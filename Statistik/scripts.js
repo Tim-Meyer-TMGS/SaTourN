@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3) URL zusammenbauen
   return `${base}?${params.toString()}`;
+  console.log('[buildUrl] →', url);   // <<< HIER einfügen
+  return url;
 };
 
 
@@ -465,18 +467,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Hilfsfunktion, um aus Deskriptoren & Antworten die Tabelle zu füllen
         const runQueries = (descriptors) => {
-            const promises = descriptors.map(d =>
-                fetch(buildUrl(d.type, d.query, d.isOpenData))
-                    .then(res => res.ok ? res.text() : Promise.reject(res.status))
-            );
-            Promise.all(promises)
-                .then(responses => {
-                    const data = parseResponses(descriptors, responses);
-                    displayTable(data);
-                })
-                .catch(err => handleError(err))
-                .finally(() => toggleLoading(false));
-        };
+  const promises = descriptors.map(d => {
+    const url = buildUrl(d.type, d.query, d.isOpenData);
+    console.log('[runQueries] fetching:', url);  // <<< HIER einfügen
+    return fetch(url)
+      .then(res => {
+        if (!res.ok) throw res.status;
+        return res.text();
+      });
+  });
+
+  Promise.all(promises)
+    .then(responses => { /* … */ })
+    .catch(err => handleError(err))
+    .finally(() => toggleLoading(false));
+};
 
         // 1) Fall: "Alle Gebiete abfragen"
         if (filters.allAreas) {
