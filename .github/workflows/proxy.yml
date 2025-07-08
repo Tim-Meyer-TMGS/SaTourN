@@ -1,0 +1,46 @@
+name: Test Proxy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  proxy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install express node-fetch dotenv
+
+      - name: Create server.js
+        run: |
+          cat << 'EOF' > server.js
+          import express from 'express';
+          import fetch from 'node-fetch';
+          import dotenv from 'dotenv';
+          dotenv.config();
+          const app = express();
+          const PORT = process.env.PORT || 3000;
+          app.get('/api/search', async (req, res) => {
+            const { type = '' } = req.query;
+            const url = \`https://meta.et4.de/rest.ashx/search/?experience=statistik_sachsen&licensekey=\${process.env.LICENSE_KEY}&type=\${type}&template=ET2014A.xml\`;
+            const upstream = await fetch(url);
+            const txt = await upstream.text();
+            res.header('Content-Type','application/xml').send(txt);
+          });
+          app.listen(PORT,()=>console.log('Running')); 
+          EOF
+
+      - name: Run proxy and test
+        env:
+          LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
+        run: |
+          node server.js &
+          sleep 5
+          curl http://localhost:3000/api/search?type=Tour
