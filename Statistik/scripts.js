@@ -15,31 +15,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ------------------------------
  const buildUrl = (type, query = '', isOpenData = false) => {
   const base = 'https://satourn.onrender.com/api/search';
+  const params = new URLSearchParams();
 
-  // 1) Rohes qParam ermitteln (ohne führendes &q=)
-  let qParam = '';
-  if (query.startsWith('&q=')) {
-    qParam = decodeURIComponent(query.slice(3));
-  } else if (query) {
-    qParam = query;
-  }
+  // 1) Typ und isOpenData immer mappen
+  params.append('type', type);
+  params.append('isOpenData', isOpenData.toString());
 
-  // 2) Open-Data-Filter anhängen, auch wenn qParam leer
-  if (isOpenData === true || isOpenData === 'true') {
-    const filter = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
-    qParam = qParam ? `${qParam} ${filter}` : filter;
-  }
+  // 2) Query ohne führendes &q=
+  const raw = query.startsWith('&q=') ? query.slice(3) : query;
+  if (raw) params.append('query', raw);
 
-  // 3) Einmaliges Encodieren: spaces → %20, ":" → %3A, quotes → %22
-  const encodedQuery = encodeURIComponent(qParam);
-
-  // 4) URL zusammenbauen
-  return (
-    `${base}` +
-    `?type=${encodeURIComponent(type)}` +
-    `&isOpenData=${encodeURIComponent(isOpenData)}` +
-    `&query=${encodedQuery}`
-  );
+  // 3) URL zusammenbauen
+  return `${base}?${params.toString()}`;
 };
 
 
