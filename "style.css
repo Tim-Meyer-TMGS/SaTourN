@@ -1,0 +1,111 @@
+/* Grund-Resets */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Arial", sans-serif;
+}
+
+/* Hintergrund und Zentrierung */
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(to right, #001f3d, #003366);
+    padding: 20px;
+    width: 100%;
+    color: white;
+}
+
+/* Haupt-Container */
+.container {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    max-width: 1000px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+/* Logo */
+.logo {
+    max-width: 800px;
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+/* Button-Container */
+.button-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* Einzelne Tool-Karte */
+.tool {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    width: 220px;
+    text-align: center;
+    padding: 20px;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+    margin: 10px;
+    text-decoration: none;
+    color: white;
+    display: block;
+}
+
+.tool:hover {
+    transform: translateY(-10px);
+}
+
+/* Icon in der Karte */
+.tool-icon .material-icons {
+    font-size: 48px;
+    color: #00bcd4;
+}
+
+/* Überschrift und Text in der Karte */
+.tool h2 {
+    font-size: 24px;
+    margin-top: 10px;
+}
+
+.tool p {
+    font-size: 14px;
+    color: #bbb;
+    margin-top: 10px;
+}
+
+/* Footer */
+footer {
+    color: white;
+    padding: 10px;
+    text-align: center;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 600px) {
+    .container {
+        padding: 15px;
+    }
+    .tool {
+        width: 100%;
+    }
+    .tool h2 {
+        font-size: 20px;
+    }
+    .tool p {
+        font-size: 12px;
+    }
+}
