@@ -13,11 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ------------------------------
     //  Hilfsfunktion: URL bauen (mit licensekey)
     // ------------------------------
- const buildUrl = (type, query = '', isOpenData = false) => {
+const buildUrl = (type, query = '', isOpenData = false) => {
   const base = 'https://satourn.onrender.com/api/search';
   const params = new URLSearchParams();
 
-  // 1) Typ und isOpenData immer mappen
+  // 1) Typ und isOpenData mappen
   params.append('type', type);
   params.append('isOpenData', isOpenData.toString());
 
@@ -25,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const raw = query.startsWith('&q=') ? query.slice(3) : query;
   if (raw) params.append('query', raw);
 
-  // 3) URL zusammenbauen
-  return `${base}?${params.toString()}`;
-  console.log('[buildUrl] →', url);   // <<< HIER einfügen
+  // 3) URL zusammenbauen und loggen
+  const url = `${base}?${params.toString()}`;
+  console.log('[buildUrl] →', url);   // <<< hier einfügen
   return url;
 };
 
@@ -466,10 +466,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // 4) parseResponses + displayTable
 
         // Hilfsfunktion, um aus Deskriptoren & Antworten die Tabelle zu füllen
-        const runQueries = (descriptors) => {
+const runQueries = (descriptors) => {
   const promises = descriptors.map(d => {
     const url = buildUrl(d.type, d.query, d.isOpenData);
-    console.log('[runQueries] fetching:', url);  // <<< HIER einfügen
+    console.log('[runQueries] fetching:', url);  // <<< hier einfügen
     return fetch(url)
       .then(res => {
         if (!res.ok) throw res.status;
@@ -478,10 +478,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   Promise.all(promises)
-    .then(responses => { /* … */ })
+    .then(responses => {
+      const data = parseResponses(descriptors, responses);
+      displayTable(data);
+    })
     .catch(err => handleError(err))
     .finally(() => toggleLoading(false));
 };
+
 
         // 1) Fall: "Alle Gebiete abfragen"
         if (filters.allAreas) {
