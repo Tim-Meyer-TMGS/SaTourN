@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaTourN fieldname-finder</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Arial", sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(to right, #001f3d, #003366); 
+      padding: 20px;
+      color: white;
+      width: 100%;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 800px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    h2, h3 {
+      margin-bottom: 15px;
+      color: white;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .upload-label {
+      display: block;
+      background: #00bcd4;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-bottom: 10px;
+    }
+
+    .upload-label:hover {
+      background: #0097a7;
+    }
+
+    .file-info {
+      margin: 10px 0;
+      font-size: 14px;
+      color: #ddd;
+    }
+
+    .btn {
+      display: none;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 16px;
+      color: white;
+      margin-top: 15px;
+    }
+
+    .convert-btn {
+      background: #00bcd4;
+    }
+
+    .convert-btn:hover {
+      background: #0097a7;
+    }
+
+    .download-btn {
+      background: #28a745;
+    }
+
+    .download-btn:hover {
+      background: #218838;
+    }
+
+    .success {
+      margin-top: 10px;
+      font-size: 14px;
+      color: lightgreen;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    table, th, td {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+    }
+
+    th {
+      background: #00bcd4;
+      color: white;
+    }
+
+    td input {
+      width: 100%;
+      border: none;
+      text-align: center;
+      font-size: 14px;
+      background: transparent;
+      color: white;
+    }
+
+    /* ======== Menü ======== */
+    .menu-container {
+      width: 100%;
+      background: #002b50;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo {
+      height: 50px;
+    }
+
+    .menu-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-left: auto;
+    }
+
+    .menu-item {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      width: 150px;
+      text-align: center;
+      padding: 12px;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .menu-item:hover {
+      transform: translateY(-5px);
+    }
+
+    .menu-icon {
+      font-size: 36px;
+      color: #00bcd4;
+    }
+
+    .menu-text {
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    /* ======== Inhalt ======== */
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 800px;
+      width: 100%;
+    }
+
+    /* ======== Footer ======== */
+    footer {
+      color: white;
+      padding: 10px;
+      text-align: center;
+      position: fixed;
+      width: 100%;
+      bottom: 0;
+      background: #002b50;
+    }
+
+  </style>
+</head>
+<body>
+<!-- ======== Menü ======== -->
+      <nav class="menu-container">
+    <img class="logo" src="../SaTourN-RGB.png" alt="SaTourN Logo">
+    <div class="menu-links">
+      <a href="../Statistik/Index.html" class="menu-item">
+        <span class="material-icons menu-icon">bar_chart</span>
+        <div class="menu-text">Statistik</div>
+      </a>
+      <a href="../Category-Editor/category_editor.html" class="menu-item">
+        <span class="material-icons menu-icon">edit</span>
+        <div class="menu-text">Kategorie-Editor</div>
+      </a>
+      <a href="Fieldname-Finder/fieldname-finder.html" class="menu-item">
+        <span class="material-icons menu-icon">assignment</span>
+        <div class="menu-text">Feldnamen-Analyse</div>
+      </a>
+      <a href="Pages-Builder/pages_builder.html" class="menu-item">
+        <span class="material-icons menu-icon">build</span>
+        <div class="menu-text">Pages Builder</div>
+      </a>
+    </div>
+  </nav>
+  
+  <div class="container">
+    <h2>SaTourN fieldname-finder</h2>
+    <label for="xmlFile" class="upload-label">📁 XML-Datei hochladen</label>
+    <input type="file" id="xmlFile" accept=".xml" onchange="showFileInfo()">
+    <div id="fileInfo" class="file-info">Keine Datei ausgewählt</div>
+    <button id="convertBtn" class="btn convert-btn" onclick="convertXMLtoTable()">🔍Daten anzeigen</button>
+    <div id="errorMessage" style="color: red; display: none;"></div>
+  </div>
+
+  <div class="container" id="tableContainer" style="display:none;">
+    <h3>Gefundene Felder</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Feldname</th>
+          <th>Datentyp</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+      </tbody>
+    </table>
+    <button id="downloadBtn" class="btn download-btn" onclick="downloadExcel()">Excel herunterladen</button>
+  </div>
+
+  <footer>
+    <p>&copy; 2025 SaTourN. Alle Rechte vorbehalten.</p>
+</footer>
+
+  <script>
+    function showFileInfo() {
+      var fileInput = document.getElementById("xmlFile");
+      var fileInfo = document.getElementById("fileInfo");
+      var convertBtn = document.getElementById("convertBtn");
+      if (fileInput.files.length > 0) {
+        fileInfo.textContent = "Datei: " + fileInput.files[0].name;
+        convertBtn.style.display = "inline-block";
+      } else {
+        fileInfo.textContent = "Keine Datei ausgewählt";
+        convertBtn.style.display = "none";
+      }
+    }
+
+    function convertXMLtoTable() {
+      var fileInput = document.getElementById("xmlFile");
+      var errorMessage = document.getElementById("errorMessage");
+      var tableBody = document.getElementById("tableBody");
+      errorMessage.style.display = "none";
+      tableBody.innerHTML = "";
+
+      if (!fileInput.files.length) {
+        errorMessage.textContent = "Bitte eine XML-Datei hochladen!";
+        errorMessage.style.display = "block";
+        return;
+      }
+
+      var file = fileInput.files[0];
+      var reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          var parser = new DOMParser();
+          var xmlDoc = parser.parseFromString(event.target.result, "text/xml");
+
+          if (xmlDoc.documentElement.nodeName === "parsererror") {
+            throw new Error("XML konnte nicht geparst werden.");
+          }
+
+          var fieldTypes = {};
+          var allElements = xmlDoc.getElementsByTagName("*");
+          for (var i = 0; i < allElements.length; i++) {
+            var element = allElements[i];
+            var tagName = element.tagName.trim();
+            var value = element.textContent.trim();
+            if (!(tagName in fieldTypes)) {
+              fieldTypes[tagName] = detectDataType(value);
+            }
+          }
+
+          displayTable(fieldTypes);
+          document.getElementById("tableContainer").style.display = "block";
+        } catch (err) {
+          errorMessage.textContent = "Fehler: " + err.message;
+          errorMessage.style.display = "block";
+        }
+      };
+
+      reader.readAsText(file);
+    }
+
+    function detectDataType(value) {
+      if (!value) return "String";
+      if (/^\d+$/.test(value)) return "Integer";
+      if (/^\d+\.\d+$/.test(value)) return "Float";
+      if (/^(true|false)$/i.test(value)) return "Boolean";
+      return "String";
+    }
+
+    function downloadExcel() {
+      var tableData = [["Feldname", "Datentyp"]];
+      document.querySelectorAll("#tableBody tr").forEach(row => {
+        tableData.push([row.cells[0].innerText, row.cells[1].innerText]);
+      });
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(tableData), "Felder");
+      XLSX.writeFile(wb, "Feldnamen.xlsx");
+    }
+  </script>
+
+</body>
+</html>

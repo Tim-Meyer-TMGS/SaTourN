@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaTourN-Statistik</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+       <h1>SaTourN-Statistik-Tool</h1>
+
+    <div class="container">
+		<h2>Gebiet wählen</h2>
+        <div class="form-group dropdown-container" id="area-dropdown-container">
+            <!-- Dropdown für Gebiete wird hier geladen -->
+        </div>
+		<h2>Ort wählen</h2>
+		<div class="form-group dropdown-container" id="place-dropdown-container">
+    <!-- Dropdown für Orte wird hier geladen -->
+</div>
+
+<h2>Typ wählen</h2>
+        <div class="form-group dropdown-container" id="type-dropdown-container">
+            <!-- Dropdown für Typen (Hotel, Restaurant, etc.) -->
+        </div>
+
+        <div class="form-group dropdown-container" id="dropdown-container">
+            <!-- Dropdown für Kategorien wird hier geladen -->
+        </div>
+<div style="margin-bottom: 10px;">
+    <label>
+        <input type="checkbox" id="all-areas-checkbox" />
+        Alle Gebiete abfragen
+    </label>
+</div>
+        <button id="search-button">Ergebnisse suchen</button>
+		<div id="loading-container" style="display: none;">
+    <svg id="coffee-cup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="120" height="120">
+        <!-- Tasse -->
+        <path d="M4 20h48v24a12 12 0 01-12 12H16a12 12 0 01-12-12V20z" fill="#cfcfcf" stroke="#333" stroke-width="2" />
+        <!-- Kaffee -->
+        <rect id="coffee-fill" x="8" y="32" width="40" height="12" fill="#6f4e37" />
+        <!-- Griff -->
+        <path d="M52 24h4a8 8 0 010 16h-4" fill="none" stroke="#333" stroke-width="2" />
+    </svg>
+    <p style="margin-top: 10px; font-size: 16px; color: #333;">Hol dir n Kaffee, das dauert ne Minute...</p>
+</div>
+
+        <div id="result"></div>
+        <div id="generated-url"></div> <!-- Feld zur Anzeige der generierten URL -->
+        <div id="chart-container">
+            <canvas id="pie-chart"></canvas> <!-- Canvas für das Kreisdiagramm -->
+        </div>
+    </div>
+    <script src="scripts.js"></script>
+</body>
+</html>
