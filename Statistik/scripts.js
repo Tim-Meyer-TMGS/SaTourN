@@ -3,11 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     //  XML-Kategorien-URLs (unverändert)
     // ------------------------------
     const xmlUrls = {
-        Hotel: 'http://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml',
-        Event: 'http://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml',
-        Gastro: 'http://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml',
-        Tour:  'http://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml',
-        POI:   'http://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml'
+        Hotel: 'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml',
+        Event: 'https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml',
+        Gastro: 'https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml',
+        Tour:  'https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml',
+        POI:   'https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml'
     };
 
     // ------------------------------
