@@ -13,27 +13,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // ------------------------------
     //  Hilfsfunktion: URL bauen (mit licensekey)
     // ------------------------------
-const buildUrl = (type, query = '', isOpenData = false) => {
-  const base = 'https://satourn.onrender.com/api/search';
-  const params = new URLSearchParams();
+ const buildUrl = (type, query = '', isOpenData = false) => {
+   const base = 'https://satourn.onrender.com/api/search';
+    const params = new URLSearchParams();
+   params.append('type', type);
+    params.append('isOpenData', isOpenData.toString());
+   const raw = query.startsWith('&q=') ? query.slice(3) : query;
+ if (raw) params.append('query', raw);
 
-  // 1) Typ und isOpenData mappen
-  params.append('type', type);
-  params.append('isOpenData', isOpenData.toString());
-
-  // 2) Query ohne führendes &q=
-  const raw = query.startsWith('&q=') ? query.slice(3) : query;
-  if (raw) params.append('query', raw);
-
-  // 3) URL zusammenbauen und loggen
-  const url = `${base}?${params.toString()}`;
-  console.log('[buildUrl] →', url);   // <<< jetzt wird geloggt
+ const url = `${base}?${params.toString()}`;
+ console.log('[buildUrl] →', url);
   return url;
-};
-
-
-
-
+ };
     // ------------------------------
     //  DOM-Elemente referenzieren
     // ------------------------------
@@ -485,17 +476,6 @@ const buildUrl = (type, query = '', isOpenData = false) => {
         // 4) parseResponses + displayTable
 
         // Hilfsfunktion, um aus Deskriptoren & Antworten die Tabelle zu füllen
-const runQueries = (descriptors) => {
-  const promises = descriptors.map(d => {
-    const url = buildUrl(d.type, d.query, d.isOpenData);
-    console.log('[runQueries] fetching:', url);  // <<< hier einfügen
-    return fetch(url)
-      .then(res => {
-        if (!res.ok) throw res.status;
-        return res.text();
-      });
-  });
-
   Promise.all(promises)
     .then(responses => {
       const data = parseResponses(descriptors, responses);
