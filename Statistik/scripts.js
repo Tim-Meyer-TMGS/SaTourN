@@ -13,25 +13,36 @@ document.addEventListener('DOMContentLoaded', () => {
     // ------------------------------
     //  Hilfsfunktion: URL bauen (mit licensekey)
     // ------------------------------
-  
-const buildUrl = (type, query = '', isOpenData = false) => {
-  const base   = 'https://satourn.onrender.com/api/search';
-  const params = new URLSearchParams({
-    type,
-    isOpenData: isOpenData.toString(),
-  });
+  const buildUrl = (type, query = '', isOpenData = false) => {
++   const base = 'https://satourn.onrender.com/api/search';
++
++   // 1) Rohes qParam ermitteln (ohne das führende &q=)
++   let qParam = '';
++   if (query.startsWith('&q=')) {
++     qParam = decodeURIComponent(query.slice(3));
++   } else {
++     qParam = query;
++   }
++
++   // 2) OpenData-Filter anhängen
++   if (isOpenData === true || isOpenData === 'true') {
++     qParam += (qParam ? ' ' : '') + 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
++   }
++
++   // 3) Manuelles Encodieren: spaces → %20, ":" → %3A, quotes → %22
++   //    URLSearchParams würde spaces als "+" kodieren, was bei ET4 manchmal Probleme macht.
++   const encoded = encodeURIComponent(qParam);
++
++   // 4) URL zusammenbauen – exakt im Format, das dein Proxy erwartet:
++   //     ?type=...&isOpenData=...&query=... 
++   return (
++     `${base}` +
++     `?type=${encodeURIComponent(type)}` +
++     `&isOpenData=${isOpenData}` +
++     `&query=${encoded}`
++   );
++ };
 
-  if (query.startsWith('&q=')) {
-    // &q= entfernen und einmalig dekodieren
-    const raw = decodeURIComponent(query.slice(3));
-    params.append('query', raw);
-  } else if (query) {
-    // einfacher Klartext-Filter
-    params.append('query', query);
-  }
-
-  return `${base}?${params.toString()}`;
-};
 
 
     // ------------------------------
