@@ -27,9 +27,10 @@ const buildUrl = (type, query = '', isOpenData = false) => {
 
   // 3) URL zusammenbauen und loggen
   const url = `${base}?${params.toString()}`;
-  console.log('[buildUrl] →', url);   // <<< hier einfügen
+  console.log('[buildUrl] →', url);   // <<< jetzt wird geloggt
   return url;
 };
+
 
 
 
@@ -448,7 +449,25 @@ const buildUrl = (type, query = '', isOpenData = false) => {
     };
 
     // ------------------------------
-    //  Daten abfragen & anzeigen
+    const runQueries = (descriptors) => {
+  const promises = descriptors.map(d => {
+    const url = buildUrl(d.type, d.query, d.isOpenData);
+    console.log('[runQueries] fetching:', url);  // <<< hier
+    return fetch(url)
+      .then(res => {
+        if (!res.ok) throw res.status;
+        return res.text();
+      });
+  });
+
+  Promise.all(promises)
+    .then(responses => {
+      const data = parseResponses(descriptors, responses);
+      displayTable(data);
+    })
+    .catch(err => handleError(err))
+    .finally(() => toggleLoading(false));
+};
     // ------------------------------
     const fetchData = () => {
         const filters = {
