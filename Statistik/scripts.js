@@ -13,35 +13,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // ------------------------------
     //  Hilfsfunktion: URL bauen (mit licensekey)
     // ------------------------------
-  const buildUrl = (type, query = '', isOpenData = false) => {
-+   const base = 'https://satourn.onrender.com/api/search';
-+
-+   // 1) Rohes qParam ermitteln (ohne das führende &q=)
-+   let qParam = '';
-+   if (query.startsWith('&q=')) {
-+     qParam = decodeURIComponent(query.slice(3));
-+   } else {
-+     qParam = query;
-+   }
-+
-+   // 2) OpenData-Filter anhängen
-+   if (isOpenData === true || isOpenData === 'true') {
-+     qParam += (qParam ? ' ' : '') + 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
-+   }
-+
-+   // 3) Manuelles Encodieren: spaces → %20, ":" → %3A, quotes → %22
-+   //    URLSearchParams würde spaces als "+" kodieren, was bei ET4 manchmal Probleme macht.
-+   const encoded = encodeURIComponent(qParam);
-+
-+   // 4) URL zusammenbauen – exakt im Format, das dein Proxy erwartet:
-+   //     ?type=...&isOpenData=...&query=... 
-+   return (
-+     `${base}` +
-+     `?type=${encodeURIComponent(type)}` +
-+     `&isOpenData=${isOpenData}` +
-+     `&query=${encoded}`
-+   );
-+ };
+ const buildUrl = (type, query = '', isOpenData = false) => {
+  const base = 'https://satourn.onrender.com/api/search';
+
+  // 1) Rohes qParam ermitteln (ohne führendes &q=)
+  let qParam = '';
+  if (query.startsWith('&q=')) {
+    qParam = decodeURIComponent(query.slice(3));
+  } else if (query) {
+    qParam = query;
+  }
+
+  // 2) Open-Data-Filter anhängen, auch wenn qParam leer
+  if (isOpenData === true || isOpenData === 'true') {
+    const filter = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
+    qParam = qParam ? `${qParam} ${filter}` : filter;
+  }
+
+  // 3) Einmaliges Encodieren: spaces → %20, ":" → %3A, quotes → %22
+  const encodedQuery = encodeURIComponent(qParam);
+
+  // 4) URL zusammenbauen
+  return (
+    `${base}` +
+    `?type=${encodeURIComponent(type)}` +
+    `&isOpenData=${encodeURIComponent(isOpenData)}` +
+    `&query=${encodedQuery}`
+  );
+};
 
 
 
