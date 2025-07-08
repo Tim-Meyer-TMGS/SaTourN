@@ -1,45 +1,76 @@
-// 1.a) CORS und Root-Route für Health-Check
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  next();
-});
+// index.js
+import express from 'express';            // ESM-Syntax: setze "type": "module" in package.json
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
 
-app.get('/', (req, res) => {
-  res.send('✅ SaTourN-Proxy alive');
-});
-
-
-
-const express = require('express');
-const fetch = require('node-fetch');
-require('dotenv').config();
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// -------------------
+// Middleware & Health
+// -------------------
+
+// CORS für alle Ursprünge (Entwicklung/Frontend)
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   next();
 });
 
+// Health-Check auf "/"
+app.get('/', (req, res) => {
+  res.send('✅ SaTourN-Proxy alive');
+});
+
+// --------------------
+// API-Proxy-Endpoint
+// --------------------
 app.get('/api/search', async (req, res) => {
   const { type, query = '', isOpenData = 'false' } = req.query;
   const licenseKey = process.env.LICENSE_KEY;
+
+  // 1) Lizenz-Key prüfen
+  if (!licenseKey) {
+    console.error('⚠️ LICENSE_KEY fehlt!');
+    return res.status(500).send('Server-Error: LICENSE_KEY fehlt');
+  }
+
+  // 2) Query-Parameter aufbauen
   let qParam = query;
   if (isOpenData === 'true') {
     qParam += '+AND+attribute_license%3A(CC0+OR+CC-BY+OR+CC-BY-SA)';
   }
-  const url = `https://meta.et4.de/rest.ashx/search/?experience=statistik_sachsen&licensekey=${licenseKey}&type=${type}&q=${qParam}&template=ET2014A.xml`;
+
+  // 3) Ziel-URL konstruieren und loggen
+  const targetUrl = [
+    'https://meta.et4.de/rest.ashx/search/',
+    '?experience=statistik_sachsen',
+    `&licensekey=${licenseKey}`,
+    `&type=${encodeURIComponent(type)}`,
+    `&q=${encodeURIComponent(qParam)}`,
+    '&template=ET2014A.xml'
+  ].join('');
+
+  console.log('👉 Proxy leitet weiter an:', targetUrl);
+
+  // 4) Fetch & Response
   try {
-    const response = await fetch(url);
-    const data = await response.text();
-    res.send(data);
+    const response = await fetch(targetUrl);
+    const text = await response.text();
+
+    // Rückgabe als XML
+    res.type('application/xml').send(text);
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Fehler beim API-Aufruf');
+    console.error('🔥 Fetch-Error:', err);
+    // Zum Debug: detaillierte Fehlermeldung zurücksenden
+    res.status(500).send(`Fetch-Error: ${err.message}`);
   }
 });
 
+// -------------------
+// Server starten
+// -------------------
 app.listen(PORT, () => {
-  console.log(`Proxy läuft auf Port ${PORT}`);
+  console.log(`Proxy-Server läuft auf Port ${PORT}`);
 });
