@@ -1,4 +1,20 @@
 // index.js
+import express from 'express';
+import cors    from 'cors';
+import fetch   from 'node-fetch';
+import dotenv  from 'dotenv';
+
+dotenv.config();
+const app = express();
+
+// 1️⃣ CORS global aktivieren
+app.use(cors());
+app.use(express.json());
+
+// Health-Check und /api/search-Route folgen hier…
+
+
+// index.js
 import express from 'express';            // ESM-Syntax: setze "type": "module" in package.json
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
