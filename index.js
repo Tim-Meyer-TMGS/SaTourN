@@ -1,3 +1,15 @@
+// 1.a) CORS und Root-Route für Health-Check
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+});
+
+app.get('/', (req, res) => {
+  res.send('✅ SaTourN-Proxy alive');
+});
+
+
+
 const express = require('express');
 const fetch = require('node-fetch');
 require('dotenv').config();
