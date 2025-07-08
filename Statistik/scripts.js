@@ -13,17 +13,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // ------------------------------
     //  Hilfsfunktion: URL bauen (mit licensekey)
     // ------------------------------
-   const buildUrl = (type, query = '', isOpenData = false) => {
-  const base = 'https://satourn.onrender.com/api/search';
+  
+const buildUrl = (type, query = '', isOpenData = false) => {
+  const base   = 'https://satourn.onrender.com/api/search';
   const params = new URLSearchParams({
     type,
     isOpenData: isOpenData.toString(),
   });
 
-  // Falls ein Query-String mit &q=… übergeben wurde, rohes Query extrahieren
-  if (query) {
-    const rawQuery = query.startsWith('&q=') ? query.slice(3) : query;
-    params.append('query', rawQuery);
+  if (query.startsWith('&q=')) {
+    // &q= entfernen und einmalig dekodieren
+    const raw = decodeURIComponent(query.slice(3));
+    params.append('query', raw);
+  } else if (query) {
+    // einfacher Klartext-Filter
+    params.append('query', query);
   }
 
   return `${base}?${params.toString()}`;
