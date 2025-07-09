@@ -12,20 +12,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * Baut die Proxy-URL für die Suche.
- * - type:      einer der Typen (POI, Tour, Hotel, Event, Gastro, Area, City…)
- * - query:     optionaler Roh-String (z.B. '&q=area:"Dresden"' oder 'area:"Dresden"')
- * - isOpenData: true → Lizenzfilter anhängen
+ * @param {string} type      - Der Typ (POI, Tour, Hotel, Event, Gastro, Area, City…)
+ * @param {string} query     - Optionaler Roh-Query-String (z.B. '&q=area:"Dresden"' oder 'area:"Dresden"')
+ * @param {boolean} isOpenData - Wenn true, Lizenzblock anhängen
+ * @returns {string} Die fertige URL
  */
 const buildUrl = (type, query = '', isOpenData = false) => {
   const base   = 'https://satourn.onrender.com/api/search';
   const params = new URLSearchParams();
+
+  // immer type mitschicken
   params.append('type', type);
 
   // 1) Roh-Query extrahieren (ohne führendes '&q=')
   let raw = '';
   if (query.startsWith('&q=')) {
     raw = query.slice(3);
-  } else if (query) {
+  } else {
     raw = query;
   }
 
@@ -43,20 +46,13 @@ const buildUrl = (type, query = '', isOpenData = false) => {
     }
   }
 
-  // 4) Wenn etwas im raw-Query steht, unter 'q' anhängen
-  if (raw) {
-    params.append('q', raw);
-  }
+  // 4) Immer q mitschicken (auch wenn raw leer ist → q=)
+  params.append('q', raw);
 
   const url = `${base}?${params.toString()}`;
   console.log('[buildUrl]', url);
   return url;
 };
-
-
-
-
-
     // ------------------------------
     //  DOM-Elemente referenzieren
     // ------------------------------
