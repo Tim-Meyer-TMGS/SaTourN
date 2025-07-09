@@ -13,18 +13,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // ------------------------------
     //  Hilfsfunktion: URL bauen (mit licensekey)
     // ------------------------------
- const buildUrl = (type, query = '', isOpenData = false) => {
-   const base = 'https://satourn.onrender.com/api/search';
+const buildUrl = (type, query = '', isOpenData = false) => {
+    const base = 'https://satourn.onrender.com/api/search';
     const params = new URLSearchParams();
-   params.append('type', type);
-    params.append('isOpenData', isOpenData.toString());
-   const raw = query.startsWith('&q=') ? query.slice(3) : query;
- if (raw) params.append('query', raw);
+    params.append('type', type);
 
- const url = `${base}?${params.toString()}`;
- console.log('[buildUrl] →', url);
-  return url;
- };
+    let raw = query.startsWith('&q=') ? query.slice(3) : query;
+
+    // OpenData: Lizenzblock anhängen
+    if (isOpenData) {
+        const LICENSE_BLOCK = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
+        if (raw && !raw.includes('attribute_license')) {
+            raw += ` AND ${LICENSE_BLOCK}`;
+        }
+        if (!raw) {
+            raw = LICENSE_BLOCK;
+        }
+    }
+
+    // Wichtig: KEIN isOpenData an den Proxy senden!
+    if (raw) params.append('query', encodeURIComponent(raw));
+
+    const url = `${base}?${params.toString()}`;
+    console.log('[buildUrl]', url);
+    return url;
+};
+
     // ------------------------------
     //  DOM-Elemente referenzieren
     // ------------------------------
