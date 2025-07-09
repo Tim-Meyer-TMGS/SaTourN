@@ -75,7 +75,7 @@ body {
 -------------------------------- */
 .container {
   width: 100%;
-  max-width: 700px;          /* Erhöhte Max-Breite */
+  max-width: 700px;
   margin: 20px;
   padding: 32px;
   background: rgba(255,255,255,0.14);
@@ -137,8 +137,6 @@ select option {
   background: #002b50;
   color: #fff;
 }
-
-/* Hover & Selected */
 select option:hover {
   background: #005f8a;
 }
@@ -224,7 +222,17 @@ button:hover,
 }
 
 /* --------------------------------
-   9. Responsive Breakpoints
+   9. Spezifische Feldbreiten
+-------------------------------- */
+#widget-height,
+#pages-url,
+#script-source-url {
+  max-width: 300px;
+  margin: 0 auto 20px;
+}
+
+/* --------------------------------
+   10. Responsive Breakpoints
 -------------------------------- */
 @media (max-width: 600px) {
   .menu-container {
