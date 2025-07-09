@@ -1,199 +1,82 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8" />
-  <title>Kategorien Editor</title>
-  <!-- Unsere CSS-Datei -->
-  <link rel="stylesheet" href="styles.css" />
+---
+layout: default
+title: "Snippet URL Generator"
+---
 
-  <!-- Google Material Icons (für Icons) -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<h1>Snippet URL Generator</h1>
 
-  <!-- PrismJS für XML-Syntax-Highlighting -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.css"
-  />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.js" defer></script>
-
-  <!-- Unser Haupt-Skript (muss nach allem anderen geladen werden) -->
-  <script src="script.js" defer></script>
-</head>
-<body>
-  <!-- Drop-Overlay für Drag&Drop (Dateien hierher ziehen) -->
-  <div id="dropOverlay" class="drop-overlay" style="display: none;">
-    Ziehe XML hierhin, um es zu laden
-  </div>
-
-  <!-- Toast-Container für Benachrichtigungen -->
-  <div id="toastContainer" class="toast-container"></div>
-
-  <!-- Debug-Log (sichtbar nur mit ?debug=true) -->
-  <button id="toggleDebugBtn" style="display: none;">Toggle Debug-Log</button>
-  <div id="debugLog" class="debug-log" style="display: none;"></div>
-
-  <!-- ============================
-       Obere Menü-Leiste
-       ============================ -->
-  <nav class="menu-container">
-    <img class="logo" src="../SaTourN-RGB.png" alt="SaTourN Logo" />
-    <div class="menu-links">
-      <a href="../Statistik/Index.html" class="menu-item">
-        <span class="material-icons menu-icon">bar_chart</span>
-        <div class="menu-text">Statistik</div>
-      </a>
-      <a href="../Category-Editor/category_editor.html" class="menu-item">
-        <span class="material-icons menu-icon">edit</span>
-        <div class="menu-text">Kategorie-Editor</div>
-      </a>
-      <a href="../Fieldname-Finder/fieldname-finder.html" class="menu-item">
-        <span class="material-icons menu-icon">assignment</span>
-        <div class="menu-text">Feldnamen-Analyse</div>
-      </a>
-      <a href="../Pages-Builder/index.html" class="menu-item">
-        <span class="material-icons menu-icon">build</span>
-        <div class="menu-text">Pages Builder</div>
-      </a>
-    </div>
-  </nav>
-
-  <!-- ============================
-       Filter- & Aktions-Bereich
-       ============================ -->
-  <div class="container filter-container" style="margin-top: 80px;">
-    <!-- Suchfeld + Dropdown-Filter -->
-    <div class="filter-row">
-      <input id="searchInput" type="text" placeholder="Kategorie suchen…" />
-      <select id="attributeFilter">
-        <option value="">Alle Kategorien</option>
-        <option value="ohne-schemaorg">Nur ohne schemaorg</option>
-        <option value="ohne-deDE">Nur ohne de-DE</option>
-        <option value="root">Nur Root-Kategorien</option>
-        <option value="unterkategorien">Nur Unterkategorien</option>
+<div id="mainForm">
+  <form id="urlForm">
+    <div class="section">
+      <label for="type">Typ auswählen:</label>
+      <select id="type" name="type" required>
+        <option value="Tour">Tour</option>
+        <option value="POI">POI</option>
+        <option value="Hotel">Hotel</option>
+        <option value="Event">Event</option>
+        <option value="Gastronomie">Gastronomie</option>
       </select>
     </div>
 
-    <!-- Buttons: Undo/Redo, Bulk-Aktionen, Draft, Quellen -->
-    <div class="button-bar">
-      <button id="undoBtn" disabled>↶ Rückgängig</button>
-      <button id="redoBtn" disabled>↷ Wiederherstellen</button>
-      <button id="bulkEditBtn" disabled>Mehrfach bearbeiten</button>
-      <button id="bulkDeleteBtn" disabled>Lösche ausgewählte</button>
-      <button id="saveDraftBtn">Entwurf speichern</button>
-      <button id="manageSourcesBtn">XML-Quellen verwalten</button>
+    <div id="categoriesContainer" class="section">
+      <label for="categories">Kategorien auswählen:</label>
+      <select id="categories" name="categories" multiple>
+        <option value="">Keine Kategorie wählen</option>
+      </select>
     </div>
+
+    <div class="section">
+      <label for="logicOperator">Kategorien kombinieren mit:</label>
+      <select id="logicOperator" name="logicOperator" required>
+        <option value="OR">ODER (OR)</option>
+        <option value="AND">UND (AND)</option>
+      </select>
+      <button type="button" id="infoBtn" class="info-btn">Info</button>
+    </div>
+
+    <div id="areasContainer" class="section">
+      <label for="areas">Optional: Gebiet auswählen:</label>
+      <select id="areas" name="areas">
+        <option value="">Kein Gebiet wählen</option>
+      </select>
+    </div>
+
+    <div id="CityContainer" class="section">
+      <label for="City">Optional: Stadt auswählen:</label>
+      <select id="City" name="City">
+        <option value="">Keine Stadt wählen</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <label for="height">Höhe des Widgets:</label>
+      <input type="number" id="height" name="height" value="400" required>
+    </div>
+
+    <div class="section">
+      <label for="showMap">Karte anzeigen:</label>
+      <input type="checkbox" id="showMap" name="showMap">
+    </div>
+
+    <button type="submit">URL generieren</button>
+  </form>
+
+  <div>
+    <h2>Pages URL:</h2>
+    <textarea id="resultnoTA" readonly></textarea>
+  </div>
+  <div>
+    <h2>Script-Source URL:</h2>
+    <textarea id="resultTA" readonly></textarea>
   </div>
 
-  <!-- ============================
-       Modal: XML-Quellen verwalten
-       ============================ -->
-  <div id="sourcesModal" class="modal" style="display: none;">
-    <div class="modal-content">
-      <span id="closeSourcesModal" class="close">&times;</span>
-      <h3>XML-Quellen verwalten</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Label</th>
-            <th>URL</th>
-            <th>Bearbeiten</th>
-            <th>Löschen</th>
-          </tr>
-        </thead>
-        <tbody id="sourcesTableBody"></tbody>
-      </table>
-      <hr />
-      <label>Neues Label:</label>
-      <input id="sourceLabelInput" type="text" placeholder="z. B. Vermieter" /><br />
-      <label>Neue URL:</label>
-      <input id="sourceUrlInput" type="text" placeholder="https://…tree.xml" /><br />
-      <button id="addSourceBtn">Quelle hinzufügen</button>
-    </div>
-  </div>
+  <button id="copyButton" class="hidden">In die Zwischenablage kopieren</button>
+</div>
 
-  <!-- ============================
-       Tabs: Baumansicht & XML-Vorschau
-       ============================ -->
-  <div class="container tabs" style="margin-top: 20px;">
-    <button id="tabTree" class="active">Baumansicht</button>
-    <button id="tabPreview">XML-Vorschau</button>
-  </div>
-
-  <!-- ============================
-       Baum-Ansicht (viewTree)
-       ============================ -->
-  <div id="viewTree">
-    <!-- Datei-Upload & Auswahl -->
-    <div class="container">
-      <h2>XML Kategorie Editor</h2>
-      <label for="fileInput" class="upload-label">XML Datei auswählen</label>
-      <input type="file" id="fileInput" style="display: none;" />
-      <div class="file-info" id="fileInfo">Noch keine Datei ausgewählt.</div>
-      <button id="addRootBtn" class="btn convert-btn" disabled>Root Kategorie hinzufügen</button>
-      <button id="downloadBtn" class="btn download-btn" disabled>Download XML</button>
-      <button onclick="document.getElementById('importJsonInput').click()" class="btn">JSON importieren</button>
-      <button onclick="document.getElementById('importCsvInput').click()" class="btn">CSV importieren</button>
-      <h2>XML-Datei aus der Liste laden</h2>
-      <label for="xmlSelect">Wählen Sie eine XML-Quelle zum Bearbeiten:</label>
-      <select id="xmlSelect"></select>
-      <button id="loadXmlBtn" class="btn download-btn">XML Laden</button>
-      <input id="importJsonInput" type="file" accept=".json" style="display: none;" />
-      <input id="importCsvInput" type="file" accept=".csv" style="display: none;" />
-    </div>
-
-    <!-- Baum-Container -->
-    <div class="container" id="treeContainerContainer">
-      <h3>Baumansicht</h3>
-      <div id="treeContainer" role="tree" tabindex="0"></div>
-    </div>
-
-    <!-- Editor-Container -->
-    <div class="container" id="editorContainer" style="display: none;">
-      <h3 id="editorTitle">Kategorie bearbeiten</h3>
-      <form id="editForm">
-        <div>
-          <label for="catName">Name:</label>
-          <input type="text" id="catName" style="padding: 5px; width: 80%;" />
-        </div>
-        <div>
-          <label for="catSchemaorg">schemaorg:</label>
-          <input type="text" id="catSchemaorg" style="padding: 5px; width: 80%;" />
-        </div>
-        <div id="displayNamesContainer"></div>
-        <div class="button-container">
-          <button type="button" id="addDisplayNameBtn" class="btn convert-btn">
-            DisplayName hinzufügen
-          </button>
-          <button type="button" id="cancelEditBtn" class="btn" style="background: #dc3545;">
-            Abbrechen
-          </button>
-          <button type="button" id="deleteCatBtn" class="btn" style="background: #dc3545;">
-            Löschen
-          </button>
-          <button type="submit" id="saveCatBtn" class="btn btn-primary">Speichern</button>
-          <button type="button" id="generateTranslationsBtn" class="btn">
-            Fehlende Übersetzungen generieren
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ============================
-       XML-Vorschau (viewPreview)
-       ============================ -->
-  <div id="viewPreview" style="display: none;">
-    <div class="container">
-      <h3>XML-Vorschau</h3>
-      <pre id="xmlPreview" class="language-markup xml-code"></pre>
-      <button id="downloadFromPreviewBtn" class="btn download-btn">
-        Download aus Vorschau
-      </button>
-    </div>
-  </div>
-
-  <footer>
-    <p>&copy; 2025 SaTourN. Alle Rechte vorbehalten.</p>
-  </footer>
-</body>
-</html>
+<!-- Info-Box Popup -->
+<div id="infoBox" class="info-box">
+  <h3>Was bedeutet AND und OR?</h3>
+  <p>Mit dem Operator <strong>AND</strong> werden die ausgewählten Kategorien mit einer logischen UND-Verknüpfung kombiniert. Nur Ergebnisse, die alle ausgewählten Kategorien gleichzeitig enthalten, werden angezeigt.</p>
+  <p>Mit dem Operator <strong>OR</strong> werden die Kategorien mit einer logischen ODER-Verknüpfung kombiniert. Ergebnisse, die mindestens eine der ausgewählten Kategorien enthalten, werden angezeigt.</p>
+  <button class="close-btn" id="closeInfoBox">Schließen</button>
+</div>
