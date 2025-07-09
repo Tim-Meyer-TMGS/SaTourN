@@ -1,16 +1,68 @@
 /* ================================================
-   responsive_styles.css – angepasst ans neue Dark-Theme-Design
-   Enthält Responsive-Regeln für mobile Geräte
+   responsive_styles.css – Dark-Theme mit Menü & verbesserter Lesbarkeit
+   Enthält: Menü, Container, Formulare, Dropdowns, Responsive-Regeln
    ================================================ */
 
 /* --------------------------------
-   1. Body & Grundlayout
+   1. Menü-Leiste (nav)
+-------------------------------- */
+.menu-container {
+  width: 100%;
+  background: #00254d;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.7);
+}
+.menu-container .logo {
+  height: 40px;
+}
+.menu-links {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.2s, transform 0.2s;
+}
+.menu-item:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateY(-2px);
+}
+.menu-icon {
+  font-size: 1.2rem;
+  color: #00e5ff;
+}
+.menu-text {
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+body {
+  padding-top: 70px; /* Platz für固定 nav */
+}
+
+/* --------------------------------
+   2. Body & Grundlayout
 -------------------------------- */
 body {
   font-family: "Arial", sans-serif;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   margin: 0;
   background: linear-gradient(to right, #001f3d, #00274d);
@@ -18,7 +70,7 @@ body {
 }
 
 /* --------------------------------
-   2. Container
+   3. Container
 -------------------------------- */
 .container {
   width: 100%;
@@ -32,7 +84,7 @@ body {
 }
 
 /* --------------------------------
-   3. Überschriften
+   4. Überschriften
 -------------------------------- */
 h1 {
   margin-bottom: 24px;
@@ -41,7 +93,7 @@ h1 {
 }
 
 /* --------------------------------
-   4. Formularelemente
+   5. Formularelemente & Dropdowns
 -------------------------------- */
 label {
   display: block;
@@ -56,25 +108,40 @@ input[type="text"] {
   display: block;
   width: 100%;
   margin: 12px auto;
-  padding: 10px 14px;
-  font-size: 1rem;
-  background: rgba(255,255,255,0.3);
+  padding: 12px 16px;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  background: rgba(0,57,87,0.8);
   color: #fff;
-  border: none;
+  border: 1px solid #005f8a;
   border-radius: 6px;
-  transition: outline-color 0.2s;
+  transition: outline-color 0.2s, background 0.2s;
 }
-
 select:focus,
 input:focus {
   outline: 3px solid #00e5ff;
+  background: rgba(0,57,87,1);
+}
+
+/* Dropdown-Optionen */
+select option {
+  background: #002b50;
+  color: #fff;
+  padding: 8px 12px;
+}
+select option:hover {
+  background: #005f8a;
+}
+select option:checked {
+  background: #00c8e6;
+  color: #00254d;
 }
 
 textarea {
   width: 100%;
   height: 120px;
   margin: 12px auto;
-  padding: 12px;
+  padding: 12px 16px;
   font-size: 1rem;
   background: rgba(255,255,255,0.3);
   color: #fff;
@@ -84,7 +151,7 @@ textarea {
 }
 
 /* --------------------------------
-   5. Buttons
+   6. Buttons
 -------------------------------- */
 button,
 .info-btn {
@@ -108,7 +175,7 @@ button:hover,
 }
 
 /* --------------------------------
-   6. Ergebnisfeld
+   7. Ergebnisfeld
 -------------------------------- */
 #result {
   margin-top: 24px;
@@ -118,7 +185,7 @@ button:hover,
 }
 
 /* --------------------------------
-   7. Infobox
+   8. Infobox
 -------------------------------- */
 .info-box {
   display: none;
@@ -135,17 +202,14 @@ button:hover,
   width: 90%;
   max-width: 320px;
 }
-
 .info-box h3 {
   margin-top: 0;
   color: #00e5ff;
 }
-
 .info-box p {
   margin: 12px 0;
   color: #e0e0e0;
 }
-
 .info-box .close-btn {
   display: inline-block;
   margin-top: 12px;
@@ -158,9 +222,20 @@ button:hover,
 }
 
 /* --------------------------------
-   8. Responsive Breakpoints
+   9. Responsive Breakpoints
 -------------------------------- */
 @media (max-width: 600px) {
+  .menu-container {
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+  }
+  .menu-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px 0 0;
+  }
   .container {
     margin: 10px;
     padding: 16px;
@@ -173,12 +248,12 @@ button:hover,
   input[type="number"],
   input[type="text"],
   textarea {
-    font-size: 0.9rem;
-    padding: 8px 12px;
+    font-size: 1rem;
+    padding: 10px 14px;
   }
   button,
   .info-btn {
     padding: 10px 0;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
   }
 }
