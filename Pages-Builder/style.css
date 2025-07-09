@@ -1,6 +1,7 @@
 /* ================================================
    responsive_styles.css – Dark-Theme mit Menü & verbesserter Lesbarkeit
    Enthält: Menü, Container, Formulare, Dropdowns, Responsive-Regeln
+   Anpassungen: breiterer Container, bessere Anordnung der Formularelemente
    ================================================ */
 
 /* --------------------------------
@@ -52,7 +53,7 @@
   font-size: 0.8rem;
 }
 body {
-  padding-top: 70px; /* Platz für固定 nav */
+  padding-top: 70px; /* Platz für fixiertes Menü */
 }
 
 /* --------------------------------
@@ -74,13 +75,24 @@ body {
 -------------------------------- */
 .container {
   width: 100%;
-  max-width: 500px;
+  max-width: 700px;          /* Erhöhte Max-Breite */
   margin: 20px;
-  padding: 24px;
+  padding: 32px;
   background: rgba(255,255,255,0.14);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Einheitlicher Abstand für Formularelemente */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  margin-bottom: 20px;
 }
 
 /* --------------------------------
@@ -90,13 +102,13 @@ h1 {
   margin-bottom: 24px;
   font-size: 1.75rem;
   color: #f0f0f0;
+  align-self: center;
 }
 
 /* --------------------------------
    5. Formularelemente & Dropdowns
 -------------------------------- */
 label {
-  display: block;
   margin-bottom: 8px;
   font-weight: bold;
   color: #e0e0e0;
@@ -105,12 +117,9 @@ label {
 select,
 input[type="number"],
 input[type="text"] {
-  display: block;
   width: 100%;
-  margin: 12px auto;
-  padding: 12px 16px;
+  padding: 14px 16px;
   font-size: 1.1rem;
-  line-height: 1.4;
   background: rgba(0,57,87,0.8);
   color: #fff;
   border: 1px solid #005f8a;
@@ -127,8 +136,9 @@ input:focus {
 select option {
   background: #002b50;
   color: #fff;
-  padding: 8px 12px;
 }
+
+/* Hover & Selected */
 select option:hover {
   background: #005f8a;
 }
@@ -140,8 +150,7 @@ select option:checked {
 textarea {
   width: 100%;
   height: 120px;
-  margin: 12px auto;
-  padding: 12px 16px;
+  padding: 14px 16px;
   font-size: 1rem;
   background: rgba(255,255,255,0.3);
   color: #fff;
@@ -155,11 +164,10 @@ textarea {
 -------------------------------- */
 button,
 .info-btn {
-  display: block;
   width: 100%;
   max-width: 240px;
   margin: 16px auto;
-  padding: 12px 0;
+  padding: 14px 0;
   font-size: 1rem;
   font-weight: bold;
   color: #fff;
@@ -167,7 +175,6 @@ button,
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
 }
 button:hover,
 .info-btn:hover {
@@ -200,25 +207,20 @@ button:hover,
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   z-index: 1000;
   width: 90%;
-  max-width: 320px;
+  max-width: 400px;
 }
 .info-box h3 {
-  margin-top: 0;
   color: #00e5ff;
 }
 .info-box p {
-  margin: 12px 0;
   color: #e0e0e0;
+  margin: 12px 0;
 }
 .info-box .close-btn {
-  display: inline-block;
   margin-top: 12px;
-  padding: 8px 16px;
+  padding: 10px 16px;
   background: #f44336;
-  color: #fff;
-  border: none;
   border-radius: 6px;
-  cursor: pointer;
 }
 
 /* --------------------------------
@@ -227,18 +229,16 @@ button:hover,
 @media (max-width: 600px) {
   .menu-container {
     flex-direction: column;
-    align-items: center;
     padding: 10px;
   }
   .menu-links {
     flex-wrap: wrap;
     justify-content: center;
-    gap: 8px;
-    margin: 10px 0 0;
+    margin-top: 10px;
   }
   .container {
-    margin: 10px;
-    padding: 16px;
+    max-width: 90%;
+    padding: 20px;
   }
   h1 {
     font-size: 1.5rem;
@@ -249,11 +249,11 @@ button:hover,
   input[type="text"],
   textarea {
     font-size: 1rem;
-    padding: 10px 14px;
+    padding: 12px 14px;
   }
   button,
   .info-btn {
-    padding: 10px 0;
+    padding: 12px 0;
     font-size: 0.95rem;
   }
 }
