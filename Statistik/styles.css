@@ -1,5 +1,6 @@
 /* ==================================================
    styles_old.css – aktualisiert auf Basis des Designs aus styles.css
+   Anpassung: Dropdown-Textfarbe lesbar gemacht
    ================================================== */
 
 /* Basis-Reset */
@@ -218,9 +219,13 @@ select {
   border-radius: 5px;
   border: 1px solid #ddd;
   background: rgba(255, 255, 255, 0.1);
-  color: white;
+  color: #000 !important;
   margin: 10px 0;
   width: 100%;
+}
+
+select option {
+  color: #000 !important;
 }
 
 input[type="text"]:focus,
@@ -354,24 +359,6 @@ input.inline-edit {
   margin: 10px 0 5px;
   color: #e5e5e5;
 }
-#editorContainer input[type="text"] {
-  width: 100%;
-}
-.button-container {
-  margin-top: 15px;
-}
-.displayname-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin: 5px 0;
-}
-.lang-input,
-.translation-input {
-  flex: 1;
-  min-width: 100px;
-}
-
 .modal {
   position: fixed;
   top: 0;
