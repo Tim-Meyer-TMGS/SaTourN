@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ---- Proxy-Endpoints für Area & City ----
-  const proxyBase  = '/api/search';
+  const proxyBase  = 'https://satourn.onrender.com/api/search';
   const areaApiUrl = `${proxyBase}?type=Area`;
   const cityApiUrl = `${proxyBase}?type=City`;
 
