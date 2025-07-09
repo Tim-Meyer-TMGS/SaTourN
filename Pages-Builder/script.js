@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (area) url += `/area:"${encodeURIComponent(area)}"`;
     if (cats) url += `/${encodeURIComponent(cats)}`;
     if (city) url += `/city:"${encodeURIComponent(city)}"`;
-    url += map + `?i_target=et4pages&i_height=${height}`;
+    
 
     // 2) Embed-Snippet (nur default/search) mit i_height
     const baseSrc = `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}?i_target=et4pages`;
