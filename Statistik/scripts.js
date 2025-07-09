@@ -17,19 +17,21 @@ document.addEventListener('DOMContentLoaded', () => {
  * @param {boolean} isOpenData - Lizenz-Filter anhängen, wenn true
  * @returns {string} Fertige Proxy-URL
  */
-const buildUrl = (type, query = '', isOpenData = false) => {
-  const base   = 'https://satourn.onrender.com/api/search';
+/**
+ * Baut die Proxy-URL für die Suche.
+ * @param {string} type       - Datentyp (z.B. 'POI', 'Tour', 'Hotel', etc.)
+ * @param {string} rawQuery   - Unkodierter Query-String (z.B. 'area:"Dresden" AND category:"Museum"')
+ * @param {boolean} isOpenData - Wenn true, wird Lizenzfilter angehängt
+ * @returns {string} - Fertige Proxy-URL
+ */
+const buildUrl = (type, rawQuery = '', isOpenData = false) => {
+  const base = 'https://satourn.onrender.com/api/search';
   const params = new URLSearchParams();
 
-  // 1) type immer mitsenden
   params.append('type', type);
 
-  // 2) Roh-Query extrahieren (ohne führendes '&q=')
-  let q = query.startsWith('&q=')
-    ? query.slice(3)
-    : query;
+  let q = rawQuery;
 
-  // 3) Lizenz-Block für OpenData
   if (isOpenData) {
     const LICENSE = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
     q = q
@@ -37,15 +39,13 @@ const buildUrl = (type, query = '', isOpenData = false) => {
       : LICENSE;
   }
 
-  // 4) query mitsenden (erst wenn nicht leer)
-  if (q) {
-    params.append('query', q);
-  }
+  params.append('query', q);
 
   const url = `${base}?${params.toString()}`;
   console.log('[buildUrl]', url);
   return url;
 };
+
 
     // ------------------------------
     //  DOM-Elemente referenzieren
@@ -178,266 +178,134 @@ const buildUrl = (type, query = '', isOpenData = false) => {
     // ------------------------------
     // Gibt ein Array von Objekten zurück:
     // { type, query, isOpenData, area, place, category }
-    const buildQueryDescriptors = (filters, areasList = []) => {
-        const { allAreas, area, place, type, categories } = filters;
-        const descriptors = [];
+   /**
+ * Baut Deskriptoren für alle kombinierten Filteroptionen.
+ * @param {Object} filters - Auswahlfilter (type, area, place, categories, allAreas)
+ * @param {Array<string>} areasList - Liste aller Gebiete (nur bei "Alle Gebiete" nötig)
+ * @returns {Array<Object>} Deskriptoren mit Typ, Query, OpenData-Flag usw.
+ */
+const buildQueryDescriptors = (filters, areasList = []) => {
+  const { allAreas, area, place, type, categories } = filters;
+  const descriptors = [];
 
-        // 1) Alle Gebiete (für jeden Typ und jedes Gebiet in areasList)
-        if (allAreas && areasList.length) {
-            areasList.forEach(areaItem => {
-                typesList.forEach(typeItem => {
-                    const qSegment = `&q=area%3A%22${encodeURIComponent(areaItem)}%22`;
-                    descriptors.push({
-                        type:       typeItem,
-                        query:      qSegment,
-                        isOpenData: false,
-                        area:       areaItem,
-                        place:      '-',
-                        category:   '-'
-                    });
-                    descriptors.push({
-                        type:       typeItem,
-                        query:      qSegment,
-                        isOpenData: true,
-                        area:       areaItem,
-                        place:      '-',
-                        category:   '-'
-                    });
-                });
-            });
-            return descriptors;
-        }
+  const buildQuery = ({ area, place, category }) => {
+    const segments = [];
+    if (area) segments.push(`area:"${area}"`);
+    if (place) segments.push(`city:"${place}"`);
+    if (category) segments.push(`category:"${category}"`);
+    return segments.join(' AND ');
+  };
 
-        // 2) Nur Typ ausgewählt, kein Gebiet, kein Ort → für alle Gebiete
-        if (!area && !place && type) {
-            areasList.forEach(areaItem => {
-                const qSegment = `&q=area%3A%22${encodeURIComponent(areaItem)}%22`;
-                descriptors.push({
-                    type,
-                    query:      qSegment,
-                    isOpenData: false,
-                    area:       areaItem,
-                    place:      '-',
-                    category:   '-'
-                });
-                descriptors.push({
-                    type,
-                    query:      qSegment,
-                    isOpenData: true,
-                    area:       areaItem,
-                    place:      '-',
-                    category:   '-'
-                });
-            });
-            return descriptors;
-        }
+  const addDescriptor = ({ type, query, area, place, category }) => {
+    descriptors.push({
+      type,
+      query,
+      isOpenData: false,
+      area,
+      place,
+      category
+    });
+    descriptors.push({
+      type,
+      query,
+      isOpenData: true,
+      area,
+      place,
+      category
+    });
+  };
 
-        // 3) Kein Gebiet, kein Ort, kein Typ → alle Typen ohne Filter (Area="Sachsen")
-        if (!area && !place && !type) {
-            typesList.forEach(typeItem => {
-                descriptors.push({
-                    type:       typeItem,
-                    query:      '',                 // keine &q=…
-                    isOpenData: false,
-                    area:       'Sachsen',
-                    place:      '-',
-                    category:   '-'
-                });
-                descriptors.push({
-                    type:       typeItem,
-                    query:      '', 
-                    isOpenData: true,
-                    area:       'Sachsen',
-                    place:      '-',
-                    category:   '-'
-                });
-            });
-            return descriptors;
-        }
+  // 1) Alle Gebiete → alle Typen je Gebiet
+  if (allAreas && areasList.length) {
+    areasList.forEach(areaItem => {
+      typesList.forEach(typeItem => {
+        const query = buildQuery({ area: areaItem });
+        addDescriptor({ type: typeItem, query, area: areaItem, place: '-', category: '-' });
+      });
+    });
+    return descriptors;
+  }
 
-        // 4) Gebiet gewählt, kein Typ, kein Ort → für jeden Typ im gewählten Gebiet
-        if (area && !type && !place) {
-            typesList.forEach(typeItem => {
-                const qSegment = `&q=area%3A%22${encodeURIComponent(area)}%22`;
-                descriptors.push({
-                    type:       typeItem,
-                    query:      qSegment,
-                    isOpenData: false,
-                    area,
-                    place:      '-',
-                    category:   '-'
-                });
-                descriptors.push({
-                    type:       typeItem,
-                    query:      qSegment,
-                    isOpenData: true,
-                    area,
-                    place:      '-',
-                    category:   '-'
-                });
-            });
-            return descriptors;
-        }
+  // 2) Typ gewählt, aber kein Gebiet oder Ort → alle Gebiete
+  if (!area && !place && type) {
+    areasList.forEach(areaItem => {
+      const query = buildQuery({ area: areaItem });
+      addDescriptor({ type, query, area: areaItem, place: '-', category: '-' });
+    });
+    return descriptors;
+  }
 
-        // 5) Gebiet + Typ, kein Ort → falls Kategorien leer, nur Gebiet+Typ, sonst jede Kategorie
-        if (area && type && !place) {
-            if (!categories.length) {
-                const qSegment = `&q=area%3A%22${encodeURIComponent(area)}%22`;
-                descriptors.push({
-                    type,
-                    query:      qSegment,
-                    isOpenData: false,
-                    area,
-                    place:      '-',
-                    category:   '-'
-                });
-                descriptors.push({
-                    type,
-                    query:      qSegment,
-                    isOpenData: true,
-                    area,
-                    place:      '-',
-                    category:   '-'
-                });
-            } else {
-                categories.forEach(cat => {
-                    const qSegment = `&q=area%3A%22${encodeURIComponent(area)}%22+AND+category%3A%22${encodeURIComponent(cat)}%22`;
-                    descriptors.push({
-                        type,
-                        query:      qSegment,
-                        isOpenData: false,
-                        area,
-                        place:      '-',
-                        category:   cat
-                    });
-                    descriptors.push({
-                        type,
-                        query:      qSegment,
-                        isOpenData: true,
-                        area,
-                        place:      '-',
-                        category:   cat
-                    });
-                });
-            }
-            return descriptors;
-        }
+  // 3) Nichts gewählt → alle Typen für Sachsen
+  if (!area && !place && !type) {
+    typesList.forEach(typeItem => {
+      addDescriptor({ type: typeItem, query: '', area: 'Sachsen', place: '-', category: '-' });
+    });
+    return descriptors;
+  }
 
-        // 6) Ort + Typ, kein Gebiet → falls Kategorien leer, nur Ort+Typ, sonst jede Kategorie
-        if (!area && place && type) {
-            if (!categories.length) {
-                const qSegment = `&q=city%3A%22${encodeURIComponent(place)}%22`;
-                descriptors.push({
-                    type,
-                    query:      qSegment,
-                    isOpenData: false,
-                    area:       '-',
-                    place,
-                    category:   '-'
-                });
-                descriptors.push({
-                    type,
-                    query:      qSegment,
-                    isOpenData: true,
-                    area:       '-',
-                    place,
-                    category:   '-'
-                });
-            } else {
-                categories.forEach(cat => {
-                    const qSegment = `&q=city%3A%22${encodeURIComponent(place)}%22+AND+category%3A%22${encodeURIComponent(cat)}%22`;
-                    descriptors.push({
-                        type,
-                        query:      qSegment,
-                        isOpenData: false,
-                        area:       '-',
-                        place,
-                        category:   cat
-                    });
-                    descriptors.push({
-                        type,
-                        query:      qSegment,
-                        isOpenData: true,
-                        area:       '-',
-                        place,
-                        category:   cat
-                    });
-                });
-            }
-            return descriptors;
-        }
+  // 4) Gebiet gewählt, kein Ort, kein Typ
+  if (area && !place && !type) {
+    typesList.forEach(typeItem => {
+      const query = buildQuery({ area });
+      addDescriptor({ type: typeItem, query, area, place: '-', category: '-' });
+    });
+    return descriptors;
+  }
 
-        // 7) Gebiet + Ort, kein Typ → alle Typen mit Gebiet+Ort
-        if (area && place && !type) {
-            typesList.forEach(typeItem => {
-                const qSegment = `&q=area%3A%22${encodeURIComponent(area)}%22+AND+city%3A%22${encodeURIComponent(place)}%22`;
-                descriptors.push({
-                    type:       typeItem,
-                    query:      qSegment,
-                    isOpenData: false,
-                    area,
-                    place,
-                    category:   '-'
-                });
-                descriptors.push({
-                    type:       typeItem,
-                    query:      qSegment,
-                    isOpenData: true,
-                    area,
-                    place,
-                    category:   '-'
-                });
-            });
-            return descriptors;
-        }
+  // 5) Gebiet + Typ, ggf. mit Kategorien
+  if (area && type && !place) {
+    if (!categories.length) {
+      const query = buildQuery({ area });
+      addDescriptor({ type, query, area, place: '-', category: '-' });
+    } else {
+      categories.forEach(cat => {
+        const query = buildQuery({ area, category: cat });
+        addDescriptor({ type, query, area, place: '-', category: cat });
+      });
+    }
+    return descriptors;
+  }
 
-        // 8) Gebiet + Ort + Typ → falls Kategorien leer: nur Gebiet+Ort+Typ, sonst jede Kategorie
-        if (area && place && type) {
-            if (!categories.length) {
-                const qSegment = `&q=area%3A%22${encodeURIComponent(area)}%22+AND+city%3A%22${encodeURIComponent(place)}%22`;
-                descriptors.push({
-                    type,
-                    query:      qSegment,
-                    isOpenData: false,
-                    area,
-                    place,
-                    category:   '-'
-                });
-                descriptors.push({
-                    type,
-                    query:      qSegment,
-                    isOpenData: true,
-                    area,
-                    place,
-                    category:   '-'
-                });
-            } else {
-                categories.forEach(cat => {
-                    const qSegment = `&q=area%3A%22${encodeURIComponent(area)}%22+AND+city%3A%22${encodeURIComponent(place)}%22+AND+category%3A%22${encodeURIComponent(cat)}%22`;
-                    descriptors.push({
-                        type,
-                        query:      qSegment,
-                        isOpenData: false,
-                        area,
-                        place,
-                        category:   cat
-                    });
-                    descriptors.push({
-                        type,
-                        query:      qSegment,
-                        isOpenData: true,
-                        area,
-                        place,
-                        category:   cat
-                    });
-                });
-            }
-            return descriptors;
-        }
+  // 6) Ort + Typ, ohne Gebiet
+  if (!area && place && type) {
+    if (!categories.length) {
+      const query = buildQuery({ place });
+      addDescriptor({ type, query, area: '-', place, category: '-' });
+    } else {
+      categories.forEach(cat => {
+        const query = buildQuery({ place, category: cat });
+        addDescriptor({ type, query, area: '-', place, category: cat });
+      });
+    }
+    return descriptors;
+  }
 
-        // Falls keine Bedingung passt (sollte nie vorkommen), Rückgabe leer
-        return descriptors;
-    };
+  // 7) Gebiet + Ort, kein Typ → alle Typen
+  if (area && place && !type) {
+    typesList.forEach(typeItem => {
+      const query = buildQuery({ area, place });
+      addDescriptor({ type: typeItem, query, area, place, category: '-' });
+    });
+    return descriptors;
+  }
+
+  // 8) Gebiet + Ort + Typ → ggf. mit Kategorien
+  if (area && place && type) {
+    if (!categories.length) {
+      const query = buildQuery({ area, place });
+      addDescriptor({ type, query, area, place, category: '-' });
+    } else {
+      categories.forEach(cat => {
+        const query = buildQuery({ area, place, category: cat });
+        addDescriptor({ type, query, area, place, category: cat });
+      });
+    }
+    return descriptors;
+  }
+
+  return descriptors;
+};
+
 
     // ------------------------------
     //  Antworten parsen gemäß Deskriptoren
