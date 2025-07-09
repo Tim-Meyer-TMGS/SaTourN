@@ -31,11 +31,13 @@ const buildUrl = (type, query = '', isOpenData = false) => {
         }
     }
 
-    if (raw) params.append('query', raw); // <-- Wichtig: kein encodeURIComponent mehr!
+    if (raw) params.append('q', raw); // <--- Korrekt!
+
     const url = `${base}?${params.toString()}`;
     console.log('[buildUrl]', url);
     return url;
 };
+
 
     // ------------------------------
     //  DOM-Elemente referenzieren
