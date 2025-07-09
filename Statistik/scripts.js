@@ -10,40 +10,47 @@ document.addEventListener('DOMContentLoaded', () => {
         POI:   'https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml'
     };
 
-    // ------------------------------
-    //  Hilfsfunktion: URL bauen (mit licensekey)
-    // ------------------------------
+/**
+ * Baut die Proxy-URL für die Suche.
+ * - type:      einer der Typen (POI, Tour, Hotel, Event, Gastro, Area, City…)
+ * - query:     optionaler Roh-String (z.B. '&q=area:"Dresden"' oder 'area:"Dresden"')
+ * - isOpenData: true → Lizenzfilter anhängen
+ */
 const buildUrl = (type, query = '', isOpenData = false) => {
-    const base = 'https://satourn.onrender.com/api/search';
-    const params = new URLSearchParams();
-    params.append('type', type);
+  const base   = 'https://satourn.onrender.com/api/search';
+  const params = new URLSearchParams();
+  params.append('type', type);
 
-    // Query ohne &q= am Anfang
-    let raw = query.startsWith('&q=') ? query.slice(3) : query;
+  // 1) Roh-Query extrahieren (ohne führendes '&q=')
+  let raw = '';
+  if (query.startsWith('&q=')) {
+    raw = query.slice(3);
+  } else if (query) {
+    raw = query;
+  }
 
-    // Lizenzblock für Open Data anhängen, wenn nötig
-    const LICENSE_BLOCK = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
+  // 2) Lizenzblock definieren
+  const LICENSE_BLOCK = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
 
-    if (isOpenData) {
-        if (raw) {
-            // Query vorhanden, aber Lizenz noch nicht enthalten
-            if (!raw.includes('attribute_license')) {
-                raw += ` AND ${LICENSE_BLOCK}`;
-            }
-        } else {
-            // Kein Query: Nur Lizenzblock als Query
-            raw = LICENSE_BLOCK;
-        }
-    }
-
-    // Query an den Proxy anhängen (als q=..., NICHT query=!)
+  // 3) Bei OpenData: Lizenz anhängen
+  if (isOpenData) {
     if (raw) {
-        params.append('q', raw);
+      if (!raw.includes('attribute_license')) {
+        raw += ` AND ${LICENSE_BLOCK}`;
+      }
+    } else {
+      raw = LICENSE_BLOCK;
     }
+  }
 
-    const url = `${base}?${params.toString()}`;
-    console.log('[buildUrl]', url);
-    return url;
+  // 4) Wenn etwas im raw-Query steht, unter 'q' anhängen
+  if (raw) {
+    params.append('q', raw);
+  }
+
+  const url = `${base}?${params.toString()}`;
+  console.log('[buildUrl]', url);
+  return url;
 };
 
 
