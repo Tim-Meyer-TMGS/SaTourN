@@ -20,23 +20,23 @@ const buildUrl = (type, query = '', isOpenData = false) => {
 
     let raw = query.startsWith('&q=') ? query.slice(3) : query;
 
-    // OpenData: Lizenzblock anhängen
+    const LICENSE_BLOCK = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
     if (isOpenData) {
-        const LICENSE_BLOCK = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
-        if (raw && !raw.includes('attribute_license')) {
-            raw += ` AND ${LICENSE_BLOCK}`;
-        }
-        if (!raw) {
+        // Wenn leer oder nur Whitespace, setze Lizenzblock
+        if (!raw || raw.trim() === "") {
             raw = LICENSE_BLOCK;
+        } else if (!raw.includes('attribute_license')) {
+            raw += ` AND ${LICENSE_BLOCK}`;
         }
     }
 
-    if (raw) params.append('q', raw); // <--- Korrekt!
+    if (raw) params.append('q', raw);
 
     const url = `${base}?${params.toString()}`;
     console.log('[buildUrl]', url);
     return url;
 };
+
 
 
     // ------------------------------
