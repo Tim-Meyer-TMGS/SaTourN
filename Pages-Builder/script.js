@@ -1,3 +1,4 @@
+<script>
 document.addEventListener('DOMContentLoaded', () => {
   // ---- XML-Kategorien-URLs (direkt, ohne Proxy) ----
   const xmlUrls = {
@@ -97,6 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---- Formular abschicken ----
   document.getElementById('urlForm').addEventListener('submit', e => {
     e.preventDefault();
+
     const type   = typeSelect.value;
     const height = heightInput.value;
     const op     = logicOpSelect.value;
@@ -110,19 +112,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const map    = document.getElementById('showMap').checked
                    ? '/view:map,half'
                    : '';
+
+    // ursprüngliche URL-Erzeugung (für Debug oder Weiterverwendung, falls benötigt)
     let url = `https://pages.destination.one/de/open-data-sachsen-tourismus/default_withmap/search/${type}`;
     if (area) url += `/area:"${encodeURIComponent(area)}"`;
     if (cats) url += `/${encodeURIComponent(cats)}`;
     if (city) url += `/city:"${encodeURIComponent(city)}"`;
     url += map + `?i_target=et4pages&i_height=${height}`;
-    resultTA.value   = url;
-    resultNoTA.value = url.split('?')[0];
+
+    // NEU: Embed-Tags erstellen
+    const baseSrc      = `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}?i_target=et4pages`;
+    const fullSrc      = `${baseSrc}&i_height=${height}`;
+    const embedWithParams = 
+`<script 
+  id="et4pages" 
+  type="text/javascript" 
+  src="${fullSrc}">
+</script>`;
+    const embedNoParams = 
+`<script 
+  id="et4pages" 
+  type="text/javascript" 
+  src="${baseSrc}">
+</script>`;
+
+    // Ausgabe
+    resultTA.value   = embedWithParams;
+    resultNoTA.value = embedNoParams;
+
     copyBtn.classList.remove('hidden');
   });
 
   copyBtn.addEventListener('click', () => {
     resultTA.select();
     document.execCommand('copy');
-    alert('URL in Zwischenablage kopiert!');
+    alert('Embed-Code in Zwischenablage kopiert!');
   });
 });
+</script>
