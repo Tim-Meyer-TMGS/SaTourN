@@ -1,9 +1,12 @@
-/* ==================================================
-   styles_old.css – aktualisiert auf Basis des Designs aus styles.css
-   Anpassung: Dropdown-Textfarbe lesbar gemacht
-   ================================================== */
+/* ================================================
+   styles_trimmed.css – optimiert für klare Lesbarkeit
+   Enthält alle Styles: Menü, Container, Tabs, Overlays, Toasts, Debug-Log,
+   Buttons, Formulare, Upload, Baumansicht, Modals, Code, Tabellen, Aktionen
+   ================================================ */
 
-/* Basis-Reset */
+/* --------------------------------
+   1. Basis-Reset
+-------------------------------- */
 * {
   margin: 0;
   padding: 0;
@@ -11,19 +14,23 @@
   font-family: "Arial", sans-serif;
 }
 
-/* Hintergrund & Body */
+/* --------------------------------
+   2. Hintergrund & Body
+-------------------------------- */
 body {
   display: flex;
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  background: linear-gradient(to right, #001f3d, #003366);
-  padding: 20px;
   width: 100%;
+  padding: 20px;
+  background: linear-gradient(to right, #001f3d, #003366);
   color: #fff;
 }
 
-/* ======== Menü-Leiste (nav) ======== */
+/* --------------------------------
+   3. Menü-Leiste (nav)
+-------------------------------- */
 .menu-container {
   width: 100%;
   background: #002b50;
@@ -37,20 +44,17 @@ body {
   z-index: 1000;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
-
 .menu-container .logo {
   height: 50px;
 }
-
 .menu-links {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
   margin-left: auto;
 }
-
 .menu-item {
-  background-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   width: 150px;
@@ -59,27 +63,26 @@ body {
   transition: transform 0.3s ease;
   cursor: pointer;
   text-decoration: none;
-  color: white;
+  color: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-
 .menu-item:hover {
   transform: translateY(-5px);
 }
-
 .menu-icon {
   font-size: 36px;
   color: #00bcd4;
 }
-
 .menu-text {
   font-size: 14px;
   margin-top: 5px;
 }
 
-/* ======== Container-Grundstil ======== */
+/* --------------------------------
+   4. Container & Überschriften
+-------------------------------- */
 .container {
   background: rgba(255, 255, 255, 0.1);
   padding: 30px;
@@ -88,16 +91,16 @@ body {
   text-align: center;
   max-width: 1000px;
   width: 100%;
-  margin-bottom: 20px;
+  margin: 80px auto 20px; /* Accounts for fixed nav */
 }
-
-/* Überschriften */
 h2, h3 {
   margin-bottom: 15px;
   color: #e5e5e5;
 }
 
-/* ======== Tabs ======== */
+/* --------------------------------
+   5. Tabs
+-------------------------------- */
 .tabs button {
   padding: 10px 20px;
   cursor: pointer;
@@ -113,7 +116,9 @@ h2, h3 {
   border-bottom: 2px solid #333;
 }
 
-/* ======== Drop Overlay ======== */
+/* --------------------------------
+   6. Drop Overlay
+-------------------------------- */
 .drop-overlay {
   position: fixed;
   top: 0;
@@ -129,41 +134,33 @@ h2, h3 {
   z-index: 10000;
 }
 
-/* ======== Toast-Benachrichtigungen ======== */
+/* --------------------------------
+   7. Toast-Benachrichtigungen
+-------------------------------- */
 .toast-container {
   position: fixed;
   bottom: 20px;
   right: 20px;
   z-index: 10000;
 }
-
 .toast {
-  background-color: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.8);
   color: #fff;
   padding: 10px 20px;
   margin-top: 5px;
   border-radius: 4px;
   opacity: 1;
-  transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.5s ease;
 }
-.toast.fade-out {
-  opacity: 0;
-}
-.toast-info {
-  background-color: #2196F3;
-}
-.toast-success {
-  background-color: #4CAF50;
-}
-.toast-warning {
-  background-color: #FFC107;
-  color: #000;
-}
-.toast-error {
-  background-color: #F44336;
-}
+.toast.fade-out { opacity: 0; }
+.toast-info { background: #2196F3; }
+.toast-success { background: #4CAF50; }
+.toast-warning { background: #FFC107; color: #000; }
+.toast-error { background: #F44336; }
 
-/* ======== Debug-Log ======== */
+/* --------------------------------
+   8. Debug-Log
+-------------------------------- */
 .debug-log {
   position: fixed;
   bottom: 0;
@@ -179,66 +176,60 @@ h2, h3 {
   padding: 10px;
 }
 
-/* ======== Moderner Button-Stil ======== */
+/* --------------------------------
+   9. Buttons
+-------------------------------- */
 button {
   padding: 10px 15px;
-  background-color: #4CAF50;
-  color: white;
+  background: #4CAF50;
+  color: #fff;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   margin: 5px;
+  transition: background 0.2s;
 }
-button:hover {
-  background-color: #45a049;
-}
-button:disabled {
-  background-color: #777;
-  cursor: default;
-}
+button:hover { background: #45a049; }
+button:disabled { background: #777; cursor: default; }
 
-/* ======== Eingabefelder & Upload ======== */
+/* --------------------------------
+   10. Upload-Label
+-------------------------------- */
 .upload-label {
-  display: block;
+  display: inline-block;
   background: #4ab1cc;
-  color: white;
+  color: #fff;
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: background 0.3s;
   margin-bottom: 10px;
 }
-.upload-label:hover {
-  background: #3c99b3;
-}
+.upload-label:hover { background: #3c99b3; }
 
+/* --------------------------------
+   11. Formulare & Dropdowns
+-------------------------------- */
 input[type="text"],
 input[type="file"],
 select {
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  background: rgba(255, 255, 255, 0.1);
-  color: #000 !important;
-  margin: 10px 0;
   width: 100%;
+  padding: 8px 12px;
+  margin: 10px 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  transition: outline-color 0.2s;
 }
-
-select option {
-  color: #000 !important;
-}
-
 input[type="text"]:focus,
-select:focus {
-  outline: none;
-  border-color: #4ab1cc;
-}
+select:focus { outline: 2px solid #00bcd4; }
+select option { background: #002b50; color: #fff; }
+input[type="file"] { cursor: pointer; }
 
-input[type="file"] {
-  cursor: pointer;
-}
-
-/* ======== Baumansicht ======== */
+/* --------------------------------
+   12. Baumansicht
+-------------------------------- */
 #treeContainer {
   width: 100%;
   max-width: 1000px;
@@ -246,7 +237,7 @@ input[type="file"] {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-  margin-top: 20px;
+  margin: 20px auto;
   min-height: 200px;
   overflow-y: auto;
 }
@@ -256,185 +247,73 @@ input[type="file"] {
   text-align: left;
 }
 #treeContainer li {
+  position: relative;
   padding: 8px;
   margin: 6px 0;
   border: 1px solid #444;
-  cursor: pointer;
   background: #2a3a59;
   border-radius: 4px;
-  position: relative;
+  cursor: pointer;
 }
-#treeContainer li:hover {
-  background: #344e74;
-}
+#treeContainer li:hover { background: #344e74; }
 #treeContainer li:focus,
-#treeContainer li.focused {
-  outline: 2px solid #4ab1cc;
-}
-#treeContainer li[aria-selected="true"] {
-  background-color: rgba(75, 177, 204, 0.4);
-}
-.node-text {
-  display: inline-block;
-}
+#treeContainer li.focused { outline: 2px solid #4ab1cc; }
+#treeContainer li[aria-selected="true"] { background: rgba(75, 177, 204, 0.4); }
+.node-text { display: inline-block; }
+.bulk-checkbox { margin-right: 5px; cursor: pointer; }
+.edit-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 1rem; color: #fff; opacity: 0; cursor: pointer; }
+#treeContainer li:hover .edit-icon { opacity: 1; }
+.highlight { background: rgba(255, 255, 0, 0.4); transition: background 0.3s; }
+.dimmed { opacity: 0.4; transition: opacity 0.3s; }
+.path-highlight { background: rgba(255, 235, 59, 0.3); }
+input.inline-edit { font-size: 1rem; padding: 2px 4px; width: calc(100% - 60px); }
+.insert-icon { position: absolute; font-size: 1.2rem; pointer-events: none; }
+.up-arrow { top: 2px; left: 50%; transform: translateX(-50%); color: green; }
+.down-arrow { bottom: 2px; left: 50%; transform: translateX(-50%); color: green; }
+.plus-icon { right: 2px; top: 50%; transform: translateY(-50%); color: orange; }
+.ghost { background: rgba(0, 0, 0, 0.6); color: #fff; padding: 4px 8px;
+  border-radius: 4px; font-size: 0.9rem; z-index: 10000; pointer-events: none; }
 
-.bulk-checkbox {
-  margin-right: 5px;
-  cursor: pointer;
-}
+/* --------------------------------
+   13. Editor & Modals
+-------------------------------- */
+#editorContainer { text-align: left; }
+#editorContainer label { display: block; margin: 10px 0 5px; color: #e5e5e5; }
+.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5); display: flex; align-items: center;
+  justify-content: center; z-index: 10000; }
+.modal-content { background: #fff; color: #000; margin: 5% auto;
+  padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px;
+  border-radius: 8px; position: relative; }
+.modal-content .close { position: absolute; top: 10px; right: 15px;
+  font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
+.modal-content .close:hover { color: #000; }
 
-.edit-icon {
-  margin-left: 8px;
-  cursor: pointer;
-  opacity: 0;
-  color: #fff;
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1rem;
-}
-#treeContainer li:hover .edit-icon {
-  opacity: 1;
-}
+/* --------------------------------
+   14. XML-Code Anzeige
+-------------------------------- */
+.xml-code { background: #f5f5f5; color: #000; padding: 10px;
+  border: 1px solid #ddd; max-height: 60vh; overflow-y: auto; text-align: left; }
 
-.highlight {
-  background-color: rgba(255, 255, 0, 0.4);
-  transition: background-color 0.3s ease;
-}
-.dimmed {
-  opacity: 0.4;
-  transition: opacity 0.3s ease;
-}
-
-.path-highlight {
-  background-color: rgba(255, 235, 59, 0.3);
-}
-
-input.inline-edit {
-  font-size: 1rem;
-  padding: 2px 4px;
-  width: calc(100% - 60px);
-}
-
-.insert-icon {
-  position: absolute;
-  font-size: 1.2rem;
-  pointer-events: none;
-}
-.up-arrow {
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: green;
-}
-.down-arrow {
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: green;
-}
-.plus-icon {
-  right: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: orange;
-}
-
-.ghost {
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  z-index: 10000;
-  pointer-events: none;
-}
-
-#editorContainer {
-  text-align: left;
-}
-#editorContainer label {
-  display: block;
-  margin: 10px 0 5px;
-  color: #e5e5e5;
-}
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-.modal-content {
-  background-color: #fff;
-  color: #000;
-  margin: 5% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
-  max-width: 500px;
-  border-radius: 8px;
-  position: relative;
-}
-.modal-content .close {
-  color: #aaa;
-  font-size: 28px;
-  font-weight: bold;
-  position: absolute;
-  top: 10px;
-  right: 15px;
-  cursor: pointer;
-}
-.modal-content .close:hover,
-.modal-content .close:focus {
-  color: black;
-}
-
-.xml-code {
-  background: #f5f5f5;
-  color: #000;
-  padding: 10px;
-  border: 1px solid #ddd;
-  max-height: 60vh;
-  overflow-y: auto;
-  text-align: left;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 15px;
-  color: #000;
-}
-table th,
-table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: left;
-}
-table th {
-  background: #f0f0f0;
-}
+/* --------------------------------
+   15. Tabellen & Aktionen
+-------------------------------- */
+table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+th, td { padding: 12px; text-align: left; }
+th { background: #004080; color: #fff; font-weight: bold; }
+tr:nth-child(even) { background: rgba(255, 255, 255, 0.05); }
+td { border-bottom: 1px solid rgba(255, 255, 255, 0.2); color: #fff; }
 
 .editSourceBtn,
 .deleteSourceBtn {
   padding: 5px 10px;
-  background-color: #2196F3;
-  color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 0.9rem;
 }
-.deleteSourceBtn {
-  background-color: #F44336;
-}
+.editSourceBtn { background: #2196F3; color: #fff; margin-right: 5px; }
+.deleteSourceBtn { background: #F44336; color: #fff; }
 .editSourceBtn:hover,
-.deleteSourceBtn:hover {
-  opacity: 0.8;
-}
+.deleteSourceBtn:hover { opacity: 0.8; }
