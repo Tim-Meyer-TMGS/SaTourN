@@ -1,114 +1,184 @@
+/* ================================================
+   responsive_styles.css – angepasst ans neue Dark-Theme-Design
+   Enthält Responsive-Regeln für mobile Geräte
+   ================================================ */
+
+/* --------------------------------
+   1. Body & Grundlayout
+-------------------------------- */
 body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f4;
-        }
-        .container {
-            text-align: center;
-            border: 1px solid #ddd;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            background-color: #fff;
-            max-width: 90%;
-            width: 500px;
-        }
-        h1 {
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #333;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        select, button, input[type="number"], input[type="text"] {
-            display: block;
-            margin: 10px auto;
-            padding: 10px;
-            width: 100%;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 12px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #result {
-            margin-top: 20px;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-        }
-        textarea {
-            width: 100%;
-            height: 120px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            box-sizing: border-box;
-            font-size: 16px;
-            resize: vertical;
-        }
-        .hidden {
-            display: none;
-        }
-		.info-box {
-            display: none;
-            position: fixed;
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            width: 300px;
-        }
+  font-family: "Arial", sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  background: linear-gradient(to right, #001f3d, #00274d);
+  color: #fff;
+}
 
-        .info-box h3 {
-            margin-top: 0;
-        }
+/* --------------------------------
+   2. Container
+-------------------------------- */
+.container {
+  width: 100%;
+  max-width: 500px;
+  margin: 20px;
+  padding: 24px;
+  background: rgba(255,255,255,0.14);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  text-align: center;
+}
 
-        .info-box p {
-            margin: 10px 0;
-        }
+/* --------------------------------
+   3. Überschriften
+-------------------------------- */
+h1 {
+  margin-bottom: 24px;
+  font-size: 1.75rem;
+  color: #f0f0f0;
+}
 
-        .info-box .close-btn {
-            background-color: red;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+/* --------------------------------
+   4. Formularelemente
+-------------------------------- */
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #e0e0e0;
+}
 
-        /* Style für den Info-Button */
-        .info-btn {
-            background-color: ##ffda;
-            border: 1px solid #ddd;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: 14px;
-            border-radius: 5px;
-            margin-top: 5px;
-        }
+select,
+input[type="number"],
+input[type="text"] {
+  display: block;
+  width: 100%;
+  margin: 12px auto;
+  padding: 10px 14px;
+  font-size: 1rem;
+  background: rgba(255,255,255,0.3);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  transition: outline-color 0.2s;
+}
 
-        .info-btn:hover {
-            background-color: #ddd;
-        }
+select:focus,
+input:focus {
+  outline: 3px solid #00e5ff;
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+  margin: 12px auto;
+  padding: 12px;
+  font-size: 1rem;
+  background: rgba(255,255,255,0.3);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  resize: vertical;
+}
+
+/* --------------------------------
+   5. Buttons
+-------------------------------- */
+button,
+.info-btn {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  margin: 16px auto;
+  padding: 12px 0;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background: #00e5ff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button:hover,
+.info-btn:hover {
+  background: #00c8e6;
+}
+
+/* --------------------------------
+   6. Ergebnisfeld
+-------------------------------- */
+#result {
+  margin-top: 24px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  color: #e0e0e0;
+}
+
+/* --------------------------------
+   7. Infobox
+-------------------------------- */
+.info-box {
+  display: none;
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 1000;
+  width: 90%;
+  max-width: 320px;
+}
+
+.info-box h3 {
+  margin-top: 0;
+  color: #00e5ff;
+}
+
+.info-box p {
+  margin: 12px 0;
+  color: #e0e0e0;
+}
+
+.info-box .close-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: #f44336;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* --------------------------------
+   8. Responsive Breakpoints
+-------------------------------- */
+@media (max-width: 600px) {
+  .container {
+    margin: 10px;
+    padding: 16px;
+  }
+  h1 {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+  }
+  select,
+  input[type="number"],
+  input[type="text"],
+  textarea {
+    font-size: 0.9rem;
+    padding: 8px 12px;
+  }
+  button,
+  .info-btn {
+    padding: 10px 0;
+    font-size: 0.9rem;
+  }
+}
