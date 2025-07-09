@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('urlForm').addEventListener('submit', e => {
     e.preventDefault();
 
-    // Werte aus Formular
+    // 1) Original-URL (default_withmap), inkl. Pfad-Filter, aber wir trennen die Parameter später ab
     const type   = encodeURIComponent(typeSelect.value);
     const height = encodeURIComponent(heightInput.value);
     const op     = logicOpSelect.value;
@@ -101,27 +101,26 @@ document.addEventListener('DOMContentLoaded', () => {
                       .map(o => `category:"${o.value}"`)
                       .join(` ${op} `);
 
-    const map = document.getElementById('showMap').checked
-                ? '/view:map,half'
-                : '';
-
-    // 1) Original-URL (default_withmap) wie gehabt
     let url = `https://pages.destination.one/de/open-data-sachsen-tourismus/default_withmap/search/${type}`;
     if (area) url += `/area:"${encodeURIComponent(area)}"`;
     if (cats) url += `/${encodeURIComponent(cats)}`;
-    if (city) url += `/city:"${encodeURIComponent(city)}"`;
-    
+    if (city) url += `/city:"${encodeURIComponent(city)}"}`;
+    // map-Part beibehalten, wenn ausgewählt
+    const mapPart = document.getElementById('showMap').checked ? '/view:map,half' : '';
+    url += mapPart;
+    // Parameter ans Ende hängen
+    url += `?i_target=et4pages&i_height=${height}`;
 
-    // 2) Embed-Snippet (nur default/search) mit i_height
+    // 2) Embed-Snippet (default/search) mit i_height
     const baseSrc = `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}?i_target=et4pages`;
     const fullSrc = `${baseSrc}&i_height=${height}`;
     const embedSnippet = `<script id="et4pages" type="text/javascript" src="${fullSrc}"></script>`;
 
     // Ausgabe:
-    // - resultTA: nur das <script>…</script>
-    // - resultNoTA: nur die Original-Seiten-URL (ohne Script-Tags)
+    // - resultTA: Embed-Snippet
+    // - resultNoTA: Original-URL ohne Parameter
     resultTA.value   = embedSnippet;
-    resultNoTA.value = url;
+    resultNoTA.value = url.split('?')[0];
 
     copyBtn.classList.remove('hidden');
   });
