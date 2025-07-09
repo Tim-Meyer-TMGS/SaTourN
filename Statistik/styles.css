@@ -1,118 +1,453 @@
+/* ==================================================
+   styles_old.css – aktualisiert auf Basis des Designs aus styles.css
+   ================================================== */
+
+/* Basis-Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Arial", sans-serif;
+}
+
+/* Hintergrund & Body */
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f7fc;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(to right, #001f3d, #003366);
+  padding: 20px;
+  width: 100%;
+  color: #fff;
 }
 
-h1 {
-    font-size: 24px;
-    color: #333;
-    margin-top: 20px;
-    margin-bottom: 30px;
+/* ======== Menü-Leiste (nav) ======== */
+.menu-container {
+  width: 100%;
+  background: #002b50;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
+.menu-container .logo {
+  height: 50px;
+}
 
+.menu-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-left: auto;
+}
 
+.menu-item {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  width: 150px;
+  text-align: center;
+  padding: 12px;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+  text-decoration: none;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.menu-item:hover {
+  transform: translateY(-5px);
+}
+
+.menu-icon {
+  font-size: 36px;
+  color: #00bcd4;
+}
+
+.menu-text {
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+/* ======== Container-Grundstil ======== */
 .container {
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    width: 100%;
-    max-width: 600px;
-    padding: 30px;
-    margin: 0 15px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 1000px;
+  width: 100%;
+  margin-bottom: 20px;
 }
 
-.form-group {
-    margin-bottom: 20px;
+/* Überschriften */
+h2, h3 {
+  margin-bottom: 15px;
+  color: #e5e5e5;
 }
 
-label {
-    font-size: 16px;
-    color: #333;
-    margin-bottom: 8px;
-    display: block;
+/* ======== Tabs ======== */
+.tabs button {
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  background: #ccc;
+  margin-right: 5px;
+  border-radius: 4px 4px 0 0;
+  color: #000;
+  font-weight: bold;
+}
+.tabs button.active {
+  background: #fff;
+  border-bottom: 2px solid #333;
 }
 
-select, button {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-    transition: background-color 0.3s ease;
+/* ======== Drop Overlay ======== */
+.drop-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
 }
 
-select:focus, button:focus {
-    outline: none;
-    border-color: #007bff;
-    background-color: #e6f0ff;
+/* ======== Toast-Benachrichtigungen ======== */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
 }
 
-select {
-    color: #333;
+.toast {
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 10px 20px;
+  margin-top: 5px;
+  border-radius: 4px;
+  opacity: 1;
+  transition: opacity 0.5s ease-in-out;
+}
+.toast.fade-out {
+  opacity: 0;
+}
+.toast-info {
+  background-color: #2196F3;
+}
+.toast-success {
+  background-color: #4CAF50;
+}
+.toast-warning {
+  background-color: #FFC107;
+  color: #000;
+}
+.toast-error {
+  background-color: #F44336;
 }
 
+/* ======== Debug-Log ======== */
+.debug-log {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  max-height: 30vh;
+  overflow-y: auto;
+  background: #111;
+  color: #0f0;
+  font-family: monospace;
+  font-size: 0.8rem;
+  z-index: 10000;
+  padding: 10px;
+}
+
+/* ======== Moderner Button-Stil ======== */
 button {
-    background-color: #007bff;
-    color: #fff;
-    cursor: pointer;
-    margin-top: 15px;
+  padding: 10px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 5px;
 }
-
 button:hover {
-    background-color: #0056b3;
+  background-color: #45a049;
+}
+button:disabled {
+  background-color: #777;
+  cursor: default;
 }
 
-#result {
-    font-size: 18px;
-    color: #333;
-    margin-top: 20px;
+/* ======== Eingabefelder & Upload ======== */
+.upload-label {
+  display: block;
+  background: #4ab1cc;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-bottom: 10px;
+}
+.upload-label:hover {
+  background: #3c99b3;
 }
 
-.dropdown-container {
-    margin-bottom: 30px;
+input[type="text"],
+input[type="file"],
+select {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  margin: 10px 0;
+  width: 100%;
 }
 
-.error {
-    color: red;
-    font-weight: bold;
+input[type="text"]:focus,
+select:focus {
+  outline: none;
+  border-color: #4ab1cc;
+}
+
+input[type="file"] {
+  cursor: pointer;
+}
+
+/* ======== Baumansicht ======== */
+#treeContainer {
+  width: 100%;
+  max-width: 1000px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  margin-top: 20px;
+  min-height: 200px;
+  overflow-y: auto;
+}
+#treeContainer ul {
+  list-style: none;
+  padding-left: 20px;
+  text-align: left;
+}
+#treeContainer li {
+  padding: 8px;
+  margin: 6px 0;
+  border: 1px solid #444;
+  cursor: pointer;
+  background: #2a3a59;
+  border-radius: 4px;
+  position: relative;
+}
+#treeContainer li:hover {
+  background: #344e74;
+}
+#treeContainer li:focus,
+#treeContainer li.focused {
+  outline: 2px solid #4ab1cc;
+}
+#treeContainer li[aria-selected="true"] {
+  background-color: rgba(75, 177, 204, 0.4);
+}
+.node-text {
+  display: inline-block;
+}
+
+.bulk-checkbox {
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.edit-icon {
+  margin-left: 8px;
+  cursor: pointer;
+  opacity: 0;
+  color: #fff;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+}
+#treeContainer li:hover .edit-icon {
+  opacity: 1;
+}
+
+.highlight {
+  background-color: rgba(255, 255, 0, 0.4);
+  transition: background-color 0.3s ease;
+}
+.dimmed {
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.path-highlight {
+  background-color: rgba(255, 235, 59, 0.3);
+}
+
+input.inline-edit {
+  font-size: 1rem;
+  padding: 2px 4px;
+  width: calc(100% - 60px);
+}
+
+.insert-icon {
+  position: absolute;
+  font-size: 1.2rem;
+  pointer-events: none;
+}
+.up-arrow {
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: green;
+}
+.down-arrow {
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: green;
+}
+.plus-icon {
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: orange;
+}
+
+.ghost {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+#editorContainer {
+  text-align: left;
+}
+#editorContainer label {
+  display: block;
+  margin: 10px 0 5px;
+  color: #e5e5e5;
+}
+#editorContainer input[type="text"] {
+  width: 100%;
+}
+.button-container {
+  margin-top: 15px;
+}
+.displayname-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 5px 0;
+}
+.lang-input,
+.translation-input {
+  flex: 1;
+  min-width: 100px;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.modal-content {
+  background-color: #fff;
+  color: #000;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 8px;
+  position: relative;
+}
+.modal-content .close {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  cursor: pointer;
+}
+.modal-content .close:hover,
+.modal-content .close:focus {
+  color: black;
+}
+
+.xml-code {
+  background: #f5f5f5;
+  color: #000;
+  padding: 10px;
+  border: 1px solid #ddd;
+  max-height: 60vh;
+  overflow-y: auto;
+  text-align: left;
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+  color: #000;
 }
-
-table th, table td {
-    padding: 10px;
-    text-align: left;
-    border: 1px solid #ddd;
-}
-
-table th {
-    background-color: #f4f7fc;
-}
-
+table th,
 table td {
-    background-color: #fff;
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
 }
-#loading-container {
-    display: none; /* Standardzustand: ausblenden */
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.8);
-    z-index: 1000;
+table th {
+  background: #f0f0f0;
 }
 
+.editSourceBtn,
+.deleteSourceBtn {
+  padding: 5px 10px;
+  background-color: #2196F3;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.deleteSourceBtn {
+  background-color: #F44336;
+}
+.editSourceBtn:hover,
+.deleteSourceBtn:hover {
+  opacity: 0.8;
+}
