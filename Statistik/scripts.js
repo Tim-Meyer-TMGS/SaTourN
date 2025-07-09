@@ -440,26 +440,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ------------------------------
-    const runQueries = (descriptors) => {
+const runQueries = (descriptors) => {
   const promises = descriptors.map(d => {
     const url = buildUrl(d.type, d.query, d.isOpenData);
-    console.log('[runQueries] fetching:', url);  // <<< hier
+    console.log('[runQueries] fetching:', url);
     return fetch(url)
       .then(res => {
         if (!res.ok) throw res.status;
         return res.text();
       });
   });
-
-  Promise.all(promises)
+    
+Promise.all(promises)
     .then(responses => {
       const data = parseResponses(descriptors, responses);
       displayTable(data);
     })
     .catch(err => handleError(err))
     .finally(() => toggleLoading(false));
-};
-    // ------------------------------
+}; // <--- **Hier muss eine Klammer hin!**
+   // ------------------------------
     const fetchData = () => {
         const filters = {
             allAreas:  elements.allAreasCheckbox.checked,
