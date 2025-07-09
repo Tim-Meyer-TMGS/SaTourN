@@ -37,15 +37,6 @@ const buildUrl = (type, query = '', isOpenData = false) => {
     return url;
 };
 
-
-    // Wichtig: KEIN isOpenData an den Proxy senden!
-    if (raw) params.append('query', encodeURIComponent(raw));
-
-    const url = `${base}?${params.toString()}`;
-    console.log('[buildUrl]', url);
-    return url;
-};
-
     // ------------------------------
     //  DOM-Elemente referenzieren
     // ------------------------------
