@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeInfoBtn   = document.getElementById('closeInfoBox');
 
   // ---- Info-Box-Logik ----
-  infoBtn.addEventListener('click',   () => infoBox.style.display = 'block');
+  infoBtn.addEventListener('click',    () => infoBox.style.display = 'block');
   closeInfoBtn.addEventListener('click', () => infoBox.style.display = 'none');
   window.addEventListener('click', e => {
     if (e.target === infoBox) infoBox.style.display = 'none';
@@ -41,13 +41,13 @@ document.addEventListener('DOMContentLoaded', () => {
   loadCategories();
   typeSelect.addEventListener('change', loadCategories);
 
-  // ---- Funktionen ----
+  // ---- Funktionen zum Laden der Selects ----
   async function loadAreas() {
     if (!areaSelect) return console.error('Kein <select id="areas"> gefunden!');
     try {
-      const res  = await fetch(areaApiUrl);
-      const txt  = await res.text();
-      const xml  = new DOMParser().parseFromString(txt, 'application/xml');
+      const res = await fetch(areaApiUrl);
+      const txt = await res.text();
+      const xml = new DOMParser().parseFromString(txt, 'application/xml');
       const items = Array.from(xml.querySelectorAll('item > title'));
       areaSelect.innerHTML = '<option value="">Kein Gebiet wählen</option>';
       items.forEach(el => areaSelect.append(new Option(el.textContent, el.textContent)));
@@ -59,9 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadCity() {
     if (!citySelect) return console.error('Kein <select id="City"> gefunden!');
     try {
-      const res  = await fetch(cityApiUrl);
-      const txt  = await res.text();
-      const xml  = new DOMParser().parseFromString(txt, 'application/xml');
+      const res = await fetch(cityApiUrl);
+      const txt = await res.text();
+      const xml = new DOMParser().parseFromString(txt, 'application/xml');
       const items = Array.from(xml.querySelectorAll('item > title'));
       citySelect.innerHTML = '<option value="">Keine Stadt wählen</option>';
       items.forEach(el => citySelect.append(new Option(el.textContent, el.textContent)));
@@ -76,9 +76,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = xmlUrls[sel];
     if (!url) return;
     try {
-      const res  = await fetch(url);
-      const txt  = await res.text();
-      const xml  = new DOMParser().parseFromString(txt, 'application/xml');
+      const res = await fetch(url);
+      const txt = await res.text();
+      const xml = new DOMParser().parseFromString(txt, 'application/xml');
       Array.from(xml.querySelectorAll('Category')).forEach(cat => {
         const name = cat.getAttribute('Name');
         categorySelect.append(new Option(name, name));
@@ -88,37 +88,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ---- Formular abschicken ----
+  // ---- Neuer Formular-Handler: nur Embed-Snippets ausgeben ----
   document.getElementById('urlForm').addEventListener('submit', e => {
     e.preventDefault();
 
-    // Werte aus Formular
-    const type   = typeSelect.value;
-    const height = heightInput.value;
+    const type   = encodeURIComponent(typeSelect.value);
+    const height = encodeURIComponent(heightInput.value);
 
-    // 1) Embed-Snippet ohne Höhe (nur default/search)
+    // 1) Embed ohne Höhe (default/search)
     const baseSrc = 
-      `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/` +
-      `${encodeURIComponent(type)}?i_target=et4pages`;
+      `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}` +
+      `?i_target=et4pages`;
 
-    // 2) Embed-Snippet mit Höhe (mit i_height)
-    const fullSrc = `${baseSrc}&i_height=${encodeURIComponent(height)}`;
+    // 2) Embed mit Höhe
+    const fullSrc = `${baseSrc}&i_height=${height}`;
 
     const embedNoParams = 
-`<script 
-  id="et4pages" 
-  type="text/javascript" 
+`<script
+  id="et4pages"
+  type="text/javascript"
   src="${baseSrc}">
 </script>`;
 
     const embedWithParams = 
-`<script 
-  id="et4pages" 
-  type="text/javascript" 
+`<script
+  id="et4pages"
+  type="text/javascript"
   src="${fullSrc}">
 </script>`;
 
-    // In Textareas ausgeben
+    // Ausgabe in die Textareas
     resultTA.value   = embedWithParams;
     resultNoTA.value = embedNoParams;
 
