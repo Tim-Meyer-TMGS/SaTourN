@@ -109,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const mapPart = document.getElementById('showMap').checked ? '/view:map,half' : '';
     url += mapPart;
     // Parameter ans Ende hängen
-    url += `?i_target=et4pages&i_height=${height}`;
 
     // 2) Embed-Snippet (default/search) mit i_height
     const baseSrc = `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}?i_target=et4pages`;
