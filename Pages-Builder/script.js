@@ -1,4 +1,3 @@
-<script>
 document.addEventListener('DOMContentLoaded', () => {
   // ---- XML-Kategorien-URLs (direkt, ohne Proxy) ----
   const xmlUrls = {
@@ -88,36 +87,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ---- Neuer Formular-Handler: nur Embed-Snippets ausgeben ----
+  // ---- Formular abschicken ----
   document.getElementById('urlForm').addEventListener('submit', e => {
     e.preventDefault();
 
+    // Werte aus Formular
     const type   = encodeURIComponent(typeSelect.value);
     const height = encodeURIComponent(heightInput.value);
 
-    // 1) Embed ohne Höhe (default/search)
+    // Basis-URL ohne Höhe
     const baseSrc = 
       `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}` +
       `?i_target=et4pages`;
 
-    // 2) Embed mit Höhe
+    // URL mit Höhen-Angabe
     const fullSrc = `${baseSrc}&i_height=${height}`;
 
+    // Hier stehen die echten <script>-Tags **im String**
     const embedNoParams = 
-`<script
-  id="et4pages"
-  type="text/javascript"
-  src="${baseSrc}">
-</script>`;
+      `<script id="et4pages" type="text/javascript" src="${baseSrc}"></script>`;
 
     const embedWithParams = 
-`<script
-  id="et4pages"
-  type="text/javascript"
-  src="${fullSrc}">
-</script>`;
+      `<script id="et4pages" type="text/javascript" src="${fullSrc}"></script>`;
 
-    // Ausgabe in die Textareas
+    // Ergebnisse in die Textareas schreiben
     resultTA.value   = embedWithParams;
     resultNoTA.value = embedNoParams;
 
@@ -131,4 +124,3 @@ document.addEventListener('DOMContentLoaded', () => {
     alert('Embed-Code in Zwischenablage kopiert!');
   });
 });
-</script>
