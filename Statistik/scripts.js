@@ -476,16 +476,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // 4) parseResponses + displayTable
 
         // Hilfsfunktion, um aus Deskriptoren & Antworten die Tabelle zu füllen
-  Promise.all(promises)
-    .then(responses => {
-      const data = parseResponses(descriptors, responses);
-      displayTable(data);
-    })
-    .catch(err => handleError(err))
-    .finally(() => toggleLoading(false));
-};
-
-
         // 1) Fall: "Alle Gebiete abfragen"
         if (filters.allAreas) {
             toggleLoading(true);
