@@ -94,25 +94,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // Werte aus Formular
     const type   = encodeURIComponent(typeSelect.value);
     const height = encodeURIComponent(heightInput.value);
+    const op     = logicOpSelect.value;
+    const area   = areaSelect.value;
+    const city   = citySelect.value;
+    const cats   = Array.from(categorySelect.selectedOptions)
+                      .map(o => `category:"${o.value}"`)
+                      .join(` ${op} `);
 
-    // Basis-URL ohne Höhe
-    const baseSrc = 
-      `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}` +
-      `?i_target=et4pages`;
+    const map = document.getElementById('showMap').checked
+                ? '/view:map,half'
+                : '';
 
-    // URL mit Höhen-Angabe
+    // 1) Original-URL (default_withmap) wie gehabt
+    let url = `https://pages.destination.one/de/open-data-sachsen-tourismus/default_withmap/search/${type}`;
+    if (area) url += `/area:"${encodeURIComponent(area)}"`;
+    if (cats) url += `/${encodeURIComponent(cats)}`;
+    if (city) url += `/city:"${encodeURIComponent(city)}"`;
+    url += map + `?i_target=et4pages&i_height=${height}`;
+
+    // 2) Embed-Snippet (nur default/search) mit i_height
+    const baseSrc = `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}?i_target=et4pages`;
     const fullSrc = `${baseSrc}&i_height=${height}`;
+    const embedSnippet = `<script id="et4pages" type="text/javascript" src="${fullSrc}"></script>`;
 
-    // Hier stehen die echten <script>-Tags **im String**
-    const embedNoParams = 
-      `<script id="et4pages" type="text/javascript" src="${baseSrc}"></script>`;
-
-    const embedWithParams = 
-      `<script id="et4pages" type="text/javascript" src="${fullSrc}"></script>`;
-
-    // Ergebnisse in die Textareas schreiben
-    resultTA.value   = embedWithParams;
-    resultNoTA.value = embedNoParams;
+    // Ausgabe:
+    // - resultTA: nur das <script>…</script>
+    // - resultNoTA: nur die Original-Seiten-URL (ohne Script-Tags)
+    resultTA.value   = embedSnippet;
+    resultNoTA.value = url;
 
     copyBtn.classList.remove('hidden');
   });
