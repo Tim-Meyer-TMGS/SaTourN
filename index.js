@@ -41,13 +41,14 @@ app.get('/api/search', async (req, res) => {
   }
 
   // Ziel-URL konstruieren
-  const targetUrl =
-    'https://meta.et4.de/rest.ashx/search/' +
-    `?experience=statistik_sachsen` +
-    `&licensekey=${licenseKey}` +
-    `&type=${encodeURIComponent(type)}` +
-    `&q=${encodeURIComponent(qParam)}` +
-    `&template=ET2014A.xml`;
+ const targetUrl =
+  'https://meta.et4.de/rest.ashx/search/' +
+  `?experience=statistik_sachsen` +
+  `&licensekey=${licenseKey}` +
+  `&type=${encodeURIComponent(type)}` +
+  `&q=${qParam}` + // ✅ NICHT nochmal encodeURIComponent
+  `&template=ET2014A.xml`;
+
 
   console.log('👉 Proxy leitet weiter an:', targetUrl);
 
