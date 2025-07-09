@@ -12,47 +12,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * Baut die Proxy-URL für die Suche.
- * @param {string} type      - Der Typ (POI, Tour, Hotel, Event, Gastro, Area, City…)
- * @param {string} query     - Optionaler Roh-Query-String (z.B. '&q=area:"Dresden"' oder 'area:"Dresden"')
- * @param {boolean} isOpenData - Wenn true, Lizenzblock anhängen
- * @returns {string} Die fertige URL
+ * @param {string} type       - Such-Typ (z.B. 'POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Area'…)
+ * @param {string} query      - Roh-Query (z.B. '&q=area:"Dresden"' oder 'area:"Dresden"' oder leer)
+ * @param {boolean} isOpenData - Lizenz-Filter anhängen, wenn true
+ * @returns {string} Fertige Proxy-URL
  */
 const buildUrl = (type, query = '', isOpenData = false) => {
   const base   = 'https://satourn.onrender.com/api/search';
   const params = new URLSearchParams();
 
-  // immer type mitschicken
+  // 1) Typ immer mitsenden
   params.append('type', type);
 
-  // 1) Roh-Query extrahieren (ohne führendes '&q=')
-  let raw = '';
+  // 2) Roh-Query extrahieren (ohne führendes '&q=')
+  let q = '';
   if (query.startsWith('&q=')) {
-    raw = query.slice(3);
+    q = query.slice(3);
   } else {
-    raw = query;
+    q = query;
   }
 
-  // 2) Lizenzblock definieren
-  const LICENSE_BLOCK = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
-
-  // 3) Bei OpenData: Lizenz anhängen
+  // 3) Lizenz-Block für OpenData
   if (isOpenData) {
-    if (raw) {
-      if (!raw.includes('attribute_license')) {
-        raw += ` AND ${LICENSE_BLOCK}`;
-      }
-    } else {
-      raw = LICENSE_BLOCK;
-    }
+    const LICENSE = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
+    q = q
+      ? `${q} AND ${LICENSE}`
+      : LICENSE;
   }
 
-  // 4) Immer q mitschicken (auch wenn raw leer ist → q=)
-  params.append('q', raw);
+  // 4) Immer q mitsenden (ggf. leer → q=)
+  params.append('q', q);
 
   const url = `${base}?${params.toString()}`;
   console.log('[buildUrl]', url);
   return url;
 };
+
     // ------------------------------
     //  DOM-Elemente referenzieren
     // ------------------------------
