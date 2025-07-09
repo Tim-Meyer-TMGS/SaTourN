@@ -18,36 +18,34 @@ const buildUrl = (type, query = '', isOpenData = false) => {
     const params = new URLSearchParams();
     params.append('type', type);
 
-    // Query aufbauen
-    let raw = '';
-    if (query && query.startsWith('&q=')) {
-        raw = query.slice(3);
-    } else if (query) {
-        raw = query;
-    }
+    // Query ohne &q= am Anfang
+    let raw = query.startsWith('&q=') ? query.slice(3) : query;
 
+    // Lizenzblock für Open Data anhängen, wenn nötig
     const LICENSE_BLOCK = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
 
-    // Lizenzlogik für OpenData
     if (isOpenData) {
         if (raw) {
-            // Es gibt bereits einen Filter (z.B. Gebiet)
+            // Query vorhanden, aber Lizenz noch nicht enthalten
             if (!raw.includes('attribute_license')) {
                 raw += ` AND ${LICENSE_BLOCK}`;
             }
         } else {
-            // Kein Filter, NUR Lizenzblock
+            // Kein Query: Nur Lizenzblock als Query
             raw = LICENSE_BLOCK;
         }
     }
 
-    // Falls etwas im Query steht, anhängen
-    if (raw) params.append('q', raw);
+    // Query an den Proxy anhängen (als q=..., NICHT query=!)
+    if (raw) {
+        params.append('q', raw);
+    }
 
     const url = `${base}?${params.toString()}`;
     console.log('[buildUrl]', url);
     return url;
 };
+
 
 
 
