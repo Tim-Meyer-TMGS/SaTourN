@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('urlForm').addEventListener('submit', e => {
     e.preventDefault();
 
-    // 1) Original-URL (default_withmap), inkl. Pfad-Filter, aber wir trennen die Parameter später ab
+    // 1) Original-URL (default_withmap), inkl. Filter-Pfad
     const type   = encodeURIComponent(typeSelect.value);
     const height = encodeURIComponent(heightInput.value);
     const op     = logicOpSelect.value;
@@ -104,11 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let url = `https://pages.destination.one/de/open-data-sachsen-tourismus/default_withmap/search/${type}`;
     if (area) url += `/area:"${encodeURIComponent(area)}"`;
     if (cats) url += `/${encodeURIComponent(cats)}`;
-    if (city) url += `/city:"${encodeURIComponent(city)}"}`;
-    // map-Part beibehalten, wenn ausgewählt
-    const mapPart = document.getElementById('showMap').checked ? '/view:map,half' : '';
-    url += mapPart;
-    // Parameter ans Ende hängen
+    if (city) url += `/city:"${encodeURIComponent(city)}"`;  // ← hier kein extra }
+    if (document.getElementById('showMap').checked) {
+      url += '/view:map,half';
+    }
+    url += `?i_target=et4pages&i_height=${height}`;
 
     // 2) Embed-Snippet (default/search) mit i_height
     const baseSrc = `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}?i_target=et4pages`;
@@ -117,9 +117,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Ausgabe:
     // - resultTA: Embed-Snippet
-    // - resultNoTA: Original-URL ohne Parameter
+    // - resultNoTA: originaler Link OHNE alle Parameter
     resultTA.value   = embedSnippet;
-    resultNoTA.value = url.split('?')[0];
+    resultNoTA.value = url.replace(/\?.*$/, '');
 
     copyBtn.classList.remove('hidden');
   });
