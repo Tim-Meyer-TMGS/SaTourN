@@ -1,10 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
             const apiUrls = {
-                POI: "http://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml",
-                Tour: "http://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml",
-                Gastronomie: "http://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml",
-                Event: "http://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml",
-                Hotel: "http://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml"
+                POI: "https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml",
+                Tour: "https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml",
+                Gastronomie: "https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml",
+                Event: "https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml",
+                Hotel: "https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml"
             };
 
             const areaApiUrl = "https://meta.et4.de/rest.ashx/search/?experience=statistik_sachsen&type=Area&template=ET2014A.xml";
