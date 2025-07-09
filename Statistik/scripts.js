@@ -31,6 +31,13 @@ const buildUrl = (type, query = '', isOpenData = false) => {
         }
     }
 
+    if (raw) params.append('query', raw); // <-- Wichtig: kein encodeURIComponent mehr!
+    const url = `${base}?${params.toString()}`;
+    console.log('[buildUrl]', url);
+    return url;
+};
+
+
     // Wichtig: KEIN isOpenData an den Proxy senden!
     if (raw) params.append('query', encodeURIComponent(raw));
 
