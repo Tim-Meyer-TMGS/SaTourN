@@ -1,4 +1,4 @@
 # _config.yml
 title: SaTourN
-baseurl: ""      # leer, wenn du nicht unter /repo-name/ hostest
-url: ""          # optional, z.B. "https://meyer.tmgs.github.io"
+baseurl: "/SaTourN"         # genau so – führender Slash, kein abschließender Slash
+url: "https://tim-meyer-tmgs.github.io"  # optional, aber empfohlen
