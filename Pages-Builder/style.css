@@ -61,7 +61,7 @@ body {
 -------------------------------- */
 body {
   font-family: "Arial", sans-serif;
-  display: flex;
+  display: block;
   justify-content: center;
   align-items: flex-start;
   min-height: 100vh;
