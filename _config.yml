@@ -1,2 +1,4 @@
 # _config.yml
-baseurl: ""  # falls dein Site-URL keinen Unterordner hat
+title: SaTourN
+baseurl: ""      # leer, wenn du nicht unter /repo-name/ hostest
+url: ""          # optional, z.B. "https://meyer.tmgs.github.io"
