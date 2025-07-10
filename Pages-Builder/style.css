@@ -73,18 +73,18 @@ body {
 /* --------------------------------
    3. Container
 -------------------------------- */
-.container {
-  width: 100%;
-  max-width: 700px;
-  margin: 20px;
-  padding: 32px;
-  background: rgba(255,255,255,0.14);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-}
+ .container {
+   width: 100%;
+   max-width: 700px;
+   margin: 20px auto; /* horizontal zentrieren */
+   padding: 32px;
+   background: rgba(255,255,255,0.14);
+   border-radius: 12px;
+   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+   text-align: center;
+   display: flex;
+   flex-direction: column;
+ }
 
 /* Einheitlicher Abstand für Formularelemente */
 .form-group {
@@ -227,8 +227,8 @@ button:hover,
 #height,
 #resultnoTA,
 #resultTA {
-  max-width: 300px;
-  margin: 0 auto 20px;
+ max-width: 300px;
+ margin: 0 auto 20px; /* bereits zentriert */
 }
 
 /* --------------------------------
@@ -264,4 +264,13 @@ button:hover,
     padding: 12px 0;
     font-size: 0.95rem;
   }
+}
+
+   11. Generischer Helfer zum Zentrieren von Blöcken
+-------------------------------- */
+.center-column {
+  display: flex;
+  flex-direction: column; /* untereinander */
+  align-items: center;    /* horizontal zentrieren */
+  gap: 20px;              /* optional: Abstand zwischen den Blocks */
 }
