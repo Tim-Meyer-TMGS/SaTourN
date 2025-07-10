@@ -224,9 +224,9 @@ button:hover,
 /* --------------------------------
    9. Spezifische Feldbreiten
 -------------------------------- */
-#widget-height,
-#pages-url,
-#script-source-url {
+#height,
+#resultnoTA,
+#resultTA {
   max-width: 300px;
   margin: 0 auto 20px;
 }
