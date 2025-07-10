@@ -7,6 +7,7 @@
   <title>{{ page.title | default: site.title }}</title>
   <link rel="stylesheet" href="{{ '/style.css' | relative_url }}">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <script src="{{ '/script.js' | relative_url }}"></script>
 </head>
 <body>
   {% include menu.html %}
@@ -16,7 +17,5 @@
   </div>
 
   {% include footer.html %}
-
-  <script src="{{ '/script.js' | relative_url }}"></script>
 </body>
 </html>
