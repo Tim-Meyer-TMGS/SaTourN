@@ -3,32 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <title>Kategorien Editor</title>
-  <!-- Unsere CSS-Datei -->
   <link rel="stylesheet" href="styles.css" />
-
-  <!-- Google Material Icons (für Icons) -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-
-  <!-- PrismJS für XML-Syntax-Highlighting -->
+ <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.css"
   />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.js" defer></script>
-
-  <!-- Unser Haupt-Skript (muss nach allem anderen geladen werden) -->
   <script src="script.js" defer></script>
 </head>
 <body>
-  <!-- Drop-Overlay für Drag&Drop (Dateien hierher ziehen) -->
   <div id="dropOverlay" class="drop-overlay" style="display: none;">
     Ziehe XML hierhin, um es zu laden
   </div>
 
-  <!-- Toast-Container für Benachrichtigungen -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- Debug-Log (sichtbar nur mit ?debug=true) -->
   <button id="toggleDebugBtn" style="display: none;">Toggle Debug-Log</button>
   <div id="debugLog" class="debug-log" style="display: none;"></div>
 
