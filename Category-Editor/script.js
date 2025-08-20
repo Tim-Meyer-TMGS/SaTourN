@@ -59,12 +59,12 @@ const elements = {
 
 // Standard-Quellen (werden ggf. überschrieben durch LocalStorage):
 let xmlSources = [
-  { label: "Vermieter", url: "http://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml" },
-  { label: "Veranstaltung", url: "http://api.et4.de/Schema/eTouristV4/Veranstaltung/sachsen-tourismus-beta/VeranstaltungTree.xml" },
-  { label: "Gastro", url: "http://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml" },
-  { label: "Tour", url: "http://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml" },
-  { label: "Poi", url: "http://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml" },
-  { label: "GlobalePauschale", url: "http://api.et4.de/Schema/eTouristV4/GlobalePauschale/Sachsen-Tourismus/GlobalePauschaleTree.xml" }
+  { label: "Vermieter", url: "https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml" },
+  { label: "Veranstaltung", url: "https://api.et4.de/Schema/eTouristV4/Veranstaltung/sachsen-tourismus-beta/VeranstaltungTree.xml" },
+  { label: "Gastro", url: "https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml" },
+  { label: "Tour", url: "https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml" },
+  { label: "Poi", url: "https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml" },
+  { label: "GlobalePauschale", url: "https://api.et4.de/Schema/eTouristV4/GlobalePauschale/Sachsen-Tourismus/GlobalePauschaleTree.xml" }
 ];
 
 // DeepL-Mapping (unverändert):
@@ -1709,4 +1709,5 @@ function isWellFormedXml(xmlStr) {
 //  Initialize on page load
 // -----------------------------------------
 window.addEventListener("DOMContentLoaded", init);
+
 
