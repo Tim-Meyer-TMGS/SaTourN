@@ -61,9 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedArea     = null;
   let selectedPlace    = null;
 
-  // Kategorien: verfügbare vs. ausgewählte (UI derzeit nicht vorhanden)
+  // Kategorien-Cache pro Typ, damit wir nicht jedes Mal neu laden
+  const categoriesCache = {}; // { [type]: string[] }
   let availableCategories = [];
-  let selectedCategories  = []; // bleibt leer, bis UI das befüllt
 
   // Article entfernt
   const typesList = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ------------------------------
-  //  Query-Deskriptoren erzeugen (filterbasiert)
+  //  Query-Deskriptoren erzeugen (generisch)
   // ------------------------------
   /**
    * Baut Deskriptoren für alle kombinierten Filteroptionen.
@@ -198,7 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 2) Typ gewählt, aber kein Gebiet oder Ort → alle Gebiete
+    // 2) Typ gewählt, aber kein Gebiet und kein Ort → alle Gebiete
+    // (Generische Variante OHNE Kategorie-Durchlauf; der Spezialfall mit Kategorien
+    //  wird in fetchData überschrieben, damit wir die verfügbaren Kategorien pro Typ nutzen.)
     if (!area && !place && type) {
       areasList.forEach(areaItem => {
         const query = buildQuery({ area: areaItem });
@@ -322,6 +324,38 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ------------------------------
+  //  Helfer: Kategorien für Typ sicherstellen (mit Cache)
+  // ------------------------------
+  const ensureCategoriesForType = async (type) => {
+    if (!type) return [];
+    if (categoriesCache[type]) {
+      availableCategories = categoriesCache[type];
+      return availableCategories;
+    }
+    const treeUrl = xmlUrls[type];
+    if (!treeUrl) {
+      categoriesCache[type] = [];
+      availableCategories = [];
+      return [];
+    }
+    const res = await fetch(treeUrl);
+    if (!res.ok) {
+      console.warn('Kategorie-Tree nicht ladbar für Typ:', type, res.status);
+      categoriesCache[type] = [];
+      availableCategories = [];
+      return [];
+    }
+    const xmlText = await res.text();
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+    const rootCats = Array.from(xmlDoc.getElementsByTagName('Category'));
+    const cats = rootCats.map(cat => cat.getAttribute('Name')).filter(Boolean);
+    categoriesCache[type] = cats;
+    availableCategories = cats;
+    return cats;
+  };
+
+  // ------------------------------
   //  Gesamtablauf (Daten holen)
   // ------------------------------
   const fetchData = () => {
@@ -330,10 +364,10 @@ document.addEventListener('DOMContentLoaded', () => {
       area:      selectedArea,
       place:     selectedPlace,
       type:      selectedType,
-      categories: selectedCategories
+      categories: [] // UI-gestützte Kategorie-Filter momentan nicht aktiv
     };
 
-    // 1) Alle Gebiete → erst Areas laden
+    // 1) "Alle Gebiete" → zuerst Areas holen (Standardpfad)
     if (filters.allAreas) {
       toggleLoading(true);
       fetch(buildUrl('Area'))
@@ -356,12 +390,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 2) Typ gewählt, aber kein Gebiet und kein Ort → trotzdem alle Gebiete brauchen
+    // 2) SPEZIALFALL aus deinem Wunsch:
+    //    Kein Gebiet & kein Ort, aber ein Typ → ALLE Kategorien dieses Typs × ALLE Gebiete
     if (!filters.area && !filters.place && filters.type) {
       toggleLoading(true);
-      fetch(buildUrl('Area'))
-        .then(res => res.ok ? res.text() : Promise.reject(res.status))
-        .then(xmlText => {
+      Promise.all([
+        fetch(buildUrl('Area')).then(r => r.ok ? r.text() : Promise.reject(r.status)),
+        ensureCategoriesForType(filters.type)
+      ])
+        .then(([xmlText, cats]) => {
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
           const areaItems = Array.from(xmlDoc.getElementsByTagName('item'));
@@ -369,7 +406,35 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(item => item.getElementsByTagName('title')[0]?.textContent)
             .filter(Boolean);
 
-          const descriptors = buildQueryDescriptors({ ...filters }, areasList);
+          const descriptors = [];
+          const categoriesToUse = Array.isArray(cats) && cats.length ? cats : [];
+
+          const buildQuery = ({ area, category }) => {
+            const segments = [];
+            if (area) segments.push(`area:"${area}"`);
+            if (category) segments.push(`category:"${category}"`);
+            return segments.join(' AND ');
+          };
+
+          if (categoriesToUse.length) {
+            // Gebiet × Kategorie
+            areasList.forEach(areaItem => {
+              categoriesToUse.forEach(cat => {
+                const query = buildQuery({ area: areaItem, category: cat });
+                // zwei Deskriptoren je Query (mit/ohne OpenData)
+                descriptors.push({ type: filters.type, query, isOpenData: false, area: areaItem, place: '-', category: cat });
+                descriptors.push({ type: filters.type, query, isOpenData: true,  area: areaItem, place: '-', category: cat });
+              });
+            });
+          } else {
+            // Fallback: wie vorher nur pro Gebiet, ohne Kategorie
+            areasList.forEach(areaItem => {
+              const query = buildQuery({ area: areaItem });
+              descriptors.push({ type: filters.type, query, isOpenData: false, area: areaItem, place: '-', category: '-' });
+              descriptors.push({ type: filters.type, query, isOpenData: true,  area: areaItem, place: '-', category: '-' });
+            });
+          }
+
           runQueries(descriptors);
         })
         .catch(err => {
@@ -379,7 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 3) Alle anderen Fälle: direkte Deskriptoren-Erzeugung (ohne Gebiets-Fetch)
+    // 3) Alle anderen Fälle: generische Deskriptoren-Erzeugung
     const descriptors = buildQueryDescriptors({ ...filters });
     toggleLoading(true);
     runQueries(descriptors);
@@ -425,27 +490,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ------------------------------
-  //  Kategorien laden (nur cachen, nicht automatisch filtern)
+  //  Kategorien (Cache) laden beim Typwechsel
   // ------------------------------
-  const loadCategories = (type) => {
-    const treeUrl = xmlUrls[type];
-    if (!treeUrl) {
-      availableCategories = [];
-      return;
-    }
-    fetch(treeUrl)
-      .then(res => res.ok ? res.text() : Promise.reject(res.status))
-      .then(xmlText => {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
-        const rootCats = xmlDoc.getElementsByTagName('Category');
-        availableCategories = Array.from(rootCats).map(cat => cat.getAttribute('Name')).filter(Boolean);
-        // Hinweis: selectedCategories bleibt leer, solange keine UI zum Auswählen existiert.
-      })
-      .catch(err => {
-        console.error('Fehler beim Laden der Kategorien:', err);
-        availableCategories = [];
-      });
+  const loadCategories = async (type) => {
+    await ensureCategoriesForType(type);
   };
 
   // ------------------------------
@@ -503,9 +551,9 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.typeContainer.innerHTML = '';
     elements.typeContainer.appendChild(typeDropdown);
 
-    typeDropdown.addEventListener('change', () => {
+    typeDropdown.addEventListener('change', async () => {
       selectedType = typeDropdown.value || null;
-      if (selectedType) loadCategories(selectedType);
+      if (selectedType) await loadCategories(selectedType); // Cache füllen
     });
   };
 
