@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   // ------------------------------
-  //  XML-Kategorien-URLs (inkl. Package & Article)
+  //  XML-Kategorien-URLs (Article entfernt)
   // ------------------------------
   const xmlUrls = {
     Hotel:  'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml',
@@ -8,14 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
     Gastro: 'https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml',
     Tour:   'https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml',
     POI:    'https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml',
-    // neu:
-    Package:'http://api.et4.de/Schema/eTouristV4/GlobalePauschale/Sachsen-Tourismus/GlobalePauschaleTree.xml',
-    Article:'http://api.et4.de/Schema/eTouristV4/managed/18638/Artikel_CategoryTree.xml'
+    Package:'http://api.et4.de/Schema/eTouristV4/GlobalePauschale/Sachsen-Tourismus/GlobalePauschaleTree.xml'
   };
 
   /**
    * Baut die Proxy-URL für die Suche.
-   * @param {string} type       - Datentyp (z.B. 'POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package', 'Article', 'Area', 'City')
+   * @param {string} type       - Datentyp (z.B. 'POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package', 'Area', 'City')
    * @param {string} rawQuery   - Unkodierter Query-String (z.B. 'area:"Dresden" AND category:"Museum"')
    * @param {boolean} isOpenData - Wenn true, wird Lizenzfilter angehängt
    * @returns {string} - Fertige Proxy-URL
@@ -27,12 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
     params.append('type', type);
 
     let q = rawQuery || '';
-
     if (isOpenData) {
       const LICENSE = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
       q = q ? `${q} AND ${LICENSE}` : LICENSE;
     }
-
     params.append('query', q);
 
     const url = `${base}?${params.toString()}`;
@@ -61,15 +57,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // ------------------------------
   //  Globale Variablen für Auswahl
   // ------------------------------
-  let selectedCategory = null;
   let selectedType     = null;
   let selectedArea     = null;
-  let selectedCity     = null;
   let selectedPlace    = null;
-  let categories       = [];
 
-  // inkl. Package & Article
-  const typesList = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package', 'Article'];
+  // Kategorien: verfügbare vs. ausgewählte (UI derzeit nicht vorhanden)
+  let availableCategories = [];
+  let selectedCategories  = []; // bleibt leer, bis UI das befüllt
+
+  // Article entfernt
+  const typesList = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
 
   // ------------------------------
   //  Ladezustand anzeigen/verbergen
@@ -97,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ------------------------------
-  //  Tabellenausgabe
+  //  Tabellenausgabe (mit gewichteter Gesamtzahl)
   // ------------------------------
   const displayTable = (data) => {
     elements.resultDiv.innerHTML = '';
@@ -118,20 +115,20 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     const tbody = table.querySelector('tbody');
 
-    let totalStatistik   = 0;
-    let totalOpenData    = 0;
-    let totalPercentage  = 0;
-    let count            = 0;
+    let totalStatistik  = 0;
+    let totalOpenData   = 0;
 
     data.forEach(({ area, place, type, category, statistikCount, openDataCount }) => {
-      const statZahl       = parseInt(statistikCount, 10);
-      const openZahl       = parseInt(openDataCount, 10);
-      const openPercentage = statZahl > 0 ? ((openZahl / statZahl) * 100).toFixed(2) : '0.00';
+      const statZahl = parseInt(statistikCount, 10) || 0;
+      const openZahl = parseInt(openDataCount, 10) || 0;
 
-      totalStatistik  += statZahl;
-      totalOpenData   += openZahl;
-      totalPercentage += parseFloat(openPercentage);
-      count++;
+      // Prozent niemals > 100 % anzeigen
+      const denom = Math.max(statZahl, 0);
+      const cappedOpen = Math.min(openZahl, statZahl);
+      const rowPct = denom > 0 ? ((cappedOpen / denom) * 100).toFixed(2) : '0.00';
+
+      totalStatistik += statZahl;
+      totalOpenData  += openZahl;
 
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -139,14 +136,17 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${place}</td>
         <td>${type}</td>
         <td>${category || '-'}</td>
-        <td>${statistikCount}</td>
-        <td>${openDataCount}</td>
-        <td>${openPercentage}%</td>
+        <td>${statZahl}</td>
+        <td>${openZahl}</td>
+        <td>${rowPct}%</td>
       `;
       tbody.appendChild(row);
     });
 
-    const avgPercentage = count > 0 ? (totalPercentage / count).toFixed(2) : '0.00';
+    // Gewichteter Gesamtanteil
+    const totalPct = totalStatistik > 0
+      ? ((Math.min(totalOpenData, totalStatistik) / totalStatistik) * 100).toFixed(2)
+      : '0.00';
 
     const totalRow = document.createElement('tr');
     totalRow.style.fontWeight = 'bold';
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <td colspan="4">Gesamt</td>
       <td>${totalStatistik}</td>
       <td>${totalOpenData}</td>
-      <td>${avgPercentage}%</td>
+      <td>${totalPct}%</td>
     `;
     tbody.appendChild(totalRow);
 
@@ -183,22 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const addDescriptor = ({ type, query, area, place, category }) => {
-      descriptors.push({
-        type,
-        query,
-        isOpenData: false,
-        area,
-        place,
-        category
-      });
-      descriptors.push({
-        type,
-        query,
-        isOpenData: true,
-        area,
-        place,
-        category
-      });
+      descriptors.push({ type, query, isOpenData: false, area, place, category });
+      descriptors.push({ type, query, isOpenData: true,  area, place, category });
     };
 
     // 1) Alle Gebiete → alle Typen je Gebiet
@@ -221,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 3) Nichts gewählt → alle Typen für Sachsen
+    // 3) Nichts gewählt → alle Typen für Sachsen (global)
     if (!area && !place && !type) {
       typesList.forEach(typeItem => {
         addDescriptor({ type: typeItem, query: '', area: 'Sachsen', place: '-', category: '-' });
@@ -238,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 5) Gebiet + Typ, ggf. mit Kategorien
+    // 5) Gebiet + Typ, ggf. mit (explizit) gewählten Kategorien
     if (area && type && !place) {
       if (!categories.length) {
         const query = buildQuery({ area });
@@ -275,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 8) Gebiet + Ort + Typ → ggf. mit Kategorien
+    // 8) Gebiet + Ort + Typ → ggf. mit (explizit) gewählten Kategorien
     if (area && place && type) {
       if (!categories.length) {
         const query = buildQuery({ area, place });
@@ -344,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
       area:      selectedArea,
       place:     selectedPlace,
       type:      selectedType,
-      categories
+      categories: selectedCategories
     };
 
     // 1) Alle Gebiete → erst Areas laden
@@ -439,14 +425,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ------------------------------
-  //  Kategorien laden, wenn ein Typ ausgewählt wird
-  //  Nutzt die oben gesetzten Tree-URLs – inkl. Package & Article.
+  //  Kategorien laden (nur cachen, nicht automatisch filtern)
   // ------------------------------
   const loadCategories = (type) => {
     const treeUrl = xmlUrls[type];
     if (!treeUrl) {
-      categories = [];
-      selectedCategory = null;
+      availableCategories = [];
       return;
     }
     fetch(treeUrl)
@@ -455,11 +439,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const parser = new DOMParser();
         const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
         const rootCats = xmlDoc.getElementsByTagName('Category');
-        categories = Array.from(rootCats).map(cat => cat.getAttribute('Name')).filter(Boolean);
+        availableCategories = Array.from(rootCats).map(cat => cat.getAttribute('Name')).filter(Boolean);
+        // Hinweis: selectedCategories bleibt leer, solange keine UI zum Auswählen existiert.
       })
       .catch(err => {
         console.error('Fehler beim Laden der Kategorien:', err);
-        categories = [];
+        availableCategories = [];
       });
   };
 
@@ -503,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ------------------------------
-  //  Typen laden (inkl. Package, Article)
+  //  Typen laden (Article entfernt)
   // ------------------------------
   const loadTypes = () => {
     const typeDropdown = document.createElement('select');
