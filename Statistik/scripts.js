@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     Gastro: 'https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml',
     Tour:   'https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml',
     POI:    'https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml',
-    Package:'http://api.et4.de/Schema/eTouristV4/GlobalePauschale/Sachsen-Tourismus/GlobalePauschaleTree.xml'
+    Package:'https://api.et4.de/Schema/eTouristV4/GlobalePauschale/Sachsen-Tourismus/GlobalePauschaleTree.xml'
   };
 
   /**
@@ -587,3 +587,4 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchData();
   });
 });
+
