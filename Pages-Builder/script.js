@@ -75,21 +75,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!ensureEl(citySelect, 'select id="City"')) return;
     citySelect.innerHTML = '<option value="">Keine Stadt wählen</option>';
 
-    // Nur filtern, wenn ein Gebiet gewählt wurde (Anforderung)
-    if (!area) {
+    const chosen = (area || '').trim();
+    if (!chosen) {
       citySelect.disabled = true;
       return;
     }
 
     try {
-      const q = encodeURIComponent(`area:"${area}"`);
-      const url = `${proxyBase}?type=City&q=${q}`;
+      // Wichtig: q NICHT vor-encoden, Proxy kümmert sich darum → vermeidet doppeltes Encoding
+      const params = new URLSearchParams({
+        type: 'City',
+        experience: 'sachsen-tourismus',
+        q: `area:"${chosen}"`
+        // optional: template: 'ET2014A.xml'
+      });
+      const url = `${proxyBase}?${params.toString()}`;
       const res = await fetch(url);
       const txt = await res.text();
       const xml = new DOMParser().parseFromString(txt, 'application/xml');
       const items = Array.from(xml.querySelectorAll('item > title'));
       items.forEach(el => citySelect.append(new Option(el.textContent, el.textContent)));
-      citySelect.disabled = false;
+      citySelect.disabled = items.length === 0;
     } catch (err) {
       console.error('Fehler beim Laden der Städte:', err);
     }
