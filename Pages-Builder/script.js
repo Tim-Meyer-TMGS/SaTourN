@@ -76,26 +76,49 @@ document.addEventListener('DOMContentLoaded', () => {
     citySelect.innerHTML = '<option value="">Keine Stadt wählen</option>';
 
     const chosen = (area || '').trim();
-    if (!chosen) {
-      citySelect.disabled = true;
-      return;
-    }
+    if (!chosen) { citySelect.disabled = true; return; }
 
     try {
-      // Wichtig: q NICHT vor-encoden, Proxy kümmert sich darum → vermeidet doppeltes Encoding
+      // 1) Primär: Proxy mit q-Filter
       const params = new URLSearchParams({
         type: 'City',
         experience: 'sachsen-tourismus',
+        template: 'ET2014A.xml',
         q: `area:"${chosen}"`
-        // optional: template: 'ET2014A.xml'
       });
       const url = `${proxyBase}?${params.toString()}`;
       const res = await fetch(url);
       const txt = await res.text();
       const xml = new DOMParser().parseFromString(txt, 'application/xml');
-      const items = Array.from(xml.querySelectorAll('item > title'));
-      items.forEach(el => citySelect.append(new Option(el.textContent, el.textContent)));
-      citySelect.disabled = items.length === 0;
+      let items = Array.from(xml.querySelectorAll('item'));
+
+      // 2) Fallback: Falls Proxy q ignoriert → clientseitig nach areas filtern
+      const looksUnfiltered = items.length > 200; // 591 bei dir → klares Signal
+      if (looksUnfiltered) {
+        items = items.filter(it => {
+          // Robust: verschiedene mögliche Strukturen abdecken
+          const areaTexts = [
+            ...Array.from(it.querySelectorAll('areas > area')).map(n => n.textContent?.trim()),
+            ...Array.from(it.querySelectorAll('field[name="area"], field[name="areas"], Area, areas, attributes > area'))
+              .map(n => n.textContent?.trim())
+          ].filter(Boolean);
+          return areaTexts.some(t => t === chosen);
+        });
+      }
+
+      // 3) Dropdown füllen (Titel = City-Name)
+      const options = items
+        .map(it => it.querySelector('title')?.textContent?.trim())
+        .filter(Boolean)
+        // doppelte rausschmeißen
+        .filter((v, i, arr) => arr.indexOf(v) === i)
+        .sort((a, b) => a.localeCompare(b, 'de'));
+
+      options.forEach(name => citySelect.append(new Option(name, name)));
+      citySelect.disabled = options.length === 0;
+
+      // Debug-Hinweis für dich
+      console.info(`[CityLoader] Gebiet="${chosen}", ursprünglich ${xml.querySelector('count')?.textContent || items.length} Treffer, verwendet ${options.length}`);
     } catch (err) {
       console.error('Fehler beim Laden der Städte:', err);
     }
