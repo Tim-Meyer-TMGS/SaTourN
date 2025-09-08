@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     Hotel:        'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml'
   };
 
-  // ---- Proxy-Endpoint für Area & City (Lizenzkey bleibt verborgen) ----
+  // ---- Proxy-Endpoint (Lizenzkey geschützt) ----
   const proxyBase  = 'https://satourn.onrender.com/api/search';
 
   // ---- DOM-Elemente ----
@@ -27,9 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const showMapChk     = document.getElementById('showMap');
   const urlForm        = document.getElementById('urlForm');
 
-  // ---- kleine Hilfsfunktionen ----
+  // ---- helpers ----
   const encodeSeg = (s) => encodeURIComponent(s);
   const ensureEl = (el, id) => { if (!el) console.error(`Kein <${id}> gefunden!`); return Boolean(el); };
+  const norm = (s) => (s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
 
   // ---- Info-Box-Logik ----
   if (infoBtn && infoBox && closeInfoBtn) {
@@ -41,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---- Initiales Befüllen ----
   loadAreas();
   loadCategories();
-  // City soll erst nach Gebiets-Wahl geladen werden
   if (areaSelect) {
     areaSelect.addEventListener('change', () => {
       // City zurücksetzen und (de)aktivieren
@@ -58,13 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadAreas() {
     if (!ensureEl(areaSelect, 'select id="areas"')) return;
     try {
-      const res = await fetch(`${proxyBase}?type=Area`);
+      const res = await fetch(`${proxyBase}?type=Area&experience=sachsen-tourismus&template=ET2014A.xml`);
       const txt = await res.text();
       const xml = new DOMParser().parseFromString(txt, 'application/xml');
       const items = Array.from(xml.querySelectorAll('item > title'));
       areaSelect.innerHTML = '<option value="">Kein Gebiet wählen</option>';
       items.forEach(el => areaSelect.append(new Option(el.textContent, el.textContent)));
-      // City-Select zu Beginn deaktivieren
       if (citySelect) citySelect.disabled = true;
     } catch (err) {
       console.error('Fehler beim Laden der Gebiete:', err);
@@ -79,46 +78,59 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!chosen) { citySelect.disabled = true; return; }
 
     try {
-      // 1) Primär: Proxy mit q-Filter
-      const params = new URLSearchParams({
+      // Schritt A: Versuch mit q-Filter (falls Proxy das irgendwann korrekt weiterreicht)
+      const paramsA = new URLSearchParams({
         type: 'City',
         experience: 'sachsen-tourismus',
         template: 'ET2014A.xml',
         q: `area:"${chosen}"`
       });
-      const url = `${proxyBase}?${params.toString()}`;
-      const res = await fetch(url);
-      const txt = await res.text();
-      const xml = new DOMParser().parseFromString(txt, 'application/xml');
+      const urlA = `${proxyBase}?${paramsA.toString()}`;
+      let res = await fetch(urlA);
+      let txt = await res.text();
+      let xml = new DOMParser().parseFromString(txt, 'application/xml');
       let items = Array.from(xml.querySelectorAll('item'));
 
-      // 2) Fallback: Falls Proxy q ignoriert → clientseitig nach areas filtern
-      const looksUnfiltered = items.length > 200; // 591 bei dir → klares Signal
-      if (looksUnfiltered) {
+      // Heuristik: wenn >200, dann wurde nicht gefiltert → Schritt B
+      if (items.length > 200) {
+        const paramsB = new URLSearchParams({
+          type: 'City',
+          experience: 'sachsen-tourismus',
+          template: 'ET2014A.xml'
+        });
+        const urlB = `${proxyBase}?${paramsB.toString()}`;
+        res = await fetch(urlB);
+        txt = await res.text();
+        xml = new DOMParser().parseFromString(txt, 'application/xml');
+        items = Array.from(xml.querySelectorAll('item'));
+
+        // Clientseitige, robuste Filterung auf Area
+        const needle = norm(chosen);
         items = items.filter(it => {
-          // Robust: verschiedene mögliche Strukturen abdecken
-          const areaTexts = [
-            ...Array.from(it.querySelectorAll('areas > area')).map(n => n.textContent?.trim()),
-            ...Array.from(it.querySelectorAll('field[name="area"], field[name="areas"], Area, areas, attributes > area'))
-              .map(n => n.textContent?.trim())
-          ].filter(Boolean);
-          return areaTexts.some(t => t === chosen);
+          const candidates = [
+            ...Array.from(it.querySelectorAll('areas, Area, area, region, Region, gebiet, Gebiet')),
+            ...Array.from(it.querySelectorAll('attributes > area, attributes > Area')),
+            ...Array.from(it.querySelectorAll('field[name="area"], field[name="areas"]')),
+            ...Array.from(it.querySelectorAll('keywords > keyword')),
+            ...Array.from(it.querySelectorAll('facets > facet[name="area"] value'))
+          ]
+          .map(n => n.textContent)
+          .filter(Boolean)
+          .map(norm);
+
+          return candidates.some(c => c === needle || c.includes(needle) || needle.includes(c));
         });
       }
 
-      // 3) Dropdown füllen (Titel = City-Name)
       const options = items
         .map(it => it.querySelector('title')?.textContent?.trim())
         .filter(Boolean)
-        // doppelte rausschmeißen
         .filter((v, i, arr) => arr.indexOf(v) === i)
         .sort((a, b) => a.localeCompare(b, 'de'));
 
       options.forEach(name => citySelect.append(new Option(name, name)));
       citySelect.disabled = options.length === 0;
-
-      // Debug-Hinweis für dich
-      console.info(`[CityLoader] Gebiet="${chosen}", ursprünglich ${xml.querySelector('count')?.textContent || items.length} Treffer, verwendet ${options.length}`);
+      console.info(`[CityLoader] Gebiet="${chosen}" → ${options.length} Städte angezeigt.`);
     } catch (err) {
       console.error('Fehler beim Laden der Städte:', err);
     }
@@ -146,19 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---- URL-Bausteine erzeugen ----
   function buildFilterPath({ area, catsSegment, city }) {
     const segs = [];
-    if (area) segs.push(`area:"${area}"`);
+    if (area) segs.push(`area:\"${area}\"`);
     if (catsSegment) segs.push(catsSegment);
-    if (city) segs.push(`city:"${city}"`);
+    if (city) segs.push(`city:\"${city}\"`);
     if (!segs.length) return '';
-    // Jede Teil-Query separat encodieren und als Pfad anhängen
     return '/' + segs.map(encodeSeg).join('/');
   }
 
   function buildCategorySegment() {
     const op   = logicOpSelect ? logicOpSelect.value : 'AND';
-    const vals = Array.from(categorySelect?.selectedOptions || []).map(o => `category:"${o.value}"`);
+    const vals = Array.from(categorySelect?.selectedOptions || []).map(o => `category:\"${o.value}\"`);
     if (!vals.length) return '';
-    // Keine Klammern nötig – folgt dem bisherigen ET4-Pfadformat
     return vals.join(` ${op} `);
   }
 
@@ -174,18 +184,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const catsSegment = buildCategorySegment();
       const filterPath  = buildFilterPath({ area, catsSegment, city });
 
-      // 1) Direkter Link (default_withmap) inkl. Filter-Pfad
       let directUrl = `https://pages.destination.one/de/open-data-sachsen-tourismus/default_withmap/search/${type}${filterPath}`;
       if (showMapChk?.checked) directUrl += '/view:map,half';
       const directUrlWithQuery = `${directUrl}?i_target=et4pages&i_height=${encodeSeg(height)}`;
 
-      // 2) Embed-Snippet (default/search) – jetzt ebenfalls mit Filter-Pfad!
       const embedSrc = `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}${filterPath}?i_target=et4pages&i_height=${encodeSeg(height)}`;
       const embedSnippet = `<script id="et4pages" type="text/javascript" src="${embedSrc}"></script>`;
 
-      // Ausgabe:
-      // - resultTA: Embed-Snippet
-      // - resultNoTA: Direkter Link OHNE Query-Parameter
       if (resultTA)   resultTA.value   = embedSnippet;
       if (resultNoTA) resultNoTA.value = directUrl;
 
