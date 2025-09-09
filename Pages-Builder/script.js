@@ -377,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const fullUrl = `${cleanUrl}?${qp.toString()}`; // optional zum Debuggen
 
     // Embed-Snippet (default/search) mit i_height
-    const baseSrc   = `${d1Base}/default/search/${encodeURIComponent(type)}?i_target=et4pages`;
+    const baseSrc   = `${d1Base}/default/search/${encodeURIComponent(type)}/hideSearchForm:1?i_target=et4pages`;
     const fullSrc   = height ? `${baseSrc}&i_height=${encodeURIComponent(height)}` : baseSrc;
     const embedCode = `<script id="et4pages" type="text/javascript" src="${fullSrc}"></script>`;
 
@@ -403,3 +403,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
