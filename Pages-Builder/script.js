@@ -2,7 +2,7 @@
 
 /**
  * SaTourN Embed-URL-Builder (destination.one)
- * - Areas & Cities werden per XML geladen (Proxy liefert XML)
+ * - Areas & Cities: Cities werden AUTOMATISCH als JSON ODER XML geladen (je nach Proxy-Antwort)
  * - City-Liste wird lokal nach gewähltem Gebiet gefiltert
  * - Kategorien (AND/OR), optionale Kartenansicht
  * - Embed-Snippet-Ausgabe
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Proxy, der meta.et4.de/destination.one durchreicht
   const proxyBase  = "https://satourn.onrender.com/api/search";
   const areaApiUrl = `${proxyBase}?type=Area`; // XML
-  const cityApiUrl = `${proxyBase}?type=City`; // <-- jetzt explizit XML (ohne template)
+  const cityApiUrl = `${proxyBase}?type=City`; // AUTO: JSON oder XML (je nach Proxy)
 
   // destination.one Basis
   const d1Base = "https://pages.destination.one/de/open-data-sachsen-tourismus";
@@ -51,8 +51,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   // State
   // ============================================================
-  /** Vollständige City-Objekte (aus XML extrahiert) */
-  let allCityItems = []; // { title: string, areas: string[] }
+  /** Vollständige City-Objekte (vereinheitlicht): { title: string, areas: string[] } */
+  let allCityItems = [];
   /** City-Titelliste (dedupliziert, sortiert) */
   let allCityTitles = [];
   /** Index: normalisierter Area-Name -> Set<String> (City-Titel) */
@@ -91,31 +91,23 @@ document.addEventListener("DOMContentLoaded", () => {
     return parts.join(` ${op} `);
   }
 
-  // Extrahiere Textinhalt eines Elements (trim) – inkl. direkter Textknoten
+  // Extrahiere Textinhalt eines Elements (trim)
   function textContent(el) {
     return (el?.textContent || "").trim();
   }
 
   // Sammle alle Area-Namen aus einem <item>-Knoten (robust gg. verschiedene XML-Schemata)
-  function extractAreasFromItem(itemEl) {
+  function extractAreasFromItemXml(itemEl) {
     const result = new Set();
 
-    // 1) Häufiger: <areas><value>Erzgebirge</value>...</areas>
-    const valueNodes = itemEl.querySelectorAll("areas > value, areas_old > value");
-    valueNodes.forEach(n => {
+    // 1) Häufig: <areas><value>Erzgebirge</value>...</areas> und <areas_old>
+    itemEl.querySelectorAll("areas > value, areas_old > value").forEach(n => {
       const t = textContent(n);
       if (t) result.add(t);
     });
 
     // 2) Manche liefern <areas><item><value>…</value></item></areas> oder direkte Texte
-    const areaContainers = itemEl.querySelectorAll("areas, areas_old, area, gebiet, region");
-    areaContainers.forEach(container => {
-      // direkte <value>-Kinder
-      container.querySelectorAll("value").forEach(vn => {
-        const t = textContent(vn);
-        if (t) result.add(t);
-      });
-      // falls keine <value>-Kinder → gesamten Textinhalt (kann notfalls kommagetrennt sein)
+    itemEl.querySelectorAll("areas, areas_old, area, gebiet, region").forEach(container => {
       if (!container.querySelector("value")) {
         const raw = textContent(container);
         raw.split(/[;,|]/).map(s => s.trim()).forEach(t => { if (t) result.add(t); });
@@ -138,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Init
   // ============================================================
   (async function init() {
-    await Promise.all([loadAreas(), loadCategories(), loadCitiesXml()]);
+    await Promise.all([loadAreas(), loadCategories(), loadCitiesAuto()]);
     buildAreaIndex();           // Index für Area→Cities
     renderCitiesForArea();      // initiale Cityliste (alle oder nach bereits gewähltem Gebiet)
 
@@ -169,38 +161,64 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================================================
-  // Loader: Cities (XML)
+  // Loader: Cities (AUTO → JSON oder XML)
   // ============================================================
-  async function loadCitiesXml() {
+  async function loadCitiesAuto() {
     if (!citySelect) return console.error('Kein <select id="City"> gefunden!');
     try {
-      const res = await fetch(cityApiUrl, { headers: { "Accept": "application/xml" } });
-      const txt = await res.text();
+      const res = await fetch(cityApiUrl);
+      const contentType = (res.headers.get('content-type') || '').toLowerCase();
+      const raw = await res.text();
 
-      // Falls Server HTML/Fehlerseite liefert, DOMParser meckert nicht – prüfen wir Root
-      const xml = new DOMParser().parseFromString(txt, "application/xml");
-      if (xml.querySelector("parsererror")) {
-        throw new Error("XML parse error");
+      // Hilfsparser
+      const parseAsJson = (txt) => {
+        try { return JSON.parse(txt); } catch { return null; }
+      };
+      const parseAsXml = (txt) => new DOMParser().parseFromString(txt, "application/xml");
+
+      // Ergebniscontainer
+      let cityObjs = []; // { title, areas[] }
+
+      const looksLikeJson = contentType.includes("application/json") || (!raw.trim().startsWith("<") && !raw.trim().startsWith("<?xml"));
+
+      if (looksLikeJson) {
+        // ------ JSON-Weg ------
+        const data = parseAsJson(raw) || {};
+        const items =
+          (Array.isArray(data?.items) && data.items) ||
+          (Array.isArray(data?.results) && data.results[0]?.items) ||
+          [];
+        for (const it of items) {
+          const title = (it?.title || "").trim();
+          if (!title) continue;
+          const areasNew = Array.isArray(it?.areas) ? it.areas.map(a => a?.value || "").filter(Boolean) : [];
+          const areasOld = Array.isArray(it?.areas_old) ? it.areas_old.filter(Boolean) : [];
+          const areas = [...areasNew, ...areasOld];
+          cityObjs.push({ title, areas });
+        }
+      } else {
+        // ------ XML-Weg ------
+        const xml = parseAsXml(raw);
+        if (xml.querySelector("parsererror")) throw new Error("XML parse error");
+
+        const items = Array.from(xml.querySelectorAll("item"));
+        for (const it of items) {
+          const title = (it.querySelector("title")?.textContent || "").trim();
+          if (!title) continue;
+
+          const areas = extractAreasFromItemXml(it);
+          cityObjs.push({ title, areas });
+        }
       }
 
-      const items = Array.from(xml.querySelectorAll("item"));
-      const cityObjs = [];
-
-      for (const it of items) {
-        const title = textContent(it.querySelector("title"));
-        if (!title) continue;
-
-        const areas = extractAreasFromItem(it);
-        cityObjs.push({ title, areas });
-      }
-
+      // State füllen
       allCityItems = cityObjs;
 
       // Titelliste deduplizieren + sortieren
       const titleSet = new Set(cityObjs.map(o => o.title).filter(Boolean));
       allCityTitles = Array.from(titleSet).sort((a, b) => a.localeCompare(b, "de"));
     } catch (err) {
-      console.error("Fehler beim Laden der Städte (XML):", err);
+      console.error("Fehler beim Laden der Städte (AUTO):", err);
       allCityItems = [];
       allCityTitles = [];
     }
@@ -321,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const qp = new URLSearchParams({ i_target: "et4pages" });
     if (height) qp.set("i_height", height);
-    const fullUrl = `${cleanUrl}?${qp.toString()}`;
+    const fullUrl = `${cleanUrl}?${qp.toString()}`; // (falls du sie brauchst)
 
     // Embed-Snippet (default/search) mit i_height
     const baseSrc   = `${d1Base}/default/search/${encodeURIComponent(type)}?i_target=et4pages`;
