@@ -1,224 +1,310 @@
-/* ================================================
-   responsive_styles.css – Dark-Theme mit Menü & verbesserter Lesbarkeit
-   Enthält: Menü, Container, Formulare, Dropdowns, Responsive-Regeln
-   Anpassungen: breiterer Container, bessere Anordnung der Formularelemente
-   ================================================ */
+/* ===========================================================
+   responsive_styles.css – Dark-Theme mit Menü & Lesbarkeit
+   Enthält: Menü, Container, Formulare, Dropdowns, Responsive
+   Autor: TMGS – vereinheitlichte, konsistente Abstände
+   =========================================================== */
 
 /* --------------------------------
-   1. Menü-Leiste (nav)
+   0. Design-Token & Resets
 -------------------------------- */
-.menu-container {
+:root{
+  /* Farben */
+  --clr-bg-start: #001f3d;
+  --clr-bg-end:   #00274d;
+  --clr-surface:  rgba(255,255,255,0.14);
+  --clr-text:     #ffffff;
+  --clr-text-sub: #e0e0e0;
+  --clr-heading:  #f0f0f0;
+  --clr-accent:   #00e5ff;
+  --clr-accent-2: #00c8e6;
+  --clr-menu:     #00254d;
+  --clr-border:   #005f8a;
+  --clr-input:    rgba(0,57,87,0.8);
+  --clr-input-h:  rgba(0,57,87,1);
+  --clr-option:   #002b50;
+  --clr-option-h: #005f8a;
+  --clr-option-s: #00c8e6;
+  --clr-danger:   #f44336;
+  --shadow-1:     0 4px 8px  rgba(0,0,0,0.7);
+  --shadow-2:     0 4px 12px rgba(0,0,0,0.5);
+
+  /* Spacing (Basis: 4px) */
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+
+  /* Typo */
+  --fs-0: 0.8rem;
+  --fs-1: 0.9rem;
+  --fs-2: 1rem;
+  --fs-3: 1.1rem;
+  --fs-4: 1.5rem;
+  --fs-5: 1.75rem;
+
+  /* Layout */
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --container-max: 700px;
+  --menu-height: 70px;
+}
+
+/* Bessere Boxmodell-Kontrolle */
+*,
+*::before,
+*::after{
+  box-sizing: border-box;
+}
+
+html, body{
+  height: 100%;
+}
+
+/* --------------------------------
+   1. Body & Grundlayout
+-------------------------------- */
+body{
+  font-family: "Arial", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, sans-serif;
+  margin: 0;
+  color: var(--clr-text);
+  background: linear-gradient(to right, var(--clr-bg-start), var(--clr-bg-end));
+  /* Platz für fixiertes Menü */
+  padding-top: var(--menu-height);
+}
+
+/* Bewegungsreduktion respektieren */
+@media (prefers-reduced-motion: reduce){
+  *{
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------
+   2. Menü-Leiste (nav)
+-------------------------------- */
+.menu-container{
   width: 100%;
-  background: #00254d;
-  padding: 15px 20px;
+  background: var(--clr-menu);
+  padding: var(--sp-4) var(--sp-5);
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0 0 auto 0; /* top:0; left:0; right:0 */
+  height: var(--menu-height);
   z-index: 1000;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.7);
+  box-shadow: var(--shadow-1);
 }
-.menu-container .logo {
+.menu-container .logo{
   height: 40px;
 }
-.menu-links {
+
+.menu-links{
   display: flex;
-  gap: 12px;
+  gap: var(--sp-3);
   margin-left: auto;
 }
-.menu-item {
+
+.menu-item{
   display: flex;
   flex-direction: column;
   align-items: center;
   background: rgba(255,255,255,0.2);
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: #fff;
+  border-radius: var(--radius-8);
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--clr-text);
   text-decoration: none;
-  font-size: 0.9rem;
-  transition: background 0.2s, transform 0.2s;
+  font-size: var(--fs-1);
+  transition: transform .2s ease, background .2s ease;
 }
-.menu-item:hover {
+.menu-item:hover{
   background: rgba(255,255,255,0.3);
   transform: translateY(-2px);
 }
-.menu-icon {
+.menu-icon{
   font-size: 1.2rem;
-  color: #00e5ff;
+  color: var(--clr-accent);
 }
-.menu-text {
-  margin-top: 4px;
-  font-size: 0.8rem;
-}
-body {
-  padding-top: 70px; /* Platz für fixiertes Menü */
-}
-
-/* --------------------------------
-   2. Body & Grundlayout
--------------------------------- */
-body {
-  font-family: "Arial", sans-serif;
-  display: block;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  margin: 0;
-  background: linear-gradient(to right, #001f3d, #00274d);
-  color: #fff;
+.menu-text{
+  margin-top: var(--sp-1);
+  font-size: var(--fs-0);
 }
 
 /* --------------------------------
    3. Container
 -------------------------------- */
- .container {
-   width: 100%;
-   max-width: 700px;
-   margin: 20px auto; /* horizontal zentrieren */
-   padding: 32px;
-   background: rgba(255,255,255,0.14);
-   border-radius: 12px;
-   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-   text-align: center;
-   display: flex;
-   flex-direction: column;
- }
-
-/* Einheitlicher Abstand für Formularelemente */
-.form-group {
+.container{
+  width: 100%;
+  max-width: var(--container-max);
+  margin: var(--sp-5) auto;
+  padding: var(--sp-8);
+  background: var(--clr-surface);
+  border-radius: var(--radius-12);
+  box-shadow: var(--shadow-2);
+  text-align: center;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  text-align: left;
-  margin-bottom: 20px;
+  /* Einheitliche vertikale Abstände im Container */
+  gap: var(--sp-6);
 }
 
 /* --------------------------------
    4. Überschriften
 -------------------------------- */
-h1 {
-  margin-bottom: 24px;
-  font-size: 1.75rem;
-  color: #f0f0f0;
+h1{
+  margin: 0; /* Abstände über Container-gap */
+  font-size: var(--fs-5);
+  color: var(--clr-heading);
   align-self: center;
 }
 
 /* --------------------------------
    5. Formularelemente & Dropdowns
 -------------------------------- */
-label {
-  margin-bottom: 8px;
-  font-weight: bold;
-  color: #e0e0e0;
+/* Formgruppen: einheitliche Abstände intern über gap statt margin */
+.form-group{
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  gap: var(--sp-2);
+  margin: 0; /* Außenabstand durch .container gap */
 }
 
+label{
+  font-weight: bold;
+  color: var(--clr-text-sub);
+  font-size: var(--fs-2);
+}
+
+/* Inputs & Selects */
 select,
 input[type="number"],
-input[type="text"] {
+input[type="text"]{
   width: 100%;
   padding: 14px 16px;
-  font-size: 1.1rem;
-  background: rgba(0,57,87,0.8);
-  color: #fff;
-  border: 1px solid #005f8a;
-  border-radius: 6px;
-  transition: outline-color 0.2s, background 0.2s;
+  font-size: var(--fs-3);
+  background: var(--clr-input);
+  color: var(--clr-text);
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-6);
+  transition: outline-color .2s ease, background .2s ease, box-shadow .2s ease;
 }
+
 select:focus,
-input:focus {
-  outline: 3px solid #00e5ff;
-  background: rgba(0,57,87,1);
+input:focus,
+textarea:focus{
+  outline: 3px solid var(--clr-accent);
+  background: var(--clr-input-h);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--clr-accent) 30%, transparent);
 }
 
 /* Dropdown-Optionen */
-select option {
-  background: #002b50;
-  color: #fff;
+select option{
+  background: var(--clr-option);
+  color: var(--clr-text);
 }
-select option:hover {
-  background: #005f8a;
+select option:hover{
+  background: var(--clr-option-h);
 }
-select option:checked {
-  background: #00c8e6;
-  color: #00254d;
+select option:checked{
+  background: var(--clr-option-s);
+  color: var(--clr-menu);
 }
 
-textarea {
+/* Textarea */
+textarea{
   width: 100%;
-  height: 120px;
+  min-height: 120px;
   padding: 14px 16px;
-  font-size: 1rem;
+  font-size: var(--fs-2);
   background: rgba(255,255,255,0.3);
-  color: #fff;
+  color: var(--clr-text);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-6);
   resize: vertical;
+  transition: box-shadow .2s ease;
 }
 
 /* --------------------------------
    6. Buttons
 -------------------------------- */
 button,
-.info-btn {
+.info-btn{
   width: 100%;
   max-width: 240px;
-  margin: 16px auto;
+  margin: 0 auto; /* Außenabstand über Container-gap */
   padding: 14px 0;
-  font-size: 1rem;
+  font-size: var(--fs-2);
   font-weight: bold;
-  color: #fff;
-  background: #00e5ff;
+  color: var(--clr-text);
+  background: var(--clr-accent);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-8);
   cursor: pointer;
+  transition: filter .2s ease, transform .06s ease;
 }
 button:hover,
-.info-btn:hover {
-  background: #00c8e6;
+.info-btn:hover{
+  filter: brightness(0.95);
+  background: var(--clr-accent-2);
+}
+button:active,
+.info-btn:active{
+  transform: translateY(1px);
 }
 
 /* --------------------------------
    7. Ergebnisfeld
 -------------------------------- */
-#result {
-  margin-top: 24px;
+#result{
+  /* Wird als eigener Block im Container behandelt */
   word-wrap: break-word;
   white-space: pre-wrap;
-  color: #e0e0e0;
+  color: var(--clr-text-sub);
+  text-align: left;
 }
 
 /* --------------------------------
-   8. Infobox
+   8. Infobox (Modal)
 -------------------------------- */
-.info-box {
+.info-box{
   display: none;
   position: fixed;
   top: 20%;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(0,0,0,0.8);
-  color: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  color: var(--clr-text);
+  padding: var(--sp-5);
+  border-radius: var(--radius-8);
+  box-shadow: var(--shadow-2);
   z-index: 1000;
   width: 90%;
   max-width: 400px;
 }
-.info-box h3 {
-  color: #00e5ff;
+.info-box h3{
+  margin: 0 0 var(--sp-3) 0;
+  color: var(--clr-accent);
 }
-.info-box p {
-  color: #e0e0e0;
-  margin: 12px 0;
+.info-box p{
+  color: var(--clr-text-sub);
+  margin: var(--sp-3) 0;
 }
-.info-box .close-btn {
-  margin-top: 12px;
+.info-box .close-btn{
+  margin-top: var(--sp-3);
   padding: 10px 16px;
-  background: #f44336;
-  border-radius: 6px;
+  background: var(--clr-danger);
+  border-radius: var(--radius-6);
+  display: inline-block;
 }
 
 /* --------------------------------
@@ -226,51 +312,69 @@ button:hover,
 -------------------------------- */
 #height,
 #resultnoTA,
-#resultTA {
- max-width: 300px;
- margin: 0 auto 20px; /* bereits zentriert */
+#resultTA{
+  max-width: 300px;
+  margin: 0 auto; /* zentriert; Außenabstand via Container-gap */
 }
 
 /* --------------------------------
    10. Responsive Breakpoints
 -------------------------------- */
-@media (max-width: 600px) {
-  .menu-container {
-    flex-direction: column;
-    padding: 10px;
+@media (max-width: 600px){
+  :root{
+    --menu-height: 64px; /* kleinere Menü-Höhe mobil */
   }
-  .menu-links {
+
+  .menu-container{
+    flex-direction: column;
+    padding: var(--sp-3);
+    height: var(--menu-height);
+  }
+
+  .menu-links{
     flex-wrap: wrap;
     justify-content: center;
-    margin-top: 10px;
+    margin-top: var(--sp-2);
+    gap: var(--sp-2);
   }
-  .container {
+
+  .container{
     max-width: 90%;
-    padding: 20px;
+    padding: var(--sp-5);
+    gap: var(--sp-5); /* etwas kompakter mobil */
   }
-  h1 {
-    font-size: 1.5rem;
-    margin-bottom: 16px;
+
+  h1{
+    font-size: var(--fs-4);
   }
+
   select,
   input[type="number"],
   input[type="text"],
-  textarea {
-    font-size: 1rem;
+  textarea{
+    font-size: var(--fs-2);
     padding: 12px 14px;
   }
+
   button,
-  .info-btn {
+  .info-btn{
     padding: 12px 0;
-    font-size: 0.95rem;
+    font-size: var(--fs-1);
   }
 }
 
+/* --------------------------------
    11. Generischer Helfer zum Zentrieren von Blöcken
 -------------------------------- */
-.center-column {
+.center-column{
+  /* Abwärtskompatibel: Deine bestehende Klasse */
   display: flex;
   flex-direction: column; /* untereinander */
   align-items: center;    /* horizontal zentrieren */
-  gap: 20px;              /* optional: Abstand zwischen den Blocks */
+  gap: var(--sp-6);       /* EINHEITLICHER ABSTAND zwischen Blöcken */
 }
+
+/* Bonus: universelle Stack-Utilities für flexible Abstände */
+.stack-4{ display:flex; flex-direction:column; gap: var(--sp-4); }
+.stack-5{ display:flex; flex-direction:column; gap: var(--sp-5); }
+.stack-6{ display:flex; flex-direction:column; gap: var(--sp-6); }
