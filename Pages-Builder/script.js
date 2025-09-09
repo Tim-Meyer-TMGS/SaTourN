@@ -2,10 +2,12 @@
 
 /**
  * SaTourN Embed-URL-Builder (destination.one)
- * - Areas & Cities: Cities werden AUTOMATISCH als JSON ODER XML geladen (je nach Proxy-Antwort)
- * - City-Liste wird lokal nach gewähltem Gebiet gefiltert
+ * - Areas (XML) & Cities (AUTO: JSON ODER XML) via Proxy
+ * - City-Liste wird lokal nach gewähltem Gebiet gefiltert (Area → Cities)
  * - Kategorien (AND/OR), optionale Kartenansicht
  * - Embed-Snippet-Ausgabe
+ *
+ * Enthält robusten XML-Fetch-Helper (um 406/Negotiation-Probleme abzufangen).
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -51,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   // State
   // ============================================================
-  /** Vollständige City-Objekte (vereinheitlicht): { title: string, areas: string[] } */
+  /** Vereinheitlichte City-Objekte: { title: string, areas: string[] } */
   let allCityItems = [];
   /** City-Titelliste (dedupliziert, sortiert) */
   let allCityTitles = [];
@@ -59,9 +61,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const areaToCities = new Map();
 
   // ============================================================
-  // Helper
+  // Helpers
   // ============================================================
   const escapeForPath = (s) => String(s).replace(/"/g, '\\"');
+
+  /** robuster XML-Fetch (zweiter Versuch mit breitem Accept, um 406 zu vermeiden) */
+  async function fetchXmlText(url) {
+    // 1. Versuch: ohne speziellen Accept-Header
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.text();
+    } catch (e1) {
+      // 2. Versuch: breiter Accept-Header
+      try {
+        const res = await fetch(url, {
+          headers: {
+            "Accept": "text/xml,application/xml;q=0.9,*/*;q=0.8"
+          }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return await res.text();
+      } catch (e2) {
+        console.error("fetchXmlText failed for", url, e1, e2);
+        throw e2;
+      }
+    }
+  }
 
   /** String-Normalisierung (für zuverlässige Vergleiche) */
   function normalizeKey(s) {
@@ -146,13 +172,15 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadAreas() {
     if (!areaSelect) return console.error('Kein <select id="areas"> gefunden!');
     try {
-      const res = await fetch(areaApiUrl, { headers: { "Accept": "application/xml" } });
-      const txt = await res.text();
+      const txt = await fetchXmlText(areaApiUrl);
       const xml = new DOMParser().parseFromString(txt, "application/xml");
+      if (xml.querySelector("parsererror")) throw new Error("XML parse error");
+
       const items = Array.from(xml.querySelectorAll("item > title"))
         .map(n => (n.textContent || "").trim())
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b, "de"));
+
       setSelectOptions(areaSelect, items, "Kein Gebiet wählen");
     } catch (err) {
       console.error("Fehler beim Laden der Gebiete:", err);
@@ -167,19 +195,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!citySelect) return console.error('Kein <select id="City"> gefunden!');
     try {
       const res = await fetch(cityApiUrl);
-      const contentType = (res.headers.get('content-type') || '').toLowerCase();
+      const contentType = (res.headers.get("content-type") || "").toLowerCase();
       const raw = await res.text();
 
       // Hilfsparser
-      const parseAsJson = (txt) => {
-        try { return JSON.parse(txt); } catch { return null; }
-      };
-      const parseAsXml = (txt) => new DOMParser().parseFromString(txt, "application/xml");
+      const parseAsJson = (txt) => { try { return JSON.parse(txt); } catch { return null; } };
+      const parseAsXml  = (txt) => new DOMParser().parseFromString(txt, "application/xml");
 
-      // Ergebniscontainer
       let cityObjs = []; // { title, areas[] }
 
-      const looksLikeJson = contentType.includes("application/json") || (!raw.trim().startsWith("<") && !raw.trim().startsWith("<?xml"));
+      const looksLikeJson = contentType.includes("application/json")
+        || (!raw.trim().startsWith("<") && !raw.trim().startsWith("<?xml"));
 
       if (looksLikeJson) {
         // ------ JSON-Weg ------
@@ -198,7 +224,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } else {
         // ------ XML-Weg ------
-        const xml = parseAsXml(raw);
+        // nutze fetchXmlText erneut, um 406-Fälle/Negotiation sauber zu handeln
+        const xmlText = await (async () => {
+          // wenn die erste Antwort bereits XML ist, verwenden
+          if (raw.trim().startsWith("<")) return raw;
+          // sonst nochmal gezielt per Helper holen
+          return await fetchXmlText(cityApiUrl);
+        })();
+
+        const xml = parseAsXml(xmlText);
         if (xml.querySelector("parsererror")) throw new Error("XML parse error");
 
         const items = Array.from(xml.querySelectorAll("item"));
@@ -282,9 +316,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!url) return;
 
     try {
-      const res = await fetch(url, { headers: { "Accept": "application/xml" } });
-      const txt = await res.text();
+      const txt = await fetchXmlText(url);
       const xml = new DOMParser().parseFromString(txt, "application/xml");
+      if (xml.querySelector("parsererror")) throw new Error("XML parse error");
+
       const cats = Array.from(xml.querySelectorAll("Category"))
         .map(cat => cat.getAttribute("Name"))
         .filter(Boolean)
@@ -339,7 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const qp = new URLSearchParams({ i_target: "et4pages" });
     if (height) qp.set("i_height", height);
-    const fullUrl = `${cleanUrl}?${qp.toString()}`; // (falls du sie brauchst)
+    const fullUrl = `${cleanUrl}?${qp.toString()}`; // optional zum Debuggen
 
     // Embed-Snippet (default/search) mit i_height
     const baseSrc   = `${d1Base}/default/search/${encodeURIComponent(type)}?i_target=et4pages`;
