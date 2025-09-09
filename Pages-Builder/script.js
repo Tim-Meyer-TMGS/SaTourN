@@ -1,4 +1,3 @@
-<script>
 document.addEventListener('DOMContentLoaded', () => {
   // ---- XML-Kategorien-URLs (direkt, ohne Proxy) ----
   const xmlUrls = {
@@ -172,4 +171,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-</script>
