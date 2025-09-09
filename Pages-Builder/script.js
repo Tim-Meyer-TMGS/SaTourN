@@ -1,5 +1,9 @@
+"use strict";
+
 document.addEventListener('DOMContentLoaded', () => {
-  // ---- XML-Kategorien-URLs (direkt, ohne Proxy) ----
+  // ============================================================
+  // Config
+  // ============================================================
   const xmlUrls = {
     POI:  'https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml',
     Tour: 'https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml',
@@ -8,15 +12,17 @@ document.addEventListener('DOMContentLoaded', () => {
     Hotel: 'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml'
   };
 
-  // ---- Proxy-Endpoints für Area & City ----
-  const proxyBase = 'https://satourn.onrender.com/api/search';
-  const areaApiUrl = `${proxyBase}?type=Area`;
-  const cityApiUrl = `${proxyBase}?type=City`;
+  // Proxy, der meta.et4.de durchreicht (Area via XML, City via JSON)
+  const proxyBase  = 'https://satourn.onrender.com/api/search';
+  const areaApiUrl = `${proxyBase}?type=Area`;                 // XML
+  const cityApiUrl = `${proxyBase}?type=City&format=json`;     // JSON
 
-  // ---- DOM-Elemente ----
+  // ============================================================
+  // DOM
+  // ============================================================
   const typeSelect      = document.getElementById('type');
   const areaSelect      = document.getElementById('areas');
-  const citySelect      = document.getElementById('City');          // (id "City" beibehalten)
+  const citySelect      = document.getElementById('City'); // id "City" beibehalten
   const categorySelect  = document.getElementById('categories');
   const logicOpSelect   = document.getElementById('logicOperator'); // Werte: AND | OR
   const heightInput     = document.getElementById('height');
@@ -27,63 +33,96 @@ document.addEventListener('DOMContentLoaded', () => {
   const infoBox         = document.getElementById('infoBox');
   const closeInfoBtn    = document.getElementById('closeInfoBox');
   const showMapCb       = document.getElementById('showMap');
+  const formEl          = document.getElementById('urlForm');
 
-  // ---- Info-Box-Logik ----
-  infoBtn?.addEventListener('click', () => infoBox.style.display = 'block');
-  closeInfoBtn?.addEventListener('click', () => infoBox.style.display = 'none');
-  window.addEventListener('click', e => { if (e.target === infoBox) infoBox.style.display = 'none'; });
+  // ============================================================
+  // State
+  // ============================================================
+  let allCities = []; // vollständige City-Liste (JSON von meta.et4, via Proxy)
 
-  // ---- Initiales Befüllen ----
-  loadAreas();
-  loadCity();
-  loadCategories();
-  typeSelect?.addEventListener('change', loadCategories);
-
-  // ---- Helper ----
+  // ============================================================
+  // Helpers
+  // ============================================================
   const escapeForPath = (s) => String(s).replace(/"/g, '\\"'); // Quotes im sichtbaren Teil escapen
 
   function buildCategoryExpression(selectedValues, op) {
-    // Z. B. category:"Museen" OR category:"Theater"
+    // z. B. category:"Museen" OR category:"Theater"
     const parts = selectedValues.map(v => `category:"${escapeForPath(v)}"`);
     return parts.join(` ${op} `);
   }
 
-  // ---- Funktionen zum Laden der Selects ----
+  function setSelectOptions(selectEl, options, placeholder) {
+    if (!selectEl) return;
+    const frag = document.createDocumentFragment();
+    const first = document.createElement('option');
+    first.value = '';
+    first.textContent = placeholder;
+    frag.appendChild(first);
+    for (const text of options) {
+      const opt = new Option(text, text);
+      frag.appendChild(opt);
+    }
+    selectEl.innerHTML = '';
+    selectEl.appendChild(frag);
+  }
+
+  // ============================================================
+  // Info-Box
+  // ============================================================
+  infoBtn?.addEventListener('click', () => infoBox.style.display = 'block');
+  closeInfoBtn?.addEventListener('click', () => infoBox.style.display = 'none');
+  window.addEventListener('click', e => { if (e.target === infoBox) infoBox.style.display = 'none'; });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  loadAreas();
+  loadCategories();
+  loadCitiesJson().then(() => filterAndRenderCities()); // initial: alle Städte zeigen
+
+  typeSelect?.addEventListener('change', loadCategories);
+  areaSelect?.addEventListener('change', filterAndRenderCities);
+
+  // ============================================================
+  // Loaders
+  // ============================================================
   async function loadAreas() {
     if (!areaSelect) return console.error('Kein <select id="areas"> gefunden!');
     try {
       const res = await fetch(areaApiUrl);
       const txt = await res.text();
       const xml = new DOMParser().parseFromString(txt, 'application/xml');
-      const items = Array.from(xml.querySelectorAll('item > title')).map(n => n.textContent.trim()).filter(Boolean);
-
-      areaSelect.innerHTML = '<option value="">Kein Gebiet wählen</option>';
-      items.forEach(title => areaSelect.append(new Option(title, title)));
+      const items = Array.from(xml.querySelectorAll('item > title'))
+        .map(n => (n.textContent || '').trim())
+        .filter(Boolean);
+      setSelectOptions(areaSelect, items, 'Kein Gebiet wählen');
     } catch (err) {
       console.error('Fehler beim Laden der Gebiete:', err);
+      setSelectOptions(areaSelect, [], 'Kein Gebiet wählen');
     }
   }
 
-  async function loadCity() {
-    if (!citySelect) return console.error('Kein <select id="City"> gefunden!');
+  async function loadCitiesJson() {
+    if (!citySelect) { console.error('Kein <select id="City"> gefunden!'); return; }
     try {
-      const res = await fetch(cityApiUrl);
-      const txt = await res.text();
-      const xml = new DOMParser().parseFromString(txt, 'application/xml');
-      const items = Array.from(xml.querySelectorAll('item > title')).map(n => n.textContent.trim()).filter(Boolean);
-
-      citySelect.innerHTML = '<option value="">Keine Stadt wählen</option>';
-      items.forEach(title => citySelect.append(new Option(title, title)));
+      const res = await fetch(cityApiUrl, { headers: { 'Accept': 'application/json' } });
+      const data = await res.json();
+      // Erwartete Struktur: { items:[{ title, areas:[{value}], areas_old:[…] , …}, …] }
+      allCities = Array.isArray(data?.items) ? data.items : [];
     } catch (err) {
-      console.error('Fehler beim Laden der Städte:', err);
+      console.error('Fehler beim Laden der Städte (JSON):', err);
+      allCities = [];
     }
   }
 
   async function loadCategories() {
     const sel = typeSelect?.value;
-    categorySelect.innerHTML = '<option value="">Keine Kategorie wählen</option>';
+    if (!categorySelect) return;
+    setSelectOptions(categorySelect, [], 'Keine Kategorie wählen');
+
     const url = xmlUrls[sel];
     if (!url) return;
+
     try {
       const res = await fetch(url);
       const txt = await res.text();
@@ -91,23 +130,57 @@ document.addEventListener('DOMContentLoaded', () => {
       const cats = Array.from(xml.querySelectorAll('Category'))
         .map(cat => cat.getAttribute('Name'))
         .filter(Boolean);
+      // Sortiert ausspielen (optional)
+      cats.sort((a, b) => a.localeCompare(b, 'de'));
+      // Mehrfachauswahl vorausgesetzt
+      categorySelect.innerHTML = '';
       cats.forEach(name => categorySelect.append(new Option(name, name)));
     } catch (err) {
       console.error('Fehler beim Laden der Kategorien:', err);
+      setSelectOptions(categorySelect, [], 'Keine Kategorie wählen');
     }
   }
 
-  // ---- Formular abschicken ----
-  document.getElementById('urlForm')?.addEventListener('submit', e => {
+  // ============================================================
+  // Cities: lokal nach gewähltem Gebiet filtern
+  // ============================================================
+  function filterAndRenderCities() {
+    if (!citySelect) return;
+    const selectedArea = areaSelect?.value?.trim();
+
+    let filtered = allCities;
+    if (selectedArea) {
+      const needle = selectedArea.toLowerCase();
+      filtered = allCities.filter(item => {
+        const areasNew = (item.areas || []).map(a => (a?.value || '').toLowerCase());
+        const areasOld = (item.areas_old || []).map(a => (a || '').toLowerCase());
+        return areasNew.includes(needle) || areasOld.includes(needle);
+      });
+    }
+
+    // Duplikate via Titel entfernen & alphabetisch sortieren
+    const byTitle = new Map();
+    for (const c of filtered) {
+      const t = (c.title || '').trim();
+      if (t) byTitle.set(t, true);
+    }
+    const titles = Array.from(byTitle.keys()).sort((a, b) => a.localeCompare(b, 'de'));
+    setSelectOptions(citySelect, titles, 'Keine Stadt wählen');
+  }
+
+  // ============================================================
+  // URL-Builder & Form Submit
+  // ============================================================
+  formEl?.addEventListener('submit', (e) => {
     e.preventDefault();
 
-    const type   = typeSelect.value;           // POI | Tour | ...
-    const height = String(heightInput.value || '').trim();
-    const op     = logicOpSelect.value;        // AND | OR
-    const area   = areaSelect.value;
-    const city   = citySelect.value;
+    const type   = typeSelect?.value || ''; // POI | Tour | ...
+    const height = String(heightInput?.value || '').trim();
+    const op     = logicOpSelect?.value || 'OR'; // AND | OR
+    const area   = areaSelect?.value || '';
+    const city   = citySelect?.value || '';
 
-    const selectedCats = Array.from(categorySelect.selectedOptions)
+    const selectedCats = Array.from(categorySelect?.selectedOptions || [])
       .map(o => o.value)
       .filter(Boolean);
 
@@ -149,24 +222,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const embedSnippet = `<script id="et4pages" type="text/javascript" src="${fullSrc}"></script>`;
 
     // Ausgabe
-    resultTA.value  = embedSnippet;
-    resultNoTA.value = cleanUrl;
+    if (resultTA)    resultTA.value   = embedSnippet;
+    if (resultNoTA)  resultNoTA.value = cleanUrl;
 
-    // Für Debugging (optional):
+    // Optional Debug:
     // console.log({ cleanUrl, fullUrl, embedSnippet });
 
     copyBtn?.classList.remove('hidden');
   });
 
-  // ---- Copy-Button ----
+  // ============================================================
+  // Copy Button
+  // ============================================================
   copyBtn?.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(resultTA.value);
+      await navigator.clipboard.writeText(resultTA?.value || '');
       alert('Embed-Code in die Zwischenablage kopiert!');
     } catch {
       // Fallback für ältere Browser
-      resultTA.select();
-      document.execCommand('copy');
+      if (resultTA) {
+        resultTA.select();
+        document.execCommand('copy');
+      }
       alert('Embed-Code in die Zwischenablage kopiert!');
     }
   });
