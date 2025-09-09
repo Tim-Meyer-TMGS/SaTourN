@@ -1,124 +1,234 @@
 "use strict";
 
-document.addEventListener('DOMContentLoaded', () => {
+/**
+ * SaTourN Embed-URL-Builder (destination.one) mit
+ * - Area → City-Filter (Cities werden clientseitig nach Gebiet gefiltert)
+ * - Kategorien (AND/OR)
+ * - optionaler Kartenansicht
+ * - Embed-Snippet-Ausgabe
+ *
+ * Robuste Normalisierung (Diakritika, NBSP, ß→ss), tolerant ggü. API-Varianten.
+ */
+
+document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   // Config
   // ============================================================
   const xmlUrls = {
-    POI:  'https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml',
-    Tour: 'https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml',
-    Gastronomie: 'https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml',
-    Event: 'https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml',
-    Hotel: 'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml'
+    POI:  "https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml",
+    Tour: "https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml",
+    Gastronomie: "https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml",
+    Event: "https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml",
+    Hotel: "https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml",
   };
 
-  // Proxy, der meta.et4.de durchreicht (Area via XML, City via JSON)
-  const proxyBase  = 'https://satourn.onrender.com/api/search';
-  const areaApiUrl = `${proxyBase}?type=Area`;                 // XML
-  const cityApiUrl = `${proxyBase}?type=City&format=json`;     // JSON
+  // Proxy, der meta.et4.de durchreicht
+  const proxyBase  = "https://satourn.onrender.com/api/search";
+  const areaApiUrl = `${proxyBase}?type=Area`; // XML
+  // Wichtig: nutze das JSON-Template wie von dir beschrieben (format=json ist je nach Proxy anders)
+  const cityApiUrl = `${proxyBase}?type=City&template=ET2022A_MULTI.json`;
+
+  // destination.one Basis
+  const d1Base = "https://pages.destination.one/de/open-data-sachsen-tourismus";
 
   // ============================================================
   // DOM
   // ============================================================
-  const typeSelect      = document.getElementById('type');
-  const areaSelect      = document.getElementById('areas');
-  const citySelect      = document.getElementById('City'); // id "City" beibehalten
-  const categorySelect  = document.getElementById('categories');
-  const logicOpSelect   = document.getElementById('logicOperator'); // Werte: AND | OR
-  const heightInput     = document.getElementById('height');
-  const resultTA        = document.getElementById('resultTA');
-  const resultNoTA      = document.getElementById('resultNoParams');
-  const copyBtn         = document.getElementById('copyButton');
-  const infoBtn         = document.getElementById('infoBtn');
-  const infoBox         = document.getElementById('infoBox');
-  const closeInfoBtn    = document.getElementById('closeInfoBox');
-  const showMapCb       = document.getElementById('showMap');
-  const formEl          = document.getElementById('urlForm');
+  const typeSelect     = document.getElementById("type");
+  const areaSelect     = document.getElementById("areas");
+  const citySelect     = document.getElementById("City"); // (id "City" beibehalten)
+  const categorySelect = document.getElementById("categories");
+  const logicOpSelect  = document.getElementById("logicOperator"); // AND | OR
+  const heightInput    = document.getElementById("height");
+  const showMapCb      = document.getElementById("showMap");
+  const formEl         = document.getElementById("urlForm");
+
+  const resultTA       = document.getElementById("resultTA");
+  const resultNoTA     = document.getElementById("resultNoParams");
+  const copyBtn        = document.getElementById("copyButton");
+
+  const infoBtn        = document.getElementById("infoBtn");
+  const infoBox        = document.getElementById("infoBox");
+  const closeInfoBtn   = document.getElementById("closeInfoBox");
 
   // ============================================================
   // State
   // ============================================================
-  let allCities = []; // vollständige City-Liste (JSON von meta.et4, via Proxy)
+  /** Vollständige City-Items aus meta.et4 (via Proxy) */
+  let allCityItems = [];
+  /** City-Titelliste (dedupliziert, sortiert) */
+  let allCityTitles = [];
+  /**
+   * Index: normalisierter Area-Name -> Set<String> (City-Titel)
+   * damit filtern wir blitzschnell
+   */
+  const areaToCities = new Map();
 
   // ============================================================
-  // Helpers
+  // Helper
   // ============================================================
-  const escapeForPath = (s) => String(s).replace(/"/g, '\\"'); // Quotes im sichtbaren Teil escapen
+  const escapeForPath = (s) => String(s).replace(/"/g, '\\"');
 
-  function buildCategoryExpression(selectedValues, op) {
-    // z. B. category:"Museen" OR category:"Theater"
-    const parts = selectedValues.map(v => `category:"${escapeForPath(v)}"`);
-    return parts.join(` ${op} `);
+  /** String-Normalisierung (für zuverlässige Vergleiche) */
+  function normalizeKey(s) {
+    return (s ?? "")
+      .toString()
+      .replace(/\u00A0/g, " ")               // NBSP → Space
+      .normalize("NFD")                       // trenne Diakritika
+      .replace(/\p{M}/gu, "")                 // entferne Diakritika
+      .replace(/ß/g, "ss")                    // ß → ss
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, " ");                  // Mehrfachspaces -> 1
   }
 
-  function setSelectOptions(selectEl, options, placeholder) {
+  function setSelectOptions(selectEl, titles, placeholder) {
     if (!selectEl) return;
     const frag = document.createDocumentFragment();
-    const first = document.createElement('option');
-    first.value = '';
-    first.textContent = placeholder;
+    const first = new Option(placeholder, "");
     frag.appendChild(first);
-    for (const text of options) {
-      const opt = new Option(text, text);
-      frag.appendChild(opt);
-    }
-    selectEl.innerHTML = '';
+    for (const t of titles) frag.appendChild(new Option(t, t));
+    selectEl.innerHTML = "";
     selectEl.appendChild(frag);
+  }
+
+  function buildCategoryExpression(selectedValues, op) {
+    const parts = selectedValues.map(v => `category:"${escapeForPath(v)}"`);
+    return parts.join(` ${op} `);
   }
 
   // ============================================================
   // Info-Box
   // ============================================================
-  infoBtn?.addEventListener('click', () => infoBox.style.display = 'block');
-  closeInfoBtn?.addEventListener('click', () => infoBox.style.display = 'none');
-  window.addEventListener('click', e => { if (e.target === infoBox) infoBox.style.display = 'none'; });
+  infoBtn?.addEventListener("click", () => (infoBox.style.display = "block"));
+  closeInfoBtn?.addEventListener("click", () => (infoBox.style.display = "none"));
+  window.addEventListener("click", (e) => {
+    if (e.target === infoBox) infoBox.style.display = "none";
+  });
 
   // ============================================================
   // Init
   // ============================================================
-  loadAreas();
-  loadCategories();
-  loadCitiesJson().then(() => filterAndRenderCities()); // initial: alle Städte zeigen
+  (async function init() {
+    await Promise.all([loadAreas(), loadCategories(), loadCitiesJson()]);
+    buildAreaIndex();           // Index für Area→Cities
+    renderCitiesForArea();      // initiale Cityliste (alle oder nach bereits gewähltem Gebiet)
 
-  typeSelect?.addEventListener('change', loadCategories);
-  areaSelect?.addEventListener('change', filterAndRenderCities);
+    // Events
+    typeSelect?.addEventListener("change", loadCategories);
+    // Zwei Events für bessere Browser-Kompatibilität
+    areaSelect?.addEventListener("change", renderCitiesForArea);
+    areaSelect?.addEventListener("input", renderCitiesForArea);
+  })();
 
   // ============================================================
-  // Loaders
+  // Loader: Areas (XML)
   // ============================================================
   async function loadAreas() {
-    if (!areaSelect) return console.error('Kein <select id="areas"> gefunden!');
+    if (!areaSelect) return console.error("Kein <select id=\"areas\"> gefunden!");
     try {
       const res = await fetch(areaApiUrl);
       const txt = await res.text();
-      const xml = new DOMParser().parseFromString(txt, 'application/xml');
-      const items = Array.from(xml.querySelectorAll('item > title'))
-        .map(n => (n.textContent || '').trim())
-        .filter(Boolean);
-      setSelectOptions(areaSelect, items, 'Kein Gebiet wählen');
+      const xml = new DOMParser().parseFromString(txt, "application/xml");
+      const items = Array.from(xml.querySelectorAll("item > title"))
+        .map((n) => (n.textContent || "").trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "de"));
+      setSelectOptions(areaSelect, items, "Kein Gebiet wählen");
     } catch (err) {
-      console.error('Fehler beim Laden der Gebiete:', err);
-      setSelectOptions(areaSelect, [], 'Kein Gebiet wählen');
+      console.error("Fehler beim Laden der Gebiete:", err);
+      setSelectOptions(areaSelect, [], "Kein Gebiet wählen");
     }
   }
 
+  // ============================================================
+  // Loader: Cities (JSON)
+  // ============================================================
   async function loadCitiesJson() {
-    if (!citySelect) { console.error('Kein <select id="City"> gefunden!'); return; }
+    if (!citySelect) return console.error("Kein <select id=\"City\"> gefunden!");
     try {
-      const res = await fetch(cityApiUrl, { headers: { 'Accept': 'application/json' } });
+      const res = await fetch(cityApiUrl, { headers: { Accept: "application/json" } });
       const data = await res.json();
-      // Erwartete Struktur: { items:[{ title, areas:[{value}], areas_old:[…] , …}, …] }
-      allCities = Array.isArray(data?.items) ? data.items : [];
+
+      // Tolerant gegen beide Formen: { items: [...] } ODER { results: [{items: [...]}] }
+      const items =
+        (Array.isArray(data?.items) && data.items) ||
+        (Array.isArray(data?.results) && data.results[0]?.items) ||
+        [];
+
+      allCityItems = Array.isArray(items) ? items : [];
+
+      // volle Titelliste einmal deduplizieren+sortieren
+      const titleSet = new Set();
+      for (const it of allCityItems) {
+        const t = (it.title || "").trim();
+        if (t) titleSet.add(t);
+      }
+      allCityTitles = Array.from(titleSet).sort((a, b) => a.localeCompare(b, "de"));
     } catch (err) {
-      console.error('Fehler beim Laden der Städte (JSON):', err);
-      allCities = [];
+      console.error("Fehler beim Laden der Städte (JSON):", err);
+      allCityItems = [];
+      allCityTitles = [];
     }
   }
 
+  // ============================================================
+  // Index aufbauen: Area (normalisiert) → Set(City-Titel)
+  // ============================================================
+  function buildAreaIndex() {
+    areaToCities.clear();
+
+    for (const it of allCityItems) {
+      const title = (it.title || "").trim();
+      if (!title) continue;
+
+      const areasNew = Array.isArray(it.areas) ? it.areas.map(a => a?.value ?? "") : [];
+      const areasOld = Array.isArray(it.areas_old) ? it.areas_old : [];
+
+      const rawAreas = [...areasNew, ...areasOld].filter(Boolean);
+
+      for (const raw of rawAreas) {
+        const key = normalizeKey(raw);
+        if (!key) continue;
+        if (!areaToCities.has(key)) areaToCities.set(key, new Set());
+        areaToCities.get(key).add(title);
+      }
+    }
+  }
+
+  // ============================================================
+  // Render Cities abhängig vom ausgewählten Gebiet
+  // ============================================================
+  function renderCitiesForArea() {
+    if (!citySelect) return;
+    const raw = areaSelect?.value ?? "";
+    const areaKey = normalizeKey(raw);
+
+    // Kein Gebiet gewählt → alle Städte
+    if (!areaKey) {
+      setSelectOptions(citySelect, allCityTitles, "Keine Stadt wählen");
+      return;
+    }
+
+    // Gebiet vorhanden → nur Cities aus dem Index
+    const set = areaToCities.get(areaKey);
+    if (!set || set.size === 0) {
+      // Nichts gefunden → leere Liste (explizit filtern, NICHT alle anzeigen)
+      setSelectOptions(citySelect, [], "Keine Stadt verfügbar");
+      return;
+    }
+
+    const titles = Array.from(set).sort((a, b) => a.localeCompare(b, "de"));
+    setSelectOptions(citySelect, titles, "Keine Stadt wählen");
+  }
+
+  // ============================================================
+  // Kategorien
+  // ============================================================
   async function loadCategories() {
-    const sel = typeSelect?.value;
     if (!categorySelect) return;
-    setSelectOptions(categorySelect, [], 'Keine Kategorie wählen');
+    const sel = typeSelect?.value;
+    setSelectOptions(categorySelect, [], "Keine Kategorie wählen");
 
     const url = xmlUrls[sel];
     if (!url) return;
@@ -126,65 +236,37 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch(url);
       const txt = await res.text();
-      const xml = new DOMParser().parseFromString(txt, 'application/xml');
-      const cats = Array.from(xml.querySelectorAll('Category'))
-        .map(cat => cat.getAttribute('Name'))
-        .filter(Boolean);
-      // Sortiert ausspielen (optional)
-      cats.sort((a, b) => a.localeCompare(b, 'de'));
-      // Mehrfachauswahl vorausgesetzt
-      categorySelect.innerHTML = '';
-      cats.forEach(name => categorySelect.append(new Option(name, name)));
+      const xml = new DOMParser().parseFromString(txt, "application/xml");
+      const cats = Array.from(xml.querySelectorAll("Category"))
+        .map((cat) => cat.getAttribute("Name"))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "de"));
+
+      // Mehrfachauswahl (falls dein <select multiple> nutzt)
+      categorySelect.innerHTML = "";
+      cats.forEach((name) => categorySelect.append(new Option(name, name)));
     } catch (err) {
-      console.error('Fehler beim Laden der Kategorien:', err);
-      setSelectOptions(categorySelect, [], 'Keine Kategorie wählen');
+      console.error("Fehler beim Laden der Kategorien:", err);
+      setSelectOptions(categorySelect, [], "Keine Kategorie wählen");
     }
   }
 
   // ============================================================
-  // Cities: lokal nach gewähltem Gebiet filtern
+  // URL-Builder & Submit
   // ============================================================
-  function filterAndRenderCities() {
-    if (!citySelect) return;
-    const selectedArea = areaSelect?.value?.trim();
-
-    let filtered = allCities;
-    if (selectedArea) {
-      const needle = selectedArea.toLowerCase();
-      filtered = allCities.filter(item => {
-        const areasNew = (item.areas || []).map(a => (a?.value || '').toLowerCase());
-        const areasOld = (item.areas_old || []).map(a => (a || '').toLowerCase());
-        return areasNew.includes(needle) || areasOld.includes(needle);
-      });
-    }
-
-    // Duplikate via Titel entfernen & alphabetisch sortieren
-    const byTitle = new Map();
-    for (const c of filtered) {
-      const t = (c.title || '').trim();
-      if (t) byTitle.set(t, true);
-    }
-    const titles = Array.from(byTitle.keys()).sort((a, b) => a.localeCompare(b, 'de'));
-    setSelectOptions(citySelect, titles, 'Keine Stadt wählen');
-  }
-
-  // ============================================================
-  // URL-Builder & Form Submit
-  // ============================================================
-  formEl?.addEventListener('submit', (e) => {
+  formEl?.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    const type   = typeSelect?.value || ''; // POI | Tour | ...
-    const height = String(heightInput?.value || '').trim();
-    const op     = logicOpSelect?.value || 'OR'; // AND | OR
-    const area   = areaSelect?.value || '';
-    const city   = citySelect?.value || '';
+    const type   = typeSelect?.value || "";    // POI | Tour | ...
+    const height = String(heightInput?.value || "").trim();
+    const op     = logicOpSelect?.value || "OR"; // AND | OR
+    const area   = areaSelect?.value || "";
+    const city   = citySelect?.value || "";
 
     const selectedCats = Array.from(categorySelect?.selectedOptions || [])
-      .map(o => o.value)
+      .map((o) => o.value)
       .filter(Boolean);
 
-    // Einzelne, komplett encodete Filter-Segmente
     const segments = [];
 
     if (area) {
@@ -193,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (selectedCats.length) {
-      const expr = buildCategoryExpression(selectedCats, op); // ein Segment für alle Kategorien
+      const expr = buildCategoryExpression(selectedCats, op);
       segments.push(encodeURIComponent(expr));
     }
 
@@ -202,49 +284,42 @@ document.addEventListener('DOMContentLoaded', () => {
       segments.push(encodeURIComponent(seg));
     }
 
-    const base = 'https://pages.destination.one/de/open-data-sachsen-tourismus';
     const typePath = `search/${encodeURIComponent(type)}`;
+    let cleanUrl = `${d1Base}/default_withmap/${typePath}`;
+    if (segments.length) cleanUrl += `/${segments.join("/")}`;
+    if (showMapCb?.checked) cleanUrl += "/view:map,half";
 
-    // Basis-Link OHNE Query-Parameter
-    let cleanUrl = `${base}/default_withmap/${typePath}`;
-    if (segments.length) cleanUrl += `/${segments.join('/')}`;
-    if (showMapCb?.checked) cleanUrl += '/view:map,half';
-
-    // Vollständige URL MIT Parametern
-    let fullUrl = cleanUrl;
-    const qp = new URLSearchParams({ i_target: 'et4pages' });
-    if (height) qp.set('i_height', height);
-    fullUrl += `?${qp.toString()}`;
+    const qp = new URLSearchParams({ i_target: "et4pages" });
+    if (height) qp.set("i_height", height);
+    const fullUrl = `${cleanUrl}?${qp.toString()}`;
 
     // Embed-Snippet (default/search) mit i_height
-    const baseSrc = `${base}/default/search/${encodeURIComponent(type)}?i_target=et4pages`;
-    const fullSrc = height ? `${baseSrc}&i_height=${encodeURIComponent(height)}` : baseSrc;
-    const embedSnippet = `<script id="et4pages" type="text/javascript" src="${fullSrc}"></script>`;
+    const baseSrc   = `${d1Base}/default/search/${encodeURIComponent(type)}?i_target=et4pages`;
+    const fullSrc   = height ? `${baseSrc}&i_height=${encodeURIComponent(height)}` : baseSrc;
+    const embedCode = `<script id="et4pages" type="text/javascript" src="${fullSrc}"></script>`;
 
-    // Ausgabe
-    if (resultTA)    resultTA.value   = embedSnippet;
-    if (resultNoTA)  resultNoTA.value = cleanUrl;
+    if (resultTA)   resultTA.value   = embedCode;
+    if (resultNoTA) resultNoTA.value = cleanUrl;
 
-    // Optional Debug:
-    // console.log({ cleanUrl, fullUrl, embedSnippet });
+    // Falls du auch die vollständige URL debuggen willst:
+    // console.log({ cleanUrl, fullUrl, embedCode });
 
-    copyBtn?.classList.remove('hidden');
+    copyBtn?.classList.remove("hidden");
   });
 
   // ============================================================
   // Copy Button
   // ============================================================
-  copyBtn?.addEventListener('click', async () => {
+  copyBtn?.addEventListener("click", async () => {
     try {
-      await navigator.clipboard.writeText(resultTA?.value || '');
-      alert('Embed-Code in die Zwischenablage kopiert!');
+      await navigator.clipboard.writeText(resultTA?.value || "");
+      alert("Embed-Code in die Zwischenablage kopiert!");
     } catch {
-      // Fallback für ältere Browser
       if (resultTA) {
         resultTA.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
       }
-      alert('Embed-Code in die Zwischenablage kopiert!');
+      alert("Embed-Code in die Zwischenablage kopiert!");
     }
   });
 });
