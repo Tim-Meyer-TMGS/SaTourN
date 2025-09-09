@@ -1,53 +1,67 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // ---- XML-Kategorien-URLs (direkt, ohne Proxy) ----
-  const xmlUrls = {
-    POI:          'https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml',
-    Tour:         'https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml',
-    Gastronomie:  'https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml',
-    Event:        'https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml',
-    Hotel:        'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml'
+document.addEventListener('DOMContentLoaded', function () {
+  // ===== Meta-API Basis (ohne Proxy) =====
+  var ET4_BASE    = 'https://meta.et4.de/rest.ashx/search/';
+  var EXPERIENCE  = 'sachsen-tourismus';
+  var TEMPLATE    = 'ET2014A.xml';
+  var LICENSE_KEY = 'ENTER_YOUR_LICENSEKEY'; // <— HIER deinen Key eintragen
+
+  // ===== Kategorie-XMLs (direkt) =====
+  var xmlUrls = {
+    POI:         'https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml',
+    Tour:        'https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml',
+    Gastronomie: 'https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml',
+    Event:       'https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml',
+    Hotel:       'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml'
   };
 
-  // ---- Proxy-Endpoint für Area & City (Lizenzkey bleibt verborgen) ----
-  const et4restBase = 'https://meta.et4.de/rest.ashx/search/';
-  const experience  = 'sachsen-tourismus';
-  const licenseKey  = 'ENTER_YOUR_LICENSEKEY'; // TODO: hier deinen Meta-API License Key einsetzen
-  const template    = 'ET2014A.xml';
+  // ===== DOM =====
+  var typeSelect     = document.getElementById('type');
+  var areaSelect     = document.getElementById('areas');
+  var citySelect     = document.getElementById('City'); // Achtung: großes C
+  var categorySelect = document.getElementById('categories');
+  var logicOpSelect  = document.getElementById('logicOperator');
+  var heightInput    = document.getElementById('height');
+  var resultTA       = document.getElementById('resultTA');
+  var resultNoTA     = document.getElementById('resultNoParams');
+  var copyBtn        = document.getElementById('copyButton');
+  var infoBtn        = document.getElementById('infoBtn');
+  var infoBox        = document.getElementById('infoBox');
+  var closeInfoBtn   = document.getElementById('closeInfoBox');
+  var showMapChk     = document.getElementById('showMap');
+  var urlForm        = document.getElementById('urlForm');
 
-  // ---- DOM-Elemente ----
-  const typeSelect     = document.getElementById('type');
-  const areaSelect     = document.getElementById('areas');
-  const citySelect     = document.getElementById('City');
-  const categorySelect = document.getElementById('categories');
-  const logicOpSelect  = document.getElementById('logicOperator');
-  const heightInput    = document.getElementById('height');
-  const resultTA       = document.getElementById('resultTA');
-  const resultNoTA     = document.getElementById('resultNoParams');
-  const copyBtn        = document.getElementById('copyButton');
-  const infoBtn        = document.getElementById('infoBtn');
-  const infoBox        = document.getElementById('infoBox');
-  const closeInfoBtn   = document.getElementById('closeInfoBox');
-  const showMapChk     = document.getElementById('showMap');
-  const urlForm        = document.getElementById('urlForm');
-
-  // ---- kleine Hilfsfunktionen ----
-  const encodeSeg = (s) => encodeURIComponent(s);
-  const ensureEl = (el, id) => { if (!el) console.error(`Kein <${id}> gefunden!`); return Boolean(el); };
-
-  // ---- Info-Box-Logik ----
-  if (infoBtn && infoBox && closeInfoBtn) {
-    infoBtn.addEventListener('click',    () => infoBox.style.display = 'block');
-    closeInfoBtn.addEventListener('click', () => infoBox.style.display = 'none');
-    window.addEventListener('click', e => { if (e.target === infoBox) infoBox.style.display = 'none'; });
+  // ===== Helpers =====
+  function ensureEl(el, label) {
+    if (!el) { console.error('Fehlendes Element:', label); }
+    return !!el;
+  }
+  function et4Url(params) {
+    var sp = new URLSearchParams({
+      experience: EXPERIENCE,
+      licensekey: LICENSE_KEY,
+      template: TEMPLATE
+    });
+    Object.keys(params).forEach(function (k) {
+      if (params[k] !== undefined && params[k] !== null) sp.set(k, params[k]);
+    });
+    return ET4_BASE + '?' + sp.toString();
   }
 
-  // ---- Initiales Befüllen ----
+  // ===== Info-Box =====
+  if (infoBtn && infoBox && closeInfoBtn) {
+    infoBtn.addEventListener('click', function () { infoBox.style.display = 'block'; });
+    closeInfoBtn.addEventListener('click', function () { infoBox.style.display = 'none'; });
+    window.addEventListener('click', function (e) {
+      if (e.target === infoBox) infoBox.style.display = 'none';
+    });
+  }
+
+  // ===== Initial laden =====
   loadAreas();
   loadCategories();
-  // City soll erst nach Gebiets-Wahl geladen werden
+
   if (areaSelect) {
-    areaSelect.addEventListener('change', () => {
-      // City zurücksetzen und (de)aktivieren
+    areaSelect.addEventListener('change', function () {
       if (citySelect) {
         citySelect.innerHTML = '<option value="">Keine Stadt wählen</option>';
         citySelect.disabled = !areaSelect.value;
@@ -57,76 +71,63 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (typeSelect) typeSelect.addEventListener('change', loadCategories);
 
-  // ---- Funktionen zum Laden der Selects ----
+  // ===== Areas laden =====
   async function loadAreas() {
-    if (!ensureEl(areaSelect, 'select id="areas"')) return;
+    if (!ensureEl(areaSelect, '#areas')) return;
     try {
-      const url = `${et4restBase}?experience=${encodeURIComponent(experience)}&licensekey=${encodeURIComponent(licenseKey)}&type=Area&template=${encodeURIComponent(template)}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/xml' } });
-      const txt = await res.text();
-      const xml = new DOMParser().parseFromString(txt, 'application/xml');
-      const items = Array.from(xml.querySelectorAll('item > title'));
+      var url = et4Url({ type: 'Area', limit: '1000' });
+      var res = await fetch(url, { headers: { 'Accept': 'application/xml' }, mode: 'cors' });
+      var txt = await res.text();
+      var xml = new DOMParser().parseFromString(txt, 'application/xml');
+      var items = Array.prototype.slice.call(xml.querySelectorAll('item > title'));
       areaSelect.innerHTML = '<option value="">Kein Gebiet wählen</option>';
-      items.forEach(el => areaSelect.append(new Option(el.textContent, el.textContent)));
+      items.forEach(function (el) {
+        var t = (el.textContent || '').trim();
+        if (t) areaSelect.append(new Option(t, t));
+      });
       if (citySelect) citySelect.disabled = true;
     } catch (err) {
       console.error('Fehler beim Laden der Gebiete:', err);
     }
   }
-  }
 
+  // ===== Cities laden (abhängig vom Gebiet) =====
   async function loadCity(area) {
-    if (!ensureEl(citySelect, 'select id="City"')) return;
+    if (!ensureEl(citySelect, '#City')) return;
     citySelect.innerHTML = '<option value="">Keine Stadt wählen</option>';
-
-    const chosen = (area || '').trim();
+    var chosen = (area || '').trim();
     if (!chosen) { citySelect.disabled = true; return; }
 
     try {
-      const q = `area:"${chosen}"`;
-      const url = `${et4restBase}?experience=${encodeURIComponent(experience)}&licensekey=${encodeURIComponent(licenseKey)}&type=City&template=${encodeURIComponent(template)}&q=${encodeURIComponent(q)}`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/xml' } });
-      const txt = await res.text();
-      const xml = new DOMParser().parseFromString(txt, 'application/xml');
-      const items = Array.from(xml.querySelectorAll('item > title'));
-      items.forEach(el => citySelect.append(new Option(el.textContent, el.textContent)));
+      var q = 'area:"' + chosen + '"';
+      var url = et4Url({ type: 'City', q: q, limit: '1000' });
+      var res = await fetch(url, { headers: { 'Accept': 'application/xml' }, mode: 'cors' });
+      var txt = await res.text();
+      var xml = new DOMParser().parseFromString(txt, 'application/xml');
+      var items = Array.prototype.slice.call(xml.querySelectorAll('item > title'));
+      items.forEach(function (el) {
+        var t = (el.textContent || '').trim();
+        if (t) citySelect.append(new Option(t, t));
+      });
       citySelect.disabled = items.length === 0;
-      console.info(`[CityLoader] Gebiet="${chosen}" → ${items.length} Städte angezeigt.`);
     } catch (err) {
       console.error('Fehler beim Laden der Städte:', err);
     }
   }
 
-      // 3) Dropdown füllen (Titel = City-Name)
-      const options = items
-        .map(it => it.querySelector('title')?.textContent?.trim())
-        .filter(Boolean)
-        // doppelte rausschmeißen
-        .filter((v, i, arr) => arr.indexOf(v) === i)
-        .sort((a, b) => a.localeCompare(b, 'de'));
-
-      options.forEach(name => citySelect.append(new Option(name, name)));
-      citySelect.disabled = options.length === 0;
-
-      // Debug-Hinweis für dich
-      console.info(`[CityLoader] Gebiet="${chosen}", ursprünglich ${xml.querySelector('count')?.textContent || items.length} Treffer, verwendet ${options.length}`);
-    } catch (err) {
-      console.error('Fehler beim Laden der Städte:', err);
-    }
-  }
-
+  // ===== Kategorien laden (aus XML) =====
   async function loadCategories() {
-    if (!ensureEl(typeSelect, 'select id="type"') || !ensureEl(categorySelect, 'select id="categories"')) return;
-    const sel = typeSelect.value;
+    if (!ensureEl(typeSelect, '#type') || !ensureEl(categorySelect, '#categories')) return;
+    var sel = typeSelect.value;
     categorySelect.innerHTML = '<option value="">Keine Kategorie wählen</option>';
-    const url = xmlUrls[sel];
+    var url = xmlUrls[sel];
     if (!url) return;
     try {
-      const res = await fetch(url);
-      const txt = await res.text();
-      const xml = new DOMParser().parseFromString(txt, 'application/xml');
-      Array.from(xml.querySelectorAll('Category')).forEach(cat => {
-        const name = cat.getAttribute('Name');
+      var res = await fetch(url);
+      var txt = await res.text();
+      var xml = new DOMParser().parseFromString(txt, 'application/xml');
+      Array.prototype.slice.call(xml.querySelectorAll('Category')).forEach(function (cat) {
+        var name = cat.getAttribute('Name');
         if (name) categorySelect.append(new Option(name, name));
       });
     } catch (err) {
@@ -134,49 +135,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ---- URL-Bausteine erzeugen ----
-  function buildFilterPath({ area, catsSegment, city }) {
-    const segs = [];
-    if (area) segs.push(`area:"${area}"`);
-    if (catsSegment) segs.push(catsSegment);
-    if (city) segs.push(`city:"${city}"`);
-    if (!segs.length) return '';
-    // Jede Teil-Query separat encodieren und als Pfad anhängen
-    return '/' + segs.map(encodeSeg).join('/');
-  }
-
+  // ===== Filter-Pfad bauen =====
   function buildCategorySegment() {
-    const op   = logicOpSelect ? logicOpSelect.value : 'AND';
-    const vals = Array.from(categorySelect?.selectedOptions || []).map(o => `category:"${o.value}"`);
-    if (!vals.length) return '';
-    // Keine Klammern nötig – folgt dem bisherigen ET4-Pfadformat
-    return vals.join(` ${op} `);
+    var op = logicOpSelect ? (logicOpSelect.value || 'AND') : 'AND';
+    var selected = Array.prototype.slice.call((categorySelect && categorySelect.selectedOptions) || []);
+    var vals = selected.map(function (o) { return 'category:"' + o.value + '"'; });
+    return vals.length ? vals.join(' ' + op + ' ') : '';
+  }
+  function buildFilterPath(opts) {
+    var segs = [];
+    if (opts.area) segs.push('area:"' + opts.area + '"');
+    if (opts.catsSegment) segs.push(opts.catsSegment);
+    if (opts.city) segs.push('city:"' + opts.city + '"');
+    if (!segs.length) return '';
+    return '/' + segs.map(encodeURIComponent).join('/');
   }
 
-  // ---- Formular abschicken ----
+  // ===== Formular submit =====
   if (urlForm) {
-    urlForm.addEventListener('submit', e => {
+    urlForm.addEventListener('submit', function (e) {
       e.preventDefault();
 
-      const type   = encodeSeg(typeSelect?.value || 'POI');
-      const height = (heightInput?.value || '1200').trim();
-      const area   = areaSelect?.value || '';
-      const city   = citySelect?.value || '';
-      const catsSegment = buildCategorySegment();
-      const filterPath  = buildFilterPath({ area, catsSegment, city });
+      var type   = encodeURIComponent((typeSelect && typeSelect.value) || 'POI');
+      var height = ((heightInput && heightInput.value) || '1200').trim();
+      var area   = (areaSelect && areaSelect.value) || '';
+      var city   = (citySelect && citySelect.value) || '';
+      var catsSegment = buildCategorySegment();
+      var filterPath  = buildFilterPath({ area: area, catsSegment: catsSegment, city: city });
 
-      // 1) Direkter Link (default_withmap) inkl. Filter-Pfad
-      let directUrl = `https://pages.destination.one/de/open-data-sachsen-tourismus/default_withmap/search/${type}${filterPath}`;
-      if (showMapChk?.checked) directUrl += '/view:map,half';
-      const directUrlWithQuery = `${directUrl}?i_target=et4pages&i_height=${encodeSeg(height)}`;
+      // 1) Direkter Link (default_withmap), inkl. optionaler Map-Ansicht
+      var directUrl = 'https://pages.destination.one/de/open-data-sachsen-tourismus/default_withmap/search/' + type + filterPath;
+      if (showMapChk && showMapChk.checked) directUrl += '/view:map,half';
+      var directUrlWithQuery = directUrl + '?i_target=et4pages&i_height=' + encodeURIComponent(height);
 
-      // 2) Embed-Snippet (default/search) – jetzt ebenfalls mit Filter-Pfad!
-      const embedSrc = `https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/${type}${filterPath}?i_target=et4pages&i_height=${encodeSeg(height)}`;
-      const embedSnippet = `<script id="et4pages" type="text/javascript" src="${embedSrc}"></script>`;
+      // 2) Embed-Snippet (default/search) inkl. gleichem Filter-Pfad
+      var embedSrc = 'https://pages.destination.one/de/open-data-sachsen-tourismus/default/search/' + type + filterPath + '?i_target=et4pages&i_height=' + encodeURIComponent(height);
+      var embedSnippet = '<script id="et4pages" type="text/javascript" src="' + embedSrc + '"></script>';
 
-      // Ausgabe:
-      // - resultTA: Embed-Snippet
-      // - resultNoTA: Direkter Link OHNE Query-Parameter
       if (resultTA)   resultTA.value   = embedSnippet;
       if (resultNoTA) resultNoTA.value = directUrl;
 
@@ -184,9 +179,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ---- Copy-Button ----
+  // ===== Copy-Button =====
   if (copyBtn && resultTA) {
-    copyBtn.addEventListener('click', () => {
+    copyBtn.addEventListener('click', function () {
       resultTA.select();
       document.execCommand('copy');
       alert('Embed-Code in Zwischenablage kopiert!');
