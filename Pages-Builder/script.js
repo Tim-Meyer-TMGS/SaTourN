@@ -1,13 +1,11 @@
 "use strict";
 
 /**
- * SaTourN Embed-URL-Builder (destination.one) mit
- * - Area → City-Filter (Cities werden clientseitig nach Gebiet gefiltert)
- * - Kategorien (AND/OR)
- * - optionaler Kartenansicht
+ * SaTourN Embed-URL-Builder (destination.one)
+ * - Areas & Cities werden per XML geladen (Proxy liefert XML)
+ * - City-Liste wird lokal nach gewähltem Gebiet gefiltert
+ * - Kategorien (AND/OR), optionale Kartenansicht
  * - Embed-Snippet-Ausgabe
- *
- * Robuste Normalisierung (Diakritika, NBSP, ß→ss), tolerant ggü. API-Varianten.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -22,11 +20,10 @@ document.addEventListener("DOMContentLoaded", () => {
     Hotel: "https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml",
   };
 
-  // Proxy, der meta.et4.de durchreicht
+  // Proxy, der meta.et4.de/destination.one durchreicht
   const proxyBase  = "https://satourn.onrender.com/api/search";
   const areaApiUrl = `${proxyBase}?type=Area`; // XML
-  // Wichtig: nutze das JSON-Template wie von dir beschrieben (format=json ist je nach Proxy anders)
-  const cityApiUrl = `${proxyBase}?type=City&template=ET2022A_MULTI.json`;
+  const cityApiUrl = `${proxyBase}?type=City`; // <-- jetzt explizit XML (ohne template)
 
   // destination.one Basis
   const d1Base = "https://pages.destination.one/de/open-data-sachsen-tourismus";
@@ -36,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   const typeSelect     = document.getElementById("type");
   const areaSelect     = document.getElementById("areas");
-  const citySelect     = document.getElementById("City"); // (id "City" beibehalten)
+  const citySelect     = document.getElementById("City"); // id "City" beibehalten
   const categorySelect = document.getElementById("categories");
   const logicOpSelect  = document.getElementById("logicOperator"); // AND | OR
   const heightInput    = document.getElementById("height");
@@ -54,14 +51,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // ============================================================
   // State
   // ============================================================
-  /** Vollständige City-Items aus meta.et4 (via Proxy) */
-  let allCityItems = [];
+  /** Vollständige City-Objekte (aus XML extrahiert) */
+  let allCityItems = []; // { title: string, areas: string[] }
   /** City-Titelliste (dedupliziert, sortiert) */
   let allCityTitles = [];
-  /**
-   * Index: normalisierter Area-Name -> Set<String> (City-Titel)
-   * damit filtern wir blitzschnell
-   */
+  /** Index: normalisierter Area-Name -> Set<String> (City-Titel) */
   const areaToCities = new Map();
 
   // ============================================================
@@ -97,6 +91,40 @@ document.addEventListener("DOMContentLoaded", () => {
     return parts.join(` ${op} `);
   }
 
+  // Extrahiere Textinhalt eines Elements (trim) – inkl. direkter Textknoten
+  function textContent(el) {
+    return (el?.textContent || "").trim();
+  }
+
+  // Sammle alle Area-Namen aus einem <item>-Knoten (robust gg. verschiedene XML-Schemata)
+  function extractAreasFromItem(itemEl) {
+    const result = new Set();
+
+    // 1) Häufiger: <areas><value>Erzgebirge</value>...</areas>
+    const valueNodes = itemEl.querySelectorAll("areas > value, areas_old > value");
+    valueNodes.forEach(n => {
+      const t = textContent(n);
+      if (t) result.add(t);
+    });
+
+    // 2) Manche liefern <areas><item><value>…</value></item></areas> oder direkte Texte
+    const areaContainers = itemEl.querySelectorAll("areas, areas_old, area, gebiet, region");
+    areaContainers.forEach(container => {
+      // direkte <value>-Kinder
+      container.querySelectorAll("value").forEach(vn => {
+        const t = textContent(vn);
+        if (t) result.add(t);
+      });
+      // falls keine <value>-Kinder → gesamten Textinhalt (kann notfalls kommagetrennt sein)
+      if (!container.querySelector("value")) {
+        const raw = textContent(container);
+        raw.split(/[;,|]/).map(s => s.trim()).forEach(t => { if (t) result.add(t); });
+      }
+    });
+
+    return Array.from(result);
+  }
+
   // ============================================================
   // Info-Box
   // ============================================================
@@ -110,13 +138,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Init
   // ============================================================
   (async function init() {
-    await Promise.all([loadAreas(), loadCategories(), loadCitiesJson()]);
+    await Promise.all([loadAreas(), loadCategories(), loadCitiesXml()]);
     buildAreaIndex();           // Index für Area→Cities
     renderCitiesForArea();      // initiale Cityliste (alle oder nach bereits gewähltem Gebiet)
 
     // Events
     typeSelect?.addEventListener("change", loadCategories);
-    // Zwei Events für bessere Browser-Kompatibilität
     areaSelect?.addEventListener("change", renderCitiesForArea);
     areaSelect?.addEventListener("input", renderCitiesForArea);
   })();
@@ -125,13 +152,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Loader: Areas (XML)
   // ============================================================
   async function loadAreas() {
-    if (!areaSelect) return console.error("Kein <select id=\"areas\"> gefunden!");
+    if (!areaSelect) return console.error('Kein <select id="areas"> gefunden!');
     try {
-      const res = await fetch(areaApiUrl);
+      const res = await fetch(areaApiUrl, { headers: { "Accept": "application/xml" } });
       const txt = await res.text();
       const xml = new DOMParser().parseFromString(txt, "application/xml");
       const items = Array.from(xml.querySelectorAll("item > title"))
-        .map((n) => (n.textContent || "").trim())
+        .map(n => (n.textContent || "").trim())
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b, "de"));
       setSelectOptions(areaSelect, items, "Kein Gebiet wählen");
@@ -142,31 +169,38 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ============================================================
-  // Loader: Cities (JSON)
+  // Loader: Cities (XML)
   // ============================================================
-  async function loadCitiesJson() {
-    if (!citySelect) return console.error("Kein <select id=\"City\"> gefunden!");
+  async function loadCitiesXml() {
+    if (!citySelect) return console.error('Kein <select id="City"> gefunden!');
     try {
-      const res = await fetch(cityApiUrl, { headers: { Accept: "application/json" } });
-      const data = await res.json();
+      const res = await fetch(cityApiUrl, { headers: { "Accept": "application/xml" } });
+      const txt = await res.text();
 
-      // Tolerant gegen beide Formen: { items: [...] } ODER { results: [{items: [...]}] }
-      const items =
-        (Array.isArray(data?.items) && data.items) ||
-        (Array.isArray(data?.results) && data.results[0]?.items) ||
-        [];
-
-      allCityItems = Array.isArray(items) ? items : [];
-
-      // volle Titelliste einmal deduplizieren+sortieren
-      const titleSet = new Set();
-      for (const it of allCityItems) {
-        const t = (it.title || "").trim();
-        if (t) titleSet.add(t);
+      // Falls Server HTML/Fehlerseite liefert, DOMParser meckert nicht – prüfen wir Root
+      const xml = new DOMParser().parseFromString(txt, "application/xml");
+      if (xml.querySelector("parsererror")) {
+        throw new Error("XML parse error");
       }
+
+      const items = Array.from(xml.querySelectorAll("item"));
+      const cityObjs = [];
+
+      for (const it of items) {
+        const title = textContent(it.querySelector("title"));
+        if (!title) continue;
+
+        const areas = extractAreasFromItem(it);
+        cityObjs.push({ title, areas });
+      }
+
+      allCityItems = cityObjs;
+
+      // Titelliste deduplizieren + sortieren
+      const titleSet = new Set(cityObjs.map(o => o.title).filter(Boolean));
       allCityTitles = Array.from(titleSet).sort((a, b) => a.localeCompare(b, "de"));
     } catch (err) {
-      console.error("Fehler beim Laden der Städte (JSON):", err);
+      console.error("Fehler beim Laden der Städte (XML):", err);
       allCityItems = [];
       allCityTitles = [];
     }
@@ -182,11 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const title = (it.title || "").trim();
       if (!title) continue;
 
-      const areasNew = Array.isArray(it.areas) ? it.areas.map(a => a?.value ?? "") : [];
-      const areasOld = Array.isArray(it.areas_old) ? it.areas_old : [];
-
-      const rawAreas = [...areasNew, ...areasOld].filter(Boolean);
-
+      const rawAreas = Array.isArray(it.areas) ? it.areas : [];
       for (const raw of rawAreas) {
         const key = normalizeKey(raw);
         if (!key) continue;
@@ -234,17 +264,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!url) return;
 
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: { "Accept": "application/xml" } });
       const txt = await res.text();
       const xml = new DOMParser().parseFromString(txt, "application/xml");
       const cats = Array.from(xml.querySelectorAll("Category"))
-        .map((cat) => cat.getAttribute("Name"))
+        .map(cat => cat.getAttribute("Name"))
         .filter(Boolean)
         .sort((a, b) => a.localeCompare(b, "de"));
 
       // Mehrfachauswahl (falls dein <select multiple> nutzt)
       categorySelect.innerHTML = "";
-      cats.forEach((name) => categorySelect.append(new Option(name, name)));
+      cats.forEach(name => categorySelect.append(new Option(name, name)));
     } catch (err) {
       console.error("Fehler beim Laden der Kategorien:", err);
       setSelectOptions(categorySelect, [], "Keine Kategorie wählen");
@@ -264,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const city   = citySelect?.value || "";
 
     const selectedCats = Array.from(categorySelect?.selectedOptions || [])
-      .map((o) => o.value)
+      .map(o => o.value)
       .filter(Boolean);
 
     const segments = [];
@@ -300,9 +330,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (resultTA)   resultTA.value   = embedCode;
     if (resultNoTA) resultNoTA.value = cleanUrl;
-
-    // Falls du auch die vollständige URL debuggen willst:
-    // console.log({ cleanUrl, fullUrl, embedCode });
 
     copyBtn?.classList.remove("hidden");
   });
