@@ -47,7 +47,7 @@ app.get('/api/search', async (req, res) => {
   `&licensekey=${licenseKey}` +
   `&type=${encodeURIComponent(type)}` +
   `&q=${qParam}` + // ✅ NICHT nochmal encodeURIComponent
-  `&limit=1000&template=ET2014A.xml`;
+  `&template=ET2014A.xml`;
 
 
   console.log('👉 Proxy leitet weiter an:', targetUrl);
