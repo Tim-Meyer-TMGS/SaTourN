@@ -10,6 +10,14 @@ dotenv.config();
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+/* ----------------------------- Konfiguration ----------------------------- */
+
+const MAX_LIMIT_CITIES = Number(process.env.MAX_LIMIT_CITIES || 1000);
+const MAX_LIMIT_OTHERS = Number(process.env.MAX_LIMIT_OTHERS || 200);
+
+// Welche type-Werte gelten als "Cities"?
+const BIG_LIMIT_TYPES = new Set(['city', 'cities', 'orte', 'staedte']);
+
 /* ----------------------------- kleine Utilities ----------------------------- */
 
 // sehr einfacher In-Memory Cache (optional, v.a. für Cities)
@@ -25,20 +33,34 @@ const setCache = (key, body, ttlMs = CACHE_TTL_MS) => {
   cache.set(key, { expires: Date.now() + ttlMs, body });
 };
 
-// Erlaubt große Limits nur für City-Abrufe
-const BIG_LIMIT_TYPES = new Set(['city', 'cities', 'orte', 'staedte']); // passe bei Bedarf an
-const MAX_LIMIT_BIG   = 1000; // für Cities
-const MAX_LIMIT_SMALL = 200;  // für alles andere
+// Heuristik: erkennt "Cities" in der Query
+function looksLikeCitiesQuery(qParamRaw = '') {
+  const q = (qParamRaw || '').toLowerCase();
+  // Passe die Marker an deine echte Query-Syntax an:
+  return (
+    q.includes('facet:city') ||
+    q.includes('city:') ||
+    q.includes('cities:') ||
+    q.includes('typ:stadt') ||
+    q.includes('type:city')
+  );
+}
 
-function normalizeLimit(type, requested) {
-  const want = Number(requested);
-  const isBigType = BIG_LIMIT_TYPES.has(String(type || '').toLowerCase());
+// Kernlogik: Entscheidet, ob großes Limit erlaubt ist
+function isCitiesRequest({ scope, type, qParam }) {
+  const scopeIsCities = String(scope || '').toLowerCase().trim() === 'cities';
+  const typeIsCities  = BIG_LIMIT_TYPES.has(String(type || '').toLowerCase().trim());
+  const heuristics    = looksLikeCitiesQuery(qParam);
+  return scopeIsCities || typeIsCities || heuristics;
+}
 
+function computeFinalLimit({ requestedLimit, isCities }) {
+  const want = Number(requestedLimit);
   if (Number.isFinite(want)) {
-    return isBigType ? Math.min(want, MAX_LIMIT_BIG) : Math.min(want, MAX_LIMIT_SMALL);
+    return isCities ? Math.min(want, MAX_LIMIT_CITIES) : Math.min(want, MAX_LIMIT_OTHERS);
   }
-  // falls kein limit übergeben wurde: für Cities 1000, sonst 200 (oder weglassen – hier bewusst gesetzt)
-  return isBigType ? MAX_LIMIT_BIG : MAX_LIMIT_SMALL;
+  // kein Limit angefragt -> Defaults
+  return isCities ? MAX_LIMIT_CITIES : MAX_LIMIT_OTHERS;
 }
 
 /* --------------------------------- Middleware -------------------------------- */
@@ -57,7 +79,7 @@ app.get('/', (req, res) => {
 /* --------------------------------- API-Proxy --------------------------------- */
 
 app.get('/api/search', async (req, res) => {
-  const { type, query = '', isOpenData = 'false', limit } = req.query;
+  const { type, query = '', isOpenData = 'false', limit, scope } = req.query;
   const licenseKey = process.env.LICENSE_KEY;
 
   if (!licenseKey) {
@@ -78,8 +100,9 @@ app.get('/api/search', async (req, res) => {
     qParam += '+AND+attribute_license%3A(CC0+OR+CC-BY+OR+CC-BY-SA)';
   }
 
-  // Limit regelbasiert anwenden (Cities dürfen groß, Rest capped)
-  const finalLimit = normalizeLimit(type, limit);
+  // robuste Cities-Erkennung
+  const cities = isCitiesRequest({ scope, type, qParam });
+  const finalLimit = computeFinalLimit({ requestedLimit: limit, isCities: cities });
 
   // Ziel-URL
   const targetUrl =
@@ -87,23 +110,33 @@ app.get('/api/search', async (req, res) => {
     `?experience=statistik_sachsen` +
     `&licensekey=${licenseKey}` +
     `&type=${encodeURIComponent(type || '')}` +
-    `&q=${qParam}` +                // ⚠️ NICHT nochmal encodeURIComponent
+    `&q=${qParam}` +                 // ⚠️ NICHT nochmal encodeURIComponent
     `&template=ET2014A.xml` +
     `&limit=${finalLimit}`;
 
-  // Cache-Key (inkl. finalLimit, damit capped/uncapped unterschieden wird)
-  const cacheKey = targetUrl;
+  // Logging zur Ursachenklärung
+  console.log('👉 /api/search',
+    JSON.stringify({
+      scope: scope || null,
+      type: (type || '').trim() || null,
+      isCities: cities,
+      requestedLimit: limit || null,
+      finalLimit
+    }, null, 2)
+  );
+  console.log('➡️  Proxy →', targetUrl);
 
-  console.log('👉 Proxy leitet weiter an:', targetUrl);
-
-  // 1) Cache-Hit?
-  const cached = getCache(cacheKey);
-  if (cached) {
-    res.type('application/xml').send(cached);
-    return;
+  // Cache nur für Cities (häufige Abrufe)
+  const cacheKey = cities ? targetUrl : null;
+  if (cacheKey) {
+    const cached = getCache(cacheKey);
+    if (cached) {
+      res.type('application/xml').send(cached);
+      return;
+    }
   }
 
-  // 2) Upstream call mit Timeout/Abort (stabiler gegen Hänger)
+  // Upstream call mit Timeout/Abort (stabiler gegen Hänger)
   try {
     const controller = new AbortController();
     const timeoutMs = 15000; // 15s; passe an Render-Plan an
@@ -122,11 +155,7 @@ app.get('/api/search', async (req, res) => {
     // könntest du hier response.body.pipe(res) nutzen – dann aber ohne Cache.
     const text = await response.text();
 
-    // nur City-Antworten cachen (typisch wiederholte Abrufe)
-    if (BIG_LIMIT_TYPES.has(String(type || '').toLowerCase())) {
-      setCache(cacheKey, text);
-    }
-
+    if (cacheKey) setCache(cacheKey, text);
     res.type('application/xml').send(text);
   } catch (err) {
     const isAbort = err && (err.name === 'AbortError' || /aborted|timeout/i.test(String(err)));
