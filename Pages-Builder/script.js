@@ -25,7 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Proxy, der meta.et4.de/destination.one durchreicht
   const proxyBase  = "https://satourn.onrender.com/api/search";
   const areaApiUrl = `${proxyBase}?type=Area`; // XML
-  const cityApiUrl = `${proxyBase}?type=City`; // AUTO: JSON oder XML (je nach Proxy)
+  const cityApiUrl = `${proxyBase}?type=City&limit=1000`;
+// AUTO: JSON oder XML (je nach Proxy)
 
   // destination.one Basis
   const d1Base = "https://pages.destination.one/de/open-data-sachsen-tourismus";
@@ -403,4 +404,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
 
