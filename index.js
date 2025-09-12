@@ -3,7 +3,6 @@ import express from 'express';
 import cors    from 'cors';
 import fetch   from 'node-fetch';
 import dotenv  from 'dotenv';
-import compression from 'compression';
 
 dotenv.config();
 
@@ -36,7 +35,6 @@ const setCache = (key, body, ttlMs = CACHE_TTL_MS) => {
 // Heuristik: erkennt "Cities" in der Query
 function looksLikeCitiesQuery(qParamRaw = '') {
   const q = (qParamRaw || '').toLowerCase();
-  // Passe die Marker an deine echte Query-Syntax an:
   return (
     q.includes('facet:city') ||
     q.includes('city:') ||
@@ -59,7 +57,6 @@ function computeFinalLimit({ requestedLimit, isCities }) {
   if (Number.isFinite(want)) {
     return isCities ? Math.min(want, MAX_LIMIT_CITIES) : Math.min(want, MAX_LIMIT_OTHERS);
   }
-  // kein Limit angefragt -> Defaults
   return isCities ? MAX_LIMIT_CITIES : MAX_LIMIT_OTHERS;
 }
 
@@ -68,7 +65,6 @@ function computeFinalLimit({ requestedLimit, isCities }) {
 app.use(cors());
 app.options('*', cors());
 app.use(express.json());
-app.use(compression()); // 🚀 spart Bandbreite/RAM
 
 /* --------------------------------- Healthcheck -------------------------------- */
 
@@ -87,34 +83,29 @@ app.get('/api/search', async (req, res) => {
     return res.status(500).send('Server-Error: LICENSE_KEY fehlt');
   }
 
-  // qParam korrekt zusammenbauen (ohne doppeltes Encoding)
   let qParam = '';
   if (query.startsWith('&q=')) {
-    qParam = query.slice(3); // roher Teil
+    qParam = query.slice(3);
   } else {
-    qParam = query;          // z.B. 'area:"XYZ"'
+    qParam = query;
   }
 
   if (isOpenData === 'true') {
-    // CC0 / CC-BY / CC-BY-SA filtern
     qParam += '+AND+attribute_license%3A(CC0+OR+CC-BY+OR+CC-BY-SA)';
   }
 
-  // robuste Cities-Erkennung
   const cities = isCitiesRequest({ scope, type, qParam });
   const finalLimit = computeFinalLimit({ requestedLimit: limit, isCities: cities });
 
-  // Ziel-URL (‼️ limit VOR template)
   const targetUrl =
     'https://meta.et4.de/rest.ashx/search/' +
     `?experience=statistik_sachsen` +
     `&licensekey=${licenseKey}` +
     `&type=${encodeURIComponent(type || '')}` +
-    `&q=${qParam}` +                 // ⚠️ NICHT nochmal encodeURIComponent
-    `&limit=${finalLimit}` +         // <- zuerst limit
-    `&template=ET2014A.xml`;         // <- dann template
+    `&q=${qParam}` +
+    `&limit=${finalLimit}` +     // limit VOR template
+    `&template=ET2014A.xml`;
 
-  // Logging zur Ursachenklärung
   console.log('👉 /api/search',
     JSON.stringify({
       scope: scope || null,
@@ -126,7 +117,6 @@ app.get('/api/search', async (req, res) => {
   );
   console.log('➡️  Proxy →', targetUrl);
 
-  // Cache nur für Cities (häufige Abrufe)
   const cacheKey = cities ? targetUrl : null;
   if (cacheKey) {
     const cached = getCache(cacheKey);
@@ -136,10 +126,9 @@ app.get('/api/search', async (req, res) => {
     }
   }
 
-  // Upstream call mit Timeout/Abort (stabiler gegen Hänger)
   try {
     const controller = new AbortController();
-    const timeoutMs = 15000; // 15s; passe an Render-Plan an
+    const timeoutMs = 15000;
     const t = setTimeout(() => controller.abort(), timeoutMs);
 
     const response = await fetch(targetUrl, { signal: controller.signal });
@@ -151,10 +140,7 @@ app.get('/api/search', async (req, res) => {
       return res.status(response.status).type('text/plain').send(errText || 'Upstream error');
     }
 
-    // XML als Text puffern (damit wir cachen können). Wenn du echtes Streaming willst,
-    // könntest du hier response.body.pipe(res) nutzen – dann aber ohne Cache.
     const text = await response.text();
-
     if (cacheKey) setCache(cacheKey, text);
     res.type('application/xml').send(text);
   } catch (err) {
