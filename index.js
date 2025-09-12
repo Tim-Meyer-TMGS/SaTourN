@@ -17,7 +17,7 @@ const MAX_LIMIT_OTHERS = Number(process.env.MAX_LIMIT_OTHERS || 200);
 // Welche type-Werte gelten als "Cities"?
 const BIG_LIMIT_TYPES = new Set(['city', 'cities', 'orte', 'staedte']);
 
-/* ----------------------------- kleine Utilities ----------------------------- */
+/* ----------------------------- Utilities ----------------------------- */
 
 // sehr einfacher In-Memory Cache (optional, v.a. für Cities)
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
@@ -44,8 +44,9 @@ function looksLikeCitiesQuery(qParamRaw = '') {
   );
 }
 
-// Kernlogik: Entscheidet, ob großes Limit erlaubt ist
-function isCitiesRequest({ scope, type, qParam }) {
+// Entscheidet, ob großes Limit erlaubt ist
+function isCitiesRequest({ scope, type, qParam, forceCities }) {
+  if (forceCities) return true; // Harte Override-Regel
   const scopeIsCities = String(scope || '').toLowerCase().trim() === 'cities';
   const typeIsCities  = BIG_LIMIT_TYPES.has(String(type || '').toLowerCase().trim());
   const heuristics    = looksLikeCitiesQuery(qParam);
@@ -57,6 +58,7 @@ function computeFinalLimit({ requestedLimit, isCities }) {
   if (Number.isFinite(want)) {
     return isCities ? Math.min(want, MAX_LIMIT_CITIES) : Math.min(want, MAX_LIMIT_OTHERS);
   }
+  // kein Limit angefragt -> Defaults
   return isCities ? MAX_LIMIT_CITIES : MAX_LIMIT_OTHERS;
 }
 
@@ -75,7 +77,7 @@ app.get('/', (req, res) => {
 /* --------------------------------- API-Proxy --------------------------------- */
 
 app.get('/api/search', async (req, res) => {
-  const { type, query = '', isOpenData = 'false', limit, scope } = req.query;
+  const { type, query = '', isOpenData = 'false', limit, scope, forceCities } = req.query;
   const licenseKey = process.env.LICENSE_KEY;
 
   if (!licenseKey) {
@@ -83,40 +85,61 @@ app.get('/api/search', async (req, res) => {
     return res.status(500).send('Server-Error: LICENSE_KEY fehlt');
   }
 
+  // qParam korrekt zusammenbauen (ohne doppeltes Encoding)
   let qParam = '';
   if (query.startsWith('&q=')) {
-    qParam = query.slice(3);
+    qParam = query.slice(3); // roher Teil
   } else {
-    qParam = query;
+    qParam = query;          // z.B. 'area:"XYZ"'
   }
 
   if (isOpenData === 'true') {
+    // CC0 / CC-BY / CC-BY-SA filtern
     qParam += '+AND+attribute_license%3A(CC0+OR+CC-BY+OR+CC-BY-SA)';
   }
 
-  const cities = isCitiesRequest({ scope, type, qParam });
+  // robuste Cities-Erkennung (+ manueller Not-Schalter)
+  const cities = isCitiesRequest({
+    scope,
+    type,
+    qParam,
+    forceCities: String(forceCities || '') === '1'
+  });
+
   const finalLimit = computeFinalLimit({ requestedLimit: limit, isCities: cities });
 
+  // Ziel-URL (‼️ limit VOR template)
   const targetUrl =
     'https://meta.et4.de/rest.ashx/search/' +
     `?experience=statistik_sachsen` +
     `&licensekey=${licenseKey}` +
     `&type=${encodeURIComponent(type || '')}` +
-    `&q=${qParam}` +
-    `&limit=${finalLimit}` +     // limit VOR template
-    `&template=ET2014A.xml`;
+    `&q=${qParam}` +                 // ⚠️ NICHT nochmal encodeURIComponent
+    `&limit=${finalLimit}` +         // <- zuerst limit
+    `&template=ET2014A.xml`;         // <- dann template
 
-  console.log('👉 /api/search',
-    JSON.stringify({
-      scope: scope || null,
-      type: (type || '').trim() || null,
-      isCities: cities,
-      requestedLimit: limit || null,
-      finalLimit
-    }, null, 2)
-  );
+  // Logging zur Ursachenklärung
+  const diag = {
+    scope: scope || null,
+    type: (type || '').trim() || null,
+    requestedLimit: limit || null,
+    isCities: cities,
+    reason: {
+      scope: String(scope || '').toLowerCase().trim() === 'cities',
+      type: BIG_LIMIT_TYPES.has(String(type || '').toLowerCase().trim()),
+      heuristics: looksLikeCitiesQuery(qParam),
+      forceCities: String(forceCities || '') === '1'
+    },
+    finalLimit
+  };
+  console.log('👉 /api/search DIAG', JSON.stringify(diag, null, 2));
   console.log('➡️  Proxy →', targetUrl);
 
+  // Sichtbar machen, welches Limit angewendet wurde
+  res.setHeader('X-Final-Limit', String(finalLimit));
+  res.setHeader('X-Is-Cities', String(cities));
+
+  // Cache nur für Cities (häufige Abrufe)
   const cacheKey = cities ? targetUrl : null;
   if (cacheKey) {
     const cached = getCache(cacheKey);
