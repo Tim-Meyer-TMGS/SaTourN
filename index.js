@@ -104,15 +104,15 @@ app.get('/api/search', async (req, res) => {
   const cities = isCitiesRequest({ scope, type, qParam });
   const finalLimit = computeFinalLimit({ requestedLimit: limit, isCities: cities });
 
-  // Ziel-URL
+  // Ziel-URL (‼️ limit VOR template)
   const targetUrl =
     'https://meta.et4.de/rest.ashx/search/' +
     `?experience=statistik_sachsen` +
     `&licensekey=${licenseKey}` +
     `&type=${encodeURIComponent(type || '')}` +
     `&q=${qParam}` +                 // ⚠️ NICHT nochmal encodeURIComponent
-    `&template=ET2014A.xml` +
-    `&limit=${finalLimit}`;
+    `&limit=${finalLimit}` +         // <- zuerst limit
+    `&template=ET2014A.xml`;         // <- dann template
 
   // Logging zur Ursachenklärung
   console.log('👉 /api/search',
