@@ -98,11 +98,7 @@ input[type="text"]{width:100%; padding:10px 14px; margin:12px 0; background:rgba
       prevBtn.addEventListener('click', () => { if (page>1) { page--; search(inputQ.value.trim()); } });
       nextBtn.addEventListener('click', () => { page++; search(inputQ.value.trim()); });
       resetBtn.addEventListener('click', () => { inputQ.value=''; page=1; results.innerHTML=''; countEl.textContent=''; status(''); });
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        page = 1;
-        search(inputQ.value.trim());
-      });
+      form.addEventListener('submit', (e) => { e.preventDefault(); page = 1; search(inputQ.value.trim()); });
     })();
 
     // ==== UI/Helper ====
@@ -214,7 +210,7 @@ input[type="text"]{width:100%; padding:10px 14px; margin:12px 0; background:rgba
       return '';
     }
 
-    // === Onlim-Auflösung ===
+    // === Onlim-Auflösung & Kandidaten ===
     function isOnlimEntity(u) {
       try { const x = new URL(u); return /(^|\.)onlim\.com$/i.test(x.hostname) && /^\/entity\/[a-f0-9-]+$/i.test(x.pathname); }
       catch { return false; }
@@ -223,26 +219,36 @@ input[type="text"]{width:100%; padding:10px 14px; margin:12px 0; background:rgba
       const x = new URL(u);
       const id = x.pathname.split('/').pop();
       const ns = `${x.protocol}//${x.host}/entity`;
-      return { id, ns };
+      return { id, ns, base: `${x.protocol}//${x.host}` };
     }
-    function onlimCandidates(u) {
-      const x = new URL(u);
-      const id = x.pathname.split('/').pop();
-      const base = `${x.protocol}//${x.host}`;
-      const candidates = [
+    function buildOnlimCandidates(rawUrl, directUrl) {
+      const { id, base } = parseOnlimIdNs(rawUrl);
+      const c = [];
+      if (directUrl) c.push(directUrl);
+      // bekannte Endpunkte
+      c.push(
         `${base}/entity/${id}/download`,
         `${base}/entity/${id}?download=1`,
         `${base}/file/${id}`,
         `${base}/api/v1/entity/${id}/download`,
         `${base}/api/entity/${id}/download`,
         `${base}/api/file/${id}`
-      ];
-      return [...new Set(candidates)];
+      );
+      // https-Variante erzwingen + 2 CDNs
+      const expanded = [];
+      const dedup = new Set();
+      for (const u of c) {
+        if (!u) continue;
+        const https = u.startsWith('http:') ? ('https:' + u.slice(5)) : u;
+        const weserv = `https://images.weserv.nl/?url=${encodeURIComponent(https.replace(/^https?:\/\//,''))}`;
+        const wsrv   = `https://wsrv.nl/?url=${encodeURIComponent(https.replace(/^https?:\/\//,''))}`;
+        for (const cand of [https, weserv, wsrv]) {
+          if (!dedup.has(cand)) { dedup.add(cand); expanded.push(cand); }
+        }
+      }
+      return expanded;
     }
-    function toWeserv(urlStr) {
-      try { const u = new URL(urlStr); const noScheme = `${u.host}${u.pathname}${u.search||''}`; return `https://images.weserv.nl/?url=${encodeURIComponent(noScheme)}&output=jpg`; }
-      catch { return ''; }
-    }
+
     async function resolveOnlimImage(rawUrl) {
       try {
         const { id, ns } = parseOnlimIdNs(rawUrl);
@@ -258,34 +264,39 @@ input[type="text"]{width:100%; padding:10px 14px; margin:12px 0; background:rgba
                   : data ? [data] : [];
         const node = arr.find(n => n && typeof n==='object') || {};
         const origin = (() => { try { const u = new URL(rawUrl); return `${u.protocol}//${u.host}`; } catch { return ''; } })();
-        const direct = extractUrlFromImage(node, origin, null);
-        return direct || '';
+        // Versuche contentUrl > url > @id (absolut)
+        const cu = extractUrlFromImage(node, origin, null);
+        return cu || '';
       } catch { return ''; }
     }
+
     async function tryLoadImageChain(thumbEl, altText, rawUrl) {
       let resolved = '';
       if (isOnlimEntity(rawUrl)) {
         resolved = await resolveOnlimImage(rawUrl);
       }
-      const baseList = isOnlimEntity(rawUrl) ? onlimCandidates(rawUrl) : [rawUrl];
-      const list = resolved ? [resolved, ...baseList] : baseList;
+      const candidates = isOnlimEntity(rawUrl)
+        ? buildOnlimCandidates(rawUrl, resolved)
+        : [rawUrl,
+           `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl.replace(/^https?:\/\//,''))}`,
+           `https://wsrv.nl/?url=${encodeURIComponent(rawUrl.replace(/^https?:\/\//,''))}`];
 
-      const attempts = [];
-      for (const c of list) {
-        attempts.push({ url: toWeserv(c) });
-        attempts.push({ url: c.startsWith('http:') ? ('https:' + c.slice(5)) : c });
-      }
-      function attempt(idx=0) {
-        if (idx >= attempts.length) {
+      console.debug('[IMG] Kandidaten für', rawUrl, candidates);
+
+      function attempt(i=0) {
+        if (i >= candidates.length) {
           thumbEl.innerHTML = `<a href="${resolved || rawUrl}" target="_blank" rel="noopener">Bild öffnen</a>`;
           return;
         }
-        const { url } = attempts[idx];
+        const u = candidates[i];
         const img = new Image();
-        img.alt = altText || 'Bild'; img.loading = 'lazy'; img.decoding = 'async'; img.referrerPolicy = 'no-referrer';
-        img.onload = () => { thumbEl.innerHTML = ''; thumbEl.appendChild(img); };
-        img.onerror = () => attempt(idx+1);
-        img.src = url;
+        img.alt = altText || 'Bild';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.referrerPolicy = 'no-referrer';
+        img.onload = () => { console.debug('[IMG] Erfolg:', u); thumbEl.innerHTML=''; thumbEl.appendChild(img); };
+        img.onerror = () => { console.debug('[IMG] Fehler:', u); attempt(i+1); };
+        img.src = u;
       }
       attempt(0);
     }
@@ -386,6 +397,7 @@ input[type="text"]{width:100%; padding:10px 14px; margin:12px 0; background:rgba
       const rawImg = pickImageUrl(node, uri, graphMap);
       const thumb = el.querySelector('[data-role=thumb]');
       if (rawImg) { tryLoadImageChain(thumb, name || 'Bild', rawImg); }
+      else { thumb.innerHTML = '<span>kein Bild</span>'; }
 
       // Link
       const a = el.querySelector('[data-role=id]');
