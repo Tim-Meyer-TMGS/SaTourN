@@ -14,9 +14,9 @@ body { display:flex; flex-direction:column; align-items:center; min-height:100vh
 h1 { font-size:26px; margin-bottom:10px; }
 button { padding:10px 16px; background:#009688; color:#fff; border:none; border-radius:6px; cursor:pointer; margin:6px; transition:background .2s; }
 button:hover{background:#00796b} button:disabled{background:#555; cursor:default}
-input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin:12px 0; background:rgba(255,255,255,.2); color:#fff; border:none; border-radius:6px;}
+input[type="text"]{width:100%; padding:10px 14px; margin:12px 0; background:rgba(255,255,255,.2); color:#fff; border:none; border-radius:6px;}
 .header { width:100%; max-width:1000px; margin-top:10px; }
-.form-grid { display:grid; grid-template-columns: 1.2fr 1fr auto; gap:10px; align-items:end; }
+.form-grid { display:grid; grid-template-columns: 1fr auto; gap:10px; align-items:end; }
 #results { margin-top:16px; display:grid; gap:12px; }
 .result { display:grid; grid-template-columns:140px 1fr; gap:14px; padding:12px; border:1px solid rgba(255,255,255,.25); border-radius:10px; background:rgba(0,0,0,.25); }
 .thumb { width:140px; height:100px; border-radius:8px; overflow:hidden; background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.25);
@@ -40,10 +40,6 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
   <section class="container">
     <form id="searchForm">
       <div class="form-grid">
-        <div>
-          <label for="apiKey">API-Key (wird lokal gespeichert)</label>
-          <input id="apiKey" type="password" placeholder="x-api-key der DZT eingeben…" autocomplete="off" />
-        </div>
         <div>
           <label for="q">Suchbegriff</label>
           <input id="q" type="text" placeholder="z. B. Dresden, Museum, Striezelmarkt…" />
@@ -80,17 +76,16 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
 
   <script>
     // ==== Konfiguration ====
-    const DS_LIST_URL = 'https://semantify.it/list/CRkyvcqGqeUu'; // stabiler Vorfilter
-    const FIXED_LANG = 'de';                                       // Sprache fest auf DE
+    const API_KEY = '3b49f5e2f44665aec87f761d4cafb9d2'; // öffentlicher Key (vom Nutzer freigegeben)
+    const DS_LIST_URL = 'https://semantify.it/list/CRkyvcqGqeUu';
+    const FIXED_LANG = 'de';
 
     // ==== State & DOM ====
     let page = 1;
     const PAGE_SIZE = 10;
-    let lastQuery = '';
 
     const form = document.getElementById('searchForm');
     const inputQ = document.getElementById('q');
-    const inputKey = document.getElementById('apiKey');
     const results = document.getElementById('results');
     const tpl = document.getElementById('resultTpl');
     const prevBtn = document.getElementById('prevBtn');
@@ -100,22 +95,17 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
     const resetBtn = document.getElementById('resetBtn');
 
     (function init() {
-      inputKey.value = localStorage.getItem('dzt_api_key') || '';
       prevBtn.addEventListener('click', () => { if (page>1) { page--; search(inputQ.value.trim()); } });
       nextBtn.addEventListener('click', () => { page++; search(inputQ.value.trim()); });
       resetBtn.addEventListener('click', () => { inputQ.value=''; page=1; results.innerHTML=''; countEl.textContent=''; status(''); });
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         page = 1;
-        lastQuery = inputQ.value.trim();
-        const key = inputKey.value.trim();
-        if (!key) { alert('Bitte zuerst einen gültigen DZT API-Key eintragen.'); return; }
-        localStorage.setItem('dzt_api_key', key);
-        search(lastQuery);
+        search(inputQ.value.trim());
       });
     })();
 
-    // ==== Utilities ====
+    // ==== UI/Helper ====
     function status(msg, isError=false) { statusEl.innerHTML = msg ? (isError ? `<span style="color:#ff6b6b">${msg}</span>` : msg) : ''; }
     function getFirstProp(obj, keys) {
       if (!obj || typeof obj !== 'object') return undefined;
@@ -147,8 +137,6 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
       } return data;
     }
     function fallbackTitleFromUri(uri) { try { const last = uri.split(/[/#]/).pop() || uri; return decodeURIComponent(last).replace(/[-_]/g, ' '); } catch { return uri; } }
-
-    // === Graph-Index (falls expanded geliefert) ===
     function indexGraph(data) {
       const map = new Map();
       if (!data) return map;
@@ -159,7 +147,7 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
       return map;
     }
 
-    // === Bild-URL-Helfer ===
+    // === Bild-URL-Tools ===
     function absoluteFromOriginMaybe(u, origin) {
       if (!u || typeof u !== 'string') return '';
       if (/^https?:\/\//i.test(u)) return u;
@@ -226,7 +214,7 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
       return '';
     }
 
-    // === Onlim-Heuristik & Auflösung der Image-IDs (direkt via DZT-Proxy API) ===
+    // === Onlim-Auflösung ===
     function isOnlimEntity(u) {
       try { const x = new URL(u); return /(^|\.)onlim\.com$/i.test(x.hostname) && /^\/entity\/[a-f0-9-]+$/i.test(x.pathname); }
       catch { return false; }
@@ -255,15 +243,13 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
       try { const u = new URL(urlStr); const noScheme = `${u.host}${u.pathname}${u.search||''}`; return `https://images.weserv.nl/?url=${encodeURIComponent(noScheme)}&output=jpg`; }
       catch { return ''; }
     }
-
     async function resolveOnlimImage(rawUrl) {
       try {
-        const key = inputKey.value.trim();
         const { id, ns } = parseOnlimIdNs(rawUrl);
         const url = new URL(`https://proxy.opendatagermany.io/api/ts/v1/kg/things/${encodeURIComponent(id)}`);
         url.searchParams.set('ns', ns);
         const res = await fetch(url.toString(), {
-          headers: { 'x-api-key': key, 'accept': 'application/json', 'inLang': FIXED_LANG, 'x-hop': '0' }
+          headers: { 'x-api-key': API_KEY, 'accept': 'application/json', 'inLang': 'de', 'x-hop': '0' }
         });
         if (!res.ok) return '';
         const data = await res.json();
@@ -276,24 +262,19 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
         return direct || '';
       } catch { return ''; }
     }
-
     async function tryLoadImageChain(thumbEl, altText, rawUrl) {
-      // 1) Falls Onlim-Entity → contentUrl ermitteln
       let resolved = '';
       if (isOnlimEntity(rawUrl)) {
         resolved = await resolveOnlimImage(rawUrl);
       }
-      // 2) Versuchsliste bauen
       const baseList = isOnlimEntity(rawUrl) ? onlimCandidates(rawUrl) : [rawUrl];
       const list = resolved ? [resolved, ...baseList] : baseList;
 
-      // 3) Für jeden Kandidaten: Proxy (weserv) → Direkt (https)
       const attempts = [];
       for (const c of list) {
         attempts.push({ url: toWeserv(c) });
         attempts.push({ url: c.startsWith('http:') ? ('https:' + c.slice(5)) : c });
       }
-
       function attempt(idx=0) {
         if (idx >= attempts.length) {
           thumbEl.innerHTML = `<a href="${resolved || rawUrl}" target="_blank" rel="noopener">Bild öffnen</a>`;
@@ -309,16 +290,15 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
       attempt(0);
     }
 
-    // ==== API Calls (direkt zum DZT-Proxy) ====
+    // ==== API Calls ====
     async function queryThings({ kw }) {
-      const key = inputKey.value.trim();
       const url = new URL('https://proxy.opendatagermany.io/api/ts/v2/kg/things');
       if (kw) url.searchParams.set('kw', kw);
       url.searchParams.set('filterDsList', DS_LIST_URL);
 
       const res = await fetch(url.toString(), {
         headers: {
-          'x-api-key': key,
+          'x-api-key': API_KEY,
           'accept': 'application/json',
           'inLang': FIXED_LANG,
           'page': String(page),
@@ -336,7 +316,6 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
     }
 
     async function fetchThingById(uri) {
-      const key = inputKey.value.trim();
       if (!uri) return null;
       const lastSlash = Math.max(uri.lastIndexOf('/'), uri.lastIndexOf('#'));
       const ns = uri.substring(0, lastSlash);
@@ -344,7 +323,7 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
       const url = new URL(`https://proxy.opendatagermany.io/api/ts/v1/kg/things/${encodeURIComponent(id)}`);
       url.searchParams.set('ns', ns);
       const res = await fetch(url.toString(), {
-        headers: { 'x-api-key': key, 'accept': 'application/json', 'inLang': FIXED_LANG, 'x-hop': '3' }
+        headers: { 'x-api-key': API_KEY, 'accept': 'application/json', 'inLang': 'de', 'x-hop': '3' }
       });
       if (!res.ok) throw new Error(`Abruf fehlgeschlagen (${res.status})`);
       const data = await res.json();
@@ -359,7 +338,7 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
 
       try {
         let things = await queryThings({ kw: query });
-        if (!things.length && query) { things = await queryThings({ kw: query }); } // kleiner Retry
+        if (!things.length && query) { things = await queryThings({ kw: query }); }
 
         if (!things.length) { status('Keine Treffer. Begriff ändern.'); return; }
 
@@ -403,7 +382,7 @@ input[type="text"], input[type="password"]{width:100%; padding:10px 14px; margin
       }
       el.querySelector('[data-role=cat]').textContent = cat || '—';
 
-      // Bild (mit Onlim-Auflösung + Fallbacks)
+      // Bild
       const rawImg = pickImageUrl(node, uri, graphMap);
       const thumb = el.querySelector('[data-role=thumb]');
       if (rawImg) { tryLoadImageChain(thumb, name || 'Bild', rawImg); }
