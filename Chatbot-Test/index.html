@@ -5,132 +5,253 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Test-Chatbot TMGS</title>
 
+  <!-- Geist Sans wie bei deinen Tools -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/geist-font/1.0.0/fonts/geist-sans/style.min.css">
+
+  <!-- (Optional) Material Symbols – falls du die Icon-Optik wie auf SaTourN willst -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:wght@400;600&display=swap" />
 
   <style>
     :root{
-      --primary: #0b5fff;
-      --primary-2: #0847c7;
-      --surface: #ffffff;
+      /* Lesbares, „SaTourN-artiges“ Blau + ruhige Flächen */
+      --brand: #0b5fff;
+      --brand-dark: #0847c7;
+
+      --bg: #f6f8ff;
+      --card: #ffffff;
+
       --text: #0f172a;
       --muted: #64748b;
-      --border: rgba(15, 23, 42, .10);
-      --shadow: 0 18px 50px rgba(2, 6, 23, .16);
-      --radius: 16px;
+
+      --border: rgba(15, 23, 42, .12);
+
+      --radius: 18px;
+      --shadow: 0 10px 30px rgba(2, 6, 23, .10);
+
+      --maxw: 980px;
     }
 
     * { box-sizing: border-box; }
 
     body{
-      font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      font-family: "Geist Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       margin: 0;
-      height: 100vh;
+      color: var(--text);
       background:
-        radial-gradient(120% 100% at 20% 0%, rgba(11,95,255,.10) 0%, rgba(11,95,255,0) 60%),
-        radial-gradient(120% 100% at 90% 30%, rgba(8,71,199,.08) 0%, rgba(8,71,199,0) 55%),
-        #f6f8ff;
-      overflow: hidden;
-      display: grid;
-      place-items: center; /* -> Chat mittig */
-      padding: 16px;
+        radial-gradient(120% 100% at 15% 0%, rgba(11,95,255,.10) 0%, rgba(11,95,255,0) 60%),
+        radial-gradient(110% 90% at 90% 20%, rgba(8,71,199,.08) 0%, rgba(8,71,199,0) 60%),
+        var(--bg);
+      min-height: 100vh;
     }
 
-    /* === Container (mittig, immer sichtbar) === */
-    #chat-widget-container{
-      width: min(900px, 92vw);
-      height: min(720px, 86vh);
-      display: flex;                 /* -> immer sichtbar */
+    /* ===== Page layout (wie SaTourN: Header + zentrierter Inhalt) ===== */
+    .page{
+      min-height: 100vh;
+      display: flex;
       flex-direction: column;
-      overflow: hidden;
-
-      background: var(--surface);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid var(--border);
     }
 
-    /* Header */
-    #chat-widget-header{
-      padding: 16px 16px 14px 16px;
-      color: #fff;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+    .topbar{
+      padding: 18px 16px 8px;
+    }
+
+    .topbar-inner{
+      max-width: var(--maxw);
+      margin: 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 16px;
     }
-    .chat-title-wrap{
+
+    .brand{
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       min-width: 0;
     }
-    .chat-avatar{
-      width: 34px;
+
+    .brand img{
       height: 34px;
-      border-radius: 10px;
-      background: rgba(255,255,255,.18);
-      display: grid;
-      place-items: center;
-      font-weight: 700;
-      letter-spacing: .2px;
-      flex: 0 0 auto;
+      width: auto;
+      display: block;
     }
-    .chat-titles{
+
+    .brand-title{
       display: flex;
       flex-direction: column;
       line-height: 1.1;
       min-width: 0;
     }
-    .chat-titles strong{
+
+    .brand-title strong{
       font-size: 14px;
       letter-spacing: .2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .chat-titles span{
+
+    .brand-title span{
       font-size: 12px;
-      opacity: .9;
+      color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .chat-header-actions{
+    .nav{
       display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav a{
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      flex: 0 0 auto;
+      padding: 8px 10px;
+      border-radius: 12px;
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid transparent;
+      background: rgba(255,255,255,.6);
+      backdrop-filter: blur(10px);
+      transition: border-color .12s ease, transform .12s ease, background .12s ease;
+      font-size: 13px;
+    }
+
+    .nav a:hover{
+      border-color: var(--border);
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.85);
+    }
+
+    .msr{
+      font-family: "Material Symbols Rounded";
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--brand);
+    }
+
+    .main{
+      flex: 1;
+      padding: 8px 16px 24px;
+      display: grid;
+      place-items: center;
+    }
+
+    .wrap{
+      width: 100%;
+      max-width: var(--maxw);
+    }
+
+    .headline{
+      padding: 14px 4px 14px;
+    }
+
+    .headline h1{
+      margin: 0 0 6px 0;
+      font-size: 26px;
+      letter-spacing: -0.2px;
+    }
+
+    .headline p{
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+      max-width: 70ch;
+    }
+
+    /* ===== Chat Card ===== */
+    #chat-widget-container{
+      width: 100%;
+      height: min(70vh, 720px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chat-widget-header{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .chat-head-left{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .chat-badge{
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: rgba(11,95,255,.10);
+      display: grid;
+      place-items: center;
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    .chat-head-titles{
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+      min-width: 0;
+    }
+
+    .chat-head-titles strong{
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-head-titles span{
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .icon-btn{
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.22);
-      background: rgba(255,255,255,.12);
-      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
       cursor: pointer;
       display: grid;
       place-items: center;
       transition: transform .12s ease, background .12s ease;
-      user-select: none;
+      color: var(--text);
     }
-    .icon-btn:hover{ background: rgba(255,255,255,.18); transform: translateY(-1px); }
+    .icon-btn:hover{ transform: translateY(-1px); background: rgba(2,6,23,.02); }
     .icon-btn:active{ transform: translateY(0); }
 
-    /* Body */
     #chat-widget-body{
       flex: 1;
       padding: 16px;
       overflow-y: auto;
-      background:
-        radial-gradient(140% 120% at 20% 0%, rgba(11,95,255,.08) 0%, rgba(11,95,255,0) 55%),
-        #fff;
+      background: #fff;
     }
 
-    /* Scrollbar (webkit) */
+    /* Scrollbar */
     #chat-widget-body::-webkit-scrollbar{ width: 10px; }
     #chat-widget-body::-webkit-scrollbar-thumb{
       background: rgba(100,116,139,.25);
@@ -138,57 +259,58 @@
       border: 3px solid transparent;
       background-clip: content-box;
     }
-    #chat-widget-body::-webkit-scrollbar-track{ background: transparent; }
 
-    /* Messages */
+    /* Messages – mehr Lesbarkeit: größere Zeilenhöhe, klarer Kontrast */
     .msg{
-      max-width: 82%;
-      padding: 10px 12px;
-      border-radius: 14px;
+      max-width: 72ch; /* Text besser lesbar */
+      padding: 12px 14px;
+      border-radius: 16px;
       margin: 10px 0;
-      font-size: 14px;
-      line-height: 1.4;
+      font-size: 15px;
+      line-height: 1.55;
       word-wrap: break-word;
       white-space: pre-wrap;
       border: 1px solid var(--border);
     }
+
     .msg-user{
       margin-left: auto;
       background: rgba(2,6,23,.04);
       color: var(--text);
-      border-top-right-radius: 8px;
-    }
-    .msg-bot{
-      margin-right: auto;
-      background: linear-gradient(135deg, rgba(11,95,255,.95) 0%, rgba(8,71,199,.95) 100%);
-      color: #fff;
-      border-color: rgba(255,255,255,.18);
-      border-top-left-radius: 8px;
-      box-shadow: 0 8px 20px rgba(11,95,255,.18);
-    }
-    .msg-meta{
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 6px;
+      border-top-right-radius: 10px;
     }
 
-    /* Footer */
+    .msg-bot{
+      margin-right: auto;
+      background: rgba(11,95,255,.08);
+      border-color: rgba(11,95,255,.18);
+      color: var(--text);
+      border-top-left-radius: 10px;
+    }
+
+    .msg-meta{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+
     #chat-widget-footer{
-      padding: 12px;
+      padding: 12px 12px;
       border-top: 1px solid var(--border);
-      background: rgba(255,255,255,.85);
-      backdrop-filter: blur(10px);
+      background: #fff;
       display: flex;
       gap: 10px;
       align-items: center;
     }
+
     #chat-widget-input{
       flex: 1;
-      padding: 10px 12px;
-      border-radius: 12px;
+      padding: 11px 12px;
+      border-radius: 14px;
       border: 1px solid var(--border);
       outline: none;
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text);
       background: #fff;
       transition: border-color .12s ease, box-shadow .12s ease;
@@ -200,67 +322,97 @@
 
     #chat-widget-send{
       border: 0;
-      padding: 10px 14px;
-      border-radius: 12px;
+      padding: 11px 14px;
+      border-radius: 14px;
       cursor: pointer;
       color: #fff;
-      font-weight: 600;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
-      box-shadow: 0 10px 18px rgba(11,95,255,.22);
-      transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+      font-weight: 650;
+      background: var(--brand);
+      transition: transform .12s ease, background .12s ease;
       white-space: nowrap;
     }
-    #chat-widget-send:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+    #chat-widget-send:hover{ transform: translateY(-1px); background: var(--brand-dark); }
     #chat-widget-send:active{ transform: translateY(0); }
 
-    /* „Schließen“ versteckt den Chat nicht mehr komplett, sondern klappt ihn nur ein */
+    /* Collapsed state: nur Header */
     #chat-widget-container.collapsed{
-      height: 72px;           /* nur Header sichtbar */
+      height: 72px;
     }
     #chat-widget-container.collapsed #chat-widget-body,
     #chat-widget-container.collapsed #chat-widget-footer{
       display: none;
     }
+
+    footer{
+      padding: 10px 16px 18px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    @media (max-width: 520px){
+      .headline h1{ font-size: 22px; }
+      #chat-widget-container{ height: 74vh; }
+      .nav{ display: none; } /* optional: auf mobile ausblenden */
+    }
   </style>
 </head>
 
 <body>
-  <!-- Chat Widget (immer sichtbar, mittig) -->
-  <div id="chat-widget-container" role="dialog" aria-label="Chat Widget">
-    <div id="chat-widget-header">
-      <div class="chat-title-wrap">
-        <div class="chat-avatar">i</div>
-        <div class="chat-titles">
-          <strong>Info-Chat</strong>
-          <span>Wir helfen gern weiter</span>
+  <div class="page">
+    <!-- Header im „SaTourN“-Stil: Logo + kleine Navigation -->
+    <main class="main">
+      <div class="wrap">
+        <div class="headline">
+          <h1>Chat</h1>
+          <p>
+            Stelle eine Frage – die Anfrage wird an deinen n8n-Webhook gesendet.
+            Fokus hier: ruhige Typo, klare Kontraste, viel Weißraum (wie in deinen SaTourN-Tools).
+          </p>
+        </div>
+
+        <!-- Chat (zentriert, sofort sichtbar) -->
+        <div id="chat-widget-container" role="dialog" aria-label="Chat Widget">
+          <div id="chat-widget-header">
+            <div class="chat-head-left">
+              <div class="chat-badge">i</div>
+              <div class="chat-head-titles">
+                <strong>Info-Chat</strong>
+                <span>Wir helfen gern weiter</span>
+              </div>
+            </div>
+
+            <div class="chat-header-actions">
+              <button class="icon-btn" id="chat-widget-minimize" aria-label="Minimieren">
+                <span class="msr">minimize</span>
+              </button>
+              <button class="icon-btn" id="chat-widget-close" aria-label="Einklappen">
+                <span class="msr">close</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="chat-widget-body">
+            <div class="msg msg-bot">
+              <strong>Hi 👋</strong><br />
+              Wie können wir dir helfen?
+            </div>
+          </div>
+
+          <div id="chat-widget-footer">
+            <input
+              type="text"
+              id="chat-widget-input"
+              placeholder="Nachricht schreiben…"
+              autocomplete="off"
+            />
+            <button id="chat-widget-send">Senden</button>
+          </div>
         </div>
       </div>
+    </main>
 
-      <div class="chat-header-actions">
-        <!-- Minimieren klappt nur ein/aus -->
-        <button class="icon-btn" id="chat-widget-minimize" aria-label="Minimieren">—</button>
-        <!-- Close wird zum „Einklappen“ (da kein Bubble-Modus mehr) -->
-        <button class="icon-btn" id="chat-widget-close" aria-label="Einklappen">✕</button>
-      </div>
-    </div>
-
-    <div id="chat-widget-body">
-      <div class="msg msg-bot">
-        <strong>Hi 👋</strong><br />
-        Wie können wir dir helfen?
-        <div class="msg-meta">Antworten dauern je nach Auslastung einen Moment.</div>
-      </div>
-    </div>
-
-    <div id="chat-widget-footer">
-      <input
-        type="text"
-        id="chat-widget-input"
-        placeholder="Nachricht schreiben…"
-        autocomplete="off"
-      />
-      <button id="chat-widget-send">Senden</button>
-    </div>
+    <footer>© 2025 TMGS / SaTourN</footer>
   </div>
 
   <script>
@@ -343,26 +495,22 @@
       }
     }
 
-    // Events
-    sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
-
-    // Minimieren/Einklappen (kein Bubble-Modus mehr)
     function toggleCollapsed() {
       container.classList.toggle("collapsed");
       if (!container.classList.contains("collapsed")) {
-        // wieder aufgeklappt
         input.focus();
         scrollToBottom();
       }
     }
 
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
     minimizeBtn.addEventListener("click", toggleCollapsed);
     closeBtn.addEventListener("click", toggleCollapsed);
 
-    // Beim Laden fokussieren & nach unten scrollen
     window.addEventListener("load", () => {
       input.focus();
       scrollToBottom();
