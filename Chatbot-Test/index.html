@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test-Chatbot TMGS</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/geist-font/1.0.0/fonts/geist-sans/style.min.css">
+
+  <style>
+    :root{
+      /* „übliches blaues Design“ – easy anpassbar */
+      --primary: #0b5fff;          /* Sachsen/Tourismus-like „klar blau“ */
+      --primary-2: #0847c7;        /* dunkler für Hover/Gradient */
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(15, 23, 42, .10);
+      --shadow: 0 18px 50px rgba(2, 6, 23, .16);
+      --shadow-soft: 0 10px 30px rgba(2, 6, 23, .10);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body{
+      font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      margin: 0;
+      height: 100vh;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    /* === Bubble Button === */
+    #chat-widget-button{
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      width: 56px;
+      height: 56px;
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+
+      color: #fff;
+      background: radial-gradient(120% 120% at 30% 20%, #2a8bff 0%, var(--primary) 35%, var(--primary-2) 100%);
+      box-shadow: var(--shadow-soft);
+      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+      font-size: 22px;
+    }
+    #chat-widget-button:hover{ transform: translateY(-2px); filter: brightness(1.03); box-shadow: var(--shadow); }
+    #chat-widget-button:active{ transform: translateY(0); }
+
+    /* === Container === */
+    #chat-widget-container{
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      width: 360px;
+      height: 560px;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1000;
+
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+
+      /* „Lift“-Animation */
+      transform: translateY(10px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    #chat-widget-container.open{
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Header */
+    #chat-widget-header{
+      padding: 16px 16px 14px 16px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .chat-title-wrap{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .chat-avatar{
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.18);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      letter-spacing: .2px;
+      flex: 0 0 auto;
+    }
+    .chat-titles{
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+      min-width: 0;
+    }
+    .chat-titles strong{
+      font-size: 14px;
+      letter-spacing: .2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chat-titles span{
+      font-size: 12px;
+      opacity: .9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-header-actions{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .icon-btn{
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: transform .12s ease, background .12s ease;
+      user-select: none;
+    }
+    .icon-btn:hover{ background: rgba(255,255,255,.18); transform: translateY(-1px); }
+    .icon-btn:active{ transform: translateY(0); }
+
+    /* Body */
+    #chat-widget-body{
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      background:
+        radial-gradient(140% 120% at 20% 0%, rgba(11,95,255,.08) 0%, rgba(11,95,255,0) 55%),
+        #fff;
+    }
+
+    /* nicer scrollbar (webkit) */
+    #chat-widget-body::-webkit-scrollbar{ width: 10px; }
+    #chat-widget-body::-webkit-scrollbar-thumb{
+      background: rgba(100,116,139,.25);
+      border-radius: 999px;
+      border: 3px solid transparent;
+      background-clip: content-box;
+    }
+    #chat-widget-body::-webkit-scrollbar-track{ background: transparent; }
+
+    /* Message bubbles */
+    .msg{
+      max-width: 82%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      margin: 10px 0;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      border: 1px solid var(--border);
+    }
+    .msg-user{
+      margin-left: auto;
+      background: rgba(2,6,23,.04);
+      color: var(--text);
+      border-top-right-radius: 8px;
+    }
+    .msg-bot{
+      margin-right: auto;
+      background: linear-gradient(135deg, rgba(11,95,255,.95) 0%, rgba(8,71,199,.95) 100%);
+      color: #fff;
+      border-color: rgba(255,255,255,.18);
+      border-top-left-radius: 8px;
+      box-shadow: 0 8px 20px rgba(11,95,255,.18);
+    }
+    .msg-meta{
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* Footer */
+    #chat-widget-footer{
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(10px);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    #chat-widget-input{
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      outline: none;
+      font-size: 14px;
+      color: var(--text);
+      background: #fff;
+      transition: border-color .12s ease, box-shadow .12s ease;
+    }
+    #chat-widget-input:focus{
+      border-color: rgba(11,95,255,.55);
+      box-shadow: 0 0 0 4px rgba(11,95,255,.12);
+    }
+
+    #chat-widget-send{
+      border: 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #fff;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-2) 100%);
+      box-shadow: 0 10px 18px rgba(11,95,255,.22);
+      transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+      white-space: nowrap;
+    }
+    #chat-widget-send:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+    #chat-widget-send:active{ transform: translateY(0); }
+
+    /* Small screens */
+    @media (max-width: 420px){
+      #chat-widget-container{
+        right: 12px;
+        left: 12px;
+        width: auto;
+        height: 78vh;
+        bottom: 12px;
+      }
+      #chat-widget-button{ right: 12px; bottom: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Chat Widget Button -->
+  <button id="chat-widget-button" aria-label="Chat öffnen">💬</button>
+
+  <!-- Chat Widget -->
+  <div id="chat-widget-container" role="dialog" aria-label="Chat Widget">
+    <div id="chat-widget-header">
+      <div class="chat-title-wrap">
+        <div class="chat-avatar">i</div>
+        <div class="chat-titles">
+          <strong>Info-Chat</strong>
+          <span>Wir helfen gern weiter</span>
+        </div>
+      </div>
+
+      <div class="chat-header-actions">
+        <button class="icon-btn" id="chat-widget-minimize" aria-label="Minimieren">—</button>
+        <button class="icon-btn" id="chat-widget-close" aria-label="Schließen">✕</button>
+      </div>
+    </div>
+
+    <div id="chat-widget-body">
+      <div class="msg msg-bot">
+        <strong>Hi 👋</strong><br />
+        Wie können wir dir helfen?
+        <div class="msg-meta">Antworten dauern je nach Auslastung einen Moment.</div>
+      </div>
+    </div>
+
+    <div id="chat-widget-footer">
+      <input
+        type="text"
+        id="chat-widget-input"
+        placeholder="Nachricht schreiben…"
+        autocomplete="off"
+      />
+      <button id="chat-widget-send">Senden</button>
+    </div>
+  </div>
+
+  <script>
+    window.ChatWidgetConfig = {
+      webhook: {
+        url: "https://n8n.oi.destination.one/webhook/5f0e0dce-1ce4-4fb6-b481-ad4cea3bf2e6/chat",
+        route: "general",
+      },
+      style: {
+        primaryColor: "#0b5fff",
+        secondaryColor: "#0847c7",
+        position: "right",
+        backgroundColor: "#ffffff",
+        fontColor: "#0f172a",
+      },
+    };
+
+    // Unique chat id per session
+    function getChatId() {
+      let chatId = sessionStorage.getItem("chatId");
+      if (!chatId) {
+        chatId = "chat_" + Math.random().toString(36).substr(2, 9);
+        sessionStorage.setItem("chatId", chatId);
+      }
+      return chatId;
+    }
+
+    const container = document.getElementById("chat-widget-container");
+    const button = document.getElementById("chat-widget-button");
+    const closeBtn = document.getElementById("chat-widget-close");
+    const minimizeBtn = document.getElementById("chat-widget-minimize");
+    const body = document.getElementById("chat-widget-body");
+    const input = document.getElementById("chat-widget-input");
+    const sendBtn = document.getElementById("chat-widget-send");
+
+    function openChatWidget() {
+      container.style.display = "flex";
+      // next frame for transition
+      requestAnimationFrame(() => container.classList.add("open"));
+      button.style.display = "none";
+      input.focus();
+      scrollToBottom();
+    }
+
+    function closeChatWidget() {
+      container.classList.remove("open");
+      setTimeout(() => {
+        container.style.display = "none";
+        button.style.display = "flex";
+      }, 160);
+    }
+
+    function minimizeChatWidget() {
+      // simple minimize: close to bubble
+      closeChatWidget();
+    }
+
+    function scrollToBottom() {
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function addMessage(text, who = "user") {
+      const msg = document.createElement("div");
+      msg.className = "msg " + (who === "user" ? "msg-user" : "msg-bot");
+      msg.textContent = text;
+      body.appendChild(msg);
+      scrollToBottom();
+    }
+
+    function addBotHtml(html) {
+      const msg = document.createElement("div");
+      msg.className = "msg msg-bot";
+      // keep HTML support like before (be mindful of backend sanitization!)
+      msg.innerHTML = html;
+      body.appendChild(msg);
+      scrollToBottom();
+    }
+
+    async function sendMessage() {
+      const message = input.value.trim();
+      if (!message) return;
+
+      addMessage(message, "user");
+      input.value = "";
+
+      const chatId = getChatId();
+
+      try {
+        const res = await fetch(window.ChatWidgetConfig.webhook.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chatId,
+            message,
+            route: window.ChatWidgetConfig.webhook.route,
+          }),
+        });
+
+        // falls Webhook mal kein JSON liefert:
+        let data = null;
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          data = { output: text };
+        }
+
+        addBotHtml(data.output || "Sorry, das habe ich nicht verstanden.");
+      } catch (e) {
+        addMessage("Ups – gerade ist ein Fehler aufgetreten. Bitte später nochmal versuchen.", "bot");
+        console.error(e);
+      }
+    }
+
+    // Events
+    button.addEventListener("click", openChatWidget);
+    closeBtn.addEventListener("click", closeChatWidget);
+    minimizeBtn.addEventListener("click", minimizeChatWidget);
+    sendBtn.addEventListener("click", sendMessage);
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+
+    // Optional: ESC closes
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && container.classList.contains("open")) closeChatWidget();
+    });
+  </script>
+</body>
+</html>
