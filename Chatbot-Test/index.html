@@ -9,15 +9,13 @@
 
   <style>
     :root{
-      /* „übliches blaues Design“ – easy anpassbar */
-      --primary: #0b5fff;          /* Sachsen/Tourismus-like „klar blau“ */
-      --primary-2: #0847c7;        /* dunkler für Hover/Gradient */
+      --primary: #0b5fff;
+      --primary-2: #0847c7;
       --surface: #ffffff;
       --text: #0f172a;
       --muted: #64748b;
       --border: rgba(15, 23, 42, .10);
       --shadow: 0 18px 50px rgba(2, 6, 23, .16);
-      --shadow-soft: 0 10px 30px rgba(2, 6, 23, .10);
       --radius: 16px;
     }
 
@@ -27,61 +25,28 @@
       font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
       margin: 0;
       height: 100vh;
-      background: transparent;
+      background:
+        radial-gradient(120% 100% at 20% 0%, rgba(11,95,255,.10) 0%, rgba(11,95,255,0) 60%),
+        radial-gradient(120% 100% at 90% 30%, rgba(8,71,199,.08) 0%, rgba(8,71,199,0) 55%),
+        #f6f8ff;
       overflow: hidden;
+      display: grid;
+      place-items: center; /* -> Chat mittig */
+      padding: 16px;
     }
 
-    /* === Bubble Button === */
-    #chat-widget-button{
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      width: 56px;
-      height: 56px;
-      border: 0;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1001;
-
-      color: #fff;
-      background: radial-gradient(120% 120% at 30% 20%, #2a8bff 0%, var(--primary) 35%, var(--primary-2) 100%);
-      box-shadow: var(--shadow-soft);
-      transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
-      font-size: 22px;
-    }
-    #chat-widget-button:hover{ transform: translateY(-2px); filter: brightness(1.03); box-shadow: var(--shadow); }
-    #chat-widget-button:active{ transform: translateY(0); }
-
-    /* === Container === */
+    /* === Container (mittig, immer sichtbar) === */
     #chat-widget-container{
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      width: 360px;
-      height: 560px;
-      display: none;
+      width: min(900px, 92vw);
+      height: min(720px, 86vh);
+      display: flex;                 /* -> immer sichtbar */
       flex-direction: column;
       overflow: hidden;
-      z-index: 1000;
 
       background: var(--surface);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       border: 1px solid var(--border);
-
-      /* „Lift“-Animation */
-      transform: translateY(10px);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .18s ease, transform .18s ease;
-    }
-    #chat-widget-container.open{
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
     }
 
     /* Header */
@@ -165,7 +130,7 @@
         #fff;
     }
 
-    /* nicer scrollbar (webkit) */
+    /* Scrollbar (webkit) */
     #chat-widget-body::-webkit-scrollbar{ width: 10px; }
     #chat-widget-body::-webkit-scrollbar-thumb{
       background: rgba(100,116,139,.25);
@@ -175,7 +140,7 @@
     }
     #chat-widget-body::-webkit-scrollbar-track{ background: transparent; }
 
-    /* Message bubbles */
+    /* Messages */
     .msg{
       max-width: 82%;
       padding: 10px 12px;
@@ -248,25 +213,19 @@
     #chat-widget-send:hover{ transform: translateY(-1px); filter: brightness(1.02); }
     #chat-widget-send:active{ transform: translateY(0); }
 
-    /* Small screens */
-    @media (max-width: 420px){
-      #chat-widget-container{
-        right: 12px;
-        left: 12px;
-        width: auto;
-        height: 78vh;
-        bottom: 12px;
-      }
-      #chat-widget-button{ right: 12px; bottom: 12px; }
+    /* „Schließen“ versteckt den Chat nicht mehr komplett, sondern klappt ihn nur ein */
+    #chat-widget-container.collapsed{
+      height: 72px;           /* nur Header sichtbar */
+    }
+    #chat-widget-container.collapsed #chat-widget-body,
+    #chat-widget-container.collapsed #chat-widget-footer{
+      display: none;
     }
   </style>
 </head>
 
 <body>
-  <!-- Chat Widget Button -->
-  <button id="chat-widget-button" aria-label="Chat öffnen">💬</button>
-
-  <!-- Chat Widget -->
+  <!-- Chat Widget (immer sichtbar, mittig) -->
   <div id="chat-widget-container" role="dialog" aria-label="Chat Widget">
     <div id="chat-widget-header">
       <div class="chat-title-wrap">
@@ -278,8 +237,10 @@
       </div>
 
       <div class="chat-header-actions">
+        <!-- Minimieren klappt nur ein/aus -->
         <button class="icon-btn" id="chat-widget-minimize" aria-label="Minimieren">—</button>
-        <button class="icon-btn" id="chat-widget-close" aria-label="Schließen">✕</button>
+        <!-- Close wird zum „Einklappen“ (da kein Bubble-Modus mehr) -->
+        <button class="icon-btn" id="chat-widget-close" aria-label="Einklappen">✕</button>
       </div>
     </div>
 
@@ -307,17 +268,9 @@
       webhook: {
         url: "https://n8n.oi.destination.one/webhook/5f0e0dce-1ce4-4fb6-b481-ad4cea3bf2e6/chat",
         route: "general",
-      },
-      style: {
-        primaryColor: "#0b5fff",
-        secondaryColor: "#0847c7",
-        position: "right",
-        backgroundColor: "#ffffff",
-        fontColor: "#0f172a",
-      },
+      }
     };
 
-    // Unique chat id per session
     function getChatId() {
       let chatId = sessionStorage.getItem("chatId");
       if (!chatId) {
@@ -328,34 +281,11 @@
     }
 
     const container = document.getElementById("chat-widget-container");
-    const button = document.getElementById("chat-widget-button");
     const closeBtn = document.getElementById("chat-widget-close");
     const minimizeBtn = document.getElementById("chat-widget-minimize");
     const body = document.getElementById("chat-widget-body");
     const input = document.getElementById("chat-widget-input");
     const sendBtn = document.getElementById("chat-widget-send");
-
-    function openChatWidget() {
-      container.style.display = "flex";
-      // next frame for transition
-      requestAnimationFrame(() => container.classList.add("open"));
-      button.style.display = "none";
-      input.focus();
-      scrollToBottom();
-    }
-
-    function closeChatWidget() {
-      container.classList.remove("open");
-      setTimeout(() => {
-        container.style.display = "none";
-        button.style.display = "flex";
-      }, 160);
-    }
-
-    function minimizeChatWidget() {
-      // simple minimize: close to bubble
-      closeChatWidget();
-    }
 
     function scrollToBottom() {
       body.scrollTop = body.scrollHeight;
@@ -372,8 +302,7 @@
     function addBotHtml(html) {
       const msg = document.createElement("div");
       msg.className = "msg msg-bot";
-      // keep HTML support like before (be mindful of backend sanitization!)
-      msg.innerHTML = html;
+      msg.innerHTML = html; // HTML support (Backend sollte sanitizen)
       body.appendChild(msg);
       scrollToBottom();
     }
@@ -398,7 +327,6 @@
           }),
         });
 
-        // falls Webhook mal kein JSON liefert:
         let data = null;
         const contentType = res.headers.get("content-type") || "";
         if (contentType.includes("application/json")) {
@@ -416,18 +344,28 @@
     }
 
     // Events
-    button.addEventListener("click", openChatWidget);
-    closeBtn.addEventListener("click", closeChatWidget);
-    minimizeBtn.addEventListener("click", minimizeChatWidget);
     sendBtn.addEventListener("click", sendMessage);
-
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") sendMessage();
     });
 
-    // Optional: ESC closes
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && container.classList.contains("open")) closeChatWidget();
+    // Minimieren/Einklappen (kein Bubble-Modus mehr)
+    function toggleCollapsed() {
+      container.classList.toggle("collapsed");
+      if (!container.classList.contains("collapsed")) {
+        // wieder aufgeklappt
+        input.focus();
+        scrollToBottom();
+      }
+    }
+
+    minimizeBtn.addEventListener("click", toggleCollapsed);
+    closeBtn.addEventListener("click", toggleCollapsed);
+
+    // Beim Laden fokussieren & nach unten scrollen
+    window.addEventListener("load", () => {
+      input.focus();
+      scrollToBottom();
     });
   </script>
 </body>
