@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js"
+    "update:pagesbuilder-xml": "node Pages-Builder/scripts/update-pagesbuilder-xml.mjs"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -13,3 +14,4 @@
     "node-fetch": "^3.3.2"
   }
 }
+
