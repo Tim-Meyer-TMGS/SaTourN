@@ -1,14 +1,13 @@
 "use strict";
 
 /**
- * Pages-Builder (SaTourN / destination.one)
- * Korrigiert für:
- *  - ET4-XML mit Default-Namespace (xmlns="http://meta.et4.de/ET2014A")
- *  - XML, das in <texts> HTML enthält (nicht XML-well-formed) → Sanitizing
- *  - &nbsp; in XML → &#160;
- *
- * Hinweis: Für Areas/Cities werden nur Title + Areas-Zuordnung benötigt.
- *          Deshalb wird <texts> entfernt, bevor geparst wird.
+ * Pages-Builder – robustes Laden von Areas/Cities aus ET4-XML
+ * Fixes:
+ *  - entfernt <texts>…</texts> (HTML darin ist oft nicht XML-well-formed)
+ *  - ersetzt &nbsp; -> &#160;
+ *  - repariert unescaped Ampersands (&) außerhalb von Entities (best-effort)
+ *  - Cities: wenn XML-Parse trotzdem fehlschlägt -> tolerant per Regex extrahieren (lokal!)
+ *  - Namespace-agnostisches Parsing (Default xmlns)
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -36,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const d1Base = "https://pages.destination.one/de/open-data-sachsen-tourismus";
 
   // ===========================================================================
-  // 2) DOM-Referenzen
+  // 2) DOM
   // ===========================================================================
 
   const typeSelect = document.getElementById("type");
@@ -78,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.text();
-    } catch (e1) {
+    } catch {
       const res = await fetch(url, {
         headers: { Accept: "text/xml,application/xml;q=0.9,*/*;q=0.8" },
       });
@@ -88,18 +87,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Entfernt <texts>…</texts> (enthält häufig nicht-well-formed HTML)
-   * und ersetzt &nbsp; durch &#160; (XML-kompatibel).
+   * 1) Entfernt <texts>…</texts> (häufig HTML kaputt)
+   * 2) &nbsp; -> &#160;
+   * 3) Best-effort: unescaped "&" zu "&amp;" (aber Entities wie &amp; bleiben)
    */
   function sanitizeEt4Xml(txt) {
-    return String(txt)
+    const noTexts = String(txt)
       .replace(/<texts[\s\S]*?<\/texts>/gi, "")
       .replace(/&nbsp;/gi, "&#160;");
+
+    // unescaped & fixen (alles, was nicht wie &word; oder &#123; aussieht)
+    // Achtung: best-effort, kann sehr selten echte Fälle "überfixen", ist hier aber praktisch.
+    return noTexts.replace(/&(?![a-zA-Z]+;|#\d+;|#x[0-9a-fA-F]+;)/g, "&amp;");
   }
 
   function parseXmlOrThrow(txt) {
     const xml = new DOMParser().parseFromString(txt, "application/xml");
-    if (xml.querySelector("parsererror")) throw new Error("XML parse error");
+    const pe = xml.querySelector("parsererror");
+    if (pe) {
+      // Browser liefern den konkreten Fehlertext im parsererror-Dokument
+      const detail = (pe.textContent || "").trim();
+      const msg = detail ? `XML parse error: ${detail}` : "XML parse error";
+      throw new Error(msg);
+    }
     return xml;
   }
 
@@ -133,55 +143,38 @@ document.addEventListener("DOMContentLoaded", () => {
     return (el?.textContent || "").trim();
   }
 
-  // -------- Namespace-agnostische XML Helper --------
-
+  // Namespace-agnostische XML helper
   function firstByLocalName(parent, localName) {
     if (!parent) return null;
     const nodes = parent.getElementsByTagNameNS("*", localName);
     return nodes && nodes.length ? nodes[0] : null;
   }
-
   function allByLocalName(parent, localName) {
     if (!parent) return [];
     return Array.from(parent.getElementsByTagNameNS("*", localName));
   }
 
-  /**
-   * Extrahiert Area-Namen aus einem <item> (namespace-agnostisch).
-   * Unterstützt:
-   *  - <areas><value>...</value></areas>
-   *  - <areas_old><value>...</value></areas_old>
-   *  - fallback: Text in areas/areas_old splitten
-   */
   function extractAreasFromItemXml(itemEl) {
     const result = new Set();
 
-    // 1) areas / areas_old Container finden
-    const areasContainers = [];
-    for (const tag of ["areas", "areas_old"]) {
-      areasContainers.push(...allByLocalName(itemEl, tag));
-    }
+    const containers = [];
+    for (const tag of ["areas", "areas_old"]) containers.push(...allByLocalName(itemEl, tag));
 
-    for (const container of areasContainers) {
-      // 2) Werteliste <value>
-      const values = allByLocalName(container, "value");
+    for (const c of containers) {
+      const values = allByLocalName(c, "value");
       if (values.length) {
         values.forEach((v) => {
           const t = textContent(v);
           if (t) result.add(t);
         });
       } else {
-        // 3) Fallback: direkter Text
-        const raw = textContent(container);
+        const raw = textContent(c);
         raw
           .split(/[;,|]/)
           .map((s) => s.trim())
-          .forEach((t) => {
-            if (t) result.add(t);
-          });
+          .forEach((t) => t && result.add(t));
       }
     }
-
     return Array.from(result);
   }
 
@@ -191,36 +184,24 @@ document.addEventListener("DOMContentLoaded", () => {
     allCityTitles = Array.from(titleSet).sort((a, b) => a.localeCompare(b, "de"));
   }
 
-  /**
-   * Parst Cities aus XML (namespace-agnostisch).
-   */
   function parseCitiesFromXmlText(xmlText) {
     const xml = parseXmlOrThrow(xmlText);
-
-    // ET4-XML hat häufig Default-Namespace → querySelectorAll("item") kann leer sein.
-    // Daher: getElementsByTagNameNS("*", "item")
     const items = Array.from(xml.getElementsByTagNameNS("*", "item"));
-    const cityObjs = [];
+    const out = [];
 
     for (const it of items) {
       const titleEl = firstByLocalName(it, "title");
       const title = textContent(titleEl);
       if (!title) continue;
-
       const areas = extractAreasFromItemXml(it);
-      cityObjs.push({ title, areas });
+      out.push({ title, areas });
     }
-
-    return cityObjs;
+    return out;
   }
 
-  /**
-   * Parst Areas aus XML (namespace-agnostisch) und nutzt nur <item><title>.
-   */
   function parseAreasTitlesFromXmlText(xmlText) {
     const xml = parseXmlOrThrow(xmlText);
     const items = Array.from(xml.getElementsByTagNameNS("*", "item"));
-
     const titles = [];
     for (const it of items) {
       const titleEl = firstByLocalName(it, "title");
@@ -228,6 +209,78 @@ document.addEventListener("DOMContentLoaded", () => {
       if (t) titles.push(t);
     }
     return titles.sort((a, b) => a.localeCompare(b, "de"));
+  }
+
+  /**
+   * Toleranter Fallback (lokal), wenn XML nicht parsebar bleibt:
+   * Extrahiert pro <item> ... </item> den <title> und alle <areas>/<areas_old> Werte.
+   * Funktioniert auch, wenn irgendwo in der Datei kaputtes Markup steckt.
+   */
+  function parseCitiesByRegexFallback(rawText) {
+    const text = String(rawText);
+
+    const cities = [];
+    const itemRe = /<item\b[^>]*>([\s\S]*?)<\/item>/gi;
+
+    let m;
+    while ((m = itemRe.exec(text)) !== null) {
+      const itemBody = m[1];
+
+      const titleMatch = /<title\b[^>]*>([\s\S]*?)<\/title>/i.exec(itemBody);
+      const title = titleMatch ? decodeXmlEntities(stripTags(titleMatch[1]).trim()) : "";
+      if (!title) continue;
+
+      const areas = new Set();
+
+      // areas/value
+      const areasContainerRe = /<areas\b[^>]*>([\s\S]*?)<\/areas>/gi;
+      const areasOldContainerRe = /<areas_old\b[^>]*>([\s\S]*?)<\/areas_old>/gi;
+
+      for (const re of [areasContainerRe, areasOldContainerRe]) {
+        let cm;
+        while ((cm = re.exec(itemBody)) !== null) {
+          const cBody = cm[1];
+
+          const valueRe = /<value\b[^>]*>([\s\S]*?)<\/value>/gi;
+          let vm;
+          let foundValue = false;
+
+          while ((vm = valueRe.exec(cBody)) !== null) {
+            foundValue = true;
+            const v = decodeXmlEntities(stripTags(vm[1]).trim());
+            if (v) areas.add(v);
+          }
+
+          if (!foundValue) {
+            const raw = decodeXmlEntities(stripTags(cBody).trim());
+            raw
+              .split(/[;,|]/)
+              .map((s) => s.trim())
+              .forEach((t) => t && areas.add(t));
+          }
+        }
+      }
+
+      cities.push({ title, areas: Array.from(areas) });
+    }
+
+    return cities;
+  }
+
+  function stripTags(s) {
+    return String(s).replace(/<[^>]*>/g, "");
+  }
+
+  function decodeXmlEntities(s) {
+    // Minimal ausreichend für Titel/Areas
+    return String(s)
+      .replace(/&#160;/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'");
   }
 
   // ===========================================================================
@@ -255,7 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
   })();
 
   // ===========================================================================
-  // 7) Loader: Areas
+  // 7) Areas
   // ===========================================================================
 
   async function loadAreas() {
@@ -287,7 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===========================================================================
-  // 8) Loader: Cities (lokal → Proxy AUTO)
+  // 8) Cities (lokal bevorzugt; bei Parse-Problemen lokaler Regex-Fallback)
   // ===========================================================================
 
   async function loadCitiesAuto() {
@@ -296,18 +349,31 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // 1) Local (XML erwartet, aber sanitizen)
+    // 1) Local
     try {
       const xmlTextRaw = await fetchXmlText(cityLocalUrl);
-      const xmlText = sanitizeEt4Xml(xmlTextRaw);
-      const cityObjs = parseCitiesFromXmlText(xmlText);
-      setCitiesStateFromObjs(cityObjs);
-      return;
-    } catch (eLocal) {
-      console.warn("Cities lokal nicht ladbar, nutze Proxy:", eLocal);
+
+      // Erst sanitizen & XML parse versuchen
+      try {
+        const xmlText = sanitizeEt4Xml(xmlTextRaw);
+        const cityObjs = parseCitiesFromXmlText(xmlText);
+        setCitiesStateFromObjs(cityObjs);
+        return;
+      } catch (xmlErr) {
+        console.warn("Cities lokal: XML-Parse fehlgeschlagen, nutze lokalen Regex-Fallback:", xmlErr);
+        const cityObjs = parseCitiesByRegexFallback(xmlTextRaw);
+        if (cityObjs.length) {
+          setCitiesStateFromObjs(cityObjs);
+          return;
+        }
+        // Wenn auch der Fallback nichts findet, dann erst Proxy
+        console.warn("Cities lokal: Regex-Fallback fand keine Einträge – nutze Proxy.");
+      }
+    } catch (eLocalFetch) {
+      console.warn("Cities lokal nicht ladbar (fetch), nutze Proxy:", eLocalFetch);
     }
 
-    // 2) Remote AUTO (JSON oder XML)
+    // 2) Remote AUTO
     try {
       const res = await fetch(cityRemoteUrl);
       const contentType = (res.headers.get("content-type") || "").toLowerCase();
@@ -358,7 +424,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===========================================================================
-  // 9) Index: Area → Cities
+  // 9) Index: Area -> Cities
   // ===========================================================================
 
   function buildAreaIndex() {
@@ -404,7 +470,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===========================================================================
-  // 11) Kategorien laden (Tree-XML)
+  // 11) Kategorien
   // ===========================================================================
 
   async function loadCategories() {
@@ -434,7 +500,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===========================================================================
-  // 12) URL-Builder & Form Submit
+  // 12) URL Builder
   // ===========================================================================
 
   formEl?.addEventListener("submit", (e) => {
@@ -479,7 +545,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ===========================================================================
-  // 13) Copy-to-Clipboard
+  // 13) Copy
   // ===========================================================================
 
   copyBtn?.addEventListener("click", async () => {
