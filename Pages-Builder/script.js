@@ -25,6 +25,8 @@
  *
  * Hinweis
  *  - Dieses Skript ist "framework-free" und läuft im Browser.
+ *
+ * Basierend auf: Pages-Builder/script.js :contentReference[oaicite:0]{index=0}
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -146,6 +148,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return await res.text();
     }
+  }
+
+  /**
+   * Minimaler Sanitizer für ET4-Area-XML:
+   * - entfernt <texts>…</texts> komplett (dort steckt häufig HTML, das nicht XML-well-formed ist)
+   * - ersetzt &nbsp; (kein XML-Standard-Entity) durch &#160;
+   */
+  function sanitizeEt4AreasXml(txt) {
+    return String(txt)
+      .replace(/<texts[\s\S]*?<\/texts>/gi, "")
+      .replace(/&nbsp;/gi, "&#160;");
   }
 
   /**
@@ -305,7 +318,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Kapselt das Laden/Parsen, damit wir denselben Code für local/remote nutzen
     const tryLoad = async (url) => {
-      const txt = await fetchXmlText(url);
+      const txtRaw = await fetchXmlText(url);
+      const txt = sanitizeEt4AreasXml(txtRaw); // <-- Fix: HTML/Entities entschärfen
       const xml = parseXmlOrThrow(txt);
 
       const items = Array.from(xml.querySelectorAll("item > title"))
