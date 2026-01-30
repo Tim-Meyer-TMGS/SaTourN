@@ -1,12 +1,4 @@
- // ----------------------------
-  // Item Randomizer (slim + safe)
-  // - IDs sammeln (paging) -> Details laden (exakt targetCount)
-  // - strikt sequenziell
-  // - rate <= 2 req/s
-  // - licensekey optional
-  // ----------------------------
-
-  const el = (id) => document.getElementById(id);
+const el = (id) => document.getElementById(id);
 
   function esc(s){
     return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
