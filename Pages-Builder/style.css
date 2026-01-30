@@ -1,380 +1,242 @@
-/* ===========================================================
-   responsive_styles.css – Dark-Theme mit Menü & Lesbarkeit
-   Enthält: Menü, Container, Formulare, Dropdowns, Responsive
-   Autor: TMGS – vereinheitlichte, konsistente Abstände
-   =========================================================== */
+/* Pages-Builder – scoped Styles (keine globalen body/menu/container Overrides) */
 
-/* --------------------------------
-   0. Design-Token & Resets
--------------------------------- */
-:root{
-  /* Farben */
-  --clr-bg-start: #001f3d;
-  --clr-bg-end:   #00274d;
-  --clr-surface:  rgba(255,255,255,0.14);
-  --clr-text:     #ffffff;
-  --clr-text-sub: #e0e0e0;
-  --clr-heading:  #f0f0f0;
-  --clr-accent:   #00e5ff;
-  --clr-accent-2: #00c8e6;
-  --clr-menu:     #00254d;
-  --clr-border:   #005f8a;
-  --clr-input:    rgba(0,57,87,0.8);
-  --clr-input-h:  rgba(0,57,87,1);
-  --clr-option:   #002b50;
-  --clr-option-h: #005f8a;
-  --clr-option-s: #00c8e6;
-  --clr-danger:   #f44336;
-  --shadow-1:     0 4px 8px  rgba(0,0,0,0.7);
-  --shadow-2:     0 4px 12px rgba(0,0,0,0.5);
-
-  /* Spacing (Basis: 4px) */
-  --sp-0: 0;
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 20px;
-  --sp-6: 24px;
-  --sp-7: 28px;
-  --sp-8: 32px;
-
-  /* Typo */
-  --fs-0: 0.8rem;
-  --fs-1: 0.9rem;
-  --fs-2: 1rem;
-  --fs-3: 1.1rem;
-  --fs-4: 1.5rem;
-  --fs-5: 1.75rem;
-
-  /* Layout */
-  --radius-6: 6px;
-  --radius-8: 8px;
-  --radius-12: 12px;
-  --container-max: 700px;
-  --menu-height: 70px;
+.pagesbuilder .wrap{
+  max-width: 980px;
+  margin: 0 auto;
 }
 
-/* Bessere Boxmodell-Kontrolle */
-*,
-*::before,
-*::after{
-  box-sizing: border-box;
+.pagesbuilder .h2{
+  margin: 14px 0 8px;
+  font-size: 13px;
+  letter-spacing: .02em;
+  color: var(--muted);
+  text-transform: uppercase;
 }
 
-html, body{
-  height: 100%;
+.pagesbuilder .grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
 }
 
-/* --------------------------------
-   1. Body & Grundlayout
--------------------------------- */
-body{
-  font-family: "Arial", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, sans-serif;
-  margin: 0;
-  color: var(--clr-text);
-  background: linear-gradient(to right, var(--clr-bg-start), var(--clr-bg-end));
-  /* Platz für fixiertes Menü */
-  padding-top: var(--menu-height);
+.pagesbuilder .field label{
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 8px;
+  font-weight: 700;
 }
 
-/* Bewegungsreduktion respektieren */
-@media (prefers-reduced-motion: reduce){
-  *{
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-/* --------------------------------
-   2. Menü-Leiste (nav)
--------------------------------- */
-.menu-container{
+.pagesbuilder select,
+.pagesbuilder input[type="number"],
+.pagesbuilder textarea{
   width: 100%;
-  background: var(--clr-menu);
-  padding: var(--sp-4) var(--sp-5);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  padding: 12px 12px;
+  outline: none;
+}
+
+.pagesbuilder textarea{
+  min-height: 110px;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pagesbuilder select:focus,
+.pagesbuilder input:focus,
+.pagesbuilder textarea:focus{
+  border-color: rgba(124,255,199,.55);
+  box-shadow: 0 0 0 3px rgba(124,255,199,.18);
+}
+
+.pagesbuilder select option{
+  background: #0b1020;
+  color: var(--text);
+}
+
+.pagesbuilder .hint{
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.pagesbuilder .row{
+  display: flex;
+  gap: 10px;
+}
+
+.pagesbuilder .row > *:first-child{
+  flex: 1 1 auto;
+}
+
+.pagesbuilder .check{
+  grid-column: span 3;
+}
+
+.pagesbuilder .checkline{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+}
+
+.pagesbuilder .actions{
+  grid-column: span 3;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.pagesbuilder button{
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pagesbuilder button:hover{
+  background: rgba(255,255,255,.10);
+}
+
+.pagesbuilder button.primary{
+  border-color: rgba(124,255,199,.35);
+  background: rgba(124,255,199,.14);
+}
+
+.pagesbuilder button.primary:hover{
+  background: rgba(124,255,199,.20);
+}
+
+.pagesbuilder button.ghost{
+  background: rgba(255,255,255,.04);
+}
+
+.pagesbuilder .hidden{
+  display: none !important;
+}
+
+/* Output area */
+.pagesbuilder .out{
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.pagesbuilder .outBlock{
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+}
+
+/* Modal */
+.pagesbuilder .modal{
+  position: fixed;
+  inset: 0;
+  display: none;
+  place-items: center;
+  z-index: 2000;
+}
+
+.pagesbuilder .modal.open{
+  display: grid;
+}
+
+.pagesbuilder .modalBg{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+}
+
+.pagesbuilder .modalCard{
+  position: relative;
+  z-index: 1;
+  width: min(520px, calc(100vw - 28px));
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.pagesbuilder .modalHd{
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+}
+
+.pagesbuilder .modalCt{
+  padding: 14px;
+}
+
+.pagesbuilder .modalActions{
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pagesbuilder .x{
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0;
+}
+
+/* Toast */
+.pagesbuilder .toast{
   position: fixed;
-  inset: 0 0 auto 0; /* top:0; left:0; right:0 */
-  height: var(--menu-height);
-  z-index: 1000;
-  box-shadow: var(--shadow-1);
-}
-.menu-container .logo{
-  height: 40px;
-}
-
-.menu-links{
-  display: flex;
-  gap: var(--sp-3);
-  margin-left: auto;
-}
-
-.menu-item{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255,255,255,0.2);
-  border-radius: var(--radius-8);
-  padding: var(--sp-2) var(--sp-3);
-  color: var(--clr-text);
-  text-decoration: none;
-  font-size: var(--fs-1);
-  transition: transform .2s ease, background .2s ease;
-}
-.menu-item:hover{
-  background: rgba(255,255,255,0.3);
-  transform: translateY(-2px);
-}
-.menu-icon{
-  font-size: 1.2rem;
-  color: var(--clr-accent);
-}
-.menu-text{
-  margin-top: var(--sp-1);
-  font-size: var(--fs-0);
-}
-
-/* --------------------------------
-   3. Container
--------------------------------- */
-.container{
-  width: 100%;
-  max-width: var(--container-max);
-  margin: var(--sp-5) auto;
-  padding: var(--sp-8);
-  background: var(--clr-surface);
-  border-radius: var(--radius-12);
-  box-shadow: var(--shadow-2);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  /* Einheitliche vertikale Abstände im Container */
-  gap: var(--sp-6);
-}
-
-/* --------------------------------
-   4. Überschriften
--------------------------------- */
-h1{
-  margin: 0; /* Abstände über Container-gap */
-  font-size: var(--fs-5);
-  color: var(--clr-heading);
-  align-self: center;
-}
-
-/* --------------------------------
-   5. Formularelemente & Dropdowns
--------------------------------- */
-/* Formgruppen: einheitliche Abstände intern über gap statt margin */
-.form-group{
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  text-align: left;
-  gap: var(--sp-2);
-  margin: 0; /* Außenabstand durch .container gap */
-}
-
-label{
-  font-weight: bold;
-  color: var(--clr-text-sub);
-  font-size: var(--fs-2);
-}
-
-/* Inputs & Selects */
-select,
-input[type="number"],
-input[type="text"]{
-  width: 100%;
-  padding: 14px 16px;
-  font-size: var(--fs-3);
-  background: var(--clr-input);
-  color: var(--clr-text);
-  border: 1px solid var(--clr-border);
-  border-radius: var(--radius-6);
-  transition: outline-color .2s ease, background .2s ease, box-shadow .2s ease;
-}
-
-select:focus,
-input:focus,
-textarea:focus{
-  outline: 3px solid var(--clr-accent);
-  background: var(--clr-input-h);
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--clr-accent) 30%, transparent);
-}
-
-/* Dropdown-Optionen */
-select option{
-  background: var(--clr-option);
-  color: var(--clr-text);
-}
-select option:hover{
-  background: var(--clr-option-h);
-}
-select option:checked{
-  background: var(--clr-option-s);
-  color: var(--clr-menu);
-}
-
-/* Textarea */
-textarea{
-  width: 100%;
-  min-height: 120px;
-  padding: 14px 16px;
-  font-size: var(--fs-2);
-  background: rgba(255,255,255,0.3);
-  color: var(--clr-text);
-  border: none;
-  border-radius: var(--radius-6);
-  resize: vertical;
-  transition: box-shadow .2s ease;
-}
-
-/* --------------------------------
-   6. Buttons
--------------------------------- */
-button,
-.info-btn{
-  width: 100%;
-  max-width: 240px;
-  margin: 0 auto; /* Außenabstand über Container-gap */
-  padding: 14px 0;
-  font-size: var(--fs-2);
-  font-weight: bold;
-  color: var(--clr-text);
-  background: var(--clr-accent);
-  border: none;
-  border-radius: var(--radius-8);
-  cursor: pointer;
-  transition: filter .2s ease, transform .06s ease;
-}
-button:hover,
-.info-btn:hover{
-  filter: brightness(0.95);
-  background: var(--clr-accent-2);
-}
-button:active,
-.info-btn:active{
-  transform: translateY(1px);
-}
-
-/* --------------------------------
-   7. Ergebnisfeld
--------------------------------- */
-#result{
-  /* Wird als eigener Block im Container behandelt */
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  color: var(--clr-text-sub);
-  text-align: left;
-}
-
-/* --------------------------------
-   8. Infobox (Modal)
--------------------------------- */
-.info-box{
-  display: none;
-  position: fixed;
-  top: 20%;
   left: 50%;
+  bottom: 18px;
   transform: translateX(-50%);
-  background: rgba(0,0,0,0.8);
-  color: var(--clr-text);
-  padding: var(--sp-5);
-  border-radius: var(--radius-8);
-  box-shadow: var(--shadow-2);
-  z-index: 1000;
-  width: 90%;
-  max-width: 400px;
-}
-.info-box h3{
-  margin: 0 0 var(--sp-3) 0;
-  color: var(--clr-accent);
-}
-.info-box p{
-  color: var(--clr-text-sub);
-  margin: var(--sp-3) 0;
-}
-.info-box .close-btn{
-  margin-top: var(--sp-3);
-  padding: 10px 16px;
-  background: var(--clr-danger);
-  border-radius: var(--radius-6);
-  display: inline-block;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.55);
+  color: var(--text);
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 3000;
 }
 
-/* --------------------------------
-   9. Spezifische Feldbreiten
--------------------------------- */
-#height,
-#resultnoTA,
-#resultTA{
-  max-width: 300px;
-  margin: 0 auto; /* zentriert; Außenabstand via Container-gap */
+.pagesbuilder .toast.show{
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
 }
 
-/* --------------------------------
-   10. Responsive Breakpoints
--------------------------------- */
-@media (max-width: 600px){
-  :root{
-    --menu-height: 64px; /* kleinere Menü-Höhe mobil */
-  }
-
-  .menu-container{
-    flex-direction: column;
-    padding: var(--sp-3);
-    height: var(--menu-height);
-  }
-
-  .menu-links{
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: var(--sp-2);
-    gap: var(--sp-2);
-  }
-
-  .container{
-    max-width: 90%;
-    padding: var(--sp-5);
-    gap: var(--sp-5); /* etwas kompakter mobil */
-  }
-
-  h1{
-    font-size: var(--fs-4);
-  }
-
-  select,
-  input[type="number"],
-  input[type="text"],
-  textarea{
-    font-size: var(--fs-2);
-    padding: 12px 14px;
-  }
-
-  button,
-  .info-btn{
-    padding: 12px 0;
-    font-size: var(--fs-1);
-  }
+/* Responsive */
+@media (max-width: 900px){
+  .pagesbuilder .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pagesbuilder .check{ grid-column: span 2; }
+  .pagesbuilder .actions{ grid-column: span 2; }
+  .pagesbuilder .out{ grid-template-columns: 1fr; }
 }
 
-/* --------------------------------
-   11. Generischer Helfer zum Zentrieren von Blöcken
--------------------------------- */
-.center-column{
-  /* Abwärtskompatibel: Deine bestehende Klasse */
-  display: flex;
-  flex-direction: column; /* untereinander */
-  align-items: center;    /* horizontal zentrieren */
-  gap: var(--sp-6);       /* EINHEITLICHER ABSTAND zwischen Blöcken */
+@media (max-width: 560px){
+  .pagesbuilder .grid{ grid-template-columns: 1fr; }
+  .pagesbuilder .check{ grid-column: span 1; }
+  .pagesbuilder .actions{ grid-column: span 1; }
+  .pagesbuilder .row{ flex-direction: column; }
 }
-
-/* Bonus: universelle Stack-Utilities für flexible Abstände */
-.stack-4{ display:flex; flex-direction:column; gap: var(--sp-4); }
-.stack-5{ display:flex; flex-direction:column; gap: var(--sp-5); }
-.stack-6{ display:flex; flex-direction:column; gap: var(--sp-6); }
