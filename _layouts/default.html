@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page.title | default: site.title }}</title>
 
-  <!-- Basis-Styles für Header / Menü / Footer / Container -->
+  <!-- IMMER laden: Menü/Header/Footer -->
   <link rel="stylesheet" href="{{ '/base.css' | relative_url }}">
 
   <!-- Optional: seiten-spezifisches CSS -->
@@ -13,26 +13,20 @@
     <link rel="stylesheet" href="{{ page.css | relative_url }}">
   {% endif %}
 
-  <!-- Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
-
-  <!-- Globales Menü -->
   {% include menu.html %}
 
-  <!-- Seiteninhalt -->
   <main class="container">
     {{ content }}
   </main>
 
-  <!-- Footer -->
   {% include footer.html %}
 
   <!-- Optional: seiten-spezifisches JS -->
   {% if page.js %}
     <script src="{{ page.js | relative_url }}"></script>
   {% endif %}
-
 </body>
 </html>
