@@ -13,10 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /**
    * Baut die Proxy-URL für die Suche.
-   * @param {string} type       - Datentyp (z.B. 'POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package', 'Area', 'City')
-   * @param {string} rawQuery   - Unkodierter Query-String (z.B. 'area:"Dresden" AND category:"Museum"')
-   * @param {boolean} isOpenData - Wenn true, wird Lizenzfilter angehängt
-   * @returns {string} - Fertige Proxy-URL
+   * @param {string} type        Datentyp (z.B. 'POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package', 'Area', 'City')
+   * @param {string} rawQuery    Unkodierter Query-String (z.B. 'area:"Dresden" AND category:"Museum"')
+   * @param {boolean} isOpenData Wenn true, wird Lizenzfilter angehängt
    */
   const buildUrl = (type, rawQuery = '', isOpenData = false) => {
     const base = 'https://satourn.onrender.com/api/search';
@@ -51,29 +50,65 @@ document.addEventListener('DOMContentLoaded', () => {
     chartContainer:     document.getElementById('chart-container'),
     allAreasCheckbox:   document.getElementById('all-areas-checkbox'),
     loadingContainer:   document.getElementById('loading-container'),
-    coffeeFill:         document.getElementById('coffee-fill')
+    coffeeFill:         document.getElementById('coffee-fill'),
+
+    // Neu (Pill + Progress aus der neuen index.html)
+    statusPill:         document.getElementById('status-pill'),
+    statusText:         document.getElementById('status-text'),
+    progWrap:           document.querySelector('.progWrap'),
+    progBar:            document.getElementById('prog-bar'),
+    progMeta:           document.getElementById('prog-meta'),
+    prog:               document.querySelector('.prog')
   };
 
   // ------------------------------
   //  Globale Variablen für Auswahl
   // ------------------------------
-  let selectedType     = null;
-  let selectedArea     = null;
-  let selectedPlace    = null;
+  let selectedType  = null;
+  let selectedArea  = null;
+  let selectedPlace = null;
 
-  // Kategorien-Cache pro Typ, damit wir nicht jedes Mal neu laden
+  // Kategorien-Cache pro Typ
   const categoriesCache = {}; // { [type]: string[] }
   let availableCategories = [];
 
-  // Article entfernt
   const typesList = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
 
   // ------------------------------
-  //  Ladezustand anzeigen/verbergen
+  //  UI Helpers: Pill + Progress
+  // ------------------------------
+  const setPill = (state, text) => {
+    // state: 'run' | 'ok' | 'err'
+    if (!elements.statusPill || !elements.statusText) return;
+    elements.statusPill.classList.remove('run', 'ok', 'err');
+    if (state) elements.statusPill.classList.add(state);
+    if (typeof text === 'string') elements.statusText.textContent = text;
+  };
+
+  const showProgress = (show) => {
+    if (!elements.progWrap) return;
+    elements.progWrap.style.display = show ? 'flex' : 'none';
+  };
+
+  const setProgress = (pct) => {
+    const p = Math.max(0, Math.min(100, Math.round(pct)));
+    if (elements.progBar) elements.progBar.style.width = `${p}%`;
+    if (elements.progMeta) elements.progMeta.textContent = `${p}%`;
+    if (elements.prog) elements.prog.setAttribute('aria-valuenow', String(p));
+  };
+
+  // Startzustand
+  setPill('run', 'bereit');
+  showProgress(false);
+  setProgress(0);
+
+  // ------------------------------
+  //  Ladezustand anzeigen/verbergen (Coffee)
   // ------------------------------
   const toggleLoading = (isLoading) => {
+    if (!elements.loadingContainer || !elements.coffeeFill) return;
     elements.loadingContainer.style.display = isLoading ? 'flex' : 'none';
-    elements.coffeeFill.style.transform     = isLoading ? 'scaleY(1)' : 'scaleY(0)';
+    elements.coffeeFill.style.transform = isLoading ? 'scaleY(1)' : 'scaleY(0)';
   };
 
   // ------------------------------
@@ -90,13 +125,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // ------------------------------
   const handleError = (message) => {
     console.error(message);
-    elements.resultDiv.textContent = 'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.';
+    if (elements.resultDiv) {
+      elements.resultDiv.textContent =
+        'Ein Fehler ist aufgetreten. Bitte versuche es später erneut.';
+    }
+    setPill('err', 'fehler');
   };
 
   // ------------------------------
   //  Tabellenausgabe (mit gewichteter Gesamtzahl)
   // ------------------------------
   const displayTable = (data) => {
+    if (!elements.resultDiv) return;
+
     elements.resultDiv.innerHTML = '';
     const table = document.createElement('table');
     table.innerHTML = `
@@ -115,14 +156,13 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     const tbody = table.querySelector('tbody');
 
-    let totalStatistik  = 0;
-    let totalOpenData   = 0;
+    let totalStatistik = 0;
+    let totalOpenData  = 0;
 
     data.forEach(({ area, place, type, category, statistikCount, openDataCount }) => {
       const statZahl = parseInt(statistikCount, 10) || 0;
       const openZahl = parseInt(openDataCount, 10) || 0;
 
-      // Prozent niemals > 100 % anzeigen
       const denom = Math.max(statZahl, 0);
       const cappedOpen = Math.min(openZahl, statZahl);
       const rowPct = denom > 0 ? ((cappedOpen / denom) * 100).toFixed(2) : '0.00';
@@ -143,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tbody.appendChild(row);
     });
 
-    // Gewichteter Gesamtanteil
     const totalPct = totalStatistik > 0
       ? ((Math.min(totalOpenData, totalStatistik) / totalStatistik) * 100).toFixed(2)
       : '0.00';
@@ -164,12 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // ------------------------------
   //  Query-Deskriptoren erzeugen (generisch)
   // ------------------------------
-  /**
-   * Baut Deskriptoren für alle kombinierten Filteroptionen.
-   * @param {Object} filters - Auswahlfilter (type, area, place, categories, allAreas)
-   * @param {Array<string>} areasList - Liste aller Gebiete (nur bei "Alle Gebiete" nötig)
-   * @returns {Array<Object>} Deskriptoren mit Typ, Query, OpenData-Flag usw.
-   */
   const buildQueryDescriptors = (filters, areasList = []) => {
     const { allAreas, area, place, type, categories } = filters;
     const descriptors = [];
@@ -187,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
       descriptors.push({ type, query, isOpenData: true,  area, place, category });
     };
 
-    // 1) Alle Gebiete → alle Typen je Gebiet
     if (allAreas && areasList.length) {
       areasList.forEach(areaItem => {
         typesList.forEach(typeItem => {
@@ -198,9 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 2) Typ gewählt, aber kein Gebiet und kein Ort → alle Gebiete
-    // (Generische Variante OHNE Kategorie-Durchlauf; der Spezialfall mit Kategorien
-    //  wird in fetchData überschrieben, damit wir die verfügbaren Kategorien pro Typ nutzen.)
     if (!area && !place && type) {
       areasList.forEach(areaItem => {
         const query = buildQuery({ area: areaItem });
@@ -209,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 3) Nichts gewählt → alle Typen für Sachsen (global)
     if (!area && !place && !type) {
       typesList.forEach(typeItem => {
         addDescriptor({ type: typeItem, query: '', area: 'Sachsen', place: '-', category: '-' });
@@ -217,7 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 4) Gebiet gewählt, kein Ort, kein Typ → alle Typen
     if (area && !place && !type) {
       typesList.forEach(typeItem => {
         const query = buildQuery({ area });
@@ -226,7 +253,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 5) Gebiet + Typ, ggf. mit (explizit) gewählten Kategorien
     if (area && type && !place) {
       if (!categories.length) {
         const query = buildQuery({ area });
@@ -240,7 +266,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 6) Ort + Typ, ohne Gebiet
     if (!area && place && type) {
       if (!categories.length) {
         const query = buildQuery({ place });
@@ -254,7 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 7) Gebiet + Ort, kein Typ → alle Typen
     if (area && place && !type) {
       typesList.forEach(typeItem => {
         const query = buildQuery({ area, place });
@@ -263,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return descriptors;
     }
 
-    // 8) Gebiet + Ort + Typ → ggf. mit (explizit) gewählten Kategorien
     if (area && place && type) {
       if (!categories.length) {
         const query = buildQuery({ area, place });
@@ -302,25 +325,50 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ------------------------------
-  //  Abfragen ausführen
+  //  Abfragen ausführen (mit Progress)
   // ------------------------------
   const runQueries = (descriptors) => {
+    const total = descriptors.length;
+    let done = 0;
+
+    const bump = () => {
+      done += 1;
+      // bis 95% während fetch, 100% nach parse/display
+      const pct = total > 0 ? (done / total) * 95 : 95;
+      setProgress(pct);
+      if (elements.statusText) elements.statusText.textContent = `lädt… ${done}/${total}`;
+    };
+
     const promises = descriptors.map(d => {
       const url = buildUrl(d.type, d.query, d.isOpenData);
       console.log('[runQueries] fetching:', url);
-      return fetch(url).then(res => {
-        if (!res.ok) throw res.status;
-        return res.text();
-      });
+
+      return fetch(url)
+        .then(res => {
+          if (!res.ok) throw res.status;
+          return res.text();
+        })
+        .then(txt => {
+          bump();
+          return txt;
+        });
     });
 
     Promise.all(promises)
       .then(responses => {
         const data = parseResponses(descriptors, responses);
         displayTable(data);
+        setProgress(100);
+        setPill('ok', 'fertig');
       })
-      .catch(err => handleError(err))
-      .finally(() => toggleLoading(false));
+      .catch(err => {
+        handleError(err);
+      })
+      .finally(() => {
+        toggleLoading(false);
+        // Progress nach kurzer Zeit wieder ausblenden (UI ruhig halten)
+        setTimeout(() => showProgress(false), 700);
+      });
   };
 
   // ------------------------------
@@ -360,19 +408,36 @@ document.addEventListener('DOMContentLoaded', () => {
   // ------------------------------
   const fetchData = () => {
     const filters = {
-      allAreas:  elements.allAreasCheckbox.checked,
-      area:      selectedArea,
-      place:     selectedPlace,
-      type:      selectedType,
+      allAreas:   elements.allAreasCheckbox?.checked,
+      area:       selectedArea,
+      place:      selectedPlace,
+      type:       selectedType,
       categories: [] // UI-gestützte Kategorie-Filter momentan nicht aktiv
     };
 
-    // 1) "Alle Gebiete" → zuerst Areas holen (Standardpfad)
+    // Status/Progress vorbereiten
+    setPill('run', 'start…');
+    showProgress(true);
+    setProgress(2);
+
+    // Vorherige Ausgaben zurücksetzen
+    if (elements.resultDiv) elements.resultDiv.innerHTML = '';
+    if (elements.generatedUrlDiv) {
+      elements.generatedUrlDiv.innerHTML = '';
+      elements.generatedUrlDiv.style.display = 'none';
+    }
+    if (elements.chartContainer) elements.chartContainer.style.display = 'none';
+
+    // 1) "Alle Gebiete" → zuerst Areas holen
     if (filters.allAreas) {
       toggleLoading(true);
+      setProgress(6);
+
       fetch(buildUrl('Area'))
         .then(res => res.ok ? res.text() : Promise.reject(res.status))
         .then(xmlText => {
+          setProgress(14);
+
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
           const areaItems = Array.from(xmlDoc.getElementsByTagName('item'));
@@ -381,24 +446,31 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(Boolean);
 
           const descriptors = buildQueryDescriptors({ ...filters, allAreas: true }, areasList);
+          // Basisprogress je nach Datenmenge
+          setProgress(18);
           runQueries(descriptors);
         })
         .catch(err => {
           handleError(err);
           toggleLoading(false);
+          showProgress(false);
         });
+
       return;
     }
 
-    // 2) SPEZIALFALL aus deinem Wunsch:
-    //    Kein Gebiet & kein Ort, aber ein Typ → ALLE Kategorien dieses Typs × ALLE Gebiete
+    // 2) Spezialfall: kein Gebiet & kein Ort, aber Typ → Kategorien × Gebiete
     if (!filters.area && !filters.place && filters.type) {
       toggleLoading(true);
+      setProgress(6);
+
       Promise.all([
         fetch(buildUrl('Area')).then(r => r.ok ? r.text() : Promise.reject(r.status)),
         ensureCategoriesForType(filters.type)
       ])
         .then(([xmlText, cats]) => {
+          setProgress(14);
+
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
           const areaItems = Array.from(xmlDoc.getElementsByTagName('item'));
@@ -417,17 +489,14 @@ document.addEventListener('DOMContentLoaded', () => {
           };
 
           if (categoriesToUse.length) {
-            // Gebiet × Kategorie
             areasList.forEach(areaItem => {
               categoriesToUse.forEach(cat => {
                 const query = buildQuery({ area: areaItem, category: cat });
-                // zwei Deskriptoren je Query (mit/ohne OpenData)
                 descriptors.push({ type: filters.type, query, isOpenData: false, area: areaItem, place: '-', category: cat });
                 descriptors.push({ type: filters.type, query, isOpenData: true,  area: areaItem, place: '-', category: cat });
               });
             });
           } else {
-            // Fallback: wie vorher nur pro Gebiet, ohne Kategorie
             areasList.forEach(areaItem => {
               const query = buildQuery({ area: areaItem });
               descriptors.push({ type: filters.type, query, isOpenData: false, area: areaItem, place: '-', category: '-' });
@@ -435,18 +504,22 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           }
 
+          setProgress(18);
           runQueries(descriptors);
         })
         .catch(err => {
           handleError(err);
           toggleLoading(false);
+          showProgress(false);
         });
+
       return;
     }
 
-    // 3) Alle anderen Fälle: generische Deskriptoren-Erzeugung
+    // 3) Alle anderen Fälle
     const descriptors = buildQueryDescriptors({ ...filters });
     toggleLoading(true);
+    setProgress(10);
     runQueries(descriptors);
   };
 
@@ -471,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (title) {
             const option = document.createElement('option');
             option.textContent = title;
-            option.value       = title;
+            option.value = title;
             dropdown.appendChild(option);
           }
         });
@@ -516,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (title) {
             const option = document.createElement('option');
             option.textContent = title;
-            option.value       = title;
+            option.value = title;
             dropdown.appendChild(option);
           }
         });
@@ -542,18 +615,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const typeDropdown = document.createElement('select');
     typeDropdown.id = 'type-dropdown';
     typeDropdown.innerHTML = '<option value="" selected>Keine Auswahl</option>';
+
     typesList.forEach(typeItem => {
       const option = document.createElement('option');
       option.textContent = typeItem;
-      option.value       = typeItem;
+      option.value = typeItem;
       typeDropdown.appendChild(option);
     });
+
     elements.typeContainer.innerHTML = '';
     elements.typeContainer.appendChild(typeDropdown);
 
     typeDropdown.addEventListener('change', async () => {
       selectedType = typeDropdown.value || null;
-      if (selectedType) await loadCategories(selectedType); // Cache füllen
+      if (selectedType) await loadCategories(selectedType);
     });
   };
 
@@ -563,16 +638,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const disableInputs = (disable) => {
     [elements.typeContainer, elements.areaContainer, elements.cityContainer, elements.placeContainer]
       .forEach(container => {
-        const dropdown = container.querySelector('select');
+        const dropdown = container?.querySelector?.('select');
         if (dropdown) dropdown.disabled = disable;
       });
   };
-  elements.allAreasCheckbox.addEventListener('change', () => {
-    disableInputs(elements.allAreasCheckbox.checked);
-  });
+
+  if (elements.allAreasCheckbox) {
+    elements.allAreasCheckbox.addEventListener('change', () => {
+      disableInputs(elements.allAreasCheckbox.checked);
+    });
+  }
 
   // ------------------------------
-  //  Initiales Laden von Gebieten und Typen
+  //  Initiales Laden
   // ------------------------------
   loadAreas();
   loadTypes();
@@ -580,11 +658,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // ------------------------------
   //  Klick auf "Ergebnisse suchen"
   // ------------------------------
-  elements.button.addEventListener('click', () => {
-    elements.resultDiv.innerHTML          = '';
-    elements.generatedUrlDiv.innerHTML    = '';
-    elements.chartContainer.style.display = 'none';
-    fetchData();
-  });
+  if (elements.button) {
+    elements.button.addEventListener('click', () => {
+      fetchData();
+    });
+  }
 });
-
