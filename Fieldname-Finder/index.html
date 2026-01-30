@@ -1,0 +1,31 @@
+---
+layout: default
+title: Fieldname-Finder
+---
+
+<div class="container fieldname-finder">
+  <h2>SaTourN Fieldname-Finder</h2>
+
+  <label for="xmlFile">XML-Datei hochladen</label>
+  <input type="file" id="xmlFile" accept=".xml">
+
+  <div id="fileInfo">Keine Datei ausgewählt</div>
+
+  <button id="convertBtn">Daten anzeigen</button>
+
+  <div id="errorMessage" class="error"></div>
+
+  <div id="tableContainer" style="display:none;">
+    <table>
+      <thead>
+        <tr>
+          <th>Feldname</th>
+          <th>Datentyp</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+
+    <button id="downloadBtn">Excel herunterladen</button>
+  </div>
+</div>
