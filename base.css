@@ -1,27 +1,28 @@
 /* ===============================
-   SaTourN Base (Light)
+   SaTourN Base (Dark)
    =============================== */
 
 :root{
-  --site-bg:#f6f8fb;
-  --site-text:#0b1220;
-  --site-muted:rgba(11,18,32,.65);
-  --site-border:rgba(11,18,32,.12);
+  /* Dark background */
+  --bg0:#070A14;
+  --bg1:#0B1020;
+  --bg2:#0A1326;
 
-  --radius:14px;
-  --shadow:0 12px 34px rgba(0,0,0,.10);
+  /* Text */
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.66);
 
-  /* Tool (Dark) Tokens – werden von Tools genutzt */
-  --tool-bg0:#070A14;
-  --tool-bg1:#0B1020;
-  --tool-surface:rgba(255,255,255,.06);
-  --tool-surface2:rgba(255,255,255,.04);
-  --tool-text:rgba(255,255,255,.92);
-  --tool-muted:rgba(255,255,255,.66);
-  --tool-border:rgba(255,255,255,.12);
-  --tool-shadow:0 12px 40px rgba(0,0,0,.35);
+  /* Surfaces */
+  --surface:rgba(255,255,255,.06);
+  --surface2:rgba(255,255,255,.04);
+  --border:rgba(255,255,255,.12);
+
+  --radius:16px;
+  --shadow:0 16px 48px rgba(0,0,0,.45);
+
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 
+  /* Accents */
   --accentA:rgba(124,255,199,.95);
   --accentB:rgba(89,122,255,.95);
   --warn:rgba(255,205,106,.95);
@@ -34,37 +35,77 @@ html,body{ height:100%; }
 body{
   margin:0;
   font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  color:var(--site-text);
-  background: var(--site-bg);
+  color:var(--text);
+
+  /* nicer "deep blue" transition */
+  background:
+    radial-gradient(1200px 700px at 16% 10%, rgba(89,122,255,.22), transparent 60%),
+    radial-gradient(900px 600px at 86% 22%, rgba(124,255,199,.14), transparent 62%),
+    radial-gradient(900px 700px at 50% 120%, rgba(89,122,255,.10), transparent 60%),
+    linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 55%, var(--bg2) 100%);
+  min-height:100vh;
 }
 
 a{ color:inherit; text-decoration:none; }
 a:hover{ text-decoration:underline; }
 
+/* Page layout */
 .container{
   max-width:1180px;
   margin:0 auto;
   padding: 18px 16px 28px;
 }
 
-/* Standard-Seitenfläche (hell) */
+/* Default content surface (so it doesn't look empty) */
 .page-surface{
-  background:#fff;
-  border:1px solid var(--site-border);
+  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 18px;
 }
 
-/* Wenn eine Seite ein Tool ist: dunkle Tool-Surface */
-.page-surface.tool{
-  padding: 0;
-  overflow: hidden;
-  background: #fff; /* außen hell, innen kommt das Tool */
+/* Optional helpers (can be reused by other tools/pages) */
+.card{
+  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow:hidden;
 }
+.card-hd{
+  padding:12px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+}
+.card-ct{ padding:14px; }
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  font-size:12px;
+  white-space:nowrap;
+}
+.pill .dot{
+  width:10px;height:10px;border-radius:999px;
+  background: rgba(255,255,255,.25);
+}
+.pill.run .dot{ background: var(--warn); }
+.pill.ok  .dot{ background: var(--accentA); }
+.pill.err .dot{ background: var(--err); }
 
 /* ===============================
-   Menu (wie bei dir)
+   Menu (keep light like you have)
    =============================== */
 
 .menu-container{
