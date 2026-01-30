@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page.title | default: site.title }}</title>
 
-  <!-- IMMER laden: Menü/Header/Footer -->
-  <link rel="stylesheet" href="{{ '/base.css' | relative_url }}">
+  <!-- Global base -->
+  <link rel="stylesheet" href="{{ site.baseurl }}/base.css">
 
-  <!-- Optional: seiten-spezifisches CSS -->
+  <!-- Optional: page-specific CSS from front matter (css:) -->
   {% if page.css %}
-    <link rel="stylesheet" href="{{ page.css | relative_url }}">
+    <link rel="stylesheet" href="{{ site.baseurl }}{{ page.css }}">
   {% endif %}
 
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -19,14 +19,16 @@
   {% include menu.html %}
 
   <main class="container">
-    {{ content }}
+    <div class="page-surface">
+      {{ content }}
+    </div>
   </main>
 
   {% include footer.html %}
 
-  <!-- Optional: seiten-spezifisches JS -->
+  <!-- Optional: page-specific JS from front matter (js:) -->
   {% if page.js %}
-    <script src="{{ page.js | relative_url }}"></script>
+    <script src="{{ site.baseurl }}{{ page.js }}"></script>
   {% endif %}
 </body>
 </html>
