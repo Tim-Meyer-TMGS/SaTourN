@@ -1,16 +1,19 @@
 /* ===============================
-   Item Randomizer – scoped styles
+   SaTourN Base Theme
    =============================== */
-body { background: #111 !important; }
 
-.item-randomizer{
+/* Tokens */
+:root{
   --bg0:#070A14;
   --bg1:#0B1020;
-  --card:rgba(255,255,255,.06);
-  --card2:rgba(255,255,255,.04);
+
+  --surface:rgba(255,255,255,.06);
+  --surface2:rgba(255,255,255,.04);
+
   --text:rgba(255,255,255,.92);
   --muted:rgba(255,255,255,.66);
   --border:rgba(255,255,255,.12);
+
   --shadow:0 12px 40px rgba(0,0,0,.35);
   --r:16px;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
@@ -19,285 +22,141 @@ body { background: #111 !important; }
   --accentB:rgba(89,122,255,.95);
   --warn:rgba(255,205,106,.95);
   --err:rgba(255,113,113,.95);
+}
 
-  /* harte Durchsetzung gegen externe Overrides */
-  color: var(--text) !important;
-  background-color: var(--bg0) !important;
-  background-image:
-    radial-gradient(1200px 700px at 15% 10%, rgba(89,122,255,.28), transparent 62%),
-    radial-gradient(900px 600px at 85% 25%, rgba(124,255,199,.18), transparent 62%),
-    linear-gradient(180deg,var(--bg0),var(--bg1)) !important;
-  background-repeat: no-repeat !important;
+/* Base */
+*{ box-sizing:border-box; }
 
+html,body{ height:100%; }
+
+body{
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+
+  /* Globaler Hintergrund (für alle Seiten) */
+  background:
+    radial-gradient(1200px 700px at 15% 10%, rgba(89,122,255,.22), transparent 62%),
+    radial-gradient(900px 600px at 85% 25%, rgba(124,255,199,.14), transparent 62%),
+    linear-gradient(180deg,var(--bg0),var(--bg1));
+  min-height:100vh;
+}
+
+a{ color:inherit; text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+/* Layout Container */
+.container{
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Eine “Surface” für Seiteninhalt (damit Inhalte nicht direkt auf body liegen) */
+.page-surface{
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.08);
   border-radius: 12px;
   padding: 16px;
-
-  /* Container-Padding neutralisieren */
-  margin: 0 -16px;
-
-  display:block;
-  isolation:isolate; /* verhindert seltsame Blend-/Backdrop-Effekte von außen */
 }
-
-/* auf großen Screens wieder sauber einrücken */
-@media (min-width: 1240px){
-  .item-randomizer{ margin: 0; }
-}
-
-.item-randomizer,
-.item-randomizer *{
-  box-sizing:border-box;
-}
-
-/* falls außen irgendwo backgrounds gesetzt werden: nicht vererben lassen */
-.item-randomizer .wrap,
-.item-randomizer .card,
-.item-randomizer .ct{
-  background-clip: padding-box;
-}
-
-/* Links */
-.item-randomizer a{
-  color:inherit;
-  text-decoration:none;
-}
-.item-randomizer a:hover{ text-decoration:underline; }
 
 /* ===============================
-   Layout
+   Common UI (optional nutzbar)
    =============================== */
 
-.item-randomizer .wrap{
-  max-width:1180px;
-  margin:0 auto;
-  display:grid;
-  gap:14px;
-  padding: 0; /* wichtig: nicht aus Versehen aus base.css übernehmen */
-}
-
-.item-randomizer .card{
-  background: linear-gradient(180deg, var(--card), var(--card2)) !important;
-  border:1px solid var(--border);
-  border-radius:var(--r);
-  box-shadow:var(--shadow);
+.card{
+  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
   overflow:hidden;
 }
 
-.item-randomizer .hd{
+.card-hd{
   padding:12px 14px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:10px;
   border-bottom:1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04) !important;
+  background: rgba(255,255,255,.04);
 }
 
-.item-randomizer .hd strong{font-size:13px; letter-spacing:.2px}
-.item-randomizer .ct{padding:14px}
+.card-ct{ padding:14px; }
 
-/* ===============================
-   Pills / Status
-   =============================== */
-
-.item-randomizer .pill{
+.pill{
   display:inline-flex;
   align-items:center;
   gap:8px;
   padding:6px 10px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04) !important;
+  background: rgba(255,255,255,.04);
   color: var(--muted);
   font-size:12px;
   white-space:nowrap;
 }
 
-.item-randomizer .dot{
-  width:10px;
-  height:10px;
-  border-radius:999px;
+.pill .dot{
+  width:10px;height:10px;border-radius:999px;
   background: rgba(255,255,255,.25);
 }
 
-.item-randomizer .pill.run .dot{background:var(--warn)}
-.item-randomizer .pill.ok  .dot{background:var(--accentA)}
-.item-randomizer .pill.err .dot{background:var(--err)}
+.pill.run .dot{ background: var(--warn); }
+.pill.ok  .dot{ background: var(--accentA); }
+.pill.err .dot{ background: var(--err); }
 
 /* ===============================
-   Form / Grid
+   Menu (bleibt bewusst weiß)
    =============================== */
 
-.item-randomizer .grid{
-  display:grid;
-  grid-template-columns: repeat(12, 1fr);
+.menu-container{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  padding:16px 24px;
+  background:#fff;
+  border-bottom:1px solid rgba(0,0,0,.10);
+}
+
+.menu-container .logo{
+  height:56px;
+  width:auto;
+  display:block;
+}
+
+.menu-links{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+
+.menu-item{
+  display:inline-flex;
+  align-items:center;
   gap:10px;
-  align-items:end;
-}
-
-.item-randomizer .field{grid-column: span 3;}
-.item-randomizer .wide{grid-column: span 6;}
-.item-randomizer .full{grid-column: span 12;}
-.item-randomizer .btn{grid-column: span 2;}
-
-@media (max-width: 980px){
-  .item-randomizer .field{grid-column: span 6;}
-  .item-randomizer .wide{grid-column: span 12;}
-  .item-randomizer .btn{grid-column: span 12;}
-}
-@media (max-width: 520px){
-  .item-randomizer .field,
-  .item-randomizer .wide,
-  .item-randomizer .btn{grid-column: span 12;}
-}
-
-.item-randomizer label{
-  display:grid;
-  gap:6px;
-  font-size:12px;
-  color: var(--muted);
-}
-
-.item-randomizer input,
-.item-randomizer textarea{
-  width:100%;
   padding:10px 12px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.18) !important;
-  color: var(--text) !important;
-  outline:none;
-}
-
-.item-randomizer textarea{
-  min-height:44px;
-  max-height:140px;
-  resize:vertical;
-  font-family: var(--mono);
-  font-size:12px;
-  line-height:1.35;
-}
-
-.item-randomizer input:focus,
-.item-randomizer textarea:focus{
-  border-color: rgba(124,255,199,.55);
-  box-shadow: 0 0 0 4px rgba(124,255,199,.12);
-}
-
-/* Buttons */
-.item-randomizer button{
-  width:100%;
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06) !important;
-  color: var(--text) !important;
-  cursor:pointer;
-}
-
-.item-randomizer button.primary{
-  background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22)) !important;
-  border-color: rgba(124,255,199,.35);
-}
-
-.item-randomizer button:disabled{opacity:.5; cursor:not-allowed;}
-
-/* Progress */
-.item-randomizer .progWrap{display:flex; gap:10px; align-items:center;}
-.item-randomizer .prog{
-  flex:1;
-  height:12px;
-  border-radius:999px;
-  background: rgba(255,255,255,.07) !important;
-  border:1px solid rgba(255,255,255,.10);
-  overflow:hidden;
-}
-.item-randomizer .bar{
-  height:100%;
-  width:0%;
-  background: linear-gradient(90deg, rgba(124,255,199,.85), rgba(89,122,255,.85)) !important;
-  transition: width .2s ease;
-}
-.item-randomizer .meta{
-  font-family: var(--mono);
-  font-size:12px;
-  color: rgba(255,255,255,.82);
-  white-space:nowrap;
-}
-
-/* Results */
-.item-randomizer .tableWrap{
-  max-height:360px;
-  overflow:auto;
-  border-radius: var(--r);
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.03) !important;
-}
-
-.item-randomizer table{
-  width:100%;
-  border-collapse:collapse;
-  min-width:820px;
-}
-
-.item-randomizer th,
-.item-randomizer td{
-  padding:10px;
-  border-bottom:1px solid rgba(255,255,255,.08);
-  vertical-align:top;
-  font-size:13px;
-}
-
-.item-randomizer th{
-  position:sticky;
-  top:0;
-  background: rgba(10,16,32,.88) !important;
-  backdrop-filter: blur(10px);
-  text-align:left;
+  border-radius:10px;
+  color:#004b5f;
+  text-decoration:none;
   font-weight:600;
+  line-height:1;
 }
 
-.item-randomizer .id{
-  font-family: var(--mono);
-  font-size:12px;
-  background: rgba(255,255,255,.06) !important;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:999px;
-  padding:3px 8px;
-  white-space:nowrap;
+.menu-item:hover{
+  background:rgba(0,0,0,.05);
+  text-decoration:none;
 }
 
-.item-randomizer pre{
-  margin:0;
-  padding:10px;
-  border-radius:12px;
-  background: rgba(0,0,0,.22) !important;
-  border:1px solid rgba(255,255,255,.08);
-  font-family: var(--mono);
-  font-size:11.5px;
-  line-height:1.35;
-  max-height:150px;
-  overflow:auto;
-}
+.menu-icon{ font-size:22px; line-height:1; }
+.menu-text{ display:inline-block; font-size:14px; }
 
-/* Log */
-.item-randomizer .log{
-  font-family: var(--mono);
-  font-size:12px;
-  line-height:1.4;
-  background: rgba(0,0,0,.22) !important;
-  border:1px solid rgba(255,255,255,.08);
-  border-radius: var(--r);
-  padding:12px;
-  max-height:180px;
-  overflow:auto;
-  white-space:pre-wrap;
-  word-break:break-word;
-}
-
-.item-randomizer .muted{
-  color:var(--muted);
-  font-size:12px;
-  line-height:1.45;
-  margin:0;
+@media (max-width: 720px){
+  .menu-container{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .menu-container .logo{ height:48px; }
 }
