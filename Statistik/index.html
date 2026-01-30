@@ -4,45 +4,46 @@ title: SaTourN-Statistik
 permalink: /Statistik/
 ---
 
-<h1>SaTourN-Statistik-Tool</h1>
-
 <div class="container">
-  <h2>Gebiet wählen</h2>
-  <div class="form-group dropdown-container" id="area-dropdown-container"></div>
+  <div class="statistik page-surface">
+    <h1>SaTourN-Statistik-Tool</h1>
 
-  <h2>Ort wählen</h2>
-  <div class="form-group dropdown-container" id="place-dropdown-container"></div>
+    <h2>Gebiet wählen</h2>
+    <div class="form-group dropdown-container" id="area-dropdown-container"></div>
 
-  <h2>Typ wählen</h2>
-  <div class="form-group dropdown-container" id="type-dropdown-container"></div>
+    <h2>Ort wählen</h2>
+    <div class="form-group dropdown-container" id="place-dropdown-container"></div>
 
-  <div class="form-group dropdown-container" id="dropdown-container"></div>
+    <h2>Typ wählen</h2>
+    <div class="form-group dropdown-container" id="type-dropdown-container"></div>
 
-  <div style="margin-bottom: 10px;">
-    <label>
-      <input type="checkbox" id="all-areas-checkbox" />
-      Alle Gebiete abfragen
-    </label>
-  </div>
+    <div class="form-group dropdown-container" id="dropdown-container"></div>
 
-  <button id="search-button">Ergebnisse suchen</button>
+    <div style="margin-bottom: 10px;">
+      <label>
+        <input type="checkbox" id="all-areas-checkbox" />
+        Alle Gebiete abfragen
+      </label>
+    </div>
 
-  <div id="loading-container" style="display: none;">
-    <svg id="coffee-cup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="120" height="120">
-      <path d="M4 20h48v24a12 12 0 01-12 12H16a12 12 0 01-12-12V20z" fill="#ccc" stroke="#fff" stroke-width="2" />
-      <rect id="coffee-fill" x="8" y="32" width="40" height="12" fill="#6f4e37" />
-      <path d="M52 24h4a8 8 0 010 16h-4" fill="none" stroke="#fff" stroke-width="2" />
-    </svg>
-    <p style="margin-top: 10px; font-size: 16px; color: #fff !important;">Hol dir 'n Kaffee, das dauert 'ne Minute...</p>
-  </div>
+    <button id="search-button">Ergebnisse suchen</button>
 
-  <div id="result"></div>
-  <div id="generated-url"></div>
+    <div id="loading-container" style="display: none;">
+      <svg id="coffee-cup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="120" height="120">
+        <path d="M4 20h48v24a12 12 0 01-12 12H16a12 12 0 01-12-12V20z" fill="#ccc" stroke="#fff" stroke-width="2" />
+        <rect id="coffee-fill" x="8" y="32" width="40" height="12" fill="#6f4e37" />
+        <path d="M52 24h4a8 8 0 010 16h-4" fill="none" stroke="#fff" stroke-width="2" />
+      </svg>
+      <p style="margin-top: 10px; font-size: 16px; color: #fff !important;">Hol dir 'n Kaffee, das dauert 'ne Minute...</p>
+    </div>
 
-  <div id="chart-container">
-    <canvas id="pie-chart"></canvas>
+    <div id="result"></div>
+    <div id="generated-url"></div>
+
+    <div id="chart-container">
+      <canvas id="pie-chart"></canvas>
+    </div>
   </div>
 </div>
 
-<!-- Lokal in diesem Ordner -->
 <script src="{{ '/Statistik/scripts.js' | relative_url }}"></script>
