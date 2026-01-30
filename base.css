@@ -1,74 +1,162 @@
-/* Base */
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+/* ===============================
+   SaTourN Base Theme
+   =============================== */
+
+/* Tokens */
+:root{
+  --bg0:#070A14;
+  --bg1:#0B1020;
+
+  --surface:rgba(255,255,255,.06);
+  --surface2:rgba(255,255,255,.04);
+
+  --text:rgba(255,255,255,.92);
+  --muted:rgba(255,255,255,.66);
+  --border:rgba(255,255,255,.12);
+
+  --shadow:0 12px 40px rgba(0,0,0,.35);
+  --r:16px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+  --accentA:rgba(124,255,199,.95);
+  --accentB:rgba(89,122,255,.95);
+  --warn:rgba(255,205,106,.95);
+  --err:rgba(255,113,113,.95);
 }
 
-.container {
+/* Base */
+*{ box-sizing:border-box; }
+
+html,body{ height:100%; }
+
+body{
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+
+  /* Globaler Hintergrund (für alle Seiten) */
+  background:
+    radial-gradient(1200px 700px at 15% 10%, rgba(89,122,255,.22), transparent 62%),
+    radial-gradient(900px 600px at 85% 25%, rgba(124,255,199,.14), transparent 62%),
+    linear-gradient(180deg,var(--bg0),var(--bg1));
+  min-height:100vh;
+}
+
+a{ color:inherit; text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+/* Layout Container */
+.container{
   max-width: 1180px;
   margin: 0 auto;
   padding: 16px;
 }
 
-/* Menu (matches _includes/menu.html) */
-.menu-container {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 16px 24px;
-  background: #fff;
-  border-bottom: 1px solid rgba(0,0,0,.10);
+/* Eine “Surface” für Seiteninhalt (damit Inhalte nicht direkt auf body liegen) */
+.page-surface{
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 16px;
 }
 
-.menu-container .logo {
-  height: 56px;
-  width: auto;
-  display: block;
+/* ===============================
+   Common UI (optional nutzbar)
+   =============================== */
+
+.card{
+  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  overflow:hidden;
 }
 
-.menu-links {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
+.card-hd{
+  padding:12px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
 }
 
-.menu-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  color: #004b5f;
-  text-decoration: none;
-  font-weight: 600;
-  line-height: 1;
+.card-ct{ padding:14px; }
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  font-size:12px;
+  white-space:nowrap;
 }
 
-.menu-item:hover {
-  background: rgba(0,0,0,.05);
-  text-decoration: none;
+.pill .dot{
+  width:10px;height:10px;border-radius:999px;
+  background: rgba(255,255,255,.25);
 }
 
-.menu-icon {
-  font-size: 22px;
-  line-height: 1;
+.pill.run .dot{ background: var(--warn); }
+.pill.ok  .dot{ background: var(--accentA); }
+.pill.err .dot{ background: var(--err); }
+
+/* ===============================
+   Menu (bleibt bewusst weiß)
+   =============================== */
+
+.menu-container{
+  display:flex;
+  align-items:center;
+  gap:24px;
+  padding:16px 24px;
+  background:#fff;
+  border-bottom:1px solid rgba(0,0,0,.10);
 }
 
-/* Text block in menu item */
-.menu-text {
-  display: inline-block;
-  font-size: 14px;
+.menu-container .logo{
+  height:56px;
+  width:auto;
+  display:block;
 }
 
-/* Responsive */
-@media (max-width: 720px) {
-  .menu-container {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+.menu-links{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+
+.menu-item{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:10px;
+  color:#004b5f;
+  text-decoration:none;
+  font-weight:600;
+  line-height:1;
+}
+
+.menu-item:hover{
+  background:rgba(0,0,0,.05);
+  text-decoration:none;
+}
+
+.menu-icon{ font-size:22px; line-height:1; }
+.menu-text{ display:inline-block; font-size:14px; }
+
+@media (max-width: 720px){
+  .menu-container{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:12px;
   }
-  .menu-container .logo {
-    height: 48px;
-  }
+  .menu-container .logo{ height:48px; }
 }
