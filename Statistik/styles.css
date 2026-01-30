@@ -1,56 +1,110 @@
-/* Statistik Tool – polished, passend zu base.css
-   Wrapper: <div class="statistik page-surface"> ... </div> */
+/* Statistik – im Stil der Vorlage (item-randomizer), aber scoped auf .statistik */
 
-.statistik{
-  max-width: 1040px;
+/* wrap */
+.statistik .wrap{
+  max-width: 980px;
   margin: 0 auto;
+  display:grid;
+  gap:16px;
 }
 
-/* Typo + Spacing */
-.statistik h1{
-  margin: 0 0 18px;
-  font-size: 28px;
-  font-weight: 800;
-  letter-spacing: .2px;
-  color: var(--text);
+/* card */
+.statistik .card{
+  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow:hidden;
 }
-.statistik h2{
-  margin: 18px 0 10px;
-  font-size: 14px;
-  font-weight: 700;
+
+/* header */
+.statistik .hd{
+  padding: 14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+}
+.statistik .hd strong{
+  font-size:14px;
+  letter-spacing:.2px;
+}
+
+/* content */
+.statistik .ct{ padding: 16px; }
+
+/* pills (wie Vorlage) */
+.statistik .pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
   color: var(--muted);
-  letter-spacing: .2px;
+  font-size:12px;
+  white-space:nowrap;
+}
+.statistik .dot{
+  width:10px;height:10px;border-radius:999px;
+  background: rgba(255,255,255,.25);
+}
+.statistik .pill.run .dot{ background: var(--warn); }
+.statistik .pill.ok  .dot{ background: var(--accentA); }
+.statistik .pill.err .dot{ background: var(--err); }
+
+/* grid wie Vorlage */
+.statistik .grid{
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap:12px;
+  align-items:end;
+}
+.statistik .field{ grid-column: span 4; }
+.statistik .wide { grid-column: span 6; }
+.statistik .full { grid-column: span 12; }
+.statistik .btn  { grid-column: span 3; }
+
+@media (max-width: 980px){
+  .statistik .field{ grid-column: span 6; }
+  .statistik .wide { grid-column: span 12; }
+  .statistik .btn  { grid-column: span 6; }
+}
+@media (max-width: 560px){
+  .statistik .field,
+  .statistik .wide,
+  .statistik .btn{ grid-column: span 12; }
 }
 
-/* Form layout: 2-spaltig ab md, 1-spaltig mobil */
-.statistik .stat-grid{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 16px;
-  margin-bottom: 14px;
-}
-@media (max-width: 860px){
-  .statistik .stat-grid{ grid-template-columns: 1fr; }
+/* labels */
+.statistik label{
+  display:grid;
+  gap:6px;
+  font-size:12px;
+  color: var(--muted);
 }
 
-/* Controls */
+/* select + input styling (dark) */
 .statistik select,
-.statistik input[type="text"],
+.statistik input,
 .statistik textarea{
-  width: 100%;
-  padding: 12px 12px;
+  width:100%;
+  padding:11px 12px;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
   color: var(--text);
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
+  outline:none;
 }
 
-/* Custom select arrow */
+/* custom arrow for select */
 .statistik select{
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
   background-image:
     linear-gradient(45deg, transparent 50%, rgba(255,255,255,.65) 50%),
     linear-gradient(135deg, rgba(255,255,255,.65) 50%, transparent 50%);
@@ -61,165 +115,159 @@
   background-repeat: no-repeat;
   padding-right: 34px;
 }
-
 .statistik select option{
   background: rgba(10,16,32,.98);
   color: var(--text);
 }
 
 .statistik select:focus,
-.statistik input[type="text"]:focus,
+.statistik input:focus,
 .statistik textarea:focus{
   border-color: rgba(124,255,199,.55);
   box-shadow: 0 0 0 4px rgba(124,255,199,.12);
 }
 
-/* Checkbox row */
-.statistik .checks{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 6px 0 12px;
-}
-.statistik label{
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 13px;
-  user-select: none;
+/* checkbox line */
+.statistik .checks{ margin-top: 2px; }
+.statistik .checkline{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
 }
 .statistik #all-areas-checkbox{
   width: 18px;
   height: 18px;
   accent-color: var(--accentA);
-  transform: translateY(1px);
 }
 
-/* Button */
-.statistik #search-button{
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.14);
-  background:
-    linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
+/* buttons */
+.statistik button{
+  width:100%;
+  padding:11px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
   color: var(--text);
+  cursor:pointer;
+}
+.statistik button.primary{
+  background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
+  border-color: rgba(124,255,199,.32);
   font-weight: 700;
-  letter-spacing: .2px;
-  cursor: pointer;
-  transition: transform .06s ease, filter .15s ease, border-color .15s ease;
 }
-.statistik #search-button:hover{
-  filter: brightness(1.06);
-  border-color: rgba(124,255,199,.35);
-}
-.statistik #search-button:active{ transform: translateY(1px); }
-.statistik #search-button:disabled{ opacity: .55; cursor: not-allowed; }
+.statistik button:disabled{ opacity:.5; cursor:not-allowed; }
 
-/* Loading */
-.statistik #loading-container{
-  margin-top: 14px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.03);
+/* progress (wie Vorlage) */
+.statistik .progWrap{ display:flex; gap:10px; align-items:center; }
+.statistik .prog{
+  flex:1;
+  height:12px;
+  border-radius:999px;
+  background: rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.10);
+  overflow:hidden;
 }
-.statistik #loading-container p{
-  margin: 10px 0 0;
-  color: var(--muted);
-  font-size: 12px;
+.statistik .bar{
+  height:100%;
+  width:0%;
+  background: linear-gradient(90deg, rgba(124,255,199,.85), rgba(89,122,255,.85));
+  transition: width .2s ease;
+}
+.statistik .meta{
   font-family: var(--mono);
-}
-.statistik #coffee-cup{
-  filter: drop-shadow(0 12px 18px rgba(0,0,0,.35));
+  font-size:12px;
+  color: rgba(255,255,255,.82);
+  white-space:nowrap;
 }
 
-/* Result block */
-.statistik #result{
-  margin-top: 16px;
+/* results table wrap */
+.statistik .tableWrap{
+  margin-top: 14px;
+  max-height: 420px;
+  overflow:auto;
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(0,0,0,.16);
-  overflow: auto;
-  max-height: 460px;
-}
-
-/* Table */
-.statistik #result table{
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  min-width: 920px;
-}
-
-.statistik #result th,
-.statistik #result td{
-  padding: 12px 14px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  font-size: 13px;
-  color: var(--text);
-  text-align: left;
-  white-space: nowrap;
-}
-
-/* Sticky header */
-.statistik #result th{
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: rgba(11,16,32,.92);
-  backdrop-filter: blur(12px);
-  font-weight: 800;
-  color: rgba(255,255,255,.92);
-}
-
-/* Zebra + hover */
-.statistik #result tbody tr:nth-child(even){
+  border:1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.03);
 }
-.statistik #result tbody tr:hover{
-  background: rgba(124,255,199,.08);
+
+/* table: ohne horizontales scrollen, dafür wrapping */
+.statistik .tableWrap table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout: fixed;
+  min-width: 0; /* wichtig gegen forced min-width */
 }
 
-/* Numeric columns right aligned (5..7) */
-.statistik #result td:nth-child(5),
-.statistik #result td:nth-child(6),
-.statistik #result td:nth-child(7),
-.statistik #result th:nth-child(5),
-.statistik #result th:nth-child(6),
-.statistik #result th:nth-child(7){
-  text-align: right;
+.statistik .tableWrap th,
+.statistik .tableWrap td{
+  padding:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:13px;
+  vertical-align: top;
+  white-space: normal;         /* wrap */
+  word-break: break-word;      /* lange Wörter umbrechen */
+}
+
+.statistik .tableWrap th{
+  position:sticky;
+  top:0;
+  background: rgba(10,16,32,.88);
+  backdrop-filter: blur(10px);
+  text-align:left;
+  font-weight:600;
+}
+
+/* numeric cols right + tabular nums */
+.statistik .tableWrap th:nth-child(5),
+.statistik .tableWrap th:nth-child(6),
+.statistik .tableWrap th:nth-child(7),
+.statistik .tableWrap td:nth-child(5),
+.statistik .tableWrap td:nth-child(6),
+.statistik .tableWrap td:nth-child(7){
+  text-align:right;
   font-variant-numeric: tabular-nums;
 }
 
-/* Total row (inline style in JS) */
-.statistik #result tr[style*="font-weight: bold"] td{
-  font-weight: 900 !important;
-  background: rgba(89,122,255,.10);
+/* subtle zebra + hover */
+.statistik .tableWrap tbody tr:nth-child(even){
+  background: rgba(255,255,255,.03);
+}
+.statistik .tableWrap tbody tr:hover{
+  background: rgba(124,255,199,.08);
 }
 
-/* URL output */
-.statistik #generated-url{
+/* log block (für generated-url) */
+.statistik .log{
   margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.03);
-  color: var(--muted);
   font-family: var(--mono);
-  font-size: 12px;
-  word-break: break-word;
+  font-size:12px;
+  line-height:1.4;
+  background: rgba(0,0,0,.22);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding:12px;
+  max-height:140px;
+  overflow:auto;
+  white-space:pre-wrap;
+  word-break:break-word;
 }
 
-/* Chart */
+.statistik .muted{
+  color: var(--muted);
+  font-size:12px;
+  line-height:1.45;
+  margin:0;
+}
+
+/* chart container */
 .statistik #chart-container{
-  margin-top: 16px;
-  padding: 14px 16px;
+  margin-top: 14px;
+  padding: 14px;
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.10);
   background: rgba(255,255,255,.03);
 }
-
-/* Small polish: tighten vertical rhythm */
-.statistik .dropdown-container{ margin-bottom: 0; }
