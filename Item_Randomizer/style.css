@@ -1,6 +1,7 @@
 /* ===============================
    Item Randomizer – scoped styles
    =============================== */
+body { background: #111 !important; }
 
 .item-randomizer{
   --bg0:#070A14;
