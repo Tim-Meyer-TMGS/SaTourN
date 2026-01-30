@@ -9,16 +9,20 @@ js: /Pages-Builder/script.js
 <div class="pagesbuilder">
   <div class="wrap">
 
+    <!-- Kopfzeile (ohne extra Card) -->
+    <div class="pb-head">
+      <div>
+        <h1>Pages-Builder</h1>
+        <p class="muted">Snippet-URL Generator</p>
+      </div>
+    </div>
+
+    <!-- Form als Card -->
     <div class="card">
       <div class="card-hd">
-        <div>
-          <strong>Pages-Builder</strong><br>
-          <span class="muted">Snippet-URL Generator</span>
-        </div>
+        <strong>Parameter</strong>
       </div>
-
       <div class="card-ct">
-
         <form id="urlForm" class="grid">
 
           <div class="field">
@@ -32,11 +36,9 @@ js: /Pages-Builder/script.js
             </select>
           </div>
 
-          <div class="field">
+          <div class="field span2">
             <label for="categories">Kategorien</label>
-            <select id="categories" name="categories" multiple>
-              <option value="">Keine Kategorie wählen</option>
-            </select>
+            <select id="categories" name="categories" multiple></select>
             <div class="hint muted">Mehrfachauswahl: Strg/Cmd gedrückt halten</div>
           </div>
 
@@ -70,61 +72,63 @@ js: /Pages-Builder/script.js
             <input type="number" id="height" name="height" value="400" min="200" step="10" required>
           </div>
 
-          <div class="field check">
+          <div class="field full check">
             <label class="checkline">
               <input type="checkbox" id="showMap" name="showMap">
               Karte anzeigen
             </label>
           </div>
 
-          <div class="actions">
+          <div class="field full actions">
             <button type="submit" class="primary">URL generieren</button>
-            <button type="button" id="copyButton" class="ghost hidden">In die Zwischenablage kopieren</button>
+            <button type="button" id="copyButton" class="ghost hidden">Kopieren</button>
           </div>
 
         </form>
-
-        <div class="out">
-          <div class="outBlock">
-            <h2 class="h2">Pages URL</h2>
-            <textarea id="resultNoParams" readonly></textarea>
-          </div>
-
-          <div class="outBlock">
-            <h2 class="h2">Script-Source URL</h2>
-            <textarea id="resultTA" readonly></textarea>
-          </div>
-        </div>
-
-        <!-- Info-Modal -->
-        <div id="infoBox" class="modal" aria-hidden="true">
-          <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-            <div class="modalHd">
-              <strong id="infoTitle">Was bedeutet AND und OR?</strong>
-              <button class="x" type="button" id="closeInfoBox" aria-label="Schließen">×</button>
-            </div>
-            <div class="modalCt">
-              <p class="muted">
-                Mit <strong>AND</strong> werden die ausgewählten Kategorien UND-verknüpft:
-                Es erscheinen nur Ergebnisse, die <strong>alle</strong> Kategorien enthalten.
-              </p>
-              <p class="muted">
-                Mit <strong>OR</strong> werden die Kategorien ODER-verknüpft:
-                Es erscheinen Ergebnisse, die <strong>mindestens eine</strong> Kategorie enthalten.
-              </p>
-              <div class="modalActions">
-                <button class="primary" type="button" id="closeInfoBox2">Schließen</button>
-              </div>
-            </div>
-          </div>
-          <div class="modalBg" data-close="1"></div>
-        </div>
-
-        <!-- Toast -->
-        <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
-
       </div>
     </div>
+
+    <!-- Output als 2 Cards -->
+    <div class="out">
+      <div class="card">
+        <div class="card-hd"><strong>Pages URL</strong></div>
+        <div class="card-ct">
+          <textarea id="resultNoParams" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><strong>Script-Source URL</strong></div>
+        <div class="card-ct">
+          <textarea id="resultTA" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info-Modal -->
+    <div id="infoBox" class="modal" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+        <div class="modalHd">
+          <strong id="infoTitle">Was bedeutet AND und OR?</strong>
+          <button class="x" type="button" id="closeInfoBox" aria-label="Schließen">×</button>
+        </div>
+        <div class="modalCt">
+          <p class="muted">
+            <strong>AND</strong>: Ergebnisse müssen <strong>alle</strong> gewählten Kategorien enthalten.
+          </p>
+          <p class="muted">
+            <strong>OR</strong>: Ergebnisse enthalten <strong>mindestens eine</strong> Kategorie.
+          </p>
+          <div class="modalActions">
+            <button class="primary" type="button" id="closeInfoBox2">Schließen</button>
+          </div>
+        </div>
+      </div>
+      <div class="modalBg" data-close="1"></div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
 
   </div>
 </div>
