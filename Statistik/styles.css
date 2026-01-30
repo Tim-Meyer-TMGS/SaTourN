@@ -1,348 +1,210 @@
-/* ================================================
-   styles_trimmed.css – optimiert für klare Lesbarkeit & Kontrast
-   Enthält alle Styles: Menü, Container, Tabs, Overlays, Toasts, Debug-Log,
-   Buttons, Formulare, Upload, Baumansicht, Modals, Code, Tabellen, Aktionen,
-   Ladebalken
-   ================================================ */
+/* Statistik Tool – Styles passend zu base.css (SaTourN Base Dark)
+   Voraussetzung: Wrapper .statistik um den Seiteninhalt */
 
-/* --------------------------------
-   1. Basis-Reset
--------------------------------- */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Arial", sans-serif;
-  color: #fff; /* Standardtextfarbe auf Weiß für maximalen Kontrast */
+/* Layout */
+.statistik{
+  max-width: 980px;
+  margin: 0 auto;
 }
 
-/* --------------------------------
-   2. Hintergrund & Body
--------------------------------- */
-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 100vh;
-  width: 100%;
-  padding: 20px;
-  background: linear-gradient(to right, #001f3d, #00274d);
-  color: #fff;
+/* Optional: wenn du NICHT page-surface nutzt, gib der Statistik-Fläche selbst die Card-Optik */
+.statistik:not(.page-surface){
+  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
 }
 
-/* --------------------------------
-   3. Menü-Leiste (nav)
--------------------------------- */
-.menu-container {
-  width: 100%;
-  background: #00254d;
-  padding: 15px 20px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+/* Headings */
+.statistik h1{
+  margin: 0 0 14px;
+  font-size: 22px;
+  letter-spacing: .2px;
+  color: var(--text);
 }
-.menu-container .logo {
-  height: 50px;
-}
-.menu-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-left: auto;
-}
-.menu-item {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  width: 150px;
-  text-align: center;
-  padding: 12px;
-  transition: transform 0.2s ease, background 0.2s ease;
-  cursor: pointer;
-  text-decoration: none;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.menu-item:hover {
-  transform: translateY(-3px);
-  background: rgba(255, 255, 255, 0.25);
-}
-.menu-icon {
-  font-size: 36px;
-  color: #00d1ff;
-}
-.menu-text {
-  font-size: 14px;
-  margin-top: 5px;
+.statistik h2{
+  margin: 16px 0 10px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--muted);
+  letter-spacing: .2px;
 }
 
-/* --------------------------------
-   4. Container & Überschriften
--------------------------------- */
-.container {
-  background: rgba(255, 255, 255, 0.12);
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  text-align: center;
-  max-width: 1000px;
-  width: 100%;
-  margin: 80px auto 20px;
-}
-h2, h3 {
-  margin-bottom: 20px;
-  color: #e0e0e0;
-}
-
-/* --------------------------------
-   5. Tabs
--------------------------------- */
-.tabs button {
-  padding: 10px 20px;
-  cursor: pointer;
-  border: none;
-  background: #004f80;
-  margin-right: 5px;
-  border-radius: 4px 4px 0 0;
-  color: #e0e0e0;
-  font-weight: bold;
-}
-.tabs button.active {
-  background: #0077b6;
-  color: #fff;
-  border-bottom: 2px solid #005f8a;
-}
-
-/* --------------------------------
-   6. Drop Overlay
--------------------------------- */
-.drop-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  font-size: 1.6rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
-}
-
-/* --------------------------------
-   7. Toast-Benachrichtigungen
--------------------------------- */
-.toast-container {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 10000;
-}
-.toast {
-  background: rgba(0, 0, 0, 0.9);
-  color: #fff;
-  padding: 12px 20px;
-  margin-top: 8px;
-  border-radius: 4px;
-  opacity: 1;
-  transition: opacity 0.4s ease;
-}
-.toast.fade-out { opacity: 0; }
-.toast-info { background: #0288d1; }
-.toast-success { background: #2e7d32; }
-.toast-warning { background: #ffb300; color: #000; }
-.toast-error { background: #c62828; }
-
-/* --------------------------------
-   8. Debug-Log
--------------------------------- */
-.debug-log {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  max-height: 30vh;
-  overflow-y: auto;
-  background: #000;
-  color: #0f0;
-  font-family: monospace;
-  font-size: 0.85rem;
-  z-index: 10000;
-  padding: 10px;
-}
-
-/* --------------------------------
-   9. Buttons
--------------------------------- */
-button {
-  padding: 10px 16px;
-  background: #009688;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin: 6px;
-  transition: background 0.2s;
-}
-button:hover { background: #00796b; }
-button:disabled { background: #555; cursor: default; }
-
-/* --------------------------------
-   10. Upload-Label
--------------------------------- */
-.upload-label {
-  display: inline-block;
-  background: #0097a7;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s;
+/* Form areas */
+.statistik .form-group{ margin: 0; }
+.statistik .dropdown-container{
+  display: grid;
+  gap: 12px;
   margin-bottom: 10px;
 }
-.upload-label:hover { background: #007c91; }
 
-/* --------------------------------
-   11. Formulare & Dropdowns
--------------------------------- */
-input[type="text"],
-input[type="file"],
-select {
+/* Inputs */
+.statistik select,
+.statistik input[type="text"],
+.statistik textarea{
   width: 100%;
-  padding: 10px 14px;
-  margin: 12px 0;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  transition: outline-color 0.2s;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+  color: var(--text);
+  outline: none;
 }
-input[type="text"]:focus,
-select:focus { outline: 3px solid #00d1ff; }
-select option { background: #003957; color: #fff; }
-input[type="file"] { cursor: pointer; }
 
-/* --------------------------------
-   12. Baumansicht
--------------------------------- */
-#treeContainer {
-  width: 100%;
-  max-width: 1000px;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-  margin: 20px auto;
-  min-height: 200px;
-  overflow-y: auto;
+.statistik select:focus,
+.statistik input[type="text"]:focus,
+.statistik textarea:focus{
+  border-color: rgba(124,255,199,.45);
+  box-shadow: 0 0 0 4px rgba(124,255,199,.12);
 }
-#treeContainer ul {
-  list-style: none;
-  padding-left: 20px;
+
+.statistik select option{
+  background: rgba(10,16,32,.98);
+  color: var(--text);
+}
+
+/* Checkbox row */
+.statistik label{
+  color: var(--muted);
+  font-size: 12px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  user-select: none;
+}
+.statistik #all-areas-checkbox{
+  transform: translateY(1px);
+}
+
+/* Buttons */
+.statistik button,
+.statistik #search-button{
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform .05s ease, background .15s ease, border-color .15s ease;
+}
+
+.statistik #search-button{
+  background:
+    linear-gradient(135deg, rgba(124,255,199,.18), rgba(89,122,255,.18));
+  border-color: rgba(124,255,199,.22);
+}
+
+.statistik button:hover,
+.statistik #search-button:hover{
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.18);
+}
+
+.statistik button:active,
+.statistik #search-button:active{
+  transform: translateY(1px);
+}
+
+.statistik button:disabled,
+.statistik #search-button:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* Loading */
+.statistik #loading-container{
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+}
+.statistik #loading-container p{
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--mono);
+}
+.statistik #coffee-cup{
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,.35));
+}
+
+/* Results table (scrollable, sticky header) */
+.statistik #result{
+  margin-top: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  overflow: auto;
+  max-height: 420px;
+}
+
+.statistik #result table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.statistik #result th,
+.statistik #result td{
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  font-size: 13px;
+  color: var(--text);
   text-align: left;
+  white-space: nowrap;
 }
-#treeContainer li {
-  position: relative;
-  padding: 10px;
-  margin: 6px 0;
-  border: 1px solid #556680;
-  background: #1f2a44;
-  border-radius: 4px;
-  cursor: pointer;
+
+.statistik #result th{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(11,16,32,.88);
+  backdrop-filter: blur(10px);
+  font-weight: 650;
 }
-#treeContainer li:hover { background: #32415d; }
-#treeContainer li:focus,
-#treeContainer li.focused { outline: 3px solid #00d1ff; }
-#treeContainer li[aria-selected="true"] { background: #006887; }
-.node-text { display: inline-block; color: #eef; }
-.bulk-checkbox { margin-right: 5px; cursor: pointer; }
-.edit-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  font-size: 1rem; color: #fff; opacity: 0; cursor: pointer; }
-#treeContainer li:hover .edit-icon { opacity: 1; }
-.highlight { background: #44556c; transition: background 0.3s; }
-.dimmed { opacity: 0.5; transition: opacity 0.3s; }
-.path-highlight { background: #ffeb3b; color: #000; }
-input.inline-edit { font-size: 1rem; padding: 4px 6px; width: calc(100% - 80px); }
-.insert-icon { position: absolute; font-size: 1.2rem; pointer-events: none; }
-.up-arrow { top: 2px; left: 50%; transform: translateX(-50%); color: #4caf50; }
-.down-arrow { bottom: 2px; left: 50%; transform: translateX(-50%); color: #4caf50; }
-.plus-icon { right: 4px; top: 50%; transform: translateY(-50%); color: #ff9800; }
-.ghost { background: rgba(0, 0, 0, 0.7); color: #fff; padding: 6px 10px;
-  border-radius: 4px; font-size: 0.9rem; z-index: 10000; pointer-events: none; }
 
-/* --------------------------------
-   13. Editor & Modals
--------------------------------- */
-#editorContainer { text-align: left; }
-#editorContainer label { display: block; margin: 12px 0 6px; color: #e0e0e0; }
-.modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.7); display: flex; align-items: center;
-  justify-content: center; z-index: 10000; }
-.modal-content { background: #fff; color: #000; margin: 5% auto;
-  padding: 24px; border: none; width: 85%; max-width: 520px;
-  border-radius: 8px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-.modal-content .close { position: absolute; top: 12px; right: 16px;
-  font-size: 28px; font-weight: bold; color: #333; cursor: pointer; }
-.modal-content .close:hover { color: #000; }
-
-/* --------------------------------
-   14. XML-Code Anzeige
--------------------------------- */
-.xml-code { background: #f0f0f0; color: #000; padding: 12px;
-  border: 1px solid #ccc; max-height: 60vh; overflow-y: auto; text-align: left; }
-
-/* --------------------------------
-   15. Tabellen & Aktionen
--------------------------------- */
-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
-th, td { padding: 14px; text-align: left; }
-th { background: #005a9c; color: #fff; font-weight: bold; }
-tr:nth-child(even) { background: rgba(255, 255, 255, 0.15); }
-td { border-bottom: 1px solid rgba(255, 255, 255, 0.3); color: #fff; }
-
-.editSourceBtn,
-.deleteSourceBtn {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
+.statistik #result tr:nth-child(even){
+  background: rgba(255,255,255,.03);
 }
-.editSourceBtn { background: #0277bd; color: #fff; margin-right: 6px; }
-.deleteSourceBtn { background: #b71c1c; color: #fff; }
-.editSourceBtn:hover,
-.deleteSourceBtn:hover { opacity: 0.85; }
 
-/* --------------------------------
-   16. Ladebalken
--------------------------------- */
-.loading-bar {
-  position: relative;
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-  border-radius: 3px;
+/* “Gesamt”-Zeile (kommt per inline style font-weight: bold) */
+.statistik #result tr[style*="font-weight: bold"] td{
+  font-weight: 750 !important;
 }
-.loading-bar .progress {
-  position: absolute;
-  top: 0; left: 0;
-  height: 6px;
-  width: 0;
-  background: #00d1ff;
-  animation: loading-animation 2s linear infinite;
+
+/* URL output block */
+.statistik #generated-url{
+  margin-top: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-word;
 }
-@keyframes loading-animation {
-  0% { width: 0; }
-  50% { width: 70%; }
-  100% { width: 0; }
+
+/* Chart surface */
+.statistik #chart-container{
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+}
+
+/* Footer inside page (falls vorhanden) */
+.statistik footer{
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 980px){
+  .statistik #result table{ min-width: 760px; }
+}
+@media (max-width: 560px){
+  .statistik h1{ font-size: 20px; }
+  .statistik #result table{ min-width: 680px; }
 }
