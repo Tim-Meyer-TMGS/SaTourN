@@ -154,3 +154,35 @@ a:hover{ text-decoration:underline; }
   .menu-container{ flex-direction:column; align-items:flex-start; gap:12px; }
   .menu-container .logo{ height:48px; }
 }
+/* ===============================
+   Global Footer
+   =============================== */
+
+.footer{
+  margin-top: 40px;
+  padding: 28px 16px;
+  background: transparent; /* Hintergrund kommt vom Body-Gradient */
+  color: var(--muted);
+}
+
+.footer-container{
+  max-width: 1180px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footer p{
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: .85;
+}
+
+/* Optional: dezente Trennlinie nach oben */
+.footer::before{
+  content:"";
+  display:block;
+  max-width: 1180px;
+  margin: 0 auto 18px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
