@@ -1,0 +1,211 @@
+/* ===============================
+   KG Finder – scoped styles
+   uses base.css tokens
+   =============================== */
+
+.kg-search{
+  display:grid;
+  gap:16px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.kg-head h1{
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: .2px;
+}
+
+.kg-sub{
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.kg-card{
+  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  padding: 16px;
+}
+
+.kg-form-grid{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items:end;
+}
+
+@media (max-width: 760px){
+  .kg-form-grid{ grid-template-columns: 1fr; }
+  .kg-actions{ justify-content: flex-start; }
+}
+
+.kg-field{
+  display:grid;
+  gap: 6px;
+}
+
+.kg-field label{
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.kg-field input{
+  width:100%;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
+  color: var(--text);
+  outline: none;
+}
+
+.kg-field input:focus{
+  border-color: rgba(124,255,199,.55);
+  box-shadow: 0 0 0 4px rgba(124,255,199,.12);
+}
+
+.kg-actions{
+  display:flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.kg-card button{
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.kg-card button.primary{
+  background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
+  border-color: rgba(124,255,199,.32);
+}
+
+.kg-card button:hover{
+  filter: brightness(1.05);
+}
+
+.kg-card button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.kg-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+@media (max-width: 760px){
+  .kg-toolbar{ flex-direction: column; align-items:flex-start; }
+}
+
+.kg-pager{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kg-count{
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.kg-status{
+  color: var(--muted);
+  font-size: 13px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.kg-spinner{
+  display:inline-block;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  border:3px solid rgba(255,255,255,.35);
+  border-top-color: rgba(89,122,255,.95);
+  animation: kgspin 1s linear infinite;
+}
+
+@keyframes kgspin { to { transform: rotate(360deg); } }
+
+.kg-results{
+  margin-top: 14px;
+  display:grid;
+  gap: 12px;
+}
+
+.kg-result{
+  display:grid;
+  grid-template-columns: 150px 1fr;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  background: rgba(0,0,0,.18);
+}
+
+@media (max-width: 760px){
+  .kg-result{ grid-template-columns: 1fr; }
+}
+
+.kg-thumb{
+  width: 150px;
+  height: 105px;
+  border-radius: 12px;
+  overflow:hidden;
+  background: rgba(0,0,0,.30);
+  border: 1px solid rgba(255,255,255,.12);
+  display:grid;
+  place-items:center;
+  font-size: 12px;
+  color: rgba(255,255,255,.70);
+}
+
+@media (max-width: 760px){
+  .kg-thumb{ width: 100%; height: 160px; }
+}
+
+.kg-thumb img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.kg-meta{
+  display:grid;
+  gap: 6px;
+}
+
+.kg-title{
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.kg-line{
+  color: rgba(255,255,255,.82);
+  font-size: 13px;
+}
+
+.kg-line a{
+  color: rgba(124,255,199,.95);
+  text-decoration:none;
+}
+.kg-line a:hover{ text-decoration:underline; }
