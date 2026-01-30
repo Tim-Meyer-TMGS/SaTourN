@@ -4,53 +4,84 @@ title: SaTourN-Statistik
 permalink: /Statistik/
 ---
 
-<div class="container">
-  <div class="statistik page-surface">
-    <h1>SaTourN-Statistik-Tool</h1>
+<div class="container statistik">
+  <div class="wrap">
 
-    <div class="stat-grid">
-      <div>
-        <h2>Gebiet wählen</h2>
-        <div class="form-group dropdown-container" id="area-dropdown-container"></div>
+    <div class="card">
+      <div class="hd">
+        <strong>SaTourN-Statistik</strong>
+
+        <!-- Status Pill -->
+        <span class="pill run" id="status-pill">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="status-text">bereit</span>
+        </span>
       </div>
 
-      <div>
-        <h2>Ort wählen</h2>
-        <div class="form-group dropdown-container" id="place-dropdown-container"></div>
+      <div class="ct">
+
+        <div class="grid">
+          <div class="field">
+            <label>
+              Gebiet
+              <div class="form-group dropdown-container" id="area-dropdown-container"></div>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>
+              Ort
+              <div class="form-group dropdown-container" id="place-dropdown-container"></div>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>
+              Typ
+              <div class="form-group dropdown-container" id="type-dropdown-container"></div>
+            </label>
+          </div>
+
+          <div class="full checks">
+            <label class="checkline">
+              <input type="checkbox" id="all-areas-checkbox" />
+              Alle Gebiete abfragen
+            </label>
+          </div>
+
+          <div class="btn">
+            <button id="search-button" class="primary">Ergebnisse suchen</button>
+          </div>
+
+          <!-- Optional: Fortschritt wie Vorlage -->
+          <div class="wide progWrap" aria-live="polite">
+            <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="bar" id="prog-bar" style="width:0%"></div>
+            </div>
+            <div class="meta" id="prog-meta">0%</div>
+          </div>
+        </div>
+
+        <div id="loading-container" style="display:none;">
+          <svg id="coffee-cup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="96" height="96">
+            <path d="M4 20h48v24a12 12 0 01-12 12H16a12 12 0 01-12-12V20z" fill="#ccc" stroke="#fff" stroke-width="2" />
+            <rect id="coffee-fill" x="8" y="32" width="40" height="12" fill="#6f4e37" />
+            <path d="M52 24h4a8 8 0 010 16h-4" fill="none" stroke="#fff" stroke-width="2" />
+          </svg>
+          <p class="muted" style="margin-top:10px;">Hol dir 'n Kaffee, das dauert 'ne Minute...</p>
+        </div>
+
+        <div class="tableWrap" id="result"></div>
+
+        <div id="generated-url" class="log" style="display:none;"></div>
+
+        <div id="chart-container" style="display:none;">
+          <canvas id="pie-chart"></canvas>
+        </div>
+
       </div>
-
-      <div>
-        <h2>Typ wählen</h2>
-        <div class="form-group dropdown-container" id="type-dropdown-container"></div>
-      </div>
     </div>
 
-    <div class="checks" style="margin-bottom: 14px;">
-      <label>
-        <input type="checkbox" id="all-areas-checkbox" />
-        Alle Gebiete abfragen
-      </label>
-    </div>
-
-    <button id="search-button">Ergebnisse suchen</button>
-
-    <div id="loading-container" style="display: none;">
-      <svg id="coffee-cup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="120" height="120">
-        <path d="M4 20h48v24a12 12 0 01-12 12H16a12 12 0 01-12-12V20z" fill="#ccc" stroke="#fff" stroke-width="2" />
-        <rect id="coffee-fill" x="8" y="32" width="40" height="12" fill="#6f4e37" />
-        <path d="M52 24h4a8 8 0 010 16h-4" fill="none" stroke="#fff" stroke-width="2" />
-      </svg>
-      <p style="margin-top: 10px; font-size: 16px; color: #fff !important;">
-        Hol dir 'n Kaffee, das dauert 'ne Minute...
-      </p>
-    </div>
-
-    <div id="result"></div>
-    <div id="generated-url"></div>
-
-    <div id="chart-container">
-      <canvas id="pie-chart"></canvas>
-    </div>
   </div>
 </div>
 
