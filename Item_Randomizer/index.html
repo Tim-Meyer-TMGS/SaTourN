@@ -1,1 +1,822 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Item Randomizer</title>
+  <style>
+    :root{
+      --bg0:#070A14;
+      --bg1:#0B1020;
+      --card:rgba(255,255,255,.06);
+      --card2:rgba(255,255,255,.04);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.66);
+      --border:rgba(255,255,255,.12);
+      --shadow:0 12px 40px rgba(0,0,0,.35);
+      --r:16px;
+      --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+      --accentA:rgba(124,255,199,.95);
+      --accentB:rgba(89,122,255,.95);
+      --warn:rgba(255,205,106,.95);
+      --err:rgba(255,113,113,.95);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(89,122,255,.28), transparent 62%),
+        radial-gradient(900px 600px at 85% 25%, rgba(124,255,199,.18), transparent 62%),
+        linear-gradient(180deg,var(--bg0),var(--bg1));
+      min-height:100vh;
+    }
+
+    a{color:inherit;text-decoration:none}
+    a:hover{text-decoration:underline}
+
+    /* Top menu */
+    .topbar{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(10px);
+      background: rgba(7,10,20,.65);
+      border-bottom:1px solid rgba(255,255,255,.10);
+    }
+    .topbarInner{
+      max-width:1180px;
+      margin:0 auto;
+      padding:10px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      min-width:200px;
+    }
+    .mark{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--accentA);
+      box-shadow:0 0 18px rgba(124,255,199,.45);
+    }
+    .brand strong{font-size:14px; letter-spacing:.2px}
+    .nav{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .nav a{
+      font-size:13px;
+      color:var(--muted);
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    .nav a:hover{
+      color:var(--text);
+      border-color:rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      text-decoration:none;
+    }
+
+    /* Page */
+    .wrap{
+      max-width:1180px;
+      margin:0 auto;
+      padding:14px 14px 22px;
+      display:grid;
+      gap:12px;
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--card) 0%, var(--card2) 100%);
+      border:1px solid var(--border);
+      border-radius:var(--r);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .hd{
+      padding:12px 14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+    }
+    .hd strong{font-size:13px; letter-spacing:.2px}
+    .ct{padding:14px}
+
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: rgba(255,255,255,.25);
+      display:inline-block;
+    }
+    .pill.run .dot{background:var(--warn)}
+    .pill.ok .dot{background:var(--accentA)}
+    .pill.err .dot{background:var(--err)}
+
+    /* Form */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:10px;
+      align-items:end;
+    }
+    .field{grid-column: span 3;}
+    .wide{grid-column: span 6;}
+    .full{grid-column: span 12;}
+    .btn{grid-column: span 2;}
+
+    @media (max-width: 980px){
+      .field{grid-column: span 6;}
+      .wide{grid-column: span 12;}
+      .btn{grid-column: span 6;}
+    }
+    @media (max-width: 520px){
+      .field,.wide,.btn{grid-column: span 12;}
+      .nav{display:none;} /* minimal mobile; scroll to sections still works */
+    }
+
+    label{
+      display:grid; gap:6px;
+      font-size:12px;
+      color: var(--muted);
+    }
+    input, textarea{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{
+      min-height:44px;
+      max-height:140px;
+      resize: vertical;
+      font-family: var(--mono);
+      font-size:12px;
+      line-height:1.35;
+    }
+    input:focus, textarea:focus{
+      border-color: rgba(124,255,199,.55);
+      box-shadow: 0 0 0 4px rgba(124,255,199,.12);
+    }
+
+    button{
+      width:100%;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor:pointer;
+    }
+    button.primary{
+      background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
+      border-color: rgba(124,255,199,.35);
+    }
+    button:disabled{opacity:.5; cursor:not-allowed;}
+
+    /* Progress */
+    .progWrap{display:flex; gap:10px; align-items:center;}
+    .prog{
+      flex:1;
+      height:12px;
+      border-radius:999px;
+      background: rgba(255,255,255,.07);
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+    }
+    .bar{
+      height:100%;
+      width:0%;
+      background: linear-gradient(90deg, rgba(124,255,199,.85), rgba(89,122,255,.85));
+      transition: width .2s ease;
+    }
+    .meta{
+      font-family: var(--mono);
+      font-size:12px;
+      color: rgba(255,255,255,.82);
+      white-space:nowrap;
+    }
+
+    /* Results */
+    .tableWrap{
+      max-height:360px;
+      overflow:auto;
+      border-radius: var(--r);
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:820px;
+    }
+    th,td{
+      padding:10px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      vertical-align:top;
+      font-size:13px;
+    }
+    th{
+      position:sticky; top:0;
+      background: rgba(10,16,32,.88);
+      backdrop-filter: blur(10px);
+      text-align:left;
+      font-weight:600;
+    }
+    .id{
+      font-family: var(--mono);
+      font-size:12px;
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:999px;
+      padding:3px 8px;
+      display:inline-block;
+      white-space:nowrap;
+    }
+    pre{
+      margin:0;
+      padding:10px;
+      border-radius:12px;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.08);
+      font-family: var(--mono);
+      font-size:11.5px;
+      line-height:1.35;
+      max-height:150px;
+      overflow:auto;
+      white-space:pre;
+    }
+
+    .log{
+      font-family: var(--mono);
+      font-size:12px;
+      line-height:1.4;
+      background: rgba(0,0,0,.22);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius: var(--r);
+      padding:12px;
+      max-height:180px;
+      overflow:auto;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+    .muted{color:var(--muted); font-size:12px; line-height:1.45; margin:0;}
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbarInner">
+      <div class="brand">
+        <span class="mark"></span>
+        <strong>Item Randomizer</strong>
+      </div>
+      <nav class="nav" aria-label="Menü">
+        <a href="#settings">Settings</a>
+        <a href="#results">Results</a>
+        <a href="#log">Log</a>
+      </nav>
+      <span id="status" class="pill run"><span class="dot"></span><span>ready</span></span>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- SETTINGS -->
+    <section id="settings" class="card">
+      <div class="hd">
+        <strong>Settings</strong>
+        <span class="pill"><span class="dot"></span><span id="countLabel">0</span></span>
+      </div>
+      <div class="ct">
+        <div class="grid">
+          <div class="wide">
+            <label>Base URL
+              <input id="baseUrl" value="https://meta.et4.de/rest.ashx/search/" />
+            </label>
+          </div>
+
+          <div class="field">
+            <label>Experience
+              <input id="experience" value="open-data-sachsen-tourismus" />
+            </label>
+          </div>
+
+          <div class="field">
+            <label>License Key (optional)
+              <input id="licensekey" placeholder="enter_your_licensekey" />
+            </label>
+          </div>
+
+          <div class="field">
+            <label>Template
+              <input id="template" value="ET2022A.json" />
+            </label>
+          </div>
+
+          <div class="field">
+            <label>Target count
+              <input id="targetCount" type="number" min="1" max="500" value="20" />
+            </label>
+          </div>
+
+          <div class="field">
+            <label>Rate (req/s, max 2)
+              <input id="rate" type="number" min="0.1" max="2" step="0.1" value="2" />
+            </label>
+          </div>
+
+          <div class="wide">
+            <label>Types (comma-separated)
+              <input id="types" value="POI,Event,Gastro,Tour,Hotel" />
+            </label>
+          </div>
+
+          <div class="full">
+            <label>Plan (optional JSON; sum = target; else evenly distributed)
+              <textarea id="plan" placeholder='{"POI":4,"Event":4,"Gastro":4,"Tour":4,"Hotel":4}'></textarea>
+            </label>
+          </div>
+
+          <div class="btn">
+            <label>&nbsp;
+              <button id="runBtn" class="primary" type="button">Start</button>
+            </label>
+          </div>
+          <div class="btn">
+            <label>&nbsp;
+              <button id="stopBtn" type="button" disabled>Stop</button>
+            </label>
+          </div>
+          <div class="btn">
+            <label>&nbsp;
+              <button id="downloadAllBtn" type="button" disabled>JSONs</button>
+            </label>
+          </div>
+          <div class="btn">
+            <label>&nbsp;
+              <button id="downloadIndexBtn" type="button" disabled>Index</button>
+            </label>
+          </div>
+
+          <div class="full">
+            <div class="progWrap">
+              <div class="prog"><div id="bar" class="bar"></div></div>
+              <div id="progressMeta" class="meta">0/0</div>
+            </div>
+            <p class="muted" style="margin-top:10px;">
+              Strict mode: sequential requests only; hard capped to max 2 req/s; waits for each response before continuing.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="results" class="card">
+      <div class="hd">
+        <strong>Results</strong>
+        <span class="pill"><span class="dot"></span><span id="phaseLabel">idle</span></span>
+      </div>
+      <div class="ct">
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:110px;">Type</th>
+                <th style="width:170px;">ID</th>
+                <th>URL</th>
+                <th style="width:420px;">JSON (preview)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOG -->
+    <section id="log" class="card">
+      <div class="hd">
+        <strong>Log</strong>
+        <span class="pill"><span class="dot"></span><span>debug</span></span>
+      </div>
+      <div class="ct">
+        <div id="logBox" class="log"></div>
+      </div>
+    </section>
+  </div>
+
+<script>
+  // ----------------------------
+  // Item Randomizer (slim + safe)
+  // - IDs sammeln (paging) -> Details laden (exakt targetCount)
+  // - strikt sequenziell
+  // - rate <= 2 req/s
+  // - licensekey optional
+  // ----------------------------
+
+  const el = (id) => document.getElementById(id);
+
+  function esc(s){
+    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+  function buildParams(obj){
+    const p = new URLSearchParams();
+    for (const [k,v] of Object.entries(obj)){
+      if (v === undefined || v === null || v === "") continue;
+      p.set(k, String(v));
+    }
+    return p.toString();
+  }
+
+  const ui = {
+    setStatus(text, state){
+      const s = el("status");
+      s.querySelector("span:last-child").textContent = text;
+      s.className = "pill " + state;
+    },
+    setPhase(text){ el("phaseLabel").textContent = text; },
+    setCount(n){ el("countLabel").textContent = String(n); },
+    setProgress(done, total){
+      el("progressMeta").textContent = `${done}/${total}`;
+      const pct = total > 0 ? (done / total) * 100 : 0;
+      el("bar").style.width = `${Math.max(0, Math.min(100, pct))}%`;
+    },
+    log(msg){
+      const box = el("logBox");
+      box.textContent += msg + "\n";
+      box.scrollTop = box.scrollHeight;
+    },
+    reset(){
+      el("tbody").innerHTML = "";
+      el("logBox").textContent = "";
+      ui.setCount(0);
+      ui.setPhase("idle");
+      ui.setProgress(0,0);
+      ui.setStatus("ready","run");
+      el("downloadAllBtn").disabled = true;
+      el("downloadIndexBtn").disabled = true;
+    },
+    addRow({type, id, url, jsonSnippet}){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${esc(type)}</td>
+        <td><span class="id">${esc(id)}</span></td>
+        <td><a href="${url}" target="_blank" rel="noopener">${url}</a></td>
+        <td><pre>${esc(jsonSnippet)}</pre></td>
+      `;
+      el("tbody").appendChild(tr);
+    }
+  };
+
+  function parseTypes(raw){
+    return raw.split(",").map(s => s.trim()).filter(Boolean);
+  }
+  function prettySnippet(obj, maxLen=700){
+    const s = JSON.stringify(obj, null, 2);
+    return s.length <= maxLen ? s : (s.slice(0, maxLen) + "\n…");
+  }
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  // Strict sequential rate limiter: ensures request STARTS are spaced by minIntervalMs
+  async function rateLimit(minIntervalMs, state){
+    const now = performance.now();
+    const elapsed = now - state.lastStart;
+    const wait = Math.max(0, minIntervalMs - elapsed);
+    if (wait > 0) await sleep(wait);
+    state.lastStart = performance.now();
+  }
+
+  async function fetchJson(baseUrl, params, abortSignal){
+    const url = baseUrl + "?" + buildParams(params);
+    const res = await fetch(url, { method: "GET", signal: abortSignal });
+    if (!res.ok){
+      const txt = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
+    }
+    return res.json();
+  }
+
+  function extractItems(payload){
+    const keys = ["items","results","Result","Documents","document","data"];
+    for (const k of keys){
+      const v = payload?.[k];
+      if (Array.isArray(v)) return v;
+      if (v && typeof v === "object"){
+        for (const kk of keys){
+          const vv = v?.[kk];
+          if (Array.isArray(vv)) return vv;
+        }
+      }
+    }
+    for (const v of Object.values(payload || {})){
+      if (Array.isArray(v) && v.length && typeof v[0] === "object") return v;
+    }
+    return [];
+  }
+
+  function extractTotal(payload){
+    const keys = ["total","Total","totalHits","TotalHits","numFound","NumFound","count","Count","hits","Hits"];
+    for (const k of keys){
+      const v = payload?.[k];
+      if (Number.isInteger(v)) return v;
+      if (typeof v === "string" && /^\d+$/.test(v)) return parseInt(v, 10);
+    }
+    for (const mk of ["meta","Meta","info","Info"]){
+      const meta = payload?.[mk];
+      if (meta && typeof meta === "object"){
+        for (const k of keys){
+          const v = meta?.[k];
+          if (Number.isInteger(v)) return v;
+          if (typeof v === "string" && /^\d+$/.test(v)) return parseInt(v, 10);
+        }
+      }
+    }
+    return null;
+  }
+
+  function extractId(item){
+    // Prefer numeric id
+    if (item?.id != null) return String(item.id);
+    // Fallback global_id
+    if (item?.global_id != null) return String(item.global_id);
+    // Other variants
+    for (const k of ["Id","ID","objectId","ObjectId","oid","Oid"]){
+      if (item?.[k] != null) return String(item[k]);
+    }
+    return null;
+  }
+
+  function getPlan(types, targetCount, planText){
+    if (planText && planText.trim()){
+      const plan = JSON.parse(planText);
+      let sum = 0;
+      for (const t of types){
+        const n = Number(plan[t] ?? 0);
+        if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid plan value for ${t}`);
+        plan[t] = Math.floor(n);
+        sum += plan[t];
+      }
+      if (sum !== targetCount) throw new Error(`Plan sum (${sum}) must equal target (${targetCount}).`);
+      return plan;
+    }
+    // even distribution
+    const base = Math.floor(targetCount / types.length);
+    let rest = targetCount - base * types.length;
+    const plan = {};
+    for (const t of types) plan[t] = base;
+    for (let i = 0; i < types.length && rest > 0; i++, rest--) plan[types[i]]++;
+    return plan;
+  }
+
+  async function collectIdsForType({baseUrl, experience, template, licensekey, type, need, limiter, abortSignal}){
+    const ids = new Set();
+    const limit = 100;
+
+    // discover total once
+    await rateLimit(limiter.minIntervalMs, limiter.state);
+    const probe = await fetchJson(baseUrl, {
+      experience, template, licensekey, type,
+      q: "", limit: 1, offset: 0
+    }, abortSignal);
+    const total = extractTotal(probe);
+
+    const maxOffset = (total && total > 0) ? Math.max(0, total - limit) : 5000;
+
+    let offset = Math.floor(Math.random() * (maxOffset + 1));
+
+    const pagesNeeded = Math.ceil(need / limit);
+    const requestBudget = Math.max(15, pagesNeeded * 6);
+
+    for (let req = 0; req < requestBudget && ids.size < need; req++){
+      await rateLimit(limiter.minIntervalMs, limiter.state);
+
+      const payload = await fetchJson(baseUrl, {
+        experience, template, licensekey, type,
+        q: "",
+        limit,
+        offset
+      }, abortSignal);
+
+      const items = extractItems(payload);
+      let added = 0;
+
+      for (const it of items){
+        const id = extractId(it);
+        if (id && !ids.has(id)){
+          ids.add(id);
+          added++;
+        }
+        if (ids.size >= need) break;
+      }
+
+      ui.log(`IDs ${type}: offset=${offset} items=${items.length} +${added} unique=${ids.size}/${need}`);
+
+      offset = offset + limit;
+      if (offset > maxOffset) offset = 0;
+      if (!items.length) break;
+    }
+
+    return Array.from(ids);
+  }
+
+  async function fetchDetailById({baseUrl, experience, template, licensekey, type, id, limiter, abortSignal}){
+    await rateLimit(limiter.minIntervalMs, limiter.state);
+    const isNumeric = /^\d+$/.test(String(id));
+    const field = isNumeric ? "id" : "global_id";
+
+    const payload = await fetchJson(baseUrl, {
+      experience, template, licensekey, type,
+      q: `${field}:${id}`,
+      limit: 1,
+      offset: 0
+    }, abortSignal);
+
+    const items = extractItems(payload);
+    return items.length ? items[0] : payload;
+  }
+
+  function downloadBlob(filename, data, mime="application/json"){
+    const blob = new Blob([data], { type: mime });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  let stopRequested = false;
+  let lastResults = [];
+  let currentAbort = null;
+
+  function setButtons(running){
+    el("runBtn").disabled = running;
+    el("stopBtn").disabled = !running;
+  }
+
+  el("stopBtn").addEventListener("click", () => {
+    stopRequested = true;
+    if (currentAbort) currentAbort.abort();
+    ui.log("Stop requested.");
+  });
+
+  el("downloadAllBtn").addEventListener("click", () => {
+    for (const r of lastResults){
+      downloadBlob(`${r.id}.json`, JSON.stringify(r.json, null, 2));
+    }
+  });
+
+  el("downloadIndexBtn").addEventListener("click", () => {
+    const index = lastResults.map(({type,id,url}) => ({type,id,url}));
+    downloadBlob("urls.json", JSON.stringify(index, null, 2));
+  });
+
+  el("runBtn").addEventListener("click", async () => {
+    ui.reset();
+    stopRequested = false;
+    lastResults = [];
+    currentAbort = new AbortController();
+
+    const baseUrl = el("baseUrl").value.trim() || "https://meta.et4.de/rest.ashx/search/";
+    const experience = el("experience").value.trim();
+    const template = el("template").value.trim() || "ET2022A.json";
+    const licensekey = el("licensekey").value.trim(); // optional
+    const types = parseTypes(el("types").value || "");
+
+    if (!experience){ ui.setStatus("error","err"); ui.log("Missing experience."); return; }
+    if (!types.length){ ui.setStatus("error","err"); ui.log("Missing types."); return; }
+
+    const targetCount = Math.max(1, Math.min(500, parseInt(el("targetCount").value, 10) || 20));
+
+    const rateRaw = parseFloat(el("rate").value);
+    const rate = Math.max(0.1, Math.min(2, Number.isFinite(rateRaw) ? rateRaw : 2));
+    el("rate").value = String(rate);
+    const minIntervalMs = Math.ceil(1000 / rate);
+
+    let plan;
+    try{
+      plan = getPlan(types, targetCount, el("plan").value);
+    }catch(e){
+      ui.setStatus("error","err");
+      ui.log(String(e.message || e));
+      return;
+    }
+
+    const limiter = { minIntervalMs, state: { lastStart: -1e9 } };
+
+    ui.setStatus("running","run");
+    ui.log(`baseUrl=${baseUrl}`);
+    ui.log(`experience=${experience}`);
+    ui.log(`template=${template}`);
+    ui.log(`licensekey=${licensekey ? "[set]" : "[empty]"}`);
+    ui.log(`types=${types.join(",")}`);
+    ui.log(`target=${targetCount}`);
+    ui.log(`rate=${rate} req/s (minInterval=${minIntervalMs}ms)`);
+    ui.log(`plan=${JSON.stringify(plan)}`);
+
+    setButtons(true);
+
+    try{
+      // Phase 1: collect IDs
+      ui.setPhase("collecting");
+      const idPool = [];
+      for (const type of types){
+        if (stopRequested) throw new Error("Stopped by user.");
+        const need = plan[type] || 0;
+        if (!need) continue;
+
+        const ids = await collectIdsForType({
+          baseUrl, experience, template, licensekey, type, need,
+          limiter, abortSignal: currentAbort.signal
+        });
+
+        ui.log(`IDs ${type}: ${ids.length}/${need}`);
+        for (const id of ids) idPool.push({ type, id });
+      }
+
+      // Phase 2: fetch details
+      ui.setPhase("loading");
+      const totalToFetch = Math.min(targetCount, idPool.length);
+      ui.setProgress(0, totalToFetch);
+
+      const seen = new Set();
+      let done = 0;
+
+      for (const entry of idPool){
+        if (done >= totalToFetch) break;
+        if (stopRequested) throw new Error("Stopped by user.");
+
+        const key = `${entry.type}:${entry.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const detail = await fetchDetailById({
+          baseUrl, experience, template, licensekey,
+          type: entry.type, id: entry.id,
+          limiter, abortSignal: currentAbort.signal
+        });
+
+        const isNumeric = /^\d+$/.test(String(entry.id));
+        const field = isNumeric ? "id" : "global_id";
+
+        const url = baseUrl + "?" + buildParams({
+          experience, template, licensekey,
+          type: entry.type,
+          q: `${field}:${entry.id}`
+        });
+
+        lastResults.push({ type: entry.type, id: entry.id, url, json: detail });
+        ui.addRow({ type: entry.type, id: entry.id, url, jsonSnippet: prettySnippet(detail) });
+
+        done++;
+        ui.setCount(lastResults.length);
+        ui.setProgress(done, totalToFetch);
+      }
+
+      if (done < targetCount){
+        ui.setStatus("partial","run");
+        ui.log(`Warning: only ${done}/${targetCount} fetched (ID pool too small).`);
+      }else{
+        ui.setStatus("done","ok");
+      }
+
+      el("downloadAllBtn").disabled = (lastResults.length === 0);
+      el("downloadIndexBtn").disabled = (lastResults.length === 0);
+      ui.setPhase("done");
+    }catch(e){
+      ui.setStatus("error","err");
+      ui.log("Error: " + String(e.message || e));
+      ui.setPhase("stopped");
+    }finally{
+      setButtons(false);
+      currentAbort = null;
+    }
+  });
+
+  ui.reset();
+  ui.log("Ready.");
+</script>
+</body>
+</html>
 
