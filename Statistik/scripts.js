@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // Startzustand
-  setPill('run', 'bereit');
+  setPill('ok', 'bereit');
   showProgress(false);
   setProgress(0);
 
@@ -525,8 +525,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ------------------------------
   //  Orte laden, wenn ein Gebiet ausgewählt wird
+  //  -> Status-Pill gelb während API lädt, grün wenn fertig
   // ------------------------------
   const loadPlaces = (area) => {
+    setPill('run', 'Gebiete und Orte werden geladen');
+
     const raw = area ? `area:"${area}"` : '';
     fetch(buildUrl('City', raw))
       .then(res => res.ok ? res.text() : Promise.reject(res.status))
@@ -555,10 +558,13 @@ document.addEventListener('DOMContentLoaded', () => {
         dropdown.addEventListener('change', () => {
           selectedPlace = dropdown.value || null;
         });
+
+        setPill('ok', 'bereit');
       })
       .catch(err => {
         console.error('Fehler beim Laden der Orte:', err);
         elements.placeContainer.textContent = 'Fehler beim Laden der Orte.';
+        setPill('err', 'fehler');
       });
   };
 
@@ -571,8 +577,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ------------------------------
   //  Gebiete laden (Dropdown)
+  //  -> Status-Pill gelb während API lädt, grün wenn fertig
   // ------------------------------
   const loadAreas = () => {
+    setPill('run', 'Gebiete und Orte werden geladen');
+
     fetch(buildUrl('Area'))
       .then(res => res.ok ? res.text() : Promise.reject(res.status))
       .then(xmlText => {
@@ -601,10 +610,13 @@ document.addEventListener('DOMContentLoaded', () => {
           selectedArea = dropdown.value || null;
           loadPlaces(selectedArea);
         });
+
+        setPill('ok', 'bereit');
       })
       .catch(err => {
         console.error('Fehler beim Laden der Gebiete:', err);
         elements.areaContainer.textContent = 'Fehler beim Laden der Gebiete.';
+        setPill('err', 'fehler');
       });
   };
 
