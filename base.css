@@ -14,19 +14,23 @@
 
   /* Surfaces */
   --surface:rgba(255,255,255,.06);
-  --surface2:rgba(255,255,255,.04);
-  --border:rgba(255,255,255,.12);
+  --surface2:rgba(255,255,255,.03);
+  --border:rgba(255,255,255,.10);
+  --shadow: 0 10px 28px rgba(0,0,0,.35);
 
-  --radius:16px;
-  --shadow:0 16px 48px rgba(0,0,0,.45);
-
-  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  /* Radius */
+  --radius:18px;
 
   /* Accents */
-  --accentA:rgba(124,255,199,.95);
-  --accentB:rgba(89,122,255,.95);
-  --warn:rgba(255,205,106,.95);
-  --err:rgba(255,113,113,.95);
+  --accentA:#7CFFC7;
+  --accentB:#597AFF;
+
+  /* Status colors */
+  --warn:#F2C94C;
+  --err:#FF5C5C;
+
+  /* Typography helpers */
+  --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 *{ box-sizing:border-box; }
@@ -43,6 +47,9 @@ body{
     radial-gradient(900px 600px at 86% 22%, rgba(124,255,199,.14), transparent 62%),
     radial-gradient(900px 700px at 50% 120%, rgba(89,122,255,.10), transparent 60%),
     linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 55%, var(--bg2) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-color: var(--bg2);
   min-height:100vh;
 }
 
@@ -78,12 +85,19 @@ a:hover{ text-decoration:underline; }
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:10px;
+  gap:12px;
   border-bottom:1px solid rgba(255,255,255,.08);
   background: rgba(255,255,255,.04);
 }
 .card-ct{ padding:14px; }
 
+h1,h2,h3{
+  margin: 0 0 12px;
+  letter-spacing:.2px;
+}
+p{ margin: 0 0 12px; color: var(--text); }
+
+/* small UI bits */
 .pill{
   display:inline-flex;
   align-items:center;
@@ -96,7 +110,7 @@ a:hover{ text-decoration:underline; }
   font-size:12px;
   white-space:nowrap;
 }
-.pill .dot{
+.dot{
   width:10px;height:10px;border-radius:999px;
   background: rgba(255,255,255,.25);
 }
@@ -104,10 +118,48 @@ a:hover{ text-decoration:underline; }
 .pill.ok  .dot{ background: var(--accentA); }
 .pill.err .dot{ background: var(--err); }
 
-/* ===============================
-   Menu (keep light like you have)
-   =============================== */
+/* Buttons */
+button{
+  font: inherit;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:11px 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  cursor:pointer;
+}
+.btn.primary{
+  background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
+  border-color: rgba(124,255,199,.32);
+  font-weight: 700;
+}
+.btn:disabled{ opacity:.5; cursor:not-allowed; }
 
+/* Inputs */
+input,select,textarea{
+  font: inherit;
+  width:100%;
+  padding:11px 12px;
+  border-radius: 12px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
+  color: var(--text);
+  outline:none;
+}
+input:focus,select:focus,textarea:focus{
+  border-color: rgba(124,255,199,.55);
+  box-shadow: 0 0 0 4px rgba(124,255,199,.12);
+}
+
+/* ===============================
+   Global Menu
+   =============================== */
 .menu-container{
   display:flex;
   align-items:center;
@@ -163,6 +215,14 @@ a:hover{ text-decoration:underline; }
   padding: 28px 16px;
   background: transparent; /* Hintergrund kommt vom Body-Gradient */
   color: var(--muted);
+  text-align: center;
+}
+
+
+.footer > *{
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .footer-container{
