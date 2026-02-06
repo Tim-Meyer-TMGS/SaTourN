@@ -1,86 +1,207 @@
-/* === Readability / Contrast Overrides === */
-.cc {
-  color: #e9eef7;
+/* === Readability / Layout Overrides (drop-in) === */
+
+:root{
+  --cc-text:#e9eef7;
+  --cc-muted:rgba(233,238,247,.78);
+  --cc-border:rgba(255,255,255,.14);
+  --cc-border-strong:rgba(255,255,255,.22);
+  --cc-bg:rgba(10,14,22,.72);
+  --cc-bg-2:rgba(0,0,0,.28);
+  --cc-bg-3:rgba(0,0,0,.55);
+  --cc-hd:rgba(255,255,255,.08);
+  --cc-th:rgba(255,255,255,.10);
+  --cc-gap:14px;
+  --cc-radius:14px;
 }
 
-.card {
-  border-color: rgba(255,255,255,.14);
-  background: rgba(10, 14, 22, .72);
-  backdrop-filter: blur(8px);
+.cc{ color:var(--cc-text); }
+
+/* Cards / sections */
+.card{
+  border:1px solid var(--cc-border);
+  background:var(--cc-bg);
+  backdrop-filter:blur(8px);
+  border-radius:var(--cc-radius);
+  padding:16px;
 }
 
-.hd {
-  background: rgba(255,255,255,.08);
-  color: #ffffff;
+.hd{
+  background:var(--cc-hd);
+  color:#fff;
+  padding:10px 14px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
 }
 
-.ct { color: #e9eef7; }
+.ct{ color:var(--cc-text); }
 
-.grid label {
-  color: #f2f5fb;
-  font-weight: 600;
-  letter-spacing: .2px;
+/* Form grid spacing */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(12, minmax(0, 1fr));
+  gap:var(--cc-gap);
+  margin-top:12px;
 }
 
-.grid input {
-  background: rgba(0,0,0,.28);
-  color: #ffffff;
-  border-color: rgba(255,255,255,.22);
+.grid .row{ grid-column:1 / -1; }
+
+.grid label{
+  color:#f2f5fb;
+  font-weight:600;
+  letter-spacing:.2px;
+  display:block;
+  margin:2px 0 6px;
 }
 
-.grid input::placeholder {
-  color: rgba(233,238,247,.55);
+.grid input{
+  width:100%;
+  box-sizing:border-box;
+  background:var(--cc-bg-2);
+  color:#fff;
+  border:1px solid var(--cc-border-strong);
+  border-radius:12px;
+  padding:10px 12px;
+  line-height:1.2;
 }
 
-/* Buttons: besserer Kontrast */
-button {
-  color: #ffffff;
-  background: rgba(255,255,255,.10);
-  border-color: rgba(255,255,255,.25);
+.grid input::placeholder{ color:rgba(233,238,247,.55); }
+
+/* Make the small two-column blocks behave nicely on wide screens */
+.grid .col-6{ grid-column:span 6; }
+.grid .col-4{ grid-column:span 4; }
+.grid .col-3{ grid-column:span 3; }
+
+@media (max-width: 980px){
+  .grid{ grid-template-columns:repeat(6, minmax(0, 1fr)); }
+  .grid .col-6{ grid-column:1 / -1; }
+  .grid .col-4{ grid-column:1 / -1; }
+  .grid .col-3{ grid-column:1 / -1; }
 }
 
-button.primary {
-  background: rgba(255,255,255,.18);
-  border-color: rgba(255,255,255,.35);
+/* Buttons */
+.actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:8px;
 }
 
-button:disabled {
-  opacity: .45;
+button{
+  color:#fff;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:12px;
+  padding:9px 12px;
+  line-height:1;
+  cursor:pointer;
 }
 
-/* Status pill */
-.pill {
-  color: #ffffff;
-  background: rgba(0,0,0,.18);
-  border-color: rgba(255,255,255,.25);
+button.primary{
+  background:rgba(255,255,255,.18);
+  border-color:rgba(255,255,255,.35);
 }
 
-/* Table */
-table { color: #e9eef7; }
+button:disabled{ opacity:.45; cursor:not-allowed; }
 
-th {
-  color: #ffffff;
-  background: rgba(255,255,255,.10);
-  border-top-color: rgba(255,255,255,.14);
+/* Status / meta line */
+.meta{
+  color:var(--cc-muted);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:8px;
 }
 
-td {
-  border-top-color: rgba(255,255,255,.10);
+.pill{
+  color:#fff;
+  background:rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:999px;
+  padding:4px 10px;
+  font-size:12px;
+  line-height:1.2;
+  white-space:nowrap;
 }
 
-td code {
-  color: #ffffff;
-  background: rgba(0,0,0,.25);
-  padding: 2px 6px;
-  border-radius: 6px;
+/* Table layout fixes (spacing + alignment) */
+.table-wrap{
+  margin-top:14px;
+  border:1px solid var(--cc-border);
+  border-radius:14px;
+  overflow:hidden;
 }
 
-/* Log: heller Text, weniger “grau auf schwarz” */
-.log {
-  background: rgba(0,0,0,.55);
-  color: #f6f7fb;
-  border: 1px solid rgba(255,255,255,.12);
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  color:var(--cc-text);
 }
 
-/* Footer/Meta */
-.meta { color: rgba(233,238,247,.92); }
+th, td{
+  padding:10px 12px;
+  vertical-align:top;
+}
+
+th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  color:#fff;
+  background:var(--cc-th);
+  border-bottom:1px solid var(--cc-border);
+  text-align:left;
+}
+
+td{
+  border-top:1px solid rgba(255,255,255,.10);
+}
+
+tbody tr:first-child td{ border-top:none; }
+
+/* Column sizing similar to screenshot */
+th:nth-child(1), td:nth-child(1){ width:160px; }
+th:nth-child(3), td:nth-child(3){ width:140px; text-align:right; }
+
+/* ID code pill */
+td code{
+  color:#fff;
+  background:rgba(0,0,0,.25);
+  padding:3px 8px;
+  border-radius:8px;
+  display:inline-block;
+}
+
+/* Links in table */
+td a{
+  color:#ffffff;
+  text-decoration:none;
+  border-bottom:1px solid rgba(255,255,255,.35);
+}
+td a:hover{ border-bottom-color:#fff; }
+
+/* Log */
+.log{
+  margin-top:14px;
+  background:var(--cc-bg-3);
+  color:#f6f7fb;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:12px;
+  line-height:1.45;
+  max-height:180px;
+  overflow:auto;
+  white-space:pre-wrap;
+}
+
+/* Small text helpers used inside cells */
+.small{
+  font-size:12px;
+  color:var(--cc-muted);
+  margin-top:6px;
+}
