@@ -1,6 +1,7 @@
 /* Copyright_Checker/script.js
    - Findet Datensätze, bei denen mindestens ein Bild/Video in media_objects
      kein (oder leeres) copyrightText hat.
+   - IGNORIERT Logos (rel="logo") bei der Prüfung
    - Pagination: limit/offset, ABBRUCH NUR wenn items.length < limit (oder 0)
      => total wird NICHT zum Abbruch verwendet (ET4 total ist oft nicht overall)
    - Types nacheinander (ohne City/Area)
@@ -105,7 +106,8 @@ function extractTotal(payload) {
 function extractId(item) {
   if (item?.global_id != null) return String(item.global_id);
   if (item?.globalId != null) return String(item.globalId);
-  if (item?.id != null && item?.channel != null) return `${String(item.channel)}_${String(item.id)}`;
+  if (item?.id != null && item?.channel != null)
+    return `${String(item.channel)}_${String(item.id)}`;
   if (item?.id != null) return String(item.id);
   return "";
 }
@@ -113,7 +115,8 @@ function extractId(item) {
 function extractTitle(item) {
   const keys = ["title", "Title", "name", "Name", "headline", "Headline"];
   for (const k of keys) {
-    if (item?.[k] != null && String(item[k]).trim()) return String(item[k]).trim();
+    if (item?.[k] != null && String(item[k]).trim())
+      return String(item[k]).trim();
   }
   const alt = item?.presentation?.title ?? item?.presentation?.name;
   if (alt != null && String(alt).trim()) return String(alt).trim();
@@ -212,6 +215,9 @@ function isCheckableMediaObject(mo) {
   // Links nicht prüfen
   if (rel === "canonical" || rel === "socialmedia") return false;
 
+  // Logos ignorieren (auch ohne copyrightText)
+  if (rel === "logo") return false;
+
   // nur Bild/Video
   if (mime.startsWith("image/") || mime.startsWith("video/")) return true;
 
@@ -279,7 +285,14 @@ function addRow({ id, title, pagesLink, missingMediaCount, missingMedia }) {
 }
 
 function toCsv(rows) {
-  const header = ["id", "title", "type", "missing_media_count", "missing_media_rel_ids", "pages_link"];
+  const header = [
+    "id",
+    "title",
+    "type",
+    "missing_media_count",
+    "missing_media_rel_ids",
+    "pages_link",
+  ];
   const lines = [header.join(",")];
 
   for (const r of rows) {
@@ -356,7 +369,8 @@ el("runBtn").addEventListener("click", async () => {
 
   currentAbort = new AbortController();
 
-  const baseUrlRaw = el("baseUrl").value.trim() || "https://meta.et4.de/rest.ashx/search/";
+  const baseUrlRaw =
+    el("baseUrl").value.trim() || "https://meta.et4.de/rest.ashx/search/";
   const baseUrl = baseUrlRaw.replace(/\/?$/, "/");
 
   const experience = el("experience").value.trim();
@@ -365,10 +379,16 @@ el("runBtn").addEventListener("click", async () => {
 
   const typesInput = (el("type").value || "All").trim();
 
-  const limit = Math.max(1, Math.min(500, parseInt(el("limit").value, 10) || 200));
+  const limit = Math.max(
+    1,
+    Math.min(500, parseInt(el("limit").value, 10) || 200)
+  );
 
   const rateRaw = parseFloat(el("rate").value);
-  const rate = Math.max(0.1, Math.min(2, Number.isFinite(rateRaw) ? rateRaw : 1));
+  const rate = Math.max(
+    0.1,
+    Math.min(2, Number.isFinite(rateRaw) ? rateRaw : 1)
+  );
   el("rate").value = String(rate);
 
   const limiter = {
@@ -438,14 +458,19 @@ el("runBtn").addEventListener("click", async () => {
         const items = extractItems(payload);
         const total = extractTotal(payload);
 
-        log(`Page: offset=${offset} items=${items.length}` + (total ? ` total=${total}` : ""));
+        log(
+          `Page: offset=${offset} items=${items.length}` +
+            (total ? ` total=${total}` : "")
+        );
 
         if (!items.length) break;
 
         // Schutz: falls offset ignoriert wird
         const fp = idsFingerprint(items);
         if (prevFingerprint && fp && fp === prevFingerprint) {
-          throw new Error(`Pagination ignored for type=${type} (same page repeated).`);
+          throw new Error(
+            `Pagination ignored for type=${type} (same page repeated).`
+          );
         }
         prevFingerprint = fp;
 
@@ -494,14 +519,18 @@ el("runBtn").addEventListener("click", async () => {
 
         pageCount++;
         if (pageCount > maxPagesSafety) {
-          throw new Error(`Safety stop: too many pages for type=${type} (check pagination).`);
+          throw new Error(
+            `Safety stop: too many pages for type=${type} (check pagination).`
+          );
         }
       }
     }
 
     setStatus("done", "ok");
     el("downloadBtn").disabled = lastMissing.length === 0;
-    log(`\nDone. Processed=${processed}. Missing datasets=${lastMissing.length}.`);
+    log(
+      `\nDone. Processed=${processed}. Missing datasets=${lastMissing.length}.`
+    );
   } catch (e) {
     setStatus("error", "err");
     log("Error: " + String(e?.message || e));
