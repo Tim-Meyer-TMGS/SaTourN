@@ -1,0 +1,89 @@
+---
+layout: default
+title: Copyright Checker
+css: /Copyright_Checker/style.css
+js: /Copyright_Checker/script.js
+---
+
+<div class="cc">
+  <div class="wrap">
+
+    <section class="card">
+      <div class="hd">
+        <strong>Copyright Checker (media_objects[].copyrightText)</strong>
+        <span id="status" class="pill idle">idle</span>
+      </div>
+
+      <div class="ct grid">
+        <label class="wide">Base URL
+          <input id="baseUrl" value="https://meta.et4.de/rest.ashx/search/" />
+        </label>
+
+        <label>Experience
+          <input id="experience" value="sachsen-tourismus" />
+        </label>
+
+        <label>Type
+          <input id="type" value="All" />
+        </label>
+
+        <label>Template
+          <input id="template" value="ET2022A.json" />
+        </label>
+
+        <label class="wide">License Key (optional)
+          <input id="licensekey" placeholder="enter_your_licensekey" />
+        </label>
+
+        <label>Page size (limit)
+          <input id="limit" type="number" min="1" max="500" value="200" />
+        </label>
+
+        <label>Rate (req/s, max 2)
+          <input id="rate" type="number" min="0.1" max="2" step="0.1" value="1" />
+        </label>
+
+        <div class="btnRow">
+          <button id="runBtn" class="primary" type="button">Start</button>
+          <button id="stopBtn" type="button" disabled>Stop</button>
+          <button id="downloadBtn" type="button" disabled>CSV Download</button>
+        </div>
+
+        <div class="wide meta">
+          <div>Progress: <span id="progress">0/0</span></div>
+          <div>Fehlende Copyrights: <span id="missingCount">0</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="hd">
+        <strong>Treffer (fehlend/leer)</strong>
+      </div>
+      <div class="ct">
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:220px;">ID</th>
+                <th>Titel</th>
+                <th style="width:140px;">Media Objects</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="hd">
+        <strong>Log</strong>
+      </div>
+      <div class="ct">
+        <pre id="log" class="log"></pre>
+      </div>
+    </section>
+
+  </div>
+</div>
