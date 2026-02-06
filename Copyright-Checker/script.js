@@ -1,4 +1,8 @@
-/* Copyright_Checker/script.js */
+/* Copyright_Checker/script.js
+   - Ruft Datensätze typweise nacheinander ab (Type-Whitelist)
+   - "City" und "Area" werden ausgeschlossen
+   - Pagination via limit/offset pro Type
+*/
 
 const el = (id) => document.getElementById(id);
 
@@ -13,7 +17,7 @@ function buildParams(obj) {
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries(obj)) {
     if (v === undefined || v === null || v === "") continue;
-    p.set(k, String(v));
+    p.append(k, String(v)); // append! damit type mehrfach möglich wäre
   }
   return p.toString();
 }
@@ -40,9 +44,8 @@ async function fetchJson(baseUrl, params, abortSignal) {
   return res.json();
 }
 
-/**
- * Robust: versucht "Items" aus ET4-Antwort zu ziehen.
- */
+/* ---- response helpers ---- */
+
 function extractItems(payload) {
   const keys = ["items", "results", "Result", "Documents", "document", "data"];
   for (const k of keys) {
@@ -112,9 +115,25 @@ function extractTitle(item) {
   return "";
 }
 
+function getType(item) {
+  return (
+    item?.type ??
+    item?.Type ??
+    item?.object_type ??
+    item?.objectType ??
+    item?.["@type"] ??
+    ""
+  );
+}
+
+function isExcludedTypeName(typeName) {
+  const t = String(typeName || "").trim();
+  return t === "City" || t === "Area";
+}
+
 function hasMissingCopyright(item) {
   const mos = item?.media_objects;
-  if (!Array.isArray(mos) || mos.length === 0) return false; // ohne media_objects -> nicht melden
+  if (!Array.isArray(mos) || mos.length === 0) return false;
   for (const mo of mos) {
     const c = mo?.copyrightText;
     if (c === undefined || c === null) return true;
@@ -122,6 +141,8 @@ function hasMissingCopyright(item) {
   }
   return false;
 }
+
+/* ---- UI helpers ---- */
 
 function setStatus(text, cls) {
   const s = el("status");
@@ -135,23 +156,25 @@ function log(msg) {
   l.scrollTop = l.scrollHeight;
 }
 
-function addRow({ id, title, mediaCount }) {
+function addRow({ id, title, mediaCount, type }) {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td><code>${esc(id)}</code></td>
     <td>${esc(title)}</td>
+    <td>${esc(type)}</td>
     <td>${esc(mediaCount)}</td>
   `;
   el("tbody").appendChild(tr);
 }
 
 function toCsv(rows) {
-  const header = ["id", "title", "media_objects_count"];
+  const header = ["id", "title", "type", "media_objects_count"];
   const lines = [header.join(",")];
   for (const r of rows) {
     const line = [
       `"${String(r.id).replaceAll('"', '""')}"`,
       `"${String(r.title).replaceAll('"', '""')}"`,
+      `"${String(r.type).replaceAll('"', '""')}"`,
       String(r.mediaCount),
     ];
     lines.push(line.join(","));
@@ -203,7 +226,7 @@ el("downloadBtn").addEventListener("click", () => {
 });
 
 el("runBtn").addEventListener("click", async () => {
-  // reset
+  // reset UI
   el("tbody").innerHTML = "";
   el("log").textContent = "";
   el("missingCount").textContent = "0";
@@ -219,9 +242,13 @@ el("runBtn").addEventListener("click", async () => {
   const baseUrl = baseUrlRaw.replace(/\/?$/, "/");
 
   const experience = el("experience").value.trim();
-  const type = el("type").value.trim() || "All";
   const template = el("template").value.trim() || "ET2022A.json";
   const licensekey = el("licensekey").value.trim();
+
+  // Hier: Typenliste (Komma-separiert) -> nacheinander abfragen
+  // Du kannst das Inputfeld im HTML z.B. so setzen: "All"
+  // oder direkt: "POI,Event,Tour,Accommodation,Gastronomy"
+  const typesInput = (el("type").value || "All").trim();
 
   const limit = Math.max(
     1,
@@ -243,88 +270,160 @@ el("runBtn").addEventListener("click", async () => {
     return;
   }
 
+  // Typen bestimmen:
+  // - wenn Nutzer "All" lässt -> harte Whitelist ohne City/Area
+  //   (API-entlastend, weil keine All-Abfrage)
+  const defaultWhitelist = [
+    "POI",
+    "Event",
+    "Tour",
+    "Accommodation",
+    "Gastronomy",
+    "PressRelease",
+    "Offer",
+    "Story",
+  ];
+
+  let types = [];
+  if (!typesInput || typesInput.toLowerCase() === "all") {
+    types = defaultWhitelist.slice();
+  } else {
+    types = typesInput
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+  }
+
+  // Zusätzlich: falls jemand City/Area eingibt -> entfernen
+  types = types.filter((t) => !isExcludedTypeName(t));
+
+  if (types.length === 0) {
+    setStatus("error", "err");
+    log('No types to query (after excluding "City" and "Area").');
+    return;
+  }
+
   setButtons(true);
   setStatus("running", "run");
 
   try {
-    let offset = 0;
     let processed = 0;
+    let totalKnownSum = 0;
+    let totalIsKnownForAll = true;
 
-    // total optional (wenn vorhanden)
-    let total = null;
-
-    // Schutz gegen Endlosschleife falls offset ignoriert wird
-    let prevFingerprint = null;
+    // Safety gegen Endlosschleifen
     const maxPagesSafety = 5000;
-    let pageCount = 0;
 
-    while (true) {
+    // Pro Type nacheinander paginieren
+    for (const type of types) {
       if (stopRequested) throw new Error("Stopped by user.");
 
-      await rateLimit(limiter.minIntervalMs, limiter.state);
+      log(`\n=== TYPE: ${type} ===`);
 
-      const payload = await fetchJson(
-        baseUrl,
-        {
-          experience,
-          type,
-          template,
-          licensekey,
-          q: "",
-          limit,
-          offset,
-        },
-        currentAbort.signal
-      );
+      let offset = 0;
+      let pageCount = 0;
+      let prevFingerprint = null;
+      let total = null;
 
-      const items = extractItems(payload);
-      if (total === null) total = extractTotal(payload);
+      while (true) {
+        if (stopRequested) throw new Error("Stopped by user.");
 
-      log(`Page: offset=${offset} items=${items.length}` + (total ? ` total=${total}` : ""));
+        await rateLimit(limiter.minIntervalMs, limiter.state);
 
-      if (!items.length) break; // Ende
-
-      // detect "offset ignored": identische IDs wie vorher
-      const fp = idsFingerprint(items);
-      if (prevFingerprint && fp && fp === prevFingerprint) {
-        throw new Error(
-          "Pagination scheint vom Server ignoriert zu werden (identische Seite erneut erhalten). Prüfe Parameter/Template."
+        const payload = await fetchJson(
+          baseUrl,
+          {
+            experience,
+            type,
+            template,
+            licensekey,
+            q: "",
+            limit,
+            offset,
+          },
+          currentAbort.signal
         );
-      }
-      prevFingerprint = fp;
 
-      for (const it of items) {
-        processed++;
+        const items = extractItems(payload);
+        if (total === null) total = extractTotal(payload);
 
-        const id = extractId(it);
-        const title = extractTitle(it);
-        const mos = Array.isArray(it?.media_objects) ? it.media_objects : [];
+        if (total == null) totalIsKnownForAll = false;
 
-        if (hasMissingCopyright(it)) {
-          lastMissing.push({ id, title, mediaCount: mos.length });
-          addRow({ id, title, mediaCount: mos.length });
-          el("missingCount").textContent = String(lastMissing.length);
+        log(
+          `Page: offset=${offset} items=${items.length}` +
+            (total ? ` total=${total}` : "")
+        );
+
+        if (!items.length) break;
+
+        // detect "offset ignored" per type
+        const fp = idsFingerprint(items);
+        if (prevFingerprint && fp && fp === prevFingerprint) {
+          throw new Error(
+            `Pagination ignored for type=${type} (same page repeated). Check API params/template.`
+          );
+        }
+        prevFingerprint = fp;
+
+        for (const it of items) {
+          const itemType = getType(it);
+
+          // Ausschließen: City/Area (auch falls API trotzdem was liefert)
+          if (isExcludedTypeName(itemType)) continue;
+
+          processed++;
+
+          const id = extractId(it);
+          const title = extractTitle(it);
+          const mos = Array.isArray(it?.media_objects) ? it.media_objects : [];
+
+          if (hasMissingCopyright(it)) {
+            lastMissing.push({
+              id,
+              title,
+              type: itemType || type,
+              mediaCount: mos.length,
+            });
+
+            addRow({
+              id,
+              title,
+              type: itemType || type,
+              mediaCount: mos.length,
+            });
+
+            el("missingCount").textContent = String(lastMissing.length);
+          }
+
+          if (totalIsKnownForAll) {
+            // Best effort: Summe der totals (nur wenn alle Types total liefern)
+            el("progress").textContent = `${processed}/${totalKnownSum}`;
+          } else {
+            el("progress").textContent = `${processed}/?`;
+          }
         }
 
-        if (total && total > 0) el("progress").textContent = `${processed}/${total}`;
-        else el("progress").textContent = `${processed}/?`;
+        // robust: offset um tatsächlich gelieferte Anzahl erhöhen
+        offset += items.length;
+
+        // wenn total bekannt: abbrechen sobald alles verarbeitet ist
+        if (total && offset >= total) break;
+
+        pageCount++;
+        if (pageCount > maxPagesSafety) {
+          throw new Error(
+            `Safety stop: too many pages for type=${type} (check pagination).`
+          );
+        }
       }
 
-      // wichtig: offset um tatsächlich verarbeitete Anzahl erhöhen (robuster als offset += limit)
-      offset += items.length;
-
-      // optional sauber abbrechen wenn total bekannt
-      if (total && processed >= total) break;
-
-      pageCount++;
-      if (pageCount > maxPagesSafety) {
-        throw new Error("Safety stop: too many pages (check pagination params).");
-      }
+      if (total != null) totalKnownSum += total;
+      if (totalIsKnownForAll) el("progress").textContent = `${processed}/${totalKnownSum}`;
     }
 
     setStatus("done", "ok");
     el("downloadBtn").disabled = lastMissing.length === 0;
-    log(`Done. Processed=${processed}. Missing=${lastMissing.length}.`);
+    log(`\nDone. Processed=${processed}. Missing=${lastMissing.length}.`);
   } catch (e) {
     setStatus("error", "err");
     log("Error: " + String(e?.message || e));
