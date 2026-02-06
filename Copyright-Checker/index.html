@@ -10,7 +10,7 @@ js: /Copyright-Checker/script.js
 
     <section class="card">
       <div class="hd">
-        <strong>Copyright Checker (media_objects[].copyrightText)</strong>
+        <strong>Copyright Checker</strong>
         <span id="status" class="pill idle">idle</span>
       </div>
 
@@ -25,6 +25,7 @@ js: /Copyright-Checker/script.js
 
         <label>Type
           <input id="type" value="All" />
+          <div class="hint">Mehrere Typen per Komma: <code>Tour,POI,Gastro,Hotel,Event</code> (City/Area werden ignoriert)</div>
         </label>
 
         <label>Template
@@ -43,7 +44,7 @@ js: /Copyright-Checker/script.js
           <input id="rate" type="number" min="0.1" max="2" step="0.1" value="1" />
         </label>
 
-        <div class="btnRow">
+        <div class="btnRow actions wide">
           <button id="runBtn" class="primary" type="button">Start</button>
           <button id="stopBtn" type="button" disabled>Stop</button>
           <button id="downloadBtn" type="button" disabled>CSV Download</button>
@@ -51,23 +52,24 @@ js: /Copyright-Checker/script.js
 
         <div class="wide meta">
           <div>Progress: <span id="progress">0/0</span></div>
-          <div>Fehlende Copyrights: <span id="missingCount">0</span></div>
+          <div>Treffer: <span id="missingCount">0</span></div>
         </div>
       </div>
     </section>
 
     <section class="card">
       <div class="hd">
-        <strong>Treffer (fehlend/leer)</strong>
+        <strong>Treffer (mindestens ein Medium ohne Copyright)</strong>
       </div>
       <div class="ct">
-        <div class="tableWrap">
+        <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th style="width:220px;">ID</th>
                 <th>Titel</th>
-                <th style="width:140px;">Media Objects</th>
+                <th style="width:140px; text-align:right;">Fehlende Medien</th>
+                <th>Details (rel / media-id)</th>
               </tr>
             </thead>
             <tbody id="tbody"></tbody>
