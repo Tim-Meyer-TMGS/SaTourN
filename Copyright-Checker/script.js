@@ -1,7 +1,12 @@
 /* Copyright_Checker/script.js
    - Ruft Datensätze typweise nacheinander ab (Type-Whitelist)
    - "City" und "Area" werden ausgeschlossen
-   - Pagination via limit/offset pro Type
+   - Pagination via limit/offset pro Type (offset += items.length)
+   - Prüft copyrightText nur für echte Medien-Assets (image/video/audio bzw. DAM),
+     ignoriert rel=canonical/socialmedia (sonst false positives)
+   - Ergänzt bei Treffern einen Pages-Link im Format:
+     https://pages.destination.one/de/<experience>/default_withmap/detail/<TYPE>/<global_id>/<URL_TITLE>
+     (URL_TITLE kommt aus attributes[].key="URL_TITLE") :contentReference[oaicite:0]{index=0}
 */
 
 const el = (id) => document.getElementById(id);
@@ -17,7 +22,7 @@ function buildParams(obj) {
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries(obj)) {
     if (v === undefined || v === null || v === "") continue;
-    p.append(k, String(v)); // append! damit type mehrfach möglich wäre
+    p.set(k, String(v));
   }
   return p.toString();
 }
@@ -44,7 +49,7 @@ async function fetchJson(baseUrl, params, abortSignal) {
   return res.json();
 }
 
-/* ---- response helpers ---- */
+/* ---------- Response helpers ---------- */
 
 function extractItems(payload) {
   const keys = ["items", "results", "Result", "Documents", "document", "data"];
@@ -104,6 +109,12 @@ function extractId(item) {
   return "";
 }
 
+function extractGlobalId(item) {
+  if (item?.global_id != null) return String(item.global_id);
+  if (item?.globalId != null) return String(item.globalId);
+  return "";
+}
+
 function extractTitle(item) {
   const keys = ["title", "Title", "name", "Name", "headline", "Headline"];
   for (const k of keys) {
@@ -131,10 +142,83 @@ function isExcludedTypeName(typeName) {
   return t === "City" || t === "Area";
 }
 
+/* ---------- Pages-Link (destination.one pages) ---------- */
+
+function extractUrlTitle(item) {
+  // attributes: [{key:"URL_TITLE", value:"..."}]
+  const attrs = item?.attributes;
+  if (Array.isArray(attrs)) {
+    for (const a of attrs) {
+      if (String(a?.key ?? "").toUpperCase() === "URL_TITLE") {
+        const v = String(a?.value ?? "").trim();
+        if (v) return v;
+      }
+    }
+  }
+  // Fallback: attributes_old? (wenn vorhanden)
+  const attrsOld = item?.attributes_old;
+  if (Array.isArray(attrsOld)) {
+    for (const a of attrsOld) {
+      if (String(a?.key ?? "").toUpperCase() === "URL_TITLE") {
+        const v = String(a?.value ?? "").trim();
+        if (v) return v;
+      }
+    }
+  }
+  return "";
+}
+
+function buildPagesLink(item, experience) {
+  const type = String(getType(item) || "").trim();
+  const gid = extractGlobalId(item);
+  const slug = extractUrlTitle(item);
+
+  if (!experience || !type || !gid || !slug) return "";
+
+  // entspricht deinem Beispiel: /de/<experience>/default_withmap/detail/<TYPE>/<global_id>/<slug>
+  const base = `https://pages.destination.one/de/${encodeURIComponent(
+    experience
+  )}/default_withmap/detail/`;
+
+  return (
+    base +
+    `${encodeURIComponent(type)}/${encodeURIComponent(gid)}/${encodeURIComponent(slug)}`
+  );
+}
+
+/* ---------- Copyright check (fixed) ---------- */
+
+function isCheckableMediaObject(mo) {
+  const rel = String(mo?.rel ?? "").toLowerCase();
+  const type = String(mo?.type ?? "").toLowerCase();
+  const url = String(mo?.url ?? "").toLowerCase();
+
+  // reine Referenzen/Links nicht prüfen (sonst false positives)
+  if (rel === "canonical" || rel === "socialmedia") return false;
+
+  // echte Medien: Bild/Video/Audio
+  if (
+    type.startsWith("image/") ||
+    type.startsWith("video/") ||
+    type.startsWith("audio/")
+  ) {
+    return true;
+  }
+
+  // Fallback: DAM-Assets ohne/mit unzuverlässigem MIME-Type
+  if (url.includes("dam.destination.one/")) return true;
+
+  return false;
+}
+
 function hasMissingCopyright(item) {
   const mos = item?.media_objects;
   if (!Array.isArray(mos) || mos.length === 0) return false;
-  for (const mo of mos) {
+
+  const checkables = mos.filter(isCheckableMediaObject);
+  if (checkables.length === 0) return false;
+
+  for (const mo of checkables) {
     const c = mo?.copyrightText;
     if (c === undefined || c === null) return true;
     if (String(c).trim() === "") return true;
@@ -142,7 +226,7 @@ function hasMissingCopyright(item) {
   return false;
 }
 
-/* ---- UI helpers ---- */
+/* ---------- UI helpers ---------- */
 
 function setStatus(text, cls) {
   const s = el("status");
@@ -156,26 +240,32 @@ function log(msg) {
   l.scrollTop = l.scrollHeight;
 }
 
-function addRow({ id, title, mediaCount, type }) {
+function addRow({ id, title, mediaCount, pagesLink }) {
+  const linkHtml = pagesLink
+    ? `<div style="margin-top:6px;">
+         <a href="${esc(pagesLink)}" target="_blank" rel="noopener noreferrer">Pages-Link öffnen</a>
+       </div>`
+    : `<div style="margin-top:6px; opacity:.7;">(kein Pages-Link ableitbar)</div>`;
+
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td><code>${esc(id)}</code></td>
-    <td>${esc(title)}</td>
-    <td>${esc(type)}</td>
+    <td>${esc(title)}${linkHtml}</td>
     <td>${esc(mediaCount)}</td>
   `;
   el("tbody").appendChild(tr);
 }
 
 function toCsv(rows) {
-  const header = ["id", "title", "type", "media_objects_count"];
+  const header = ["id", "title", "type", "media_objects_count", "pages_link"];
   const lines = [header.join(",")];
   for (const r of rows) {
     const line = [
       `"${String(r.id).replaceAll('"', '""')}"`,
       `"${String(r.title).replaceAll('"', '""')}"`,
-      `"${String(r.type).replaceAll('"', '""')}"`,
-      String(r.mediaCount),
+      `"${String(r.type ?? "").replaceAll('"', '""')}"`,
+      String(r.mediaCount ?? 0),
+      `"${String(r.pagesLink ?? "").replaceAll('"', '""')}"`,
     ];
     lines.push(line.join(","));
   }
@@ -245,15 +335,10 @@ el("runBtn").addEventListener("click", async () => {
   const template = el("template").value.trim() || "ET2022A.json";
   const licensekey = el("licensekey").value.trim();
 
-  // Hier: Typenliste (Komma-separiert) -> nacheinander abfragen
-  // Du kannst das Inputfeld im HTML z.B. so setzen: "All"
-  // oder direkt: "POI,Event,Tour,Accommodation,Gastronomy"
+  // Eingabe: comma-separierte Typen. Wenn "All" -> Whitelist (API-schonend) ohne City/Area.
   const typesInput = (el("type").value || "All").trim();
 
-  const limit = Math.max(
-    1,
-    Math.min(500, parseInt(el("limit").value, 10) || 200)
-  );
+  const limit = Math.max(1, Math.min(500, parseInt(el("limit").value, 10) || 200));
 
   const rateRaw = parseFloat(el("rate").value);
   const rate = Math.max(0.1, Math.min(2, Number.isFinite(rateRaw) ? rateRaw : 1));
@@ -270,18 +355,17 @@ el("runBtn").addEventListener("click", async () => {
     return;
   }
 
-  // Typen bestimmen:
-  // - wenn Nutzer "All" lässt -> harte Whitelist ohne City/Area
-  //   (API-entlastend, weil keine All-Abfrage)
+  // API-Entlastung: Keine All-Abfrage, sondern Whitelist.
+  // Passe diese Liste ggf. an eure realen Types an.
   const defaultWhitelist = [
     "POI",
     "Event",
     "Tour",
     "Accommodation",
     "Gastronomy",
-    "PressRelease",
     "Offer",
     "Story",
+    "PressRelease",
   ];
 
   let types = [];
@@ -294,7 +378,7 @@ el("runBtn").addEventListener("click", async () => {
       .filter(Boolean);
   }
 
-  // Zusätzlich: falls jemand City/Area eingibt -> entfernen
+  // City/Area sicher ausschließen (auch wenn jemand sie eingibt)
   types = types.filter((t) => !isExcludedTypeName(t));
 
   if (types.length === 0) {
@@ -308,13 +392,11 @@ el("runBtn").addEventListener("click", async () => {
 
   try {
     let processed = 0;
-    let totalKnownSum = 0;
-    let totalIsKnownForAll = true;
 
     // Safety gegen Endlosschleifen
     const maxPagesSafety = 5000;
 
-    // Pro Type nacheinander paginieren
+    // per Type nacheinander abfragen
     for (const type of types) {
       if (stopRequested) throw new Error("Stopped by user.");
 
@@ -347,16 +429,11 @@ el("runBtn").addEventListener("click", async () => {
         const items = extractItems(payload);
         if (total === null) total = extractTotal(payload);
 
-        if (total == null) totalIsKnownForAll = false;
-
-        log(
-          `Page: offset=${offset} items=${items.length}` +
-            (total ? ` total=${total}` : "")
-        );
+        log(`Page: offset=${offset} items=${items.length}` + (total ? ` total=${total}` : ""));
 
         if (!items.length) break;
 
-        // detect "offset ignored" per type
+        // Detect: offset ignoriert -> gleiche Seite kommt wieder
         const fp = idsFingerprint(items);
         if (prevFingerprint && fp && fp === prevFingerprint) {
           throw new Error(
@@ -366,9 +443,9 @@ el("runBtn").addEventListener("click", async () => {
         prevFingerprint = fp;
 
         for (const it of items) {
-          const itemType = getType(it);
+          const itemType = String(getType(it) || "").trim();
 
-          // Ausschließen: City/Area (auch falls API trotzdem was liefert)
+          // City/Area auch serverseitig rausfiltern (falls doch geliefert)
           if (isExcludedTypeName(itemType)) continue;
 
           processed++;
@@ -378,47 +455,41 @@ el("runBtn").addEventListener("click", async () => {
           const mos = Array.isArray(it?.media_objects) ? it.media_objects : [];
 
           if (hasMissingCopyright(it)) {
+            const pagesLink = buildPagesLink(it, experience);
+
             lastMissing.push({
               id,
               title,
               type: itemType || type,
               mediaCount: mos.length,
+              pagesLink,
             });
 
             addRow({
               id,
               title,
-              type: itemType || type,
               mediaCount: mos.length,
+              pagesLink,
             });
 
             el("missingCount").textContent = String(lastMissing.length);
           }
 
-          if (totalIsKnownForAll) {
-            // Best effort: Summe der totals (nur wenn alle Types total liefern)
-            el("progress").textContent = `${processed}/${totalKnownSum}`;
-          } else {
-            el("progress").textContent = `${processed}/?`;
-          }
+          // Progress: bewusst ohne (unsichere) Gesamtzahl
+          el("progress").textContent = `${processed}/?`;
         }
 
         // robust: offset um tatsächlich gelieferte Anzahl erhöhen
         offset += items.length;
 
-        // wenn total bekannt: abbrechen sobald alles verarbeitet ist
+        // optional sauber abbrechen wenn total bekannt
         if (total && offset >= total) break;
 
         pageCount++;
         if (pageCount > maxPagesSafety) {
-          throw new Error(
-            `Safety stop: too many pages for type=${type} (check pagination).`
-          );
+          throw new Error(`Safety stop: too many pages for type=${type} (check pagination).`);
         }
       }
-
-      if (total != null) totalKnownSum += total;
-      if (totalIsKnownForAll) el("progress").textContent = `${processed}/${totalKnownSum}`;
     }
 
     setStatus("done", "ok");
