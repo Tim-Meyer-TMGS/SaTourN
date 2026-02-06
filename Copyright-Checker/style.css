@@ -1,139 +1,128 @@
 /* =========================
-   Copyright Checker – Layout Fix
-   Ziel: saubere Struktur, keine zerfetzten Labels, klare Bereiche
-   Drop-in: an bestehende style.css anhängen (überschreibt nur Layout)
+   Copyright Checker – base.css aligned
+   Drop-in: an style.css anhängen
    ========================= */
 
-:root{
-  --gap:14px;
-  --radius:14px;
-  --border:rgba(255,255,255,.14);
-  --border2:rgba(255,255,255,.22);
-  --bg:rgba(10,14,22,.72);
-  --bg2:rgba(0,0,0,.28);
-  --hd:rgba(255,255,255,.08);
-  --text:#e9eef7;
-  --muted:rgba(233,238,247,.78);
+/* Optional: alles scoped halten (wie bei KG-Finder/Pages-Builder) */
+.cc{
+  color: var(--text);
 }
 
-.cc{ color:var(--text); }
-
-/* outer wrap */
-.wrap{
-  max-width:1200px;
+/* outer wrap (an container/page-surface angelehnt) */
+.cc .wrap{
+  max-width:1180px;              /* wie .container :contentReference[oaicite:3]{index=3} */
   margin:0 auto;
-  padding:18px 14px 22px;
+  padding: 18px 16px 22px;
   display:flex;
   flex-direction:column;
-  gap:16px;
+  gap:14px;
 }
 
-/* cards */
-.card{
-  border:1px solid var(--border);
-  background:var(--bg);
-  backdrop-filter: blur(8px);
-  border-radius:var(--radius);
+/* cards (base.css card pattern) */
+.cc .card{
+  background: linear-gradient(180deg, var(--surface), var(--surface2)); /* :contentReference[oaicite:4]{index=4} */
+  border: 1px solid var(--border);                                     /* :contentReference[oaicite:5]{index=5} */
+  border-radius: var(--radius);                                        /* :contentReference[oaicite:6]{index=6} */
+  box-shadow: var(--shadow);                                           /* :contentReference[oaicite:7]{index=7} */
   overflow:hidden;
 }
 
-.hd{
-  background:var(--hd);
-  color:#fff;
+/* header/content (base.css card-hd/card-ct) */
+.cc .hd{
   padding:12px 14px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
+  border-bottom:1px solid rgba(255,255,255,.08); /* :contentReference[oaicite:8]{index=8} */
+  background: rgba(255,255,255,.04);             /* :contentReference[oaicite:9]{index=9} */
 }
+.cc .hd strong{
+  font-size:18px;
+  letter-spacing:.2px;
+}
+.cc .ct{ padding:14px; } /* wie .card-ct :contentReference[oaicite:10]{index=10} */
 
-.hd strong{ font-size:18px; letter-spacing:.2px; }
-
-.ct{ padding:14px; }
-
-/* status pill */
-.pill{
-  color:#fff;
-  background:rgba(0,0,0,.18);
-  border:1px solid rgba(255,255,255,.25);
+/* status pill (base.css pill pattern) */
+.cc .pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
   border-radius:999px;
-  padding:5px 10px;
+  border:1px solid rgba(255,255,255,.12); /* :contentReference[oaicite:11]{index=11} */
+  background: rgba(255,255,255,.04);       /* :contentReference[oaicite:12]{index=12} */
+  color: var(--muted);                      /* :contentReference[oaicite:13]{index=13} */
   font-size:12px;
-  line-height:1.2;
   white-space:nowrap;
 }
 
 /* =========================
-   Form layout (fix)
+   Form layout
    ========================= */
-.grid{
+.cc .grid{
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: var(--gap);
+  gap: 14px;
   align-items:end;
 }
 
-label{
-  display:block;
-  margin:0;
-}
+.cc label{ display:block; margin:0; }
 
-label > span,
-label > .lbl{
+/* Labels: base.css nutzt eher muted/kleiner (siehe andere Tools) */
+.cc label > span,
+.cc label > .lbl,
+.cc .grid label{
   display:block;
   font-weight:700;
-  color:#f2f5fb;
+  color: var(--muted);
   margin:0 0 6px;
   letter-spacing:.2px;
+  font-size:12px;
 }
 
-.grid label{
-  color:#f2f5fb;
-  font-weight:700;
-  letter-spacing:.2px;
-}
-
-.grid input{
+/* Inputs: base.css Input-Styling übernehmen */
+.cc .grid input{
   width:100%;
+  font: inherit;
   box-sizing:border-box;
-  background:var(--bg2);
-  color:#fff;
-  border:1px solid var(--border2);
+  padding:11px 12px;
   border-radius:12px;
-  padding:10px 12px;
-  line-height:1.2;
+  border:1px solid rgba(255,255,255,.14); /* :contentReference[oaicite:14]{index=14} */
+  background: rgba(0,0,0,.18);            /* :contentReference[oaicite:15]{index=15} */
+  color: var(--text);
+  outline:none;
   min-height:40px;
 }
-
-.grid input::placeholder{ color:rgba(233,238,247,.55); }
+.cc .grid input:focus{
+  border-color: rgba(124,255,199,.55);      /* :contentReference[oaicite:16]{index=16} */
+  box-shadow: 0 0 0 4px rgba(124,255,199,.12); /* :contentReference[oaicite:17]{index=17} */
+}
+.cc .grid input::placeholder{ color:rgba(255,255,255,.45); }
 
 /* column placement */
-.grid label.wide{ grid-column: 1 / -1; }
-.grid label:not(.wide){ grid-column: span 3; }
-
-/* make experience/type/template a bit wider */
-.grid label:nth-of-type(2),
-.grid label:nth-of-type(3),
-.grid label:nth-of-type(4){ grid-column: span 3; }
+.cc .grid label.wide{ grid-column: 1 / -1; }
+.cc .grid label:not(.wide){ grid-column: span 3; }
 
 /* hint below Type */
-.hint{
+.cc .hint{
   margin-top:6px;
-  color:var(--muted);
+  color: var(--muted);
   font-weight:600;
   font-size:12px;
   line-height:1.35;
 }
-.hint code{
-  background:rgba(0,0,0,.22);
+.cc .hint code{
+  background: rgba(0,0,0,.18);
   border:1px solid rgba(255,255,255,.12);
   padding:2px 6px;
   border-radius:8px;
-  color:#fff;
+  color: var(--text);
+  font-family: var(--mono);
 }
 
 /* Buttons row */
-.btnRow{
+.cc .btnRow{
   grid-column: 1 / -1;
   display:flex;
   align-items:center;
@@ -143,57 +132,46 @@ label > .lbl{
   margin-top:2px;
 }
 
-/* buttons */
-button{
-  color:#fff;
-  background:rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.25);
+/* Buttons: base.css nutzt .btn/.btn.primary; hier kompatibel zu button + .primary */
+.cc button{
+  font: inherit; /* :contentReference[oaicite:18]{index=18} */
+  padding:11px 14px;
   border-radius:12px;
-  padding:10px 14px;
-  line-height:1;
+  border:1px solid rgba(255,255,255,.14);  /* :contentReference[oaicite:19]{index=19} */
+  background: rgba(255,255,255,.06);       /* :contentReference[oaicite:20]{index=20} */
+  color: var(--text);
   cursor:pointer;
 }
-button.primary{
-  background:rgba(255,255,255,.18);
-  border-color:rgba(255,255,255,.35);
+.cc button.primary{
+  background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22)); /* :contentReference[oaicite:21]{index=21} */
+  border-color: rgba(124,255,199,.32);                                            /* :contentReference[oaicite:22]{index=22} */
+  font-weight:700;
 }
-button:disabled{ opacity:.45; cursor:not-allowed; }
+.cc button:disabled{ opacity:.5; cursor:not-allowed; } /* :contentReference[oaicite:23]{index=23} */
 
 /* Meta line */
-.meta{
+.cc .meta{
   grid-column: 1 / -1;
   display:flex;
   justify-content:flex-start;
   gap:18px;
   flex-wrap:wrap;
   margin-top:2px;
-  color:var(--muted);
+  color: var(--muted);
   font-weight:700;
 }
-.meta span{ color:#fff; }
-
-/* Responsive */
-@media (max-width: 1100px){
-  .grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .grid label:not(.wide){ grid-column: span 3; }
-}
-@media (max-width: 720px){
-  .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .grid label:not(.wide){ grid-column: 1 / -1; }
-  .btnRow{ justify-content:stretch; }
-  button{ flex:1 1 auto; }
-}
+.cc .meta span{ color: var(--text); }
 
 /* =========================
    Table layout
    ========================= */
-.table-wrap, .tableWrap{
+.cc .table-wrap, .cc .tableWrap{
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius: var(--radius);
   overflow:auto;
 }
 
-table{
+.cc table{
   width:100%;
   border-collapse:separate;
   border-spacing:0;
@@ -201,14 +179,14 @@ table{
   min-width:820px;
 }
 
-th, td{
+.cc th, .cc td{
   padding:12px 12px;
   vertical-align:top;
 }
 
-th{
-  color:#fff;
-  background:rgba(255,255,255,.10);
+.cc th{
+  color: var(--text);
+  background: rgba(255,255,255,.06);
   border-bottom:1px solid var(--border);
   text-align:left;
   position:sticky;
@@ -216,40 +194,51 @@ th{
   z-index:1;
 }
 
-td{
-  border-top:1px solid rgba(255,255,255,.10);
-}
+.cc td{ border-top:1px solid rgba(255,255,255,.08); }
 
-tbody tr:hover td{
-  background:rgba(255,255,255,.04);
-}
+.cc tbody tr:hover td{ background: rgba(255,255,255,.04); }
 
-td code{
-  color:#fff;
-  background:rgba(0,0,0,.25);
+.cc td code{
+  color: var(--text);
+  background: rgba(0,0,0,.18);
+  border:1px solid rgba(255,255,255,.10);
   padding:3px 8px;
   border-radius:8px;
   display:inline-block;
+  font-family: var(--mono);
 }
 
-td a{
-  color:#fff;
+.cc td a{
+  color: rgba(124,255,199,.95);
   text-decoration:none;
-  border-bottom:1px solid rgba(255,255,255,.35);
 }
-td a:hover{ border-bottom-color:#fff; }
+.cc td a:hover{ text-decoration:underline; }
 
 /* =========================
    Log
    ========================= */
-.log{
-  background:rgba(0,0,0,.55);
-  color:#f6f7fb;
+.cc .log{
+  background: rgba(0,0,0,.35);
+  color: var(--text);
   border:1px solid rgba(255,255,255,.12);
-  border-radius:14px;
+  border-radius: var(--radius);
   padding:12px;
   line-height:1.45;
   max-height:220px;
   overflow:auto;
   white-space:pre-wrap;
+  font-family: var(--mono);
+  font-size:12px;
+}
+
+/* Responsive */
+@media (max-width: 1100px){
+  .cc .grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .cc .grid label:not(.wide){ grid-column: span 3; }
+}
+@media (max-width: 720px){
+  .cc .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cc .grid label:not(.wide){ grid-column: 1 / -1; }
+  .cc .btnRow{ justify-content:stretch; }
+  .cc button{ flex:1 1 auto; }
 }
