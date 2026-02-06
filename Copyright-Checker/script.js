@@ -1,7 +1,8 @@
 /* Copyright_Checker/script.js
    - Findet Datensätze, bei denen mindestens ein Bild/Video in media_objects
      kein (oder leeres) copyrightText hat.
-   - Pagination: limit/offset
+   - Pagination: limit/offset, ABBRUCH NUR wenn items.length < limit (oder 0)
+     => total wird NICHT zum Abbruch verwendet (ET4 total ist oft nicht overall)
    - Types nacheinander (ohne City/Area)
    - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Debug-Liste
 */
@@ -66,6 +67,39 @@ function extractItems(payload) {
     if (Array.isArray(v) && v.length && typeof v[0] === "object") return v;
   }
   return [];
+}
+
+function extractTotal(payload) {
+  const keys = [
+    "overallcount",
+    "overallCount",
+    "total",
+    "Total",
+    "totalHits",
+    "TotalHits",
+    "numFound",
+    "NumFound",
+    "count",
+    "Count",
+    "hits",
+    "Hits",
+  ];
+  for (const k of keys) {
+    const v = payload?.[k];
+    if (Number.isInteger(v)) return v;
+    if (typeof v === "string" && /^\d+$/.test(v)) return parseInt(v, 10);
+  }
+  for (const mk of ["meta", "Meta", "info", "Info"]) {
+    const meta = payload?.[mk];
+    if (meta && typeof meta === "object") {
+      for (const k of keys) {
+        const v = meta?.[k];
+        if (Number.isInteger(v)) return v;
+        if (typeof v === "string" && /^\d+$/.test(v)) return parseInt(v, 10);
+      }
+    }
+  }
+  return null;
 }
 
 function extractId(item) {
@@ -299,4 +333,180 @@ function setButtons(running) {
   el("stopBtn").disabled = !running;
 }
 
-el("stopBtn").addEventListener("clic
+el("stopBtn").addEventListener("click", () => {
+  stopRequested = true;
+  if (currentAbort) currentAbort.abort();
+  log("Stop requested.");
+});
+
+el("downloadBtn").addEventListener("click", () => {
+  const csv = toCsv(lastMissing);
+  downloadBlob("missing_copyright.csv", csv, "text/csv;charset=utf-8");
+});
+
+el("runBtn").addEventListener("click", async () => {
+  // reset UI
+  el("tbody").innerHTML = "";
+  el("log").textContent = "";
+  el("missingCount").textContent = "0";
+  el("progress").textContent = "0/0";
+  el("downloadBtn").disabled = true;
+  lastMissing = [];
+  stopRequested = false;
+
+  currentAbort = new AbortController();
+
+  const baseUrlRaw = el("baseUrl").value.trim() || "https://meta.et4.de/rest.ashx/search/";
+  const baseUrl = baseUrlRaw.replace(/\/?$/, "/");
+
+  const experience = el("experience").value.trim();
+  const template = (el("template").value.trim() || "ET2022A.json").trim();
+  const licensekey = el("licensekey").value.trim();
+
+  const typesInput = (el("type").value || "All").trim();
+
+  const limit = Math.max(1, Math.min(500, parseInt(el("limit").value, 10) || 200));
+
+  const rateRaw = parseFloat(el("rate").value);
+  const rate = Math.max(0.1, Math.min(2, Number.isFinite(rateRaw) ? rateRaw : 1));
+  el("rate").value = String(rate);
+
+  const limiter = {
+    minIntervalMs: Math.ceil(1000 / rate),
+    state: { lastStart: -1e9 },
+  };
+
+  if (!experience) {
+    setStatus("error", "err");
+    log("Missing experience.");
+    return;
+  }
+
+  let types = [];
+  if (!typesInput || typesInput.toLowerCase() === "all") {
+    types = defaultTypesNoCityArea();
+  } else {
+    types = typesInput
+      .split(",")
+      .map((t) => normalizeTypeName(t))
+      .map((t) => t.trim())
+      .filter(Boolean);
+  }
+
+  types = types.filter((t) => !isExcludedTypeName(t));
+
+  if (types.length === 0) {
+    setStatus("error", "err");
+    log('No types to query (after excluding "City" and "Area").');
+    return;
+  }
+
+  setButtons(true);
+  setStatus("running", "run");
+
+  try {
+    let processed = 0;
+    const maxPagesSafety = 12000;
+
+    for (const type of types) {
+      if (stopRequested) throw new Error("Stopped by user.");
+
+      log(`\n=== TYPE: ${type} ===`);
+
+      let offset = 0;
+      let pageCount = 0;
+      let prevFingerprint = null;
+
+      while (true) {
+        if (stopRequested) throw new Error("Stopped by user.");
+
+        await rateLimit(limiter.minIntervalMs, limiter.state);
+
+        const payload = await fetchJson(
+          baseUrl,
+          {
+            experience,
+            type,
+            template,
+            licensekey,
+            limit,
+            offset,
+          },
+          currentAbort.signal
+        );
+
+        const items = extractItems(payload);
+        const total = extractTotal(payload);
+
+        log(`Page: offset=${offset} items=${items.length}` + (total ? ` total=${total}` : ""));
+
+        if (!items.length) break;
+
+        // Schutz: falls offset ignoriert wird
+        const fp = idsFingerprint(items);
+        if (prevFingerprint && fp && fp === prevFingerprint) {
+          throw new Error(`Pagination ignored for type=${type} (same page repeated).`);
+        }
+        prevFingerprint = fp;
+
+        for (const it of items) {
+          const itemType = normalizeTypeName(getType(it));
+          if (isExcludedTypeName(itemType)) continue;
+
+          processed++;
+          el("progress").textContent = `${processed}/?`;
+
+          const { checkableCount, missing } = findMissingCopyrightMedia(it);
+          const missingMediaCount = missing.length;
+
+          if (checkableCount > 0 && missingMediaCount > 0) {
+            const id = extractId(it);
+            const title = extractTitle(it);
+            const pagesLink = buildPagesLink(it, experience);
+
+            lastMissing.push({
+              id,
+              title,
+              type: itemType || type,
+              missingMediaCount,
+              missingMedia: missing,
+              pagesLink,
+            });
+
+            addRow({
+              id,
+              title,
+              pagesLink,
+              missingMediaCount,
+              missingMedia: missing,
+            });
+
+            el("missingCount").textContent = String(lastMissing.length);
+          }
+        }
+
+        // offset robust erhöhen
+        offset += items.length;
+        log(`Next offset=${offset}`);
+
+        // ABBRUCH: letzte Seite (items < limit)
+        if (items.length < limit) break;
+
+        pageCount++;
+        if (pageCount > maxPagesSafety) {
+          throw new Error(`Safety stop: too many pages for type=${type} (check pagination).`);
+        }
+      }
+    }
+
+    setStatus("done", "ok");
+    el("downloadBtn").disabled = lastMissing.length === 0;
+    log(`\nDone. Processed=${processed}. Missing datasets=${lastMissing.length}.`);
+  } catch (e) {
+    setStatus("error", "err");
+    log("Error: " + String(e?.message || e));
+  } finally {
+    setButtons(false);
+    currentAbort = null;
+  }
+});
