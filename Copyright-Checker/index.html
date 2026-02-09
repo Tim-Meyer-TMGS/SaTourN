@@ -15,40 +15,27 @@ js: /Copyright-Checker/script.js
       </div>
 
       <div class="ct grid">
-        <label class="wide">
-          <span>Base URL</span>
-          <input id="baseUrl" value="https://meta.et4.de/rest.ashx/search/" />
-        </label>
+        <!-- Hidden config (nicht mehr im UI sichtbar) -->
+        <input id="baseUrl" type="hidden" value="https://meta.et4.de/rest.ashx/search/" />
+        <input id="template" type="hidden" value="ET2022A.json" />
+        <input id="limit" type="hidden" value="200" />
+        <input id="rate" type="hidden" value="1" />
 
-        <label>
+        <!-- Rechtsbündig untereinander -->
+        <label class="stackRight">
           <span>Experience</span>
           <input id="experience" value="sachsen-tourismus" />
         </label>
 
-        <label>
+        <label class="stackRight">
           <span>Type</span>
           <input id="type" value="All" />
           <div class="hint">Mehrere Typen per Komma: <code>Tour,POI,Gastro,Hotel,Event</code> (City/Area werden ignoriert)</div>
         </label>
 
-        <label>
-          <span>Template</span>
-          <input id="template" value="ET2022A.json" />
-        </label>
-
-        <label class="wide">
+        <label class="stackRight">
           <span>License Key (optional)</span>
           <input id="licensekey" placeholder="enter_your_licensekey" />
-        </label>
-
-        <label>
-          <span>Page size (limit)</span>
-          <input id="limit" type="number" min="1" max="500" value="200" />
-        </label>
-
-        <label>
-          <span>Rate (req/s, max 2)</span>
-          <input id="rate" type="number" min="0.1" max="2" step="0.1" value="1" />
         </label>
 
         <div class="btnRow actions wide">
