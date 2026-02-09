@@ -104,6 +104,19 @@
 .cc .grid label.wide{ grid-column: 1 / -1; }
 .cc .grid label:not(.wide){ grid-column: span 3; }
 
+/* Rechtsbündige Stapel-Spalte (Experience/Type/License) */
+.cc .grid label.stackRight{
+  grid-column: 10 / -1; /* rechte 3 Spalten im 12er Grid */
+  justify-self: end;
+}
+.cc .grid label.stackRight > span,
+.cc .grid label.stackRight .hint{
+  text-align: right;
+}
+.cc .grid label.stackRight input{
+  text-align: right;
+}
+
 /* hint below Type */
 .cc .hint{
   margin-top:6px;
@@ -235,6 +248,12 @@
 @media (max-width: 1100px){
   .cc .grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .cc .grid label:not(.wide){ grid-column: span 3; }
+
+  /* stackRight auf volle Breite + linksbündig */
+  .cc .grid label.stackRight{ grid-column: 1 / -1; justify-self: stretch; }
+  .cc .grid label.stackRight > span,
+  .cc .grid label.stackRight .hint,
+  .cc .grid label.stackRight input{ text-align: left; }
 }
 @media (max-width: 720px){
   .cc .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
