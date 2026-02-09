@@ -176,22 +176,63 @@ const PAGES_LANG = "de";
 const PAGES_TEMPLATE = "default_withmap";
 
 function extractUrlTitle(item) {
+  // 1) attributes[]: URL_TITLE
   const attrs = item?.attributes;
   if (Array.isArray(attrs)) {
     for (const a of attrs) {
-      if (String(a?.key ?? "").toUpperCase() === "URL_TITLE") {
+      const k = String(a?.key ?? "").trim().toUpperCase();
+      if (k === "URL_TITLE" || k === "URLTITLE" || k === "URL_TITLE_DE") {
         const v = String(a?.value ?? "").trim();
         if (v) return v;
       }
     }
   }
+
+  // 2) direkte Felder (häufige Varianten)
+  const directCandidates = [
+    item?.url_title,
+    item?.urlTitle,
+    item?.URL_TITLE,
+    item?.slug,
+    item?.Slug,
+    item?.presentation?.url_title,
+    item?.presentation?.urlTitle,
+    item?.presentation?.slug,
+  ];
+  for (const v of directCandidates) {
+    const s = String(v ?? "").trim();
+    if (s) return s;
+  }
+
   return "";
+}
+
+function slugifyFallback(title) {
+  // einfacher, robuster Fallback (ASCII-ish)
+  const s = String(title ?? "").trim().toLowerCase();
+  if (!s) return "";
+
+  return s
+    .replaceAll("ä", "ae")
+    .replaceAll("ö", "oe")
+    .replaceAll("ü", "ue")
+    .replaceAll("ß", "ss")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function buildPagesLink(item, pagesExperience) {
   const pagesType = normalizeTypeName(getType(item));
   const gid = extractId(item);
-  const slug = extractUrlTitle(item);
+
+  let slug = extractUrlTitle(item);
+  if (!slug) {
+    // Fallback: aus Titel generieren
+    slug = slugifyFallback(extractTitle(item));
+  }
 
   if (!pagesExperience || !pagesType || !gid || !slug) return "";
 
@@ -379,16 +420,10 @@ el("runBtn").addEventListener("click", async () => {
 
   const typesInput = (el("type").value || "All").trim();
 
-  const limit = Math.max(
-    1,
-    Math.min(500, parseInt(el("limit").value, 10) || 200)
-  );
+  const limit = Math.max(1, Math.min(500, parseInt(el("limit").value, 10) || 200));
 
   const rateRaw = parseFloat(el("rate").value);
-  const rate = Math.max(
-    0.1,
-    Math.min(2, Number.isFinite(rateRaw) ? rateRaw : 1)
-  );
+  const rate = Math.max(0.1, Math.min(2, Number.isFinite(rateRaw) ? rateRaw : 1));
   el("rate").value = String(rate);
 
   const limiter = {
@@ -428,6 +463,24 @@ el("runBtn").addEventListener("click", async () => {
     let processed = 0;
     const maxPagesSafety = 12000;
 
+    // Progress-Ziel: Summe der overallcount-Werte pro Typ
+    const totalsByType = {};
+    let overallExpected = 0;
+
+    const recomputeOverallExpected = () => {
+      overallExpected = Object.values(totalsByType).reduce(
+        (sum, n) => sum + (Number.isFinite(n) ? n : 0),
+        0
+      );
+    };
+
+    const setProgressText = () => {
+      const denom = overallExpected > 0 ? overallExpected : 0;
+      el("progress").textContent = `${processed}/${denom || "?"}`;
+    };
+
+    setProgressText();
+
     for (const type of types) {
       if (stopRequested) throw new Error("Stopped by user.");
 
@@ -436,6 +489,9 @@ el("runBtn").addEventListener("click", async () => {
       let offset = 0;
       let pageCount = 0;
       let prevFingerprint = null;
+
+      // pro Typ nur einmal den Gesamtwert übernehmen (aus dem ersten Call)
+      let typeTotalCaptured = false;
 
       while (true) {
         if (stopRequested) throw new Error("Stopped by user.");
@@ -458,6 +514,15 @@ el("runBtn").addEventListener("click", async () => {
         const items = extractItems(payload);
         const total = extractTotal(payload);
 
+        // overallcount im ersten Call pro Typ merken
+        if (!typeTotalCaptured && Number.isFinite(total) && total >= 0) {
+          totalsByType[type] = total;
+          recomputeOverallExpected();
+          typeTotalCaptured = true;
+          log(`Captured overallcount for type=${type}: ${total} (overallExpected=${overallExpected})`);
+          setProgressText();
+        }
+
         log(
           `Page: offset=${offset} items=${items.length}` +
             (total ? ` total=${total}` : "")
@@ -468,9 +533,7 @@ el("runBtn").addEventListener("click", async () => {
         // Schutz: falls offset ignoriert wird
         const fp = idsFingerprint(items);
         if (prevFingerprint && fp && fp === prevFingerprint) {
-          throw new Error(
-            `Pagination ignored for type=${type} (same page repeated).`
-          );
+          throw new Error(`Pagination ignored for type=${type} (same page repeated).`);
         }
         prevFingerprint = fp;
 
@@ -479,7 +542,7 @@ el("runBtn").addEventListener("click", async () => {
           if (isExcludedTypeName(itemType)) continue;
 
           processed++;
-          el("progress").textContent = `${processed}/?`;
+          setProgressText();
 
           const { checkableCount, missing } = findMissingCopyrightMedia(it);
           const missingMediaCount = missing.length;
@@ -519,18 +582,14 @@ el("runBtn").addEventListener("click", async () => {
 
         pageCount++;
         if (pageCount > maxPagesSafety) {
-          throw new Error(
-            `Safety stop: too many pages for type=${type} (check pagination).`
-          );
+          throw new Error(`Safety stop: too many pages for type=${type} (check pagination).`);
         }
       }
     }
 
     setStatus("done", "ok");
     el("downloadBtn").disabled = lastMissing.length === 0;
-    log(
-      `\nDone. Processed=${processed}. Missing datasets=${lastMissing.length}.`
-    );
+    log(`\nDone. Processed=${processed}. Missing datasets=${lastMissing.length}.`);
   } catch (e) {
     setStatus("error", "err");
     log("Error: " + String(e?.message || e));
