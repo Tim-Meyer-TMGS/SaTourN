@@ -21,7 +21,6 @@ js: /Copyright-Checker/script.js
         <input id="limit" type="hidden" value="200" />
         <input id="rate" type="hidden" value="1" />
 
-        <!-- Rechtsbündig untereinander -->
         <label class="stackRight">
           <span>Experience</span>
           <input id="experience" value="sachsen-tourismus" />
@@ -29,12 +28,11 @@ js: /Copyright-Checker/script.js
 
         <label class="stackRight">
           <span>Type</span>
-          <input id="type" value="POI" />
-          <div class="hint">Mehrere Typen per Komma: <code>Tour,POI,Gastro,Hotel,Event</code></div>
+          <input id="type" value="All" />
         </label>
 
         <label class="stackRight">
-          <span>License Key</span>
+          <span>License Key (optional)</span>
           <input id="licensekey" placeholder="enter_your_licensekey" />
         </label>
 
@@ -62,7 +60,7 @@ js: /Copyright-Checker/script.js
               <tr>
                 <th style="width:220px;">ID</th>
                 <th>Titel</th>
-                <th style="width:140px; text-align:right;">Medien mit fehlendem Copyright</th>
+                <th style="width:180px;">Medien mit fehlendem Copyright</th>
                 <th>Details (rel / media-id)</th>
               </tr>
             </thead>
