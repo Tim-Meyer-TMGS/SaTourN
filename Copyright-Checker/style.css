@@ -1,14 +1,11 @@
 /* =========================
    Copyright Checker – base.css aligned
-   Drop-in: an style.css anhängen
    ========================= */
 
-/* Optional: alles scoped halten (wie bei KG-Finder/Pages-Builder) */
 .cc{
   color: var(--text);
 }
 
-/* outer wrap (an container/page-surface angelehnt) */
 .cc .wrap{
   max-width:1180px;
   margin:0 auto;
@@ -18,7 +15,7 @@
   gap:14px;
 }
 
-/* cards (base.css card pattern) */
+/* cards */
 .cc .card{
   background: linear-gradient(180deg, var(--surface), var(--surface2));
   border: 1px solid var(--border);
@@ -63,38 +60,46 @@
 .cc .grid{
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 14px;
-  align-items:end;
-  justify-items:start; /* alles links ausrichten */
+  gap: 16px;              /* gleichmäßiger Abstand */
+  align-items: start;     /* gleiche obere Kante */
+  justify-items: start;
 }
 
-.cc label{ display:block; margin:0; }
+.cc label{ margin:0; }
 
-/* Labels */
+/* Labels als Stack: gleicher vertikaler Abstand */
+.cc .grid label{
+  display:flex;
+  flex-direction:column;
+  gap:6px;                /* Abstand Label -> Input */
+}
+
+/* Label text */
 .cc label > span,
 .cc label > .lbl,
 .cc .grid label{
-  display:block;
   font-weight:700;
   color: var(--muted);
-  margin:0 0 6px;
   letter-spacing:.2px;
   font-size:12px;
   text-align:left;
 }
 
-/* Inputs */
+/* Inputs: gleiche Höhe */
 .cc .grid input{
   width:100%;
   font: inherit;
   box-sizing:border-box;
-  padding:11px 12px;
+  height:44px;
+  min-height:44px;
+  padding: 0 12px;
+  line-height:44px;
+
   border-radius:12px;
   border:1px solid rgba(255,255,255,.14);
   background: rgba(0,0,0,.18);
   color: var(--text);
   outline:none;
-  min-height:40px;
   text-align:left;
 }
 .cc .grid input:focus{
@@ -107,35 +112,10 @@
 .cc .grid label.wide{ grid-column: 1 / -1; }
 .cc .grid label:not(.wide){ grid-column: span 3; }
 
-/* Experience/Type/License: NICHT rechts platzieren – wie normale Felder links */
+/* Experience/Type/License: wie normale Felder links */
 .cc .grid label.stackRight{
-  grid-column: span 3;   /* statt 10 / -1 */
+  grid-column: span 3;
   justify-self:start;
-}
-.cc .grid label.stackRight > span,
-.cc .grid label.stackRight .hint{
-  text-align:left;
-}
-.cc .grid label.stackRight input{
-  text-align:left;
-}
-
-/* hint below Type */
-.cc .hint{
-  margin-top:6px;
-  color: var(--muted);
-  font-weight:600;
-  font-size:12px;
-  line-height:1.35;
-  text-align:left;
-}
-.cc .hint code{
-  background: rgba(0,0,0,.18);
-  border:1px solid rgba(255,255,255,.12);
-  padding:2px 6px;
-  border-radius:8px;
-  color: var(--text);
-  font-family: var(--mono);
 }
 
 /* Buttons row */
@@ -201,7 +181,13 @@
 .cc th, .cc td{
   padding:12px 12px;
   vertical-align:top;
-  text-align:left;
+  text-align:left;              /* alles links */
+}
+
+/* Spalte 3: nicht umbrechen */
+.cc th:nth-child(3),
+.cc td:nth-child(3){
+  white-space: nowrap;          /* „Medien mit fehlendem Copyright“ in einer Zeile */
 }
 
 .cc th{
@@ -255,11 +241,7 @@
 @media (max-width: 1100px){
   .cc .grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .cc .grid label:not(.wide){ grid-column: span 3; }
-
-  .cc .grid label.stackRight{
-    grid-column: span 3; /* bleibt links wie die anderen */
-    justify-self:start;
-  }
+  .cc .grid label.stackRight{ grid-column: span 3; }
 }
 
 @media (max-width: 720px){
