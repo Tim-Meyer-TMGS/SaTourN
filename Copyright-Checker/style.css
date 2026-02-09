@@ -10,7 +10,7 @@
 
 /* outer wrap (an container/page-surface angelehnt) */
 .cc .wrap{
-  max-width:1180px;              /* wie .container :contentReference[oaicite:3]{index=3} */
+  max-width:1180px;
   margin:0 auto;
   padding: 18px 16px 22px;
   display:flex;
@@ -20,39 +20,39 @@
 
 /* cards (base.css card pattern) */
 .cc .card{
-  background: linear-gradient(180deg, var(--surface), var(--surface2)); /* :contentReference[oaicite:4]{index=4} */
-  border: 1px solid var(--border);                                     /* :contentReference[oaicite:5]{index=5} */
-  border-radius: var(--radius);                                        /* :contentReference[oaicite:6]{index=6} */
-  box-shadow: var(--shadow);                                           /* :contentReference[oaicite:7]{index=7} */
+  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   overflow:hidden;
 }
 
-/* header/content (base.css card-hd/card-ct) */
+/* header/content */
 .cc .hd{
   padding:12px 14px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:12px;
-  border-bottom:1px solid rgba(255,255,255,.08); /* :contentReference[oaicite:8]{index=8} */
-  background: rgba(255,255,255,.04);             /* :contentReference[oaicite:9]{index=9} */
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
 }
 .cc .hd strong{
   font-size:18px;
   letter-spacing:.2px;
 }
-.cc .ct{ padding:14px; } /* wie .card-ct :contentReference[oaicite:10]{index=10} */
+.cc .ct{ padding:14px; }
 
-/* status pill (base.css pill pattern) */
+/* status pill */
 .cc .pill{
   display:inline-flex;
   align-items:center;
   gap:8px;
   padding:6px 10px;
   border-radius:999px;
-  border:1px solid rgba(255,255,255,.12); /* :contentReference[oaicite:11]{index=11} */
-  background: rgba(255,255,255,.04);       /* :contentReference[oaicite:12]{index=12} */
-  color: var(--muted);                      /* :contentReference[oaicite:13]{index=13} */
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
   font-size:12px;
   white-space:nowrap;
 }
@@ -69,7 +69,7 @@
 
 .cc label{ display:block; margin:0; }
 
-/* Labels: base.css nutzt eher muted/kleiner (siehe andere Tools) */
+/* Labels */
 .cc label > span,
 .cc label > .lbl,
 .cc .grid label{
@@ -79,24 +79,26 @@
   margin:0 0 6px;
   letter-spacing:.2px;
   font-size:12px;
+  text-align:left;
 }
 
-/* Inputs: base.css Input-Styling übernehmen */
+/* Inputs */
 .cc .grid input{
   width:100%;
   font: inherit;
   box-sizing:border-box;
   padding:11px 12px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.14); /* :contentReference[oaicite:14]{index=14} */
-  background: rgba(0,0,0,.18);            /* :contentReference[oaicite:15]{index=15} */
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(0,0,0,.18);
   color: var(--text);
   outline:none;
   min-height:40px;
+  text-align:left;
 }
 .cc .grid input:focus{
-  border-color: rgba(124,255,199,.55);      /* :contentReference[oaicite:16]{index=16} */
-  box-shadow: 0 0 0 4px rgba(124,255,199,.12); /* :contentReference[oaicite:17]{index=17} */
+  border-color: rgba(124,255,199,.55);
+  box-shadow: 0 0 0 4px rgba(124,255,199,.12);
 }
 .cc .grid input::placeholder{ color:rgba(255,255,255,.45); }
 
@@ -104,17 +106,17 @@
 .cc .grid label.wide{ grid-column: 1 / -1; }
 .cc .grid label:not(.wide){ grid-column: span 3; }
 
-/* Rechtsbündige Stapel-Spalte (Experience/Type/License) */
+/* Experience/Type/License: rechts im Grid, aber linksbündig */
 .cc .grid label.stackRight{
-  grid-column: 10 / -1; /* rechte 3 Spalten im 12er Grid */
-  justify-self: end;
+  grid-column: 10 / -1;
+  justify-self: stretch;
 }
 .cc .grid label.stackRight > span,
 .cc .grid label.stackRight .hint{
-  text-align: right;
+  text-align:left;
 }
 .cc .grid label.stackRight input{
-  text-align: right;
+  text-align:left;
 }
 
 /* hint below Type */
@@ -124,6 +126,7 @@
   font-weight:600;
   font-size:12px;
   line-height:1.35;
+  text-align:left;
 }
 .cc .hint code{
   background: rgba(0,0,0,.18);
@@ -145,22 +148,23 @@
   margin-top:2px;
 }
 
-/* Buttons: base.css nutzt .btn/.btn.primary; hier kompatibel zu button + .primary */
+/* Buttons */
 .cc button{
-  font: inherit; /* :contentReference[oaicite:18]{index=18} */
+  font: inherit;
   padding:11px 14px;
   border-radius:12px;
-  border:1px solid rgba(255,255,255,.14);  /* :contentReference[oaicite:19]{index=19} */
-  background: rgba(255,255,255,.06);       /* :contentReference[oaicite:20]{index=20} */
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
   color: var(--text);
   cursor:pointer;
+  text-align:left;
 }
 .cc button.primary{
-  background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22)); /* :contentReference[oaicite:21]{index=21} */
-  border-color: rgba(124,255,199,.32);                                            /* :contentReference[oaicite:22]{index=22} */
+  background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
+  border-color: rgba(124,255,199,.32);
   font-weight:700;
 }
-.cc button:disabled{ opacity:.5; cursor:not-allowed; } /* :contentReference[oaicite:23]{index=23} */
+.cc button:disabled{ opacity:.5; cursor:not-allowed; }
 
 /* Meta line */
 .cc .meta{
@@ -172,6 +176,7 @@
   margin-top:2px;
   color: var(--muted);
   font-weight:700;
+  text-align:left;
 }
 .cc .meta span{ color: var(--text); }
 
@@ -195,13 +200,13 @@
 .cc th, .cc td{
   padding:12px 12px;
   vertical-align:top;
+  text-align:left;
 }
 
 .cc th{
   color: var(--text);
   background: rgba(255,255,255,.06);
   border-bottom:1px solid var(--border);
-  text-align:left;
   position:sticky;
   top:0;
   z-index:1;
@@ -242,6 +247,7 @@
   white-space:pre-wrap;
   font-family: var(--mono);
   font-size:12px;
+  text-align:left;
 }
 
 /* Responsive */
@@ -249,12 +255,12 @@
   .cc .grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .cc .grid label:not(.wide){ grid-column: span 3; }
 
-  /* stackRight auf volle Breite + linksbündig */
-  .cc .grid label.stackRight{ grid-column: 1 / -1; justify-self: stretch; }
-  .cc .grid label.stackRight > span,
-  .cc .grid label.stackRight .hint,
-  .cc .grid label.stackRight input{ text-align: left; }
+  .cc .grid label.stackRight{
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
 }
+
 @media (max-width: 720px){
   .cc .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cc .grid label:not(.wide){ grid-column: 1 / -1; }
