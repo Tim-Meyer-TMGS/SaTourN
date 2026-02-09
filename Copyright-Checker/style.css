@@ -65,6 +65,7 @@
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 14px;
   align-items:end;
+  justify-items:start; /* alles links ausrichten */
 }
 
 .cc label{ display:block; margin:0; }
@@ -106,10 +107,10 @@
 .cc .grid label.wide{ grid-column: 1 / -1; }
 .cc .grid label:not(.wide){ grid-column: span 3; }
 
-/* Experience/Type/License: rechts im Grid, aber linksbündig */
+/* Experience/Type/License: NICHT rechts platzieren – wie normale Felder links */
 .cc .grid label.stackRight{
-  grid-column: 10 / -1;
-  justify-self: stretch;
+  grid-column: span 3;   /* statt 10 / -1 */
+  justify-self:start;
 }
 .cc .grid label.stackRight > span,
 .cc .grid label.stackRight .hint{
@@ -256,8 +257,8 @@
   .cc .grid label:not(.wide){ grid-column: span 3; }
 
   .cc .grid label.stackRight{
-    grid-column: 1 / -1;
-    justify-self: stretch;
+    grid-column: span 3; /* bleibt links wie die anderen */
+    justify-self:start;
   }
 }
 
