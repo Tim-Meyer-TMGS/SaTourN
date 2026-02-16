@@ -134,6 +134,23 @@ function getType(item) {
   );
 }
 
+/* ✅ NEU: areas_old (Fallback: areas[{value}]) */
+function extractAreasOld(item) {
+  const aOld = item?.areas_old;
+  if (Array.isArray(aOld)) {
+    return aOld.map((x) => String(x ?? "").trim()).filter(Boolean);
+  }
+
+  const a = item?.areas;
+  if (Array.isArray(a)) {
+    return a
+      .map((x) => String(x?.value ?? "").trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 /* ------------------------- Type handling ------------------------- */
 
 const CANON_TYPE = {
@@ -300,7 +317,7 @@ function log(msg) {
   l.scrollTop = l.scrollHeight;
 }
 
-function addRow({ id, title, pagesLink, missingMediaCount, missingMedia }) {
+function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missingMedia }) {
   const missingShort =
     missingMediaCount === 0
       ? ""
@@ -319,6 +336,10 @@ function addRow({ id, title, pagesLink, missingMediaCount, missingMedia }) {
   tr.innerHTML = `
     <td><code>${esc(id)}</code></td>
     <td>${esc(title)}<div style="margin-top:6px;">${linkHtml}</div></td>
+
+    <!-- ✅ NEU -->
+    <td style="font-size:12px; opacity:.9;">${esc(areasOldText || "")}</td>
+
     <td><strong>${esc(missingMediaCount)}</strong></td>
     <td style="font-size:12px; opacity:.85;">${esc(missingShort)}${esc(more)}</td>
   `;
@@ -330,6 +351,7 @@ function toCsv(rows) {
     "id",
     "title",
     "type",
+    "areas_old",
     "missing_media_count",
     "missing_media_rel_ids",
     "pages_link",
@@ -345,6 +367,7 @@ function toCsv(rows) {
       `"${String(r.id).replaceAll('"', '""')}"`,
       `"${String(r.title).replaceAll('"', '""')}"`,
       `"${String(r.type).replaceAll('"', '""')}"`,
+      `"${String(r.areasOldText || "").replaceAll('"', '""')}"`,
       String(r.missingMediaCount ?? 0),
       `"${relIds.replaceAll('"', '""')}"`,
       `"${String(r.pagesLink || "").replaceAll('"', '""')}"`,
@@ -552,10 +575,15 @@ el("runBtn").addEventListener("click", async () => {
             const title = extractTitle(it);
             const pagesLink = buildPagesLink(it, experience);
 
+            // ✅ NEU: areas_old
+            const areasOldArr = extractAreasOld(it);
+            const areasOldText = areasOldArr.join(", ");
+
             lastMissing.push({
               id,
               title,
               type: itemType || type,
+              areasOldText,
               missingMediaCount,
               missingMedia: missing,
               pagesLink,
@@ -565,6 +593,7 @@ el("runBtn").addEventListener("click", async () => {
               id,
               title,
               pagesLink,
+              areasOldText,
               missingMediaCount,
               missingMedia: missing,
             });
