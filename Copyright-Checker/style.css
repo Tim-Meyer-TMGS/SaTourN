@@ -175,7 +175,10 @@
   border-collapse:separate;
   border-spacing:0;
   color:var(--text);
-  min-width:820px;
+  min-width:1100px;
+
+  /* ✅ wichtig: Breiten in <th style="width:..."> erzwingen */
+  table-layout: fixed;
 }
 
 .cc th, .cc td{
@@ -184,10 +187,26 @@
   text-align:left;              /* alles links */
 }
 
-/* Spalte 3: nicht umbrechen */
-.cc th:nth-child(3),
-.cc td:nth-child(3){
-  white-space: nowrap;          /* „Medien mit fehlendem Copyright“ in einer Zeile */
+/* ✅ Spalte 4: nicht umbrechen (Medien mit fehlendem Copyright) */
+.cc th:nth-child(4),
+.cc td:nth-child(4){
+  white-space: nowrap;
+}
+
+/* ✅ Titel + areas_old dürfen umbrechen */
+.cc th:nth-child(2), .cc td:nth-child(2),
+.cc th:nth-child(3), .cc td:nth-child(3){
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* ✅ Details: umbrechen erlaubt */
+.cc th:nth-child(5),
+.cc td:nth-child(5){
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .cc th{
