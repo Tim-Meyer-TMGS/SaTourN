@@ -134,7 +134,7 @@ function getType(item) {
   );
 }
 
-/* ✅ NEU: areas_old (Fallback: areas[{value}]) */
+/* ✅ NEU: areas_old extrahieren (Fallback: areas[{value}]) */
 function extractAreasOld(item) {
   const aOld = item?.areas_old;
   if (Array.isArray(aOld)) {
@@ -143,9 +143,7 @@ function extractAreasOld(item) {
 
   const a = item?.areas;
   if (Array.isArray(a)) {
-    return a
-      .map((x) => String(x?.value ?? "").trim())
-      .filter(Boolean);
+    return a.map((x) => String(x?.value ?? "").trim()).filter(Boolean);
   }
 
   return [];
@@ -317,7 +315,14 @@ function log(msg) {
   l.scrollTop = l.scrollHeight;
 }
 
-function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missingMedia }) {
+function addRow({
+  id,
+  title,
+  pagesLink,
+  areasOldText,
+  missingMediaCount,
+  missingMedia,
+}) {
   const missingShort =
     missingMediaCount === 0
       ? ""
@@ -336,10 +341,7 @@ function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missing
   tr.innerHTML = `
     <td><code>${esc(id)}</code></td>
     <td>${esc(title)}<div style="margin-top:6px;">${linkHtml}</div></td>
-
-    <!-- ✅ NEU -->
     <td style="font-size:12px; opacity:.9;">${esc(areasOldText || "")}</td>
-
     <td><strong>${esc(missingMediaCount)}</strong></td>
     <td style="font-size:12px; opacity:.85;">${esc(missingShort)}${esc(more)}</td>
   `;
@@ -542,7 +544,9 @@ el("runBtn").addEventListener("click", async () => {
           totalsByType[type] = total;
           recomputeOverallExpected();
           typeTotalCaptured = true;
-          log(`Captured overallcount for type=${type}: ${total} (overallExpected=${overallExpected})`);
+          log(
+            `Captured overallcount for type=${type}: ${total} (overallExpected=${overallExpected})`
+          );
           setProgressText();
         }
 
@@ -556,7 +560,9 @@ el("runBtn").addEventListener("click", async () => {
         // Schutz: falls offset ignoriert wird
         const fp = idsFingerprint(items);
         if (prevFingerprint && fp && fp === prevFingerprint) {
-          throw new Error(`Pagination ignored for type=${type} (same page repeated).`);
+          throw new Error(
+            `Pagination ignored for type=${type} (same page repeated).`
+          );
         }
         prevFingerprint = fp;
 
@@ -575,9 +581,7 @@ el("runBtn").addEventListener("click", async () => {
             const title = extractTitle(it);
             const pagesLink = buildPagesLink(it, experience);
 
-            // ✅ NEU: areas_old
-            const areasOldArr = extractAreasOld(it);
-            const areasOldText = areasOldArr.join(", ");
+            const areasOldText = extractAreasOld(it).join(", ");
 
             lastMissing.push({
               id,
@@ -611,14 +615,18 @@ el("runBtn").addEventListener("click", async () => {
 
         pageCount++;
         if (pageCount > maxPagesSafety) {
-          throw new Error(`Safety stop: too many pages for type=${type} (check pagination).`);
+          throw new Error(
+            `Safety stop: too many pages for type=${type} (check pagination).`
+          );
         }
       }
     }
 
     setStatus("done", "ok");
     el("downloadBtn").disabled = lastMissing.length === 0;
-    log(`\nDone. Processed=${processed}. Missing datasets=${lastMissing.length}.`);
+    log(
+      `\nDone. Processed=${processed}. Missing datasets=${lastMissing.length}.`
+    );
   } catch (e) {
     setStatus("error", "err");
     log("Error: " + String(e?.message || e));
