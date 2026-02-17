@@ -60,21 +60,19 @@
 .cc .grid{
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 16px;              /* gleichmäßiger Abstand */
-  align-items: start;     /* gleiche obere Kante */
+  gap: 16px;
+  align-items: start;
   justify-items: start;
 }
 
 .cc label{ margin:0; }
 
-/* Labels als Stack: gleicher vertikaler Abstand */
 .cc .grid label{
   display:flex;
   flex-direction:column;
-  gap:6px;                /* Abstand Label -> Input */
+  gap:6px;
 }
 
-/* Label text */
 .cc label > span,
 .cc label > .lbl,
 .cc .grid label{
@@ -85,7 +83,6 @@
   text-align:left;
 }
 
-/* Inputs: gleiche Höhe */
 .cc .grid input{
   width:100%;
   font: inherit;
@@ -112,7 +109,6 @@
 .cc .grid label.wide{ grid-column: 1 / -1; }
 .cc .grid label:not(.wide){ grid-column: span 3; }
 
-/* Experience/Type/License: wie normale Felder links */
 .cc .grid label.stackRight{
   grid-column: span 3;
   justify-self:start;
@@ -175,41 +171,27 @@
   border-collapse:separate;
   border-spacing:0;
   color:var(--text);
-  min-width:1100px;
 
-  /* ✅ wichtig: Breiten in <th style="width:..."> erzwingen */
+  /* mehr Platz, damit Header nicht kollidieren */
+  min-width:1400px;
+
+  /* wichtig: Spaltenbreiten aus <th style="width:..."> wirklich anwenden */
   table-layout: fixed;
 }
 
 .cc th, .cc td{
   padding:12px 12px;
   vertical-align:top;
-  text-align:left;              /* alles links */
+  text-align:left;
 }
 
-/* ✅ Spalte 4: nicht umbrechen (Medien mit fehlendem Copyright) */
-.cc th:nth-child(4),
-.cc td:nth-child(4){
-  white-space: nowrap;
-}
-
-/* ✅ Titel + areas_old dürfen umbrechen */
-.cc th:nth-child(2), .cc td:nth-child(2),
-.cc th:nth-child(3), .cc td:nth-child(3){
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-/* ✅ Details: umbrechen erlaubt */
-.cc th:nth-child(5),
-.cc td:nth-child(5){
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
+/* ✅ Header: Umbruch erlauben, verhindert Überlappung */
 .cc th{
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.2;
+
   color: var(--text);
   background: rgba(255,255,255,.06);
   border-bottom:1px solid var(--border);
@@ -218,9 +200,29 @@
   z-index:1;
 }
 
+/* Datenzeilen */
 .cc td{ border-top:1px solid rgba(255,255,255,.08); }
-
 .cc tbody tr:hover td{ background: rgba(255,255,255,.04); }
+
+/* Titel + Gebiete dürfen umbrechen */
+.cc td:nth-child(2),
+.cc td:nth-child(3){
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Zähler-Spalte (nur Body): kompakt */
+.cc td:nth-child(4){
+  white-space: nowrap;
+}
+
+/* Details (Body): umbrechen erlaubt */
+.cc td:nth-child(5){
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
 .cc td code{
   color: var(--text);
