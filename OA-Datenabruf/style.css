@@ -12,13 +12,17 @@
   --oa-err: var(--err, #ff5c5c);
 }
 
-.oaTool{ color: var(--oa-text); }
+.oaTool{ 
+  color: var(--oa-text); 
+}
+
 .oaTool .wrap{
   max-width: 980px;
   margin: 0 auto;
   padding: 18px 16px 22px;
 }
 
+/* Card Layout */
 .oaTool .card{
   background: linear-gradient(180deg, var(--oa-surface), var(--oa-surface2));
   border: 1px solid var(--oa-border);
@@ -36,9 +40,16 @@
   border-bottom:1px solid rgba(255,255,255,.08);
   background: rgba(255,255,255,.04);
 }
-.oaTool .hd strong{ font-size: 14px; }
-.oaTool .ct{ padding: 16px; }
 
+.oaTool .hd strong{ 
+  font-size: 14px; 
+}
+
+.oaTool .ct{ 
+  padding: 16px; 
+}
+
+/* Status Pill */
 .oaTool .pill{
   display:inline-flex;
   align-items:center;
@@ -50,17 +61,28 @@
   color: var(--oa-muted);
   font-size:12px;
 }
-.oaTool .dot{ width:10px;height:10px;border-radius:999px; background: rgba(255,255,255,.25); }
+
+.oaTool .dot{ 
+  width:10px;
+  height:10px;
+  border-radius:999px; 
+  background: rgba(255,255,255,.25); 
+}
+
 .oaTool .pill.run .dot{ background: var(--oa-warn); }
 .oaTool .pill.ok  .dot{ background: var(--oa-accent); }
 .oaTool .pill.err .dot{ background: var(--oa-err); }
 
+/* Grid Layout */
 .oaTool .grid{
   display:grid;
   grid-template-columns: repeat(12, 1fr);
   gap:12px;
-  align-items:end;
+
+  /* FIX: Felder oben bündig */
+  align-items:start;
 }
+
 .oaTool .field{ grid-column: span 4; }
 .oaTool .wide { grid-column: span 12; }
 .oaTool .btn  { grid-column: span 3; }
@@ -69,16 +91,21 @@
   .oaTool .field{ grid-column: span 6; }
   .oaTool .btn{ grid-column: span 6; }
 }
+
 @media (max-width: 560px){
   .oaTool .field,
   .oaTool .btn{ grid-column: span 12; }
 }
 
+/* Labels + Inputs */
 .oaTool label{
   display:grid;
   gap:6px;
   font-size:12px;
   color: var(--oa-muted);
+
+  /* Optional Stabilisierung */
+  align-content:start;
 }
 
 .oaTool input,
@@ -101,6 +128,7 @@
   line-height: 1.35;
 }
 
+/* Buttons */
 .oaTool button{
   width:100%;
   padding:11px 12px;
@@ -110,21 +138,32 @@
   color: var(--oa-text);
   cursor:pointer;
 }
+
 .oaTool button.primary{
   background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
   border-color: rgba(124,255,199,.32);
   font-weight: 700;
 }
-.oaTool button:disabled{ opacity:.55; cursor:not-allowed; }
 
+.oaTool button:disabled{ 
+  opacity:.55; 
+  cursor:not-allowed; 
+}
+
+/* Checkbox Row */
 .oaTool .chk{
   display:flex;
   align-items:center;
   gap:10px;
   margin-top: 8px;
 }
-.oaTool .chk input{ width:auto; padding:0; }
 
+.oaTool .chk input{ 
+  width:auto; 
+  padding:0; 
+}
+
+/* Output Viewer */
 .oaTool .log{
   margin-top: 12px;
   background: rgba(0,0,0,.35);
