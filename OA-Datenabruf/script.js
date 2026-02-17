@@ -1,5 +1,6 @@
 (() => {
   const API_BASE = "https://api-oa.com/api/v2/project/"; // Data API v2
+  const PARALLEL_DEFAULT = 4; // UI-Feld entfernt, aber weiterhin parallelisiert
 
   const el = (id) => document.getElementById(id);
 
@@ -10,9 +11,7 @@
     projectKey: el("projectKey"),
     apiKey: el("apiKey"),
     rememberKey: el("rememberKey"),
-    lang: el("lang"),
     display: el("display"),
-    parallel: el("parallel"),
     ids: el("ids"),
 
     runBtn: el("runBtn"),
@@ -36,16 +35,14 @@
       .filter(Boolean);
   }
 
-  function buildContentUrl({ projectKey, id, lang, display, apiKey }){
+  function buildContentUrl({ projectKey, id, display, apiKey }){
     const base = API_BASE.replace(/\/+$/,"") + "/";
     const p = encodeURIComponent(String(projectKey).trim());
     const idSeg = encodeURIComponent(String(id).trim());
 
     const u = new URL(`${base}${p}/contents/${idSeg}`);
     if (display) u.searchParams.set("display", display);
-    if (lang) u.searchParams.set("lang", lang);
 
-    // aktuellste Nutzung: JSON ausgeben
     u.searchParams.set("format", "json");
     u.searchParams.set("key", apiKey);
 
@@ -65,9 +62,7 @@
   function persist(){
     const payload = {
       projectKey: ui.projectKey.value || "",
-      lang: ui.lang.value || "de",
       display: ui.display.value || "verbose",
-      parallel: ui.parallel.value || "4",
       rememberKey: !!ui.rememberKey.checked,
       apiKey: ui.rememberKey.checked ? (ui.apiKey.value || "") : ""
     };
@@ -81,9 +76,7 @@
       const p = JSON.parse(raw);
 
       ui.projectKey.value = p.projectKey || "api-sachsen";
-      ui.lang.value = p.lang || "de";
       ui.display.value = p.display || "verbose";
-      ui.parallel.value = p.parallel || "4";
       ui.rememberKey.checked = !!p.rememberKey;
       if (ui.rememberKey.checked && p.apiKey) ui.apiKey.value = p.apiKey;
     }catch{
@@ -96,10 +89,9 @@
 
     const projectKey = (ui.projectKey.value || "").trim();
     const apiKey = (ui.apiKey.value || "").trim();
-    const lang = (ui.lang.value || "de").trim();
     const display = ui.display.value || "verbose";
     const ids = parseIds(ui.ids.value);
-    const parallel = Math.max(1, Math.min(10, Number(ui.parallel.value) || 4));
+    const parallel = Math.min(PARALLEL_DEFAULT, ids.length || 1);
 
     if (!projectKey || !apiKey || !ids.length){
       setStatus("err", "missing input");
@@ -119,7 +111,7 @@
     async function worker(){
       while (cursor < ids.length){
         const id = ids[cursor++];
-        const url = buildContentUrl({ projectKey, id, lang, display, apiKey });
+        const url = buildContentUrl({ projectKey, id, display, apiKey });
         const res = await fetchText(url);
 
         if (!res.ok){
@@ -145,7 +137,7 @@
       }
     }
 
-    await Promise.all(Array.from({ length: Math.min(parallel, ids.length) }, worker));
+    await Promise.all(Array.from({ length: parallel }, worker));
 
     const out = JSON.stringify(results, null, 2);
     state.lastJson = out;
@@ -171,7 +163,6 @@
 
   ui.rememberKey.addEventListener("change", () => {
     if (!ui.rememberKey.checked){
-      // gespeicherten Key entfernen
       try{
         const raw = localStorage.getItem("oaDataLookup.settings");
         const p = raw ? JSON.parse(raw) : {};
