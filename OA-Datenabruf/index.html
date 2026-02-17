@@ -7,10 +7,8 @@ permalink: /OA-Datenabruf/
 <link rel="stylesheet" href="{{ '/OA-Datenabruf/style.css' | relative_url }}">
 <script defer src="{{ '/OA-Datenabruf/script.js' | relative_url }}"></script>
 
-
 <div class="oaTool">
   <div class="wrap">
-
     <section class="card">
       <div class="hd">
         <strong>Outdooractive Data Lookup</strong>
@@ -27,33 +25,32 @@ permalink: /OA-Datenabruf/
               Project Key
               <input id="projectKey" value="api-sachsen" placeholder="api-sachsen">
             </label>
-            <p class="hint">Wird in die URL als <code>/project/&lt;projectKey&gt;/</code> eingesetzt.</p>
           </div>
 
           <div class="field">
             <label>
-              API Key (Lizenzschlüssel)
+              API Key
               <input id="apiKey" placeholder="…">
             </label>
             <label class="chk">
               <input type="checkbox" id="rememberKey">
-              Key lokal merken (localStorage)
+              Key lokal merken
             </label>
           </div>
 
           <div class="field">
             <label>
-              Sprache (lang)
+              lang
               <input id="lang" value="de" placeholder="de">
             </label>
           </div>
 
           <div class="field">
             <label>
-              Display
+              display
               <select id="display">
-                <option value="snippet">snippet</option>
                 <option value="verbose">verbose</option>
+                <option value="snippet">snippet</option>
               </select>
             </label>
           </div>
@@ -70,156 +67,23 @@ permalink: /OA-Datenabruf/
               IDs (eine pro Zeile oder Komma/Space-getrennt)
               <textarea id="ids" placeholder="1373438&#10;1397449"></textarea>
             </label>
-            <p class="hint">
-              Details werden über <code>/contents/&lt;id&gt;</code> geholt (einzeln, parallelisiert). Für große Listen ggf. Rate-Limits beachten.
-            </p>
           </div>
 
           <div class="btn">
             <label>&nbsp;
-              <button id="runBtn" class="primary" type="button">Details abrufen</button>
+              <button id="runBtn" class="primary" type="button">Abrufen</button>
             </label>
           </div>
 
           <div class="btn">
             <label>&nbsp;
-              <button id="sampleBtn" type="button">Beispieldaten (Test-Keys)</button>
+              <button id="downloadBtn" type="button" disabled>Download JSON</button>
             </label>
           </div>
-
-          <div class="btn">
-            <label>&nbsp;
-              <button id="resetBtn" type="button">Reset</button>
-            </label>
-          </div>
-
-          <div class="btn">
-            <label>&nbsp;
-              <button id="downloadBtn" type="button" disabled>Download (JSON)</button>
-            </label>
-          </div>
-        </div>
-
-        <div class="note">
-          <strong>Hinweis:</strong> Wenn dein API-Key auf <code>sachsen-tourismus.de</code> eingeschränkt ist, funktionieren Browser-Requests oft nur auf der freigeschalteten Domain (oder via Proxy).
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="hd">
-        <strong>Ergebnisliste (Content-Details)</strong>
-        <span class="pill"><span class="dot"></span><span id="countLabel">0</span></span>
-      </div>
-      <div class="ct">
-        <div class="tableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:160px;">ID</th>
-                <th style="width:90px;">HTTP</th>
-                <th style="width:180px;">Content-Type</th>
-                <th style="width:280px;">Titel (heuristisch)</th>
-                <th>Preview</th>
-              </tr>
-            </thead>
-            <tbody id="resultBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="hd">
-        <strong>Viewer</strong>
-        <span class="pill"><span class="dot"></span><span id="viewerLabel">—</span></span>
-      </div>
-      <div class="ct">
-        <div class="viewerActions">
-          <button id="copyBtn" type="button" disabled>Copy</button>
-          <button id="openBtn" type="button" disabled>Open</button>
-        </div>
-
-        <div class="kv">
-          <div class="k">Request</div>
-          <div class="v"><code id="requestUrl">—</code></div>
         </div>
 
         <pre id="viewer" class="log">Noch keine Daten geladen.</pre>
       </div>
     </section>
-
-    <section class="card">
-      <div class="hd">
-        <strong>Projekt-Index (IDs &amp; lastModifiedAt)</strong>
-        <span class="pill"><span class="dot"></span><span id="indexCount">0</span></span>
-      </div>
-      <div class="ct">
-        <div class="grid">
-          <div class="field">
-            <label>
-              Type
-              <select id="indexType">
-                <option value="tour">tour</option>
-                <option value="poi">poi</option>
-                <option value="event">event</option>
-                <option value="offer">offer</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="field">
-            <label>
-              Count
-              <input id="indexCountInput" type="number" min="1" max="10000" value="200">
-            </label>
-          </div>
-
-          <div class="field">
-            <label>
-              StartIndex
-              <input id="indexStart" type="number" min="0" value="0">
-            </label>
-          </div>
-
-          <div class="btn">
-            <label>&nbsp;
-              <button id="loadIndexBtn" type="button">IDs laden</button>
-            </label>
-          </div>
-
-          <div class="btn">
-            <label>&nbsp;
-              <button id="useSelectedBtn" type="button" disabled>Auswahl in IDs-Feld</button>
-            </label>
-          </div>
-        </div>
-
-        <div class="tableWrap" style="margin-top:12px; max-height:260px;">
-          <table>
-            <thead>
-              <tr>
-                <th style="width:44px;"></th>
-                <th style="width:160px;">ID</th>
-                <th style="width:260px;">lastModifiedAt</th>
-                <th>importKey</th>
-              </tr>
-            </thead>
-            <tbody id="indexBody"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="hd">
-        <strong>Log</strong>
-        <span class="pill"><span class="dot"></span><span>debug</span></span>
-      </div>
-      <div class="ct">
-        <pre id="log" class="log"></pre>
-      </div>
-    </section>
-
   </div>
 </div>
