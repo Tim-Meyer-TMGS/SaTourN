@@ -6,6 +6,7 @@
      => total wird NICHT zum Abbruch verwendet (ET4 total ist oft nicht overall)
    - Types nacheinander (ohne City/Area)
    - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Debug-Liste
+   - Pages-URL: nutzt channel_prefixed ID (z.B. t_100303361) wie in Pages erwartet
 */
 
 const el = (id) => document.getElementById(id);
@@ -188,6 +189,20 @@ const PAGES_BASE = "https://pages.destination.one";
 const PAGES_LANG = "de";
 const PAGES_TEMPLATE = "default_withmap";
 
+/* Prefix-Mapping als Fallback, falls kein channel/global_id vorhanden ist */
+const PAGES_ID_PREFIX_BY_TYPE = {
+  Tour: "t",
+  Event: "e",
+  Gastro: "g",
+  Hotel: "h",
+  POI: "p",
+  Package: "o",
+  Article: "a",
+  Web: "w",
+  City: "c",
+  Area: "r",
+};
+
 function extractUrlTitle(item) {
   const attrs = item?.attributes;
   if (Array.isArray(attrs)) {
@@ -232,9 +247,38 @@ function slugifyFallback(title) {
     .replace(/^-|-$/g, "");
 }
 
+/* ✅ Pages-GID: bevorzugt global_id (wenn schon wie t_...), sonst channel_id, sonst typePrefix_id */
+function extractPagesGid(item) {
+  // 1) global_id / globalId (oft bereits "t_123...")
+  const gid = item?.global_id ?? item?.globalId;
+  if (gid != null) {
+    const s = String(gid).trim();
+    if (s) return s;
+  }
+
+  // 2) channel + id (z.B. "t" + "_" + "100303361")
+  if (item?.channel != null && item?.id != null) {
+    const ch = String(item.channel).trim();
+    const id = String(item.id).trim();
+    if (ch && id) return `${ch}_${id}`;
+  }
+
+  // 3) Fallback: type-prefix + id
+  if (item?.id != null) {
+    const id = String(item.id).trim();
+    const t = normalizeTypeName(getType(item));
+    const pref = PAGES_ID_PREFIX_BY_TYPE[t];
+    if (pref && id) return `${pref}_${id}`;
+    if (id) return id;
+  }
+
+  // 4) Letzter Fallback
+  return extractId(item);
+}
+
 function buildPagesLink(item, pagesExperience) {
   const pagesType = normalizeTypeName(getType(item));
-  const gid = extractId(item);
+  const gid = extractPagesGid(item);
 
   let slug = extractUrlTitle(item);
   if (!slug) slug = slugifyFallback(extractTitle(item));
@@ -510,7 +554,9 @@ el("runBtn").addEventListener("click", async () => {
           totalsByType[type] = total;
           recomputeOverallExpected();
           typeTotalCaptured = true;
-          log(`Captured overallcount for type=${type}: ${total} (overallExpected=${overallExpected})`);
+          log(
+            `Captured overallcount for type=${type}: ${total} (overallExpected=${overallExpected})`
+          );
           setProgressText();
         }
 
@@ -571,7 +617,9 @@ el("runBtn").addEventListener("click", async () => {
 
         pageCount++;
         if (pageCount > maxPagesSafety) {
-          throw new Error(`Safety stop: too many pages for type=${type} (check pagination).`);
+          throw new Error(
+            `Safety stop: too many pages for type=${type} (check pagination).`
+          );
         }
       }
     }
