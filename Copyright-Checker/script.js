@@ -188,6 +188,9 @@ const PAGES_BASE = "https://pages.destination.one";
 const PAGES_LANG = "de";
 const PAGES_TEMPLATE = "default_withmap";
 
+/* ✅ feste Pages-Experience */
+const PAGES_EXPERIENCE = "statistik_sachsen";
+
 function extractUrlTitle(item) {
   const attrs = item?.attributes;
   if (Array.isArray(attrs)) {
@@ -232,24 +235,26 @@ function slugifyFallback(title) {
     .replace(/^-|-$/g, "");
 }
 
-function buildPagesLink(item, pagesExperience) {
+/* ✅ pagesExperience Parameter entfernt, stattdessen PAGES_EXPERIENCE */
+function buildPagesLink(item) {
   const pagesType = normalizeTypeName(getType(item));
   const gid = extractId(item);
 
   let slug = extractUrlTitle(item);
   if (!slug) slug = slugifyFallback(extractTitle(item));
 
-  if (!pagesExperience || !pagesType || !gid || !slug) return "";
+  if (!pagesType || !gid || !slug) return "";
 
   return (
     `${PAGES_BASE}/${PAGES_LANG}/` +
-    `${encodeURIComponent(pagesExperience)}/` +
+    `${encodeURIComponent(PAGES_EXPERIENCE)}/` +
     `${encodeURIComponent(PAGES_TEMPLATE)}/detail/` +
     `${encodeURIComponent(pagesType)}/` +
     `${encodeURIComponent(gid)}/` +
     `${encodeURIComponent(slug)}`
   );
 }
+
 
 /* ------------------------- Media copyright check ------------------------- */
 
