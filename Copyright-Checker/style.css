@@ -1,32 +1,31 @@
 /* =========================
-   Copyright Checker – base.css aligned
+   Copyright Checker – final stable layout
    ========================= */
 
 .cc{
   color: var(--text);
 }
 
-/* ✅ Container passt sich an Tabelle an */
+/* Container */
 .cc .wrap{
-  width: 100%;
-  max-width: none;        /* keine künstliche Begrenzung */
+  width: min(100%, 2200px);
   margin: 0 auto;
-  padding: 18px 24px 22px; /* etwas mehr Innenabstand */
+  padding: 18px clamp(16px, 2vw, 40px) 22px;
   display:flex;
   flex-direction:column;
   gap:14px;
 }
 
-/* cards */
+/* Cards */
 .cc .card{
   background: linear-gradient(180deg, var(--surface), var(--surface2));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow:visible; /* kein Abschneiden */
+  overflow: hidden; /* verhindert Herausragen */
 }
 
-/* header/content */
+/* Header */
 .cc .hd{
   padding:12px 14px;
   display:flex;
@@ -42,7 +41,7 @@
 }
 .cc .ct{ padding:14px; }
 
-/* status pill */
+/* Status */
 .cc .pill{
   display:inline-flex;
   align-items:center;
@@ -57,7 +56,7 @@
 }
 
 /* =========================
-   Form layout
+   Form
    ========================= */
 
 .cc .grid{
@@ -65,13 +64,15 @@
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 16px;
   align-items: start;
-  justify-items: start;
 }
 
 .cc .grid label{
   display:flex;
   flex-direction:column;
   gap:6px;
+  font-weight:700;
+  font-size:12px;
+  color: var(--muted);
 }
 
 .cc .grid label.wide{ grid-column: 1 / -1; }
@@ -100,7 +101,6 @@
   gap:10px;
   flex-wrap:wrap;
 }
-
 .cc button{
   padding:11px 14px;
   border-radius:12px;
@@ -119,38 +119,52 @@
   cursor:not-allowed;
 }
 
+/* Meta */
+.cc .meta{
+  grid-column: 1 / -1;
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+  font-weight:700;
+  color: var(--muted);
+}
+.cc .meta span{ color: var(--text); }
+
 /* =========================
-   Table layout
+   Table
    ========================= */
 
 .cc .table-wrap{
   border:1px solid var(--border);
   border-radius: var(--radius);
-  overflow:visible; /* kein horizontales Scrollen */
+  overflow: hidden; /* keine überstehenden Elemente */
+  width: 100%;
 }
 
-/* ✅ Tabelle bestimmt Breite */
 .cc table{
   width:100%;
+  max-width:100%;
   border-collapse:separate;
   border-spacing:0;
-  color:var(--text);
   table-layout: fixed;
-  min-width:0; /* kein erzwungenes Scrollen */
+  min-width:0;
 }
+
+/* Inline-widths aus HTML überschreiben */
+.cc th{ width:auto !important; }
 
 .cc th, .cc td{
   padding:12px;
   vertical-align:top;
   text-align:left;
+  min-width:0;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:break-word;
 }
 
 /* Header */
 .cc th{
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  line-height:1.2;
   background: rgba(255,255,255,.06);
   border-bottom:1px solid var(--border);
   position:sticky;
@@ -158,37 +172,35 @@
   z-index:1;
 }
 
-/* Body */
-.cc td{
-  border-top:1px solid rgba(255,255,255,.08);
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
+/* Rows */
+.cc td{ border-top:1px solid rgba(255,255,255,.08); }
+.cc tbody tr:hover td{ background: rgba(255,255,255,.04); }
 
-.cc tbody tr:hover td{
-  background: rgba(255,255,255,.04);
-}
-
-/* Spaltensteuerung */
+/* Responsive Fluid Columns */
 .cc th:nth-child(1),
-.cc td:nth-child(1){ width:160px; }
+.cc td:nth-child(1){
+  width: clamp(120px, 10vw, 200px) !important;
+}
 
 .cc th:nth-child(2),
-.cc td:nth-child(2){ width:280px; }
+.cc td:nth-child(2){
+  width: clamp(200px, 22vw, 420px) !important;
+}
 
 .cc th:nth-child(3),
-.cc td:nth-child(3){ width:260px; }
+.cc td:nth-child(3){
+  width: clamp(200px, 22vw, 420px) !important;
+}
 
 .cc th:nth-child(4),
 .cc td:nth-child(4){
-  width:200px;
+  width: clamp(140px, 14vw, 260px) !important;
   white-space:nowrap;
 }
 
 .cc th:nth-child(5),
 .cc td:nth-child(5){
-  width:auto;
+  width:auto !important;
 }
 
 /* Code */
