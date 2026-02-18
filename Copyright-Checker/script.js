@@ -5,7 +5,7 @@
    - Pagination: limit/offset, ABBRUCH NUR wenn items.length < limit (oder 0)
      => total wird NICHT zum Abbruch verwendet (ET4 total ist oft nicht overall)
    - Types nacheinander (ohne City/Area)
-   - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Debug-Liste
+   - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Details (rel / media-id)
    - Pages-URL: nutzt channel_prefixed ID (z.B. t_100303361) wie in Pages erwartet
 */
 
@@ -247,23 +247,20 @@ function slugifyFallback(title) {
     .replace(/^-|-$/g, "");
 }
 
-/* ✅ Pages-GID: bevorzugt global_id (wenn schon wie t_...), sonst channel_id, sonst typePrefix_id */
+/* ✅ Pages-GID: bevorzugt global_id (z.B. p_100059776), sonst channel_id (p_100...), sonst typePrefix_id */
 function extractPagesGid(item) {
-  // 1) global_id / globalId (oft bereits "t_123...")
   const gid = item?.global_id ?? item?.globalId;
   if (gid != null) {
     const s = String(gid).trim();
     if (s) return s;
   }
 
-  // 2) channel + id (z.B. "t" + "_" + "100303361")
   if (item?.channel != null && item?.id != null) {
     const ch = String(item.channel).trim();
     const id = String(item.id).trim();
     if (ch && id) return `${ch}_${id}`;
   }
 
-  // 3) Fallback: type-prefix + id
   if (item?.id != null) {
     const id = String(item.id).trim();
     const t = normalizeTypeName(getType(item));
@@ -272,7 +269,6 @@ function extractPagesGid(item) {
     if (id) return id;
   }
 
-  // 4) Letzter Fallback
   return extractId(item);
 }
 
@@ -311,6 +307,24 @@ function isCheckableMediaObject(mo) {
   return false;
 }
 
+/* robust: falls ET4 mal andere id-felder liefert */
+function extractMediaId(mo) {
+  const candidates = [
+    mo?.id, // z.B. m_1018052
+    mo?.media_id,
+    mo?.mediaId,
+    mo?.global_id,
+    mo?.globalId,
+    mo?.asset_id,
+    mo?.assetId,
+  ];
+  for (const v of candidates) {
+    const s = String(v ?? "").trim();
+    if (s) return s;
+  }
+  return "";
+}
+
 function findMissingCopyrightMedia(item) {
   const mos = Array.isArray(item?.media_objects) ? item.media_objects : [];
   const checkables = mos.filter(isCheckableMediaObject);
@@ -321,7 +335,7 @@ function findMissingCopyrightMedia(item) {
     if (c === undefined || c === null || String(c).trim() === "") {
       missing.push({
         rel: String(mo?.rel ?? ""),
-        id: String(mo?.id ?? ""),
+        id: extractMediaId(mo),
         url: String(mo?.url ?? ""),
       });
     }
@@ -343,16 +357,20 @@ function log(msg) {
   l.scrollTop = l.scrollHeight;
 }
 
+/* ✅ sorgt dafür, dass die Spalte "Details (rel / media-id)" immer befüllt wird */
 function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missingMedia }) {
-  const missingShort =
+  const list = Array.isArray(missingMedia) ? missingMedia : [];
+
+  const details =
     missingMediaCount === 0
       ? ""
-      : missingMedia
-          .slice(0, 5)
-          .map((m) => `${m.rel || "?"}${m.id ? " (" + m.id + ")" : ""}`)
+      : list
+          .map((m) => {
+            const rel = String(m?.rel ?? "").trim() || "?";
+            const mid = String(m?.id ?? "").trim();
+            return mid ? `${rel} (${mid})` : `${rel}`;
+          })
           .join(", ");
-
-  const more = missingMediaCount > 5 ? ` (+${missingMediaCount - 5} mehr)` : "";
 
   const linkHtml = pagesLink
     ? `<a href="${esc(pagesLink)}" target="_blank" rel="noopener noreferrer">Pages-Link</a>`
@@ -364,7 +382,7 @@ function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missing
     <td>${esc(title)}<div style="margin-top:6px;">${linkHtml}</div></td>
     <td style="font-size:12px; opacity:.9;">${esc(areasOldText || "")}</td>
     <td><strong>${esc(missingMediaCount)}</strong></td>
-    <td style="font-size:12px; opacity:.85;">${esc(missingShort)}${esc(more)}</td>
+    <td style="font-size:12px; opacity:.85;">${esc(details)}</td>
   `;
   el("tbody").appendChild(tr);
 }
@@ -383,7 +401,11 @@ function toCsv(rows) {
 
   for (const r of rows) {
     const relIds = (r.missingMedia || [])
-      .map((m) => `${m.rel || "?"}${m.id ? ":" + m.id : ""}`)
+      .map((m) => {
+        const rel = String(m?.rel ?? "").trim() || "?";
+        const id = String(m?.id ?? "").trim();
+        return id ? `${rel}:${id}` : rel;
+      })
       .join(" | ");
 
     const line = [
@@ -584,7 +606,6 @@ el("runBtn").addEventListener("click", async () => {
             const id = extractId(it);
             const title = extractTitle(it);
             const pagesLink = buildPagesLink(it, experience);
-
             const areasOldText = extractAreasOld(it).join(", ");
 
             lastMissing.push({
@@ -617,9 +638,7 @@ el("runBtn").addEventListener("click", async () => {
 
         pageCount++;
         if (pageCount > maxPagesSafety) {
-          throw new Error(
-            `Safety stop: too many pages for type=${type} (check pagination).`
-          );
+          throw new Error(`Safety stop: too many pages for type=${type} (check pagination).`);
         }
       }
     }
