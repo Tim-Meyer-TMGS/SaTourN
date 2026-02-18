@@ -6,10 +6,12 @@
   color: var(--text);
 }
 
+/* ✅ Container passt sich an Tabelle an */
 .cc .wrap{
-  max-width:1180px;
-  margin:0 auto;
-  padding: 18px 16px 22px;
+  width: 100%;
+  max-width: none;        /* keine künstliche Begrenzung */
+  margin: 0 auto;
+  padding: 18px 24px 22px; /* etwas mehr Innenabstand */
   display:flex;
   flex-direction:column;
   gap:14px;
@@ -21,7 +23,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow:hidden;
+  overflow:visible; /* kein Abschneiden */
 }
 
 /* header/content */
@@ -57,6 +59,7 @@
 /* =========================
    Form layout
    ========================= */
+
 .cc .grid{
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -65,134 +68,89 @@
   justify-items: start;
 }
 
-.cc label{ margin:0; }
-
 .cc .grid label{
   display:flex;
   flex-direction:column;
   gap:6px;
 }
 
-.cc label > span,
-.cc label > .lbl,
-.cc .grid label{
-  font-weight:700;
-  color: var(--muted);
-  letter-spacing:.2px;
-  font-size:12px;
-  text-align:left;
-}
+.cc .grid label.wide{ grid-column: 1 / -1; }
+.cc .grid label:not(.wide){ grid-column: span 3; }
 
 .cc .grid input{
   width:100%;
-  font: inherit;
   box-sizing:border-box;
   height:44px;
-  min-height:44px;
-  padding: 0 12px;
-  line-height:44px;
-
+  padding:0 12px;
   border-radius:12px;
   border:1px solid rgba(255,255,255,.14);
   background: rgba(0,0,0,.18);
   color: var(--text);
   outline:none;
-  text-align:left;
 }
 .cc .grid input:focus{
   border-color: rgba(124,255,199,.55);
   box-shadow: 0 0 0 4px rgba(124,255,199,.12);
 }
-.cc .grid input::placeholder{ color:rgba(255,255,255,.45); }
 
-/* column placement */
-.cc .grid label.wide{ grid-column: 1 / -1; }
-.cc .grid label:not(.wide){ grid-column: span 3; }
-
-.cc .grid label.stackRight{
-  grid-column: span 3;
-  justify-self:start;
-}
-
-/* Buttons row */
+/* Buttons */
 .cc .btnRow{
   grid-column: 1 / -1;
   display:flex;
-  align-items:center;
-  justify-content:flex-start;
   gap:10px;
   flex-wrap:wrap;
-  margin-top:2px;
 }
 
-/* Buttons */
 .cc button{
-  font: inherit;
   padding:11px 14px;
   border-radius:12px;
   border:1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.06);
   color: var(--text);
   cursor:pointer;
-  text-align:left;
 }
 .cc button.primary{
   background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
   border-color: rgba(124,255,199,.32);
   font-weight:700;
 }
-.cc button:disabled{ opacity:.5; cursor:not-allowed; }
-
-/* Meta line */
-.cc .meta{
-  grid-column: 1 / -1;
-  display:flex;
-  justify-content:flex-start;
-  gap:18px;
-  flex-wrap:wrap;
-  margin-top:2px;
-  color: var(--muted);
-  font-weight:700;
-  text-align:left;
+.cc button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
 }
-.cc .meta span{ color: var(--text); }
 
 /* =========================
    Table layout
    ========================= */
-.cc .table-wrap, .cc .tableWrap{
+
+.cc .table-wrap{
   border:1px solid var(--border);
   border-radius: var(--radius);
-  overflow:auto;
+  overflow:visible; /* kein horizontales Scrollen */
 }
 
+/* ✅ Tabelle bestimmt Breite */
 .cc table{
   width:100%;
   border-collapse:separate;
   border-spacing:0;
   color:var(--text);
-
-  /* mehr Platz, damit Header nicht kollidieren */
-  min-width:1400px;
-
-  /* wichtig: Spaltenbreiten aus <th style="width:..."> wirklich anwenden */
   table-layout: fixed;
+  min-width:0; /* kein erzwungenes Scrollen */
 }
 
 .cc th, .cc td{
-  padding:12px 12px;
+  padding:12px;
   vertical-align:top;
   text-align:left;
 }
 
-/* ✅ Header: Umbruch erlauben, verhindert Überlappung */
+/* Header */
 .cc th{
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
-  line-height: 1.2;
-
-  color: var(--text);
+  line-height:1.2;
   background: rgba(255,255,255,.06);
   border-bottom:1px solid var(--border);
   position:sticky;
@@ -200,40 +158,50 @@
   z-index:1;
 }
 
-/* Datenzeilen */
-.cc td{ border-top:1px solid rgba(255,255,255,.08); }
-.cc tbody tr:hover td{ background: rgba(255,255,255,.04); }
-
-/* Titel + Gebiete dürfen umbrechen */
-.cc td:nth-child(2),
-.cc td:nth-child(3){
+/* Body */
+.cc td{
+  border-top:1px solid rgba(255,255,255,.08);
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
-/* Zähler-Spalte (nur Body): kompakt */
+.cc tbody tr:hover td{
+  background: rgba(255,255,255,.04);
+}
+
+/* Spaltensteuerung */
+.cc th:nth-child(1),
+.cc td:nth-child(1){ width:160px; }
+
+.cc th:nth-child(2),
+.cc td:nth-child(2){ width:280px; }
+
+.cc th:nth-child(3),
+.cc td:nth-child(3){ width:260px; }
+
+.cc th:nth-child(4),
 .cc td:nth-child(4){
-  white-space: nowrap;
+  width:200px;
+  white-space:nowrap;
 }
 
-/* Details (Body): umbrechen erlaubt */
+.cc th:nth-child(5),
 .cc td:nth-child(5){
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  width:auto;
 }
 
+/* Code */
 .cc td code{
-  color: var(--text);
   background: rgba(0,0,0,.18);
   border:1px solid rgba(255,255,255,.10);
   padding:3px 8px;
   border-radius:8px;
-  display:inline-block;
+  display:inline;
   font-family: var(--mono);
 }
 
+/* Links */
 .cc td a{
   color: rgba(124,255,199,.95);
   text-decoration:none;
@@ -243,31 +211,43 @@
 /* =========================
    Log
    ========================= */
+
 .cc .log{
   background: rgba(0,0,0,.35);
-  color: var(--text);
   border:1px solid rgba(255,255,255,.12);
   border-radius: var(--radius);
   padding:12px;
-  line-height:1.45;
   max-height:220px;
   overflow:auto;
   white-space:pre-wrap;
   font-family: var(--mono);
   font-size:12px;
-  text-align:left;
 }
 
-/* Responsive */
-@media (max-width: 1100px){
-  .cc .grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .cc .grid label:not(.wide){ grid-column: span 3; }
-  .cc .grid label.stackRight{ grid-column: span 3; }
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width:1100px){
+  .cc .grid{
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .cc .grid label:not(.wide){
+    grid-column: span 3;
+  }
 }
 
-@media (max-width: 720px){
-  .cc .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cc .grid label:not(.wide){ grid-column: 1 / -1; }
-  .cc .btnRow{ justify-content:stretch; }
-  .cc button{ flex:1 1 auto; }
+@media (max-width:720px){
+  .cc .grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cc .grid label:not(.wide){
+    grid-column: 1 / -1;
+  }
+  .cc .btnRow{
+    justify-content:stretch;
+  }
+  .cc button{
+    flex:1 1 auto;
+  }
 }
