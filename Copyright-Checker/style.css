@@ -7,9 +7,7 @@
 }
 
 .cc .wrap{
-  /* breiter, damit mehr Platz vorhanden ist */
-  width: 100%;
-  max-width: 1600px; /* ggf. an dein Layout anpassen */
+  max-width:1180px;
   margin:0 auto;
   padding: 18px 16px 22px;
   display:flex;
@@ -59,7 +57,6 @@
 /* =========================
    Form layout
    ========================= */
-
 .cc .grid{
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -68,68 +65,105 @@
   justify-items: start;
 }
 
+.cc label{ margin:0; }
+
 .cc .grid label{
   display:flex;
   flex-direction:column;
   gap:6px;
-  grid-column: span 3;
 }
 
-.cc .grid label.wide{
-  grid-column: 1 / -1;
+.cc label > span,
+.cc label > .lbl,
+.cc .grid label{
+  font-weight:700;
+  color: var(--muted);
+  letter-spacing:.2px;
+  font-size:12px;
+  text-align:left;
 }
 
 .cc .grid input{
   width:100%;
+  font: inherit;
+  box-sizing:border-box;
   height:44px;
-  padding:0 12px;
+  min-height:44px;
+  padding: 0 12px;
+  line-height:44px;
+
   border-radius:12px;
   border:1px solid rgba(255,255,255,.14);
   background: rgba(0,0,0,.18);
   color: var(--text);
   outline:none;
+  text-align:left;
 }
 .cc .grid input:focus{
   border-color: rgba(124,255,199,.55);
   box-shadow: 0 0 0 4px rgba(124,255,199,.12);
 }
+.cc .grid input::placeholder{ color:rgba(255,255,255,.45); }
 
-/* Buttons */
+/* column placement */
+.cc .grid label.wide{ grid-column: 1 / -1; }
+.cc .grid label:not(.wide){ grid-column: span 3; }
+
+.cc .grid label.stackRight{
+  grid-column: span 3;
+  justify-self:start;
+}
+
+/* Buttons row */
 .cc .btnRow{
   grid-column: 1 / -1;
   display:flex;
+  align-items:center;
+  justify-content:flex-start;
   gap:10px;
   flex-wrap:wrap;
+  margin-top:2px;
 }
 
+/* Buttons */
 .cc button{
+  font: inherit;
   padding:11px 14px;
   border-radius:12px;
   border:1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.06);
   color: var(--text);
   cursor:pointer;
+  text-align:left;
 }
 .cc button.primary{
   background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
   border-color: rgba(124,255,199,.32);
   font-weight:700;
 }
-.cc button:disabled{
-  opacity:.5;
-  cursor:not-allowed;
+.cc button:disabled{ opacity:.5; cursor:not-allowed; }
+
+/* Meta line */
+.cc .meta{
+  grid-column: 1 / -1;
+  display:flex;
+  justify-content:flex-start;
+  gap:18px;
+  flex-wrap:wrap;
+  margin-top:2px;
+  color: var(--muted);
+  font-weight:700;
+  text-align:left;
 }
+.cc .meta span{ color: var(--text); }
 
 /* =========================
    Table layout
    ========================= */
-
-.cc .table-wrap{
+.cc .table-wrap, .cc .tableWrap{
   border:1px solid var(--border);
   border-radius: var(--radius);
-  /* kein horizontales Scrollen */
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow:auto;
 }
 
 .cc table{
@@ -137,134 +171,103 @@
   border-collapse:separate;
   border-spacing:0;
   color:var(--text);
+
+  /* mehr Platz, damit Header nicht kollidieren */
+  min-width:1400px;
+
+  /* wichtig: Spaltenbreiten aus <th style="width:..."> wirklich anwenden */
   table-layout: fixed;
-  min-width:0; /* verhindert erzwungenes horizontales Scrollen */
 }
 
-/* Header */
-.cc th{
-  padding:12px;
+.cc th, .cc td{
+  padding:12px 12px;
+  vertical-align:top;
   text-align:left;
-  background: rgba(255,255,255,.06);
-  border-bottom:1px solid var(--border);
+}
 
+/* ✅ Header: Umbruch erlauben, verhindert Überlappung */
+.cc th{
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
-  line-height:1.2;
+  line-height: 1.2;
 
+  color: var(--text);
+  background: rgba(255,255,255,.06);
+  border-bottom:1px solid var(--border);
   position:sticky;
   top:0;
   z-index:1;
 }
 
-/* Cells */
-.cc td{
-  padding:12px;
-  vertical-align:top;
-  border-top:1px solid rgba(255,255,255,.08);
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
+/* Datenzeilen */
+.cc td{ border-top:1px solid rgba(255,255,255,.08); }
+.cc tbody tr:hover td{ background: rgba(255,255,255,.04); }
 
-.cc tbody tr:hover td{
-  background: rgba(255,255,255,.04);
-}
-
-/* Kompaktere Spaltensteuerung */
-.cc th:nth-child(1),
-.cc td:nth-child(1){
-  width:120px;
-}
-
-.cc th:nth-child(2),
-.cc td:nth-child(2){
-  width:220px;   /* Titel */
-}
-
-.cc th:nth-child(3),
+/* Titel + Gebiete dürfen umbrechen */
+.cc td:nth-child(2),
 .cc td:nth-child(3){
-  width:240px;   /* Gebiete */
-}
-
-.cc th:nth-child(4),
-.cc td:nth-child(4){
-  width:160px;
-  /* vorher nowrap -> kann horizontales Wachstum erzwingen */
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 
-.cc th:nth-child(5),
-.cc td:nth-child(5){
-  width:auto;    /* Details bekommt Restbreite */
+/* Zähler-Spalte (nur Body): kompakt */
+.cc td:nth-child(4){
+  white-space: nowrap;
 }
 
-/* Links & Code */
-.cc td a{
-  color: rgba(124,255,199,.95);
-  text-decoration:none;
-}
-.cc td a:hover{
-  text-decoration:underline;
+/* Details (Body): umbrechen erlaubt */
+.cc td:nth-child(5){
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .cc td code{
+  color: var(--text);
   background: rgba(0,0,0,.18);
   border:1px solid rgba(255,255,255,.10);
   padding:3px 8px;
   border-radius:8px;
-  /* wichtig: umbrechen statt “unbreakable inline-block” */
-  display:inline;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  max-width: 100%;
+  display:inline-block;
   font-family: var(--mono);
 }
+
+.cc td a{
+  color: rgba(124,255,199,.95);
+  text-decoration:none;
+}
+.cc td a:hover{ text-decoration:underline; }
 
 /* =========================
    Log
    ========================= */
-
 .cc .log{
   background: rgba(0,0,0,.35);
+  color: var(--text);
   border:1px solid rgba(255,255,255,.12);
   border-radius: var(--radius);
   padding:12px;
+  line-height:1.45;
   max-height:220px;
   overflow:auto;
   white-space:pre-wrap;
   font-family: var(--mono);
   font-size:12px;
+  text-align:left;
 }
 
-/* =========================
-   Responsive
-   ========================= */
-
-@media (max-width:1100px){
-  .cc .grid{
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-  .cc .grid label{
-    grid-column: span 3;
-  }
+/* Responsive */
+@media (max-width: 1100px){
+  .cc .grid{ grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .cc .grid label:not(.wide){ grid-column: span 3; }
+  .cc .grid label.stackRight{ grid-column: span 3; }
 }
 
-@media (max-width:720px){
-  .cc .grid{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .cc .grid label{
-    grid-column: 1 / -1;
-  }
-  .cc .btnRow{
-    justify-content:stretch;
-  }
-  .cc button{
-    flex:1 1 auto;
-  }
+@media (max-width: 720px){
+  .cc .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cc .grid label:not(.wide){ grid-column: 1 / -1; }
+  .cc .btnRow{ justify-content:stretch; }
+  .cc button{ flex:1 1 auto; }
 }
