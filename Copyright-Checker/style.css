@@ -7,7 +7,9 @@
 }
 
 .cc .wrap{
-  max-width:1180px;
+  /* breiter, damit mehr Platz vorhanden ist */
+  width: 100%;
+  max-width: 1600px; /* ggf. an dein Layout anpassen */
   margin:0 auto;
   padding: 18px 16px 22px;
   display:flex;
@@ -125,7 +127,9 @@
 .cc .table-wrap{
   border:1px solid var(--border);
   border-radius: var(--radius);
-  overflow:auto;
+  /* kein horizontales Scrollen */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .cc table{
@@ -187,7 +191,10 @@
 .cc th:nth-child(4),
 .cc td:nth-child(4){
   width:160px;
-  white-space:nowrap;
+  /* vorher nowrap -> kann horizontales Wachstum erzwingen */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .cc th:nth-child(5),
@@ -209,7 +216,12 @@
   border:1px solid rgba(255,255,255,.10);
   padding:3px 8px;
   border-radius:8px;
-  display:inline-block;
+  /* wichtig: umbrechen statt “unbreakable inline-block” */
+  display:inline;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
   font-family: var(--mono);
 }
 
