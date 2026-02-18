@@ -5,8 +5,7 @@
    - Pagination: limit/offset, ABBRUCH NUR wenn items.length < limit (oder 0)
      => total wird NICHT zum Abbruch verwendet (ET4 total ist oft nicht overall)
    - Types nacheinander (ohne City/Area)
-   - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Details (rel / media-id)
-   - Pages-URL: nutzt channel_prefixed ID (z.B. t_100303361) wie in Pages erwartet
+   - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Debug-Liste
 */
 
 const el = (id) => document.getElementById(id);
@@ -189,20 +188,6 @@ const PAGES_BASE = "https://pages.destination.one";
 const PAGES_LANG = "de";
 const PAGES_TEMPLATE = "default_withmap";
 
-/* Prefix-Mapping als Fallback, falls kein channel/global_id vorhanden ist */
-const PAGES_ID_PREFIX_BY_TYPE = {
-  Tour: "t",
-  Event: "e",
-  Gastro: "g",
-  Hotel: "h",
-  POI: "p",
-  Package: "o",
-  Article: "a",
-  Web: "w",
-  City: "c",
-  Area: "r",
-};
-
 function extractUrlTitle(item) {
   const attrs = item?.attributes;
   if (Array.isArray(attrs)) {
@@ -247,34 +232,9 @@ function slugifyFallback(title) {
     .replace(/^-|-$/g, "");
 }
 
-/* ✅ Pages-GID: bevorzugt global_id (z.B. p_100059776), sonst channel_id (p_100...), sonst typePrefix_id */
-function extractPagesGid(item) {
-  const gid = item?.global_id ?? item?.globalId;
-  if (gid != null) {
-    const s = String(gid).trim();
-    if (s) return s;
-  }
-
-  if (item?.channel != null && item?.id != null) {
-    const ch = String(item.channel).trim();
-    const id = String(item.id).trim();
-    if (ch && id) return `${ch}_${id}`;
-  }
-
-  if (item?.id != null) {
-    const id = String(item.id).trim();
-    const t = normalizeTypeName(getType(item));
-    const pref = PAGES_ID_PREFIX_BY_TYPE[t];
-    if (pref && id) return `${pref}_${id}`;
-    if (id) return id;
-  }
-
-  return extractId(item);
-}
-
 function buildPagesLink(item, pagesExperience) {
   const pagesType = normalizeTypeName(getType(item));
-  const gid = extractPagesGid(item);
+  const gid = extractId(item);
 
   let slug = extractUrlTitle(item);
   if (!slug) slug = slugifyFallback(extractTitle(item));
@@ -307,24 +267,6 @@ function isCheckableMediaObject(mo) {
   return false;
 }
 
-/* robust: falls ET4 mal andere id-felder liefert */
-function extractMediaId(mo) {
-  const candidates = [
-    mo?.id, // z.B. m_1018052
-    mo?.media_id,
-    mo?.mediaId,
-    mo?.global_id,
-    mo?.globalId,
-    mo?.asset_id,
-    mo?.assetId,
-  ];
-  for (const v of candidates) {
-    const s = String(v ?? "").trim();
-    if (s) return s;
-  }
-  return "";
-}
-
 function findMissingCopyrightMedia(item) {
   const mos = Array.isArray(item?.media_objects) ? item.media_objects : [];
   const checkables = mos.filter(isCheckableMediaObject);
@@ -335,7 +277,7 @@ function findMissingCopyrightMedia(item) {
     if (c === undefined || c === null || String(c).trim() === "") {
       missing.push({
         rel: String(mo?.rel ?? ""),
-        id: extractMediaId(mo),
+        id: String(mo?.id ?? ""),
         url: String(mo?.url ?? ""),
       });
     }
@@ -357,20 +299,16 @@ function log(msg) {
   l.scrollTop = l.scrollHeight;
 }
 
-/* ✅ sorgt dafür, dass die Spalte "Details (rel / media-id)" immer befüllt wird */
 function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missingMedia }) {
-  const list = Array.isArray(missingMedia) ? missingMedia : [];
-
-  const details =
+  const missingShort =
     missingMediaCount === 0
       ? ""
-      : list
-          .map((m) => {
-            const rel = String(m?.rel ?? "").trim() || "?";
-            const mid = String(m?.id ?? "").trim();
-            return mid ? `${rel} (${mid})` : `${rel}`;
-          })
+      : missingMedia
+          .slice(0, 5)
+          .map((m) => `${m.rel || "?"}${m.id ? " (" + m.id + ")" : ""}`)
           .join(", ");
+
+  const more = missingMediaCount > 5 ? ` (+${missingMediaCount - 5} mehr)` : "";
 
   const linkHtml = pagesLink
     ? `<a href="${esc(pagesLink)}" target="_blank" rel="noopener noreferrer">Pages-Link</a>`
@@ -382,7 +320,7 @@ function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missing
     <td>${esc(title)}<div style="margin-top:6px;">${linkHtml}</div></td>
     <td style="font-size:12px; opacity:.9;">${esc(areasOldText || "")}</td>
     <td><strong>${esc(missingMediaCount)}</strong></td>
-    <td style="font-size:12px; opacity:.85;">${esc(details)}</td>
+    <td style="font-size:12px; opacity:.85;">${esc(missingShort)}${esc(more)}</td>
   `;
   el("tbody").appendChild(tr);
 }
@@ -401,11 +339,7 @@ function toCsv(rows) {
 
   for (const r of rows) {
     const relIds = (r.missingMedia || [])
-      .map((m) => {
-        const rel = String(m?.rel ?? "").trim() || "?";
-        const id = String(m?.id ?? "").trim();
-        return id ? `${rel}:${id}` : rel;
-      })
+      .map((m) => `${m.rel || "?"}${m.id ? ":" + m.id : ""}`)
       .join(" | ");
 
     const line = [
@@ -576,9 +510,7 @@ el("runBtn").addEventListener("click", async () => {
           totalsByType[type] = total;
           recomputeOverallExpected();
           typeTotalCaptured = true;
-          log(
-            `Captured overallcount for type=${type}: ${total} (overallExpected=${overallExpected})`
-          );
+          log(`Captured overallcount for type=${type}: ${total} (overallExpected=${overallExpected})`);
           setProgressText();
         }
 
@@ -606,6 +538,7 @@ el("runBtn").addEventListener("click", async () => {
             const id = extractId(it);
             const title = extractTitle(it);
             const pagesLink = buildPagesLink(it, experience);
+
             const areasOldText = extractAreasOld(it).join(", ");
 
             lastMissing.push({
