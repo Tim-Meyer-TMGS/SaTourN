@@ -26,12 +26,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const xmlUrls = {
     POI: "https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml",
     Tour: "https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml",
-    Gastronomie:
-      "https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml",
-    Event:
-      "https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml",
-    Hotel:
-      "https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml",
+    Gastronomie: "https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml",
+    Event: "https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml",
+    Hotel: "https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml",
   };
 
   // ===========================================================================
@@ -43,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const citySelect = document.getElementById("City");
   const categorySelect = document.getElementById("categories");
   const logicOpSelect = document.getElementById("logicOperator");
-  const heightInput = document.getElementById("height");
+  const heightInput = document.getElementById("height"); // bleibt (UI), aber nicht mehr in URL verwendet
   const showMapCb = document.getElementById("showMap");
 
   const formEl = document.getElementById("urlForm");
@@ -79,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return String(txt)
       .replace(/<texts[\s\S]*?<\/texts>/gi, "")
       .replace(/&nbsp;/gi, " ")
-      .replace(/&(?![a-zA-Z]+;#\d+;|#x[a-fA-F0-9]+;)/g, "&amp;");
+      .replace(/&(?![a-zA-Z]+;|#\d+;|#x[a-fA-F0-9]+;)/g, "&amp;");
   }
 
   function normalizeKey(s) {
@@ -142,11 +139,28 @@ document.addEventListener("DOMContentLoaded", () => {
       .sort((a, b) => a.localeCompare(b, "de"));
   }
 
+  // Robust: sammelt Gebietsinformationen auch dann, wenn Proxy/Export andere Feldnamen nutzt
   function parseCitiesFromXml(xmlText) {
     const parser = new DOMParser();
     const xml = parser.parseFromString(sanitizeXml(xmlText), "application/xml");
     const items = Array.from(xml.getElementsByTagName("item"));
     const out = [];
+
+    const extractAreaLikeTexts = (item) => {
+      const names = new Set();
+
+      // Heuristik: alle Felder, deren Tagname "area"/"gebiet"/"region" enthält
+      const nodes = item.getElementsByTagName("*");
+      for (let i = 0; i < nodes.length; i++) {
+        const ln = (nodes[i].localName || nodes[i].tagName || "").toLowerCase();
+        if (ln.includes("area") || ln.includes("gebiet") || ln.includes("region")) {
+          const t = nodes[i].textContent ? nodes[i].textContent.trim() : "";
+          if (t) names.add(t);
+        }
+      }
+
+      return [...names];
+    };
 
     for (const it of items) {
       const title = it.getElementsByTagName("title")[0]?.textContent?.trim();
@@ -175,6 +189,9 @@ document.addEventListener("DOMContentLoaded", () => {
           if (t) areas.add(t);
         }
       });
+
+      // Fallback-Heuristik (falls nicht in <areas>/<areas_old>)
+      extractAreaLikeTexts(it).forEach((t) => areas.add(t));
 
       out.push({ title, areas: [...areas] });
     }
@@ -222,11 +239,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Wenn Gebiet gewählt: Städte auf das Gebiet einschränken
+  // Wenn Gebiet gewählt: Städte auf dieses Gebiet einschränken
   function renderCitiesForArea() {
-    const areaKey = normalizeKey(areaSelect.value);
+    const areaRaw = (areaSelect.value || "").trim();
+    const areaKey = normalizeKey(areaRaw);
 
-    // nichts gewählt -> alle Städte
     if (!areaKey) {
       setSelect(citySelect, allCityTitles, "Keine Stadt wählen");
       return;
@@ -234,9 +251,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const result = new Set();
 
-    for (const [k, set] of areaToCities.entries()) {
-      if (k === areaKey || k.includes(areaKey) || areaKey.includes(k)) {
-        set.forEach((c) => result.add(c));
+    // 1) Exakt (case-insensitive) gegen die originalen Area-Texte aus den City-Items
+    const rawLower = areaRaw.toLowerCase();
+    for (const c of allCityItems) {
+      for (const a of c.areas || []) {
+        if (String(a).trim().toLowerCase() === rawLower) {
+          result.add(c.title);
+          break;
+        }
+      }
+    }
+
+    // 2) Fallback: Normalisierungs-/Fuzzy-Logik
+    if (result.size === 0) {
+      for (const [k, set] of areaToCities.entries()) {
+        if (k === areaKey || k.includes(areaKey) || areaKey.includes(k)) {
+          set.forEach((c) => result.add(c));
+        }
       }
     }
 
@@ -410,7 +441,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   copyBtn.addEventListener("click", async () => {
-    const txt = (resultNoTA.value || "").trim() + "\n\n" + (resultTA.value || "").trim();
+    const txt =
+      (resultNoTA.value || "").trim() +
+      "\n\n" +
+      (resultTA.value || "").trim();
 
     try {
       await navigator.clipboard.writeText(txt.trim());
@@ -449,10 +483,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     typeSelect.addEventListener("change", loadCategories);
 
-    // Wenn Gebiet gewählt: Städte entsprechend einschränken
+    // Wenn Gebiet wechselt: Stadt-Filter aktualisieren (und ggf. Stadt-Auswahl leeren)
     areaSelect.addEventListener("change", () => {
-      // optional: Stadt-Auswahl resetten, damit keine ungültige Stadt stehen bleibt
-      citySelect.value = "";
+      if (citySelect) citySelect.value = "";
       renderCitiesForArea();
     });
   })();
