@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>DeepL Glossar Checker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 920px;
+      margin: 40px auto;
+      padding: 0 16px;
+      line-height: 1.5;
+    }
+    label {
+      display: block;
+      margin-top: 14px;
+      font-weight: bold;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      padding: 9px;
+      margin-top: 4px;
+      box-sizing: border-box;
+      font-size: 15px;
+    }
+    button {
+      margin-top: 12px;
+      cursor: pointer;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 14px;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      border: 1px solid #ddd;
+    }
+    .hint {
+      background: #fff8dc;
+      border: 1px solid #ead58a;
+      padding: 12px;
+      margin: 16px 0;
+    }
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>DeepL Glossar Checker</h1>
+
+  <div class="hint">
+    Der API-Key wird nur für diesen Test an den lokalen/temporären Server gesendet.
+    Er wird nicht gespeichert.
+  </div>
+
+  <label>API-Typ</label>
+  <select id="apiType">
+    <option value="pro">DeepL API Pro</option>
+    <option value="free">DeepL API Free</option>
+  </select>
+
+  <label>DeepL API Key</label>
+  <input id="apiKey" type="password" placeholder="DeepL-Auth-Key ..." autocomplete="off">
+
+  <div class="grid">
+    <div>
+      <label>Source Lang</label>
+      <input id="sourceLang" value="DE">
+    </div>
+    <div>
+      <label>Target Lang</label>
+      <input id="targetLang" value="EN">
+    </div>
+  </div>
+
+  <label>Glossary ID</label>
+  <input id="glossaryId" placeholder="z. B. def3a26b-3e84-45b3-84ae-0c0aaf3525f7">
+
+  <label>Testtext</label>
+  <textarea id="text" rows="5">Unser Begriff kommt hier im Text vor.</textarea>
+
+  <button onclick="callDeepL('glossaries')">1. Glossare abrufen</button>
+  <button onclick="callDeepL('entries')">2. Glossar-Einträge abrufen</button>
+  <button onclick="callDeepL('translateWithoutGlossary')">3. Ohne Glossar übersetzen</button>
+  <button onclick="callDeepL('translateWithGlossary')">4. Mit Glossar übersetzen</button>
+
+  <h2>Ausgabe</h2>
+  <pre id="output">Noch keine Anfrage gesendet.</pre>
+
+  <script>
+    function getPayload(action) {
+      return {
+        action,
+        apiType: document.getElementById("apiType").value,
+        apiKey: document.getElementById("apiKey").value.trim(),
+        sourceLang: document.getElementById("sourceLang").value.trim().toUpperCase(),
+        targetLang: document.getElementById("targetLang").value.trim().toUpperCase(),
+        glossaryId: document.getElementById("glossaryId").value.trim(),
+        text: document.getElementById("text").value
+      };
+    }
+
+    function show(data) {
+      const output = document.getElementById("output");
+      output.textContent = typeof data === "string"
+        ? data
+        : JSON.stringify(data, null, 2);
+    }
+
+    async function callDeepL(action) {
+      show("Anfrage läuft ...");
+
+      try {
+        const response = await fetch("/api/deepl", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(getPayload(action))
+        });
+
+        const contentType = response.headers.get("content-type") || "";
+        const data = contentType.includes("application/json")
+          ? await response.json()
+          : await response.text();
+
+        if (!response.ok) {
+          show({
+            status: response.status,
+            error: data
+          });
+          return;
+        }
+
+        show(data);
+      } catch (error) {
+        show("Fehler: " + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
