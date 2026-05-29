@@ -1,8 +1,5 @@
 const el = (id) => document.getElementById(id);
 
-  function esc(s){
-    return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-  }
   function buildParams(obj){
     const p = new URLSearchParams();
     for (const [k,v] of Object.entries(obj)){
@@ -42,12 +39,30 @@ const el = (id) => document.getElementById(id);
     },
     addRow({type, id, url, jsonSnippet}){
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${esc(type)}</td>
-        <td><span class="id">${esc(id)}</span></td>
-        <td><a href="${url}" target="_blank" rel="noopener">${url}</a></td>
-        <td><pre>${esc(jsonSnippet)}</pre></td>
-      `;
+
+      const typeCell = document.createElement("td");
+      typeCell.textContent = type;
+
+      const idCell = document.createElement("td");
+      const idPill = document.createElement("span");
+      idPill.className = "id";
+      idPill.textContent = id;
+      idCell.appendChild(idPill);
+
+      const urlCell = document.createElement("td");
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = url;
+      urlCell.appendChild(link);
+
+      const jsonCell = document.createElement("td");
+      const pre = document.createElement("pre");
+      pre.textContent = jsonSnippet;
+      jsonCell.appendChild(pre);
+
+      tr.append(typeCell, idCell, urlCell, jsonCell);
       el("tbody").appendChild(tr);
     }
   };

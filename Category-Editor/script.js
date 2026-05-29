@@ -35,7 +35,7 @@
 // ════════════════════════════════════════════════════════════
 
 const MAX_HISTORY   = 30;
-const DEEPL_API_KEY = "YOUR_DEEPL_KEY_HERE"; // ← eigenen Key eintragen
+const DEEPL_SESSION_KEY = "ceDeepLApiKey";
 
 /**
  * Sprachcodes aus dem realen GastroTree + Standard-Ergänzungen.
@@ -183,6 +183,19 @@ function enableButtons(on) {
     .forEach(b => { b.disabled = !on; });
   [el.expandAllBtn, el.collapseAllBtn]
     .forEach(b => { b.style.display = on ? "inline-flex" : "none"; });
+}
+
+function getDeepLApiKey() {
+  const cached = sessionStorage.getItem(DEEPL_SESSION_KEY) || "";
+  if (cached) return cached;
+
+  const key = prompt("DeepL API Key für diese Sitzung eingeben:");
+  if (key && key.trim()) {
+    sessionStorage.setItem(DEEPL_SESSION_KEY, key.trim());
+    return key.trim();
+  }
+
+  return "";
 }
 
 
@@ -1105,11 +1118,14 @@ async function generateTranslations(catEl = selectedCatEl) {
   const need = KNOWN_LANGUAGES.filter(l => !have.includes(l));
   if (!need.length) { showToast("Alle Übersetzungen bereits vorhanden.", "info"); return; }
 
+  const apiKey = getDeepLApiKey();
+  if (!apiKey) { showToast("DeepL API Key fehlt.", "warning"); return; }
+
   showToast(`Übersetze ${need.length} Sprachen…`, "info");
 
   try {
     const params = new URLSearchParams();
-    params.append("auth_key", DEEPL_API_KEY);
+    params.append("auth_key", apiKey);
     params.append("text", base.textContent.trim());
     need.map(l => DEEPL_MAPPING[l]).filter(Boolean)
         .forEach(t => params.append("target_lang", t));
@@ -1374,17 +1390,20 @@ function populateSourcesTable() {
 
   xmlSources.forEach((src, i) => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${src.label}</td>
-      <td class="ce-src-url">${src.url}</td>
-      <td><button class="ce-src-edit" data-i="${i}">✏</button></td>
-      <td><button class="btn-danger ce-src-del" data-i="${i}">✕</button></td>`;
-    el.sourcesTableBody.appendChild(tr);
-  });
 
-  el.sourcesTableBody.querySelectorAll(".ce-src-edit").forEach(b => {
-    b.addEventListener("click", () => {
-      const i  = +b.dataset.i;
+    const labelCell = document.createElement("td");
+    labelCell.textContent = src.label;
+
+    const urlCell = document.createElement("td");
+    urlCell.className = "ce-src-url";
+    urlCell.textContent = src.url;
+
+    const editCell = document.createElement("td");
+    const editButton = document.createElement("button");
+    editButton.className = "ce-src-edit";
+    editButton.type = "button";
+    editButton.textContent = "✏";
+    editButton.addEventListener("click", () => {
       const nl = prompt("Label:", xmlSources[i].label);
       const nu = prompt("URL:",   xmlSources[i].url);
       if (nl && nu && /^https?:\/\/.+\.xml$/i.test(nu)) {
@@ -1397,11 +1416,14 @@ function populateSourcesTable() {
         showToast("Ungültige Eingaben.", "error");
       }
     });
-  });
+    editCell.appendChild(editButton);
 
-  el.sourcesTableBody.querySelectorAll(".ce-src-del").forEach(b => {
-    b.addEventListener("click", () => {
-      const i = +b.dataset.i;
+    const deleteCell = document.createElement("td");
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "btn-danger ce-src-del";
+    deleteButton.type = "button";
+    deleteButton.textContent = "✕";
+    deleteButton.addEventListener("click", () => {
       if (confirm(`„${xmlSources[i].label}" löschen?`)) {
         xmlSources.splice(i, 1);
         localStorage.setItem("ceXmlSources", JSON.stringify(xmlSources));
@@ -1410,6 +1432,10 @@ function populateSourcesTable() {
         showToast("Gelöscht.", "info");
       }
     });
+    deleteCell.appendChild(deleteButton);
+
+    tr.append(labelCell, urlCell, editCell, deleteCell);
+    el.sourcesTableBody.appendChild(tr);
   });
 }
 

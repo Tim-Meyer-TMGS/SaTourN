@@ -195,7 +195,7 @@
   position: relative;
   z-index: 1;
   width: min(520px, calc(100vw - 28px));
-  border-radius: 16px;
+  border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,.14);
   background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
   box-shadow: var(--shadow);
@@ -221,7 +221,7 @@
 .pagesbuilder .x{
   width: 36px;
   height: 36px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   font-size: 22px;
   line-height: 1;
   padding: 0;

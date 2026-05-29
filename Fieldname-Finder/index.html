@@ -1,31 +1,73 @@
 ---
 layout: default
 title: Fieldname-Finder
+css: /Fieldname-Finder/style.css
 ---
 
-<div class="container fieldname-finder">
-  <h2>SaTourN Fieldname-Finder</h2>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script defer src="{{ '/Fieldname-Finder/script.js' | relative_url }}"></script>
 
-  <label for="xmlFile">XML-Datei hochladen</label>
-  <input type="file" id="xmlFile" accept=".xml">
+<div class="fieldname-finder">
+  <header class="ff-head">
+    <h1>Fieldname-Finder</h1>
+    <span id="status" class="pill idle">
+      <span class="dot" aria-hidden="true"></span>
+      <span>bereit</span>
+    </span>
+  </header>
 
-  <div id="fileInfo">Keine Datei ausgewählt</div>
+  <section class="card">
+    <div class="card-hd">
+      <strong>XML analysieren</strong>
+    </div>
+    <div class="card-ct">
+      <div class="ff-grid">
+        <label class="ff-upload" for="xmlFile">
+          <span class="material-icons" aria-hidden="true">upload_file</span>
+          <span>XML-Datei wählen</span>
+        </label>
+        <input type="file" id="xmlFile" accept=".xml,text/xml,application/xml">
 
-  <button id="convertBtn">Daten anzeigen</button>
+        <div id="fileInfo" class="ff-file">Keine Datei ausgewählt</div>
 
-  <div id="errorMessage" class="error"></div>
+        <div class="ff-actions">
+          <button id="convertBtn" type="button" class="primary" disabled>
+            <span class="material-icons" aria-hidden="true">table_view</span>
+            Anzeigen
+          </button>
+          <button id="downloadBtn" type="button" disabled>
+            <span class="material-icons" aria-hidden="true">download</span>
+            Excel
+          </button>
+        </div>
+      </div>
 
-  <div id="tableContainer" style="display:none;">
-    <table>
-      <thead>
-        <tr>
-          <th>Feldname</th>
-          <th>Datentyp</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
+      <div id="errorMessage" class="ff-error" role="alert"></div>
+    </div>
+  </section>
 
-    <button id="downloadBtn">Excel herunterladen</button>
-  </div>
+  <section id="tableContainer" class="card ff-results" hidden>
+    <div class="card-hd">
+      <strong>Gefundene Felder</strong>
+      <span class="pill">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="fieldCount">0</span>
+      </span>
+    </div>
+    <div class="card-ct">
+      <div class="ff-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Feldname</th>
+              <th>Datentyp</th>
+              <th>Vorkommen</th>
+              <th>Beispiel</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 </div>

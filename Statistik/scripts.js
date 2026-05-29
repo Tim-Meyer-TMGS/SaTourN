@@ -140,21 +140,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     elements.resultDiv.innerHTML = '';
     const table = document.createElement('table');
-    table.innerHTML = `
-      <thead>
-        <tr>
-          <th>Gebiet</th>
-          <th>Ort</th>
-          <th>Typ</th>
-          <th>Kategorie</th>
-          <th>SaTourN</th>
-          <th>Open-Data</th>
-          <th>Open-Data-Prozentsatz</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    `;
-    const tbody = table.querySelector('tbody');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    ['Gebiet', 'Ort', 'Typ', 'Kategorie', 'SaTourN', 'Open-Data', 'Open-Data-Prozentsatz']
+      .forEach((label) => {
+        const th = document.createElement('th');
+        th.textContent = label;
+        headerRow.appendChild(th);
+      });
+    thead.appendChild(headerRow);
+
+    const tbody = document.createElement('tbody');
+    table.append(thead, tbody);
+
+    const appendCell = (row, value, options = {}) => {
+      const cell = document.createElement(options.header ? 'th' : 'td');
+      if (options.colSpan) cell.colSpan = options.colSpan;
+      cell.textContent = String(value);
+      row.appendChild(cell);
+      return cell;
+    };
 
     let totalStatistik = 0;
     let totalOpenData  = 0;
@@ -171,15 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
       totalOpenData  += openZahl;
 
       const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${area}</td>
-        <td>${place}</td>
-        <td>${type}</td>
-        <td>${category || '-'}</td>
-        <td>${statZahl}</td>
-        <td>${openZahl}</td>
-        <td>${rowPct}%</td>
-      `;
+      appendCell(row, area);
+      appendCell(row, place);
+      appendCell(row, type);
+      appendCell(row, category || '-');
+      appendCell(row, statZahl);
+      appendCell(row, openZahl);
+      appendCell(row, `${rowPct}%`);
       tbody.appendChild(row);
     });
 
@@ -189,12 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const totalRow = document.createElement('tr');
     totalRow.style.fontWeight = 'bold';
-    totalRow.innerHTML = `
-      <td colspan="4">Gesamt</td>
-      <td>${totalStatistik}</td>
-      <td>${totalOpenData}</td>
-      <td>${totalPct}%</td>
-    `;
+    appendCell(totalRow, 'Gesamt', { colSpan: 4 });
+    appendCell(totalRow, totalStatistik);
+    appendCell(totalRow, totalOpenData);
+    appendCell(totalRow, `${totalPct}%`);
     tbody.appendChild(totalRow);
 
     elements.resultDiv.appendChild(table);

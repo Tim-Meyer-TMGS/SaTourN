@@ -12,13 +12,6 @@ const el = (id) => document.getElementById(id);
 
 /* ------------------------- small utils ------------------------- */
 
-function esc(s) {
-  return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
 function buildParams(obj) {
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries(obj)) {
@@ -315,18 +308,48 @@ function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missing
 
   const more = missingMediaCount > 5 ? ` (+${missingMediaCount - 5} mehr)` : "";
 
-  const linkHtml = pagesLink
-    ? `<a href="${esc(pagesLink)}" target="_blank" rel="noopener noreferrer">Pages-Link</a>`
-    : `<span style="opacity:.7;">kein Link</span>`;
-
   const tr = document.createElement("tr");
-  tr.innerHTML = `
-    <td><code>${esc(id)}</code></td>
-    <td>${esc(title)}<div style="margin-top:6px;">${linkHtml}</div></td>
-    <td style="font-size:12px; opacity:.9;">${esc(areasOldText || "")}</td>
-    <td><strong>${esc(missingMediaCount)}</strong></td>
-    <td style="font-size:12px; opacity:.85;">${esc(missingShort)}${esc(more)}</td>
-  `;
+
+  const idCell = document.createElement("td");
+  const code = document.createElement("code");
+  code.textContent = id;
+  idCell.appendChild(code);
+
+  const titleCell = document.createElement("td");
+  titleCell.appendChild(document.createTextNode(title));
+  const linkWrap = document.createElement("div");
+  linkWrap.style.marginTop = "6px";
+  if (pagesLink) {
+    const link = document.createElement("a");
+    link.href = pagesLink;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Pages-Link";
+    linkWrap.appendChild(link);
+  } else {
+    const fallback = document.createElement("span");
+    fallback.style.opacity = ".7";
+    fallback.textContent = "kein Link";
+    linkWrap.appendChild(fallback);
+  }
+  titleCell.appendChild(linkWrap);
+
+  const areaCell = document.createElement("td");
+  areaCell.style.fontSize = "12px";
+  areaCell.style.opacity = ".9";
+  areaCell.textContent = areasOldText || "";
+
+  const countCell = document.createElement("td");
+  const strong = document.createElement("strong");
+  strong.textContent = String(missingMediaCount);
+  countCell.appendChild(strong);
+
+  const detailCell = document.createElement("td");
+  detailCell.style.fontSize = "12px";
+  detailCell.style.opacity = ".85";
+  detailCell.textContent = `${missingShort}${more}`;
+
+  tr.append(idCell, titleCell, areaCell, countCell, detailCell);
   el("tbody").appendChild(tr);
 }
 

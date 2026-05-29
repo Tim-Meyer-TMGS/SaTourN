@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
+    "check": "node --check index.js && node --check lib/config.js && node --check lib/cache.js && node --check lib/search-utils.js && node --check routes/search.js && node --check routes/kg.js",
     "update:pagesbuilder-xml": "node Pages-Builder/scripts/update-pagesbuilder-xml.mjs"
   },
   "dependencies": {
