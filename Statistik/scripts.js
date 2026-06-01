@@ -138,7 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadAreaTitles(signal) {
     if (state.areaCache) return state.areaCache;
-    const titles = extractItemTitles(await fetchText(buildUrl('Area'), signal));
+    const response = await fetchText(buildUrl('Area'), signal);
+    if (!response.ok) {
+      throw new Error(`API-Fehler beim Laden der Gebiete: HTTP ${response.status}`);
+    }
+    const titles = extractItemTitles(response.text);
     state.areaCache = titles;
     return titles;
   }
@@ -146,7 +150,11 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadCityTitles(area, signal) {
     if (!area) return [];
     const query = `area:"${cleanQueryValue(area)}"`;
-    return extractItemTitles(await fetchText(buildUrl('City', query), signal));
+    const response = await fetchText(buildUrl('City', query), signal);
+    if (!response.ok) {
+      throw new Error(`API-Fehler beim Laden der Orte: HTTP ${response.status}`);
+    }
+    return extractItemTitles(response.text);
   }
 
   async function ensureCategoriesForType(type, signal) {
@@ -160,8 +168,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const xmlText = await fetchText(treeUrl, signal);
-      const xml = parseXml(xmlText);
+      const response = await fetchText(treeUrl, signal);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} beim Laden des Category-Tree`);
+      }
+      const xml = parseXml(response.text);
       const categories = [...new Set(Array.from(xml.getElementsByTagName('Category'))
         .map((cat) => cat.getAttribute('Name'))
         .filter(Boolean))]
@@ -407,8 +418,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function fetchCountForJob(job, signal) {
-    const text = await fetchText(buildUrl(job.row.type, job.row.query, job.isOpenData), signal);
-    return parseCount(text);
+    const response = await fetchText(buildUrl(job.row.type, job.row.query, job.isOpenData), signal);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} beim Abrufen der Zahl`);
+    }
+    return parseCount(response.text);
   }
 
   async function runQueue(rows, run) {

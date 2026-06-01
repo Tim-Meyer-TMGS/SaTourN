@@ -197,11 +197,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadAreas() {
     try {
-      const xmlText = await fetchText(areaLocalUrl);
-      setSelect(areaSelect, parseAreasFromXml(xmlText), "Kein Gebiet wählen");
+      const response = await fetchText(areaLocalUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setSelect(areaSelect, parseAreasFromXml(response.text), "Kein Gebiet wählen");
     } catch {
-      const xmlText = await fetchText(areaRemoteUrl);
-      setSelect(areaSelect, parseAreasFromXml(xmlText), "Kein Gebiet wählen");
+      const response = await fetchText(areaRemoteUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setSelect(areaSelect, parseAreasFromXml(response.text), "Kein Gebiet wählen");
     }
   }
 
@@ -295,8 +297,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 1) Lokal
     try {
-      const rawLocal = await fetchText(cityLocalUrl);
-      localCities = parseCitiesFromXml(rawLocal);
+      const response = await fetchText(cityLocalUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      localCities = parseCitiesFromXml(response.text);
     } catch {
       localCities = [];
     }
@@ -306,8 +309,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (shouldFetchRemote) {
       try {
         const remoteUrl = `${proxyBase}?type=City&limit=5000`;
-        const rawRemote = await fetchText(remoteUrl);
-        remoteCities = parseCitiesFromXml(rawRemote);
+        const response = await fetchText(remoteUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        remoteCities = parseCitiesFromXml(response.text);
       } catch (e) {
         console.warn("Remote Cities konnten nicht geladen werden:", e);
         remoteCities = [];
@@ -334,8 +338,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!url) return;
 
-    const txt = await fetchText(url);
-    const xml = new DOMParser().parseFromString(txt, "application/xml");
+    const response = await fetchText(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const xml = new DOMParser().parseFromString(response.text, "application/xml");
 
     const cats = [...xml.querySelectorAll("Category")]
       .map((c) => c.getAttribute("Name"))
