@@ -1,20 +1,3 @@
-const parseJson = (raw, fallback = null) => {
-  if (raw == null) return fallback;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
-};
-
-export function loadJsonFromLocalStorage(key, fallback = null) {
-  return parseJson(localStorage.getItem(key), fallback);
-}
-
-export function saveJsonToLocalStorage(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
 export function getDeepLApiKey(storageKey = 'ceDeepLApiKey') {
   const cached = sessionStorage.getItem(storageKey) || '';
   if (cached) return cached;

@@ -2,7 +2,7 @@
    DZT KG Finder
 ========================== */
 
-import { fetchJson } from '../lib/browser.js';
+import { fetchJson, setText } from '../lib/browser.js';
 
 /* ==========================
    Konfiguration
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
      UI/Helpers
   ========================== */
   function status(msg, isError = false) {
-    statusEl.textContent = msg || '';
+    setText(statusEl, msg || '');
     statusEl.classList.toggle('kg-status-error', Boolean(isError));
   }
 

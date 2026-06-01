@@ -1,6 +1,6 @@
-import { $, debounce, uid, triggerDownload } from './lib/dom-utils.js';
+import { $, debounce, uid, downloadBlob, downloadText, loadJson, saveJson } from '../lib/browser.js';
 import { sanitizeXML, isValidSchemaorg, formatXml } from './lib/xml-utils.js';
-import { getDeepLApiKey, loadJsonFromLocalStorage, saveJsonToLocalStorage } from './lib/storage-utils.js';
+import { getDeepLApiKey } from './lib/storage-utils.js';
 
 const MAX_HISTORY = 30;
 const DEEPL_SESSION_KEY = 'ceDeepLApiKey';
@@ -635,7 +635,7 @@ function downloadXML() {
     showToast('XML-Fehler – Download abgebrochen.', 'error');
     return;
   }
-  triggerDownload(URL.createObjectURL(new Blob([str], { type: 'text/xml' })), 'kategorien.xml');
+  downloadBlob('kategorien.xml', new Blob([str], { type: 'text/xml' }));
 }
 
 function downloadJSON() {
@@ -652,7 +652,7 @@ function downloadJSON() {
   });
 
   const json = JSON.stringify({ categories: catChildren(categoriesNode).map(toObj) }, null, 2);
-  triggerDownload(URL.createObjectURL(new Blob([json], { type: 'application/json' })), 'kategorien.json');
+  downloadBlob('kategorien.json', new Blob([json], { type: 'application/json' }));
 }
 
 function downloadCSV() {
@@ -670,7 +670,7 @@ function downloadCSV() {
   };
   catChildren(categoriesNode).forEach(c => walk(c));
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
-  triggerDownload(encodeURI('data:text/csv;charset=utf-8,' + csv), 'kategorien.csv');
+  downloadText('kategorien.csv', csv, 'text/csv;charset=utf-8');
 }
 
 function exportSubtreeCsv(catEl) {
@@ -687,7 +687,7 @@ function exportSubtreeCsv(catEl) {
   };
   walk(catEl);
   const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
-  triggerDownload(encodeURI('data:text/csv;charset=utf-8,' + csv), `subtree_${catEl.getAttribute('Name')}.csv`);
+  downloadText(`subtree_${catEl.getAttribute('Name')}.csv`, csv, 'text/csv;charset=utf-8');
 }
 
 function handleJsonImport(e) {
@@ -785,7 +785,7 @@ function downloadFromPreview() {
     showToast('XML enthält Fehler.', 'error');
     return;
   }
-  triggerDownload(URL.createObjectURL(new Blob([str], { type: 'text/xml' })), 'kategorien_preview.xml');
+  downloadBlob('kategorien_preview.xml', new Blob([str], { type: 'text/xml' }));
 }
 
 function saveDraft() {
@@ -808,7 +808,7 @@ function addNewSource() {
   if (!label || !url) { showToast('Label und URL erforderlich.', 'warning'); return; }
   if (!/^https?:\/\/.+\.xml$/i.test(url)) { showToast('URL muss auf .xml enden.', 'error'); return; }
   xmlSources.push({ label, url });
-  saveJsonToLocalStorage('ceXmlSources', xmlSources);
+  saveJson('ceXmlSources', xmlSources);
   rebuildSourceDropdown();
   populateSourcesTable();
   el.sourceLabelInput.value = '';
@@ -840,7 +840,7 @@ function populateSourcesTable() {
       const nu = prompt('URL:', xmlSources[i].url);
       if (nl && nu && /^https?:\/\/.+\.xml$/i.test(nu)) {
         xmlSources[i] = { label: nl, url: nu };
-        saveJsonToLocalStorage('ceXmlSources', xmlSources);
+        saveJson('ceXmlSources', xmlSources);
         rebuildSourceDropdown();
         populateSourcesTable();
         showToast('Aktualisiert.', 'success');
@@ -858,7 +858,7 @@ function populateSourcesTable() {
     deleteButton.addEventListener('click', () => {
       if (confirm(`„${xmlSources[i].label}" löschen?`)) {
         xmlSources.splice(i, 1);
-        saveJsonToLocalStorage('ceXmlSources', xmlSources);
+        saveJson('ceXmlSources', xmlSources);
         rebuildSourceDropdown();
         populateSourcesTable();
         showToast('Gelöscht.', 'info');
@@ -1058,7 +1058,7 @@ function init() {
 
   if (isDebug) el.debugLog.style.display = 'block';
 
-  xmlSources = loadJsonFromLocalStorage('ceXmlSources', [...DEFAULT_SOURCES]);
+  xmlSources = loadJson('ceXmlSources', [...DEFAULT_SOURCES]);
 
   rebuildSourceDropdown();
   populateSourcesTable();

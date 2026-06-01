@@ -1,7 +1,4 @@
-import { $ } from '../lib/browser.js';
-import { fetchText } from '../lib/browser.js';
-import { loadJson, saveJson } from '../lib/browser.js';
-import { downloadText } from '../lib/browser.js';
+import { $, fetchText, loadJson, saveJson, downloadText, createStatusSetter } from '../lib/browser.js';
 
 const API_BASE = 'https://api-oa.com/api/v2/project/';
 const PARALLEL_DEFAULT = 4;
@@ -24,10 +21,7 @@ const state = {
   lastJson: '',
 };
 
-function setStatus(kind, text) {
-  ui.statusPill.className = `pill ${kind}`;
-  ui.statusText.textContent = text;
-}
+const setStatus = createStatusSetter(ui.statusPill);
 
 function parseIds(raw) {
   return String(raw || '')

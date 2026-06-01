@@ -8,7 +8,7 @@
    - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Debug-Liste
 */
 
-import { $, buildParams, fetchJson, downloadText, rateLimit, extractItems, extractTotal, extractId } from '../lib/browser.js';
+import { $, buildParams, fetchJson, downloadText, rateLimit, extractItems, extractTotal, extractId, createStatusSetter } from '../lib/browser.js';
 
 const el = $;
 
@@ -196,11 +196,7 @@ function findMissingCopyrightMedia(item) {
 
 /* ------------------------- UI helpers ------------------------- */
 
-function setStatus(text, cls) {
-  const s = el("status");
-  s.textContent = text;
-  s.className = "pill " + cls;
-}
+const setStatus = createStatusSetter(el('status'));
 
 function log(msg) {
   const l = el("log");

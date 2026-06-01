@@ -1,4 +1,4 @@
-import { $, downloadText, parseXml } from '../lib/browser.js';
+import { $, downloadText, parseXml, createStatusSetter } from '../lib/browser.js';
 
 const ui = {
   file: $('xmlFile'),
@@ -14,11 +14,7 @@ const ui = {
 
 let rows = [];
 
-function setStatus(text, state = 'idle') {
-  if (!ui.status) return;
-  ui.status.className = `pill ${state}`;
-  ui.status.querySelector('span:last-child').textContent = text;
-}
+const setStatus = createStatusSetter(ui.status);
 
 function setError(message = '') {
   if (!ui.error) return;

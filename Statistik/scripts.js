@@ -1,4 +1,4 @@
-import { fetchText, parseXml, downloadText } from '../lib/browser.js';
+import { fetchText, parseXml, downloadText, createSelect, createStatusSetter } from '../lib/browser.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const API_BASE = window.SATOURN_SEARCH_API_BASE
@@ -72,12 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return String(error.message || error).slice(0, 180);
   };
 
-  function setPill(stateName, text) {
-    if (!elements.statusPill || !elements.statusText) return;
-    elements.statusPill.classList.remove('run', 'ok', 'err', 'idle');
-    elements.statusPill.classList.add(stateName || 'idle');
-    elements.statusText.textContent = text;
-  }
+  const setPill = createStatusSetter(elements.statusPill);
 
   function setProgress(done, total) {
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -179,16 +174,6 @@ document.addEventListener('DOMContentLoaded', () => {
       state.categoriesCache.set(type, []);
       return [];
     }
-  }
-
-  function createSelect({ id, container, placeholder, values, onChange }) {
-    const select = document.createElement('select');
-    select.id = id;
-    select.appendChild(new Option(placeholder, ''));
-    values.forEach((value) => select.appendChild(new Option(value, value)));
-    select.addEventListener('change', () => onChange(select.value || null, select));
-    container.replaceChildren(select);
-    return select;
   }
 
   async function loadAreas() {

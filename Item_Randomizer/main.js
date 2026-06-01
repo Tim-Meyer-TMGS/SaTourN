@@ -1,4 +1,4 @@
-import { $, buildParams, fetchJson, downloadText, rateLimit, extractItems, extractTotal, extractId } from '../lib/browser.js';
+import { $, buildParams, fetchJson, downloadText, rateLimit, extractItems, extractTotal, extractId, createStatusSetter } from '../lib/browser.js';
 
 const ui = {
   runBtn: $('runBtn'),
@@ -9,11 +9,7 @@ const ui = {
 
 const el = (id) => document.getElementById(id);
 
-function setStatus(text, state) {
-  const pill = el('status');
-  pill.querySelector('span:last-child').textContent = text;
-  pill.className = `pill ${state}`;
-}
+const setStatus = createStatusSetter(el('status'));
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
