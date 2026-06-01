@@ -2,6 +2,8 @@
    DZT KG Finder
 ========================== */
 
+import { fetchJson } from '../lib/browser.js';
+
 /* ==========================
    Konfiguration
 ========================== */
@@ -264,10 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (kw) url.searchParams.set('kw', kw);
     url.searchParams.set('filterDsList', DS_LIST_URL);
 
-    const res = await fetch(url.toString(), { headers: kgHeaders({ page, pageSize: PAGE_SIZE }) });
-    if (!res.ok) throw new Error(`Suche fehlgeschlagen (${res.status})`);
-
-    const data = await res.json();
+    const data = await fetchJson(url.toString(), { headers: kgHeaders({ page, pageSize: PAGE_SIZE }) });
     const items = Array.isArray(data) ? data
       : Array.isArray(data?.data) ? data.data
       : Array.isArray(data?.items) ? data.items
@@ -285,10 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = new URL(`${KG_BASE}/v1/kg/things/${encodeURIComponent(id)}`);
     url.searchParams.set('ns', ns);
 
-    const res = await fetch(url.toString(), { headers: kgHeaders({ hop: 3 }) });
-    if (!res.ok) throw new Error(`Abruf fehlgeschlagen (${res.status})`);
-
-    const data = await res.json();
+    const data = await fetchJson(url.toString(), { headers: kgHeaders({ hop: 3 }) });
     return { uri, data };
   }
 

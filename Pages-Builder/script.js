@@ -1,3 +1,6 @@
+import { fetchText } from '../lib/browser.js';
+import { sanitizeXml } from '../lib/browser.js';
+
 "use strict";
 
 /**
@@ -66,18 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Helper
   // ===========================================================================
 
-  async function fetchText(url) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.text();
-  }
 
-  function sanitizeXml(txt) {
-    return String(txt)
-      .replace(/<texts[\s\S]*?<\/texts>/gi, "")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/&(?![a-zA-Z]+;|#\d+;|#x[a-fA-F0-9]+;)/g, "&amp;");
-  }
 
   function normalizeKey(s) {
     return (s || "")

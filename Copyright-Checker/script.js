@@ -8,102 +8,13 @@
    - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Debug-Liste
 */
 
-const el = (id) => document.getElementById(id);
+import { $, buildParams, fetchJson, downloadText, rateLimit, extractItems, extractTotal, extractId } from '../lib/browser.js';
+
+const el = $;
 
 /* ------------------------- small utils ------------------------- */
 
-function buildParams(obj) {
-  const p = new URLSearchParams();
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined || v === null || v === "") continue;
-    p.set(k, String(v));
-  }
-  return p.toString();
-}
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function rateLimit(minIntervalMs, state) {
-  const now = performance.now();
-  const elapsed = now - state.lastStart;
-  const wait = Math.max(0, minIntervalMs - elapsed);
-  if (wait > 0) await sleep(wait);
-  state.lastStart = performance.now();
-}
-
-async function fetchJson(baseUrl, params, abortSignal) {
-  const url = baseUrl + "?" + buildParams(params);
-  const res = await fetch(url, { method: "GET", signal: abortSignal });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status}: ${txt.slice(0, 300)}`);
-  }
-  return res.json();
-}
-
 /* ------------------------- ET4 response helpers ------------------------- */
-
-function extractItems(payload) {
-  const keys = ["items", "results", "Result", "Documents", "document", "data"];
-  for (const k of keys) {
-    const v = payload?.[k];
-    if (Array.isArray(v)) return v;
-    if (v && typeof v === "object") {
-      for (const kk of keys) {
-        const vv = v?.[kk];
-        if (Array.isArray(vv)) return vv;
-      }
-    }
-  }
-  for (const v of Object.values(payload || {})) {
-    if (Array.isArray(v) && v.length && typeof v[0] === "object") return v;
-  }
-  return [];
-}
-
-function extractTotal(payload) {
-  const keys = [
-    "overallcount",
-    "overallCount",
-    "total",
-    "Total",
-    "totalHits",
-    "TotalHits",
-    "numFound",
-    "NumFound",
-    "count",
-    "Count",
-    "hits",
-    "Hits",
-  ];
-  for (const k of keys) {
-    const v = payload?.[k];
-    if (Number.isInteger(v)) return v;
-    if (typeof v === "string" && /^\d+$/.test(v)) return parseInt(v, 10);
-  }
-  for (const mk of ["meta", "Meta", "info", "Info"]) {
-    const meta = payload?.[mk];
-    if (meta && typeof meta === "object") {
-      for (const k of keys) {
-        const v = meta?.[k];
-        if (Number.isInteger(v)) return v;
-        if (typeof v === "string" && /^\d+$/.test(v)) return parseInt(v, 10);
-      }
-    }
-  }
-  return null;
-}
-
-function extractId(item) {
-  if (item?.global_id != null) return String(item.global_id);
-  if (item?.globalId != null) return String(item.globalId);
-  if (item?.id != null && item?.channel != null)
-    return `${String(item.channel)}_${String(item.id)}`;
-  if (item?.id != null) return String(item.id);
-  return "";
-}
 
 function extractTitle(item) {
   const keys = ["title", "Title", "name", "Name", "headline", "Headline"];
@@ -385,19 +296,6 @@ function toCsv(rows) {
   return lines.join("\n");
 }
 
-function downloadBlob(filename, data, mime) {
-  const blob = new Blob([data], { type: mime });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(a.href);
-    a.remove();
-  }, 1000);
-}
-
 function idsFingerprint(items, n = 30) {
   return items
     .map((it) => extractId(it))
@@ -425,7 +323,7 @@ el("stopBtn").addEventListener("click", () => {
 
 el("downloadBtn").addEventListener("click", () => {
   const csv = toCsv(lastMissing);
-  downloadBlob("missing_copyright.csv", csv, "text/csv;charset=utf-8");
+  downloadText('missing_copyright.csv', csv, 'text/csv;charset=utf-8');
 });
 
 el("runBtn").addEventListener("click", async () => {

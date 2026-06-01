@@ -26,7 +26,7 @@
   {% include footer.html %}
 
   {% if page.js %}
-    <script src="{{ page.js | relative_url }}"></script>
+    <script{% if page.module %} type="module"{% endif %} src="{{ page.js | relative_url }}"></script>
   {% endif %}
 </body>
 </html>

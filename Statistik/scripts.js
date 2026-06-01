@@ -1,3 +1,5 @@
+import { fetchText, parseXml, downloadText } from '../lib/browser.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   const API_BASE = window.SATOURN_SEARCH_API_BASE
     || (location.hostname === 'localhost' || location.hostname === '127.0.0.1'
@@ -120,14 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return url.toString();
   }
 
-  function parseXml(xmlText) {
-    const xml = new DOMParser().parseFromString(String(xmlText || ''), 'application/xml');
-    if (xml.getElementsByTagName('parsererror').length) {
-      throw new Error('Ungültige XML-Antwort');
-    }
-    return xml;
-  }
-
   function parseCount(xmlText) {
     const xml = parseXml(xmlText);
     const raw = xml.getElementsByTagName('overallcount')[0]?.textContent;
@@ -138,14 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return count;
   }
 
-  async function fetchText(url, signal) {
-    const response = await fetch(url, { signal });
-    const text = await response.text();
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${text.slice(0, 220)}`);
-    }
-    return text;
-  }
 
   function extractItemTitles(xmlText) {
     const xml = parseXml(xmlText);
@@ -728,16 +714,8 @@ document.addEventListener('DOMContentLoaded', () => {
       })
     ].map((line) => line.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';'));
 
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `satourn-statistik-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      URL.revokeObjectURL(link.href);
-      link.remove();
-    }, 1000);
+    const filename = `satourn-statistik-${new Date().toISOString().slice(0, 10)}.csv`;
+    downloadText(filename, lines.join('\n'), 'text/csv;charset=utf-8');
   }
 
   function currentFilters() {
