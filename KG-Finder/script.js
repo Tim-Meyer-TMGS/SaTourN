@@ -5,10 +5,8 @@
 /* ==========================
    Konfiguration
 ========================== */
-const API_BASE = window.SATOURN_KG_API_BASE
-  || (location.hostname === 'localhost' || location.hostname === '127.0.0.1'
-    ? 'http://localhost:3000/api/kg'
-    : 'https://satourn.onrender.com/api/kg');
+const KG_BASE = 'https://proxy.opendatagermany.io/api/ts';
+const DS_LIST_URL = 'https://semantify.it/list/CRkyvcqGqeUu';
 const FIXED_LANG = 'de';
 const PAGE_SIZE = 10;
 
@@ -38,6 +36,42 @@ document.addEventListener('DOMContentLoaded', () => {
   function status(msg, isError = false) {
     statusEl.textContent = msg || '';
     statusEl.classList.toggle('kg-status-error', Boolean(isError));
+  }
+
+  function getApiKey() {
+    const configured = window.SATOURN_DZT_LICENSEKEY || window.DZT_LICENSEKEY || '';
+    const stored = sessionStorage.getItem('satourn.dztLicenseKey') || '';
+    return String(configured || stored).trim();
+  }
+
+  function ensureApiKey() {
+    const key = getApiKey();
+    if (key) return key;
+
+    const entered = prompt('DZT Knowledge Graph API-Key eingeben:');
+    if (entered && entered.trim()) {
+      sessionStorage.setItem('satourn.dztLicenseKey', entered.trim());
+      return entered.trim();
+    }
+
+    return '';
+  }
+
+  function kgHeaders({ page, pageSize, hop } = {}) {
+    const apiKey = ensureApiKey();
+    if (!apiKey) throw new Error('DZT API-Key fehlt.');
+
+    const headers = {
+      'x-api-key': apiKey,
+      accept: 'application/json',
+      inLang: FIXED_LANG
+    };
+
+    if (page) headers.page = String(page);
+    if (pageSize) headers['page-size'] = String(pageSize);
+    if (hop) headers['x-hop'] = String(hop);
+
+    return headers;
   }
 
   function loadingStatus(msg) {
@@ -107,13 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
-  }
-
   /* ==========================
      Bild-Auflösung aus ImageObject
   ========================== */
@@ -133,12 +160,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = u.pathname.split('/').pop();
       const ns = `${u.protocol}//${u.host}/entity`;
 
-      const url = new URL(`${API_BASE}/things/${encodeURIComponent(id)}`);
+      const url = new URL(`${KG_BASE}/v1/kg/things/${encodeURIComponent(id)}`);
       url.searchParams.set('ns', ns);
-      url.searchParams.set('inLang', FIXED_LANG);
-      url.searchParams.set('hop', '3');
 
-      const res = await fetch(url.toString(), { headers: { accept: 'application/json' } });
+      const res = await fetch(url.toString(), { headers: kgHeaders({ hop: 3 }) });
       if (!res.ok) return '';
 
       const data = await res.json();
@@ -235,13 +260,11 @@ document.addEventListener('DOMContentLoaded', () => {
      API Calls
   ========================== */
   async function queryThings({ kw }) {
-    const url = new URL(`${API_BASE}/things`);
+    const url = new URL(`${KG_BASE}/v2/kg/things`);
     if (kw) url.searchParams.set('kw', kw);
-    url.searchParams.set('inLang', FIXED_LANG);
-    url.searchParams.set('page', String(page));
-    url.searchParams.set('pageSize', String(PAGE_SIZE));
+    url.searchParams.set('filterDsList', DS_LIST_URL);
 
-    const res = await fetch(url.toString(), { headers: { accept: 'application/json' } });
+    const res = await fetch(url.toString(), { headers: kgHeaders({ page, pageSize: PAGE_SIZE }) });
     if (!res.ok) throw new Error(`Suche fehlgeschlagen (${res.status})`);
 
     const data = await res.json();
@@ -259,12 +282,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const ns = uri.substring(0, p);
     const id = uri.substring(p + 1);
 
-    const url = new URL(`${API_BASE}/things/${encodeURIComponent(id)}`);
+    const url = new URL(`${KG_BASE}/v1/kg/things/${encodeURIComponent(id)}`);
     url.searchParams.set('ns', ns);
-    url.searchParams.set('inLang', FIXED_LANG);
-    url.searchParams.set('hop', '3');
 
-    const res = await fetch(url.toString(), { headers: { accept: 'application/json' } });
+    const res = await fetch(url.toString(), { headers: kgHeaders({ hop: 3 }) });
     if (!res.ok) throw new Error(`Abruf fehlgeschlagen (${res.status})`);
 
     const data = await res.json();

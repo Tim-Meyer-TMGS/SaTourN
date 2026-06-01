@@ -14,9 +14,19 @@ SaTourN Tools bündelt interne Web-Werkzeuge für Statistik, Destination.One-Lin
 Der Proxy akzeptiert die Secret-Namen aus dem GitHub/Render-Setup:
 
 ```text
-LICENSEKEY      Destination.One / ET4 License Key
-DZT_LICENSEKEY  DZT Knowledge Graph API Key
+LICENSEKEY      Destination.One / ET4 License Key für den OnRender-Proxy
+DZT_LICENSEKEY  DZT Knowledge Graph API Key für den KG-Finder
 ```
+
+Der Destination.One-Key wird serverseitig im OnRender-Proxy genutzt. Der KG-Finder greift direkt auf die DZT-/OpenDataGermany-Endpunkte zu; dafür muss der DZT-Key im Browser verfügbar sein, z. B. über eine nicht versionierte `KG-Finder/config.js`:
+
+```js
+window.SATOURN_DZT_LICENSEKEY = "...";
+```
+
+Wichtig: Ein direkter Browser-Zugriff bedeutet, dass der KG-Key für Nutzer der Seite technisch sichtbar ist. Wenn der Key geheim bleiben muss, braucht der KG-Finder ebenfalls einen Server-Proxy.
+
+Der GitHub-Pages-Workflow schreibt `KG-Finder/config.js` beim Build aus `secrets.DZT_LICENSEKEY`. Das hält den Key aus dem Repository heraus, macht ihn aber im ausgelieferten Frontend sichtbar.
 
 Optionale Overrides:
 
@@ -27,8 +37,14 @@ REQUEST_TIMEOUT_MS
 DESTINATION_ONE_BASE_URL
 DESTINATION_ONE_EXPERIENCE
 DESTINATION_ONE_TEMPLATE
-KG_DS_LIST_URL
-KG_LANG
+```
+
+Die Statistik-Oberfläche kann bei Bedarf vor dem Laden von `Statistik/scripts.js` über Browser-Globals angepasst werden:
+
+```js
+window.SATOURN_SEARCH_API_BASE = "https://satourn.onrender.com/api/search";
+window.SATOURN_STATISTIK_CONCURRENCY = 6;
+window.SATOURN_STATISTIK_WARN_REQUESTS = 120;
 ```
 
 ## Lokal starten

@@ -15,6 +15,8 @@ import {
   normalizeQueryParam
 } from '../lib/search-utils.js';
 
+const OPEN_DATA_LICENSE_QUERY = '(attribute_license:CC0 OR attribute_license:CC-BY OR attribute_license:CC-BY-SA)';
+
 export function registerSearchRoute(app, cache) {
   app.get('/api/search', async (req, res) => {
     const { type, query = '', isOpenData = 'false', limit, scope, forceCities } = req.query;
@@ -27,8 +29,8 @@ export function registerSearchRoute(app, cache) {
     let qParam = normalizeQueryParam(query);
     if (String(isOpenData).toLowerCase() === 'true') {
       qParam = qParam
-        ? `${qParam} AND attribute_license:(CC0 OR CC-BY OR CC-BY-SA)`
-        : 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA)';
+        ? `${qParam} AND ${OPEN_DATA_LICENSE_QUERY}`
+        : OPEN_DATA_LICENSE_QUERY;
     }
 
     const cities = isCitiesRequest({

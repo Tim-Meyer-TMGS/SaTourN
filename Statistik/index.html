@@ -9,81 +9,128 @@ js: /Statistik/scripts.js
 <div class="statistik">
   <div class="wrap">
 
-    <div class="card">
+    <section class="card">
       <div class="hd">
         <strong>SaTourN-Statistik</strong>
-
-        <!-- Status Pill -->
-        <span class="pill run" id="status-pill">
+        <span class="pill ok" id="status-pill">
           <span class="dot" aria-hidden="true"></span>
           <span id="status-text">bereit</span>
         </span>
       </div>
 
       <div class="ct">
-
         <div class="grid">
           <div class="field">
             <label>
               Gebiet
-              <div class="form-group dropdown-container" id="area-dropdown-container"></div>
+              <div class="dropdown-container" id="area-dropdown-container"></div>
             </label>
           </div>
 
           <div class="field">
             <label>
               Ort
-              <div class="form-group dropdown-container" id="place-dropdown-container"></div>
+              <div class="dropdown-container" id="place-dropdown-container"></div>
             </label>
           </div>
 
           <div class="field">
             <label>
               Typ
-              <div class="form-group dropdown-container" id="type-dropdown-container"></div>
+              <div class="dropdown-container" id="type-dropdown-container"></div>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>
+              Kategorie
+              <div class="dropdown-container" id="category-dropdown-container"></div>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>
+              Sortierung
+              <select id="sort-select">
+                <option value="default">Standard</option>
+                <option value="pct-desc">Open-Data % absteigend</option>
+                <option value="pct-asc">Open-Data % aufsteigend</option>
+                <option value="stat-desc">SaTourN absteigend</option>
+                <option value="open-desc">Open-Data absteigend</option>
+                <option value="errors">Fehler zuerst</option>
+              </select>
             </label>
           </div>
 
           <div class="full checks">
             <label class="checkline">
-              <input type="checkbox" id="all-areas-checkbox" />
+              <input type="checkbox" id="all-areas-checkbox">
               Alle Gebiete abfragen
             </label>
           </div>
 
           <div class="btn">
-            <button id="search-button" class="primary">Ergebnisse suchen</button>
+            <button id="search-button" class="primary" type="button">Ergebnisse suchen</button>
           </div>
 
-          <!-- Fortschritt -->
-          <div class="wide progWrap" aria-live="polite" style="display:none;">
+          <div class="btn">
+            <button id="cancel-button" type="button" disabled>Abbrechen</button>
+          </div>
+
+          <div class="btn">
+            <button id="export-button" type="button" disabled>CSV Export</button>
+          </div>
+
+          <div class="wide progWrap" aria-live="polite" hidden>
             <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <div class="bar" id="prog-bar" style="width:0%"></div>
             </div>
-            <div class="meta" id="prog-meta">0%</div>
+            <div class="meta" id="prog-meta">0/0</div>
           </div>
         </div>
 
-        <div id="loading-container" style="display:none;">
-          <svg id="coffee-cup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="96" height="96">
-            <path d="M4 20h48v24a12 12 0 01-12 12H16a12 12 0 01-12-12V20z" fill="#ccc" stroke="#fff" stroke-width="2" />
-            <rect id="coffee-fill" x="8" y="32" width="40" height="12" fill="#6f4e37" />
-            <path d="M52 24h4a8 8 0 010 16h-4" fill="none" stroke="#fff" stroke-width="2" />
+        <div id="loading-container" class="loading" hidden>
+          <svg id="coffee-cup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="76" height="76" aria-hidden="true">
+            <path d="M4 20h48v24a12 12 0 01-12 12H16a12 12 0 01-12-12V20z" fill="#ccc" stroke="#fff" stroke-width="2"></path>
+            <rect id="coffee-fill" x="8" y="32" width="40" height="12" fill="#6f4e37"></rect>
+            <path d="M52 24h4a8 8 0 010 16h-4" fill="none" stroke="#fff" stroke-width="2"></path>
           </svg>
-          <p class="muted" style="margin-top:10px;">Hol dir 'n Kaffee, das dauert 'ne Minute...</p>
+          <p class="muted">Abfrage läuft...</p>
         </div>
 
-        <div class="tableWrap" id="result"></div>
-
-        <div id="generated-url" class="log" style="display:none;"></div>
-
-        <div id="chart-container" style="display:none;">
-          <canvas id="pie-chart"></canvas>
+        <div id="summary" class="summary" hidden>
+          <div class="summary-item">
+            <span>SaTourN</span>
+            <strong id="summary-stat">0</strong>
+          </div>
+          <div class="summary-item">
+            <span>Open-Data</span>
+            <strong id="summary-open">0</strong>
+          </div>
+          <div class="summary-item">
+            <span>Quote</span>
+            <strong id="summary-pct">0%</strong>
+          </div>
+          <div class="summary-item">
+            <span>Fehler</span>
+            <strong id="summary-errors">0</strong>
+          </div>
         </div>
 
+        <div id="chart-container" class="chart-grid" hidden>
+          <div class="chart-card">
+            <div class="chart-title">Open-Data Anteil</div>
+            <canvas id="ratio-chart" height="230"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Quote nach Typ</div>
+            <canvas id="type-chart" height="230"></canvas>
+          </div>
+        </div>
+
+        <div class="tableWrap" id="result" hidden></div>
       </div>
-    </div>
+    </section>
 
   </div>
 </div>
-

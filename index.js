@@ -3,7 +3,6 @@ import cors from 'cors';
 
 import { CACHE_TTL_MS, PORT } from './lib/config.js';
 import { TTLCache } from './lib/cache.js';
-import { registerKgRoutes } from './routes/kg.js';
 import { registerSearchRoute } from './routes/search.js';
 
 const app = express();
@@ -23,7 +22,6 @@ app.get('/health', (req, res) => {
 });
 
 registerSearchRoute(app, cache);
-registerKgRoutes(app, cache);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });

@@ -1,113 +1,86 @@
-/* Statistik – im Stil der Vorlage (item-randomizer), aber scoped auf .statistik */
+/* Statistik - scoped to .statistik */
 
-/* wrap */
-.statistik .wrap{
-  max-width: 980px;
+.statistik .wrap {
+  max-width: 1180px;
   margin: 0 auto;
-  display:grid;
-  gap:16px;
+  display: grid;
+  gap: 16px;
 }
 
-/* card */
-.statistik .card{
-  background: linear-gradient(180deg, var(--surface), var(--surface2));
+.statistik .card {
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow:hidden;
+  overflow: hidden;
 }
 
-/* header */
-.statistik .hd{
+.statistik .hd {
   padding: 14px 16px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  border-bottom:1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04);
-}
-.statistik .hd strong{
-  font-size:14px;
-  letter-spacing:.2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(0, 0, 0, .20);
 }
 
-/* content */
-.statistik .ct{ padding: 16px; }
+.statistik .hd strong {
+  font-size: 16px;
+}
 
-/* pills (wie Vorlage) */
-.statistik .pill{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.04);
+.statistik .ct {
+  padding: 16px;
+}
+
+.statistik .grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.statistik .field {
+  grid-column: span 3;
+}
+
+.statistik .wide {
+  grid-column: span 6;
+}
+
+.statistik .full {
+  grid-column: span 12;
+}
+
+.statistik .btn {
+  grid-column: span 2;
+}
+
+.statistik label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
   color: var(--muted);
-  font-size:12px;
-  white-space:nowrap;
-}
-.statistik .dot{
-  width:10px;height:10px;border-radius:999px;
-  background: rgba(255,255,255,.25);
-}
-.statistik .pill.run .dot{ background: var(--warn); }
-.statistik .pill.ok  .dot{ background: var(--accentA); }
-.statistik .pill.err .dot{ background: var(--err); }
-
-/* grid wie Vorlage */
-.statistik .grid{
-  display:grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap:12px;
-  align-items:end;
-}
-.statistik .field{ grid-column: span 4; }
-.statistik .wide { grid-column: span 6; }
-.statistik .full { grid-column: span 12; }
-.statistik .btn  { grid-column: span 3; }
-
-@media (max-width: 980px){
-  .statistik .field{ grid-column: span 6; }
-  .statistik .wide { grid-column: span 12; }
-  .statistik .btn  { grid-column: span 6; }
-}
-@media (max-width: 560px){
-  .statistik .field,
-  .statistik .wide,
-  .statistik .btn{ grid-column: span 12; }
+  font-weight: 700;
 }
 
-/* labels */
-.statistik label{
-  display:grid;
-  gap:6px;
-  font-size:12px;
-  color: var(--muted);
-}
-
-/* select + input styling (dark) */
 .statistik select,
 .statistik input,
-.statistik textarea{
-  width:100%;
-  padding:11px 12px;
-  border-radius: 12px;
-  border:1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.18);
+.statistik textarea {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(0, 0, 0, .24);
   color: var(--text);
-  outline:none;
+  outline: none;
 }
 
-/* custom arrow for select */
-.statistik select{
-  appearance:none;
-  -webkit-appearance:none;
-  -moz-appearance:none;
+.statistik select {
+  appearance: none;
   background-image:
-    linear-gradient(45deg, transparent 50%, rgba(255,255,255,.65) 50%),
-    linear-gradient(135deg, rgba(255,255,255,.65) 50%, transparent 50%);
+    linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, .72) 50%),
+    linear-gradient(135deg, rgba(255, 255, 255, .72) 50%, transparent 50%);
   background-position:
     calc(100% - 18px) 50%,
     calc(100% - 12px) 50%;
@@ -115,159 +88,265 @@
   background-repeat: no-repeat;
   padding-right: 34px;
 }
-.statistik select option{
-  background: rgba(10,16,32,.98);
+
+.statistik select option {
+  background: var(--bg2);
   color: var(--text);
 }
 
 .statistik select:focus,
 .statistik input:focus,
-.statistik textarea:focus{
-  border-color: rgba(124,255,199,.55);
-  box-shadow: 0 0 0 4px rgba(124,255,199,.12);
+.statistik textarea:focus {
+  border-color: var(--accentA);
+  box-shadow: var(--focus);
 }
 
-/* checkbox line */
-.statistik .checks{ margin-top: 2px; }
-.statistik .checkline{
-  display:inline-flex;
-  align-items:center;
-  gap:10px;
+.statistik .checkline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
   padding: 10px 12px;
-  border-radius: 12px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.03);
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(0, 0, 0, .18);
+  color: var(--text);
 }
-.statistik #all-areas-checkbox{
+
+.statistik #all-areas-checkbox {
   width: 18px;
   height: 18px;
   accent-color: var(--accentA);
 }
 
-/* buttons */
-.statistik button{
-  width:100%;
-  padding:11px 12px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.14);
-  background: rgba(255,255,255,.06);
+.statistik button {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(0, 0, 0, .26);
   color: var(--text);
-  cursor:pointer;
+  cursor: pointer;
 }
-.statistik button.primary{
-  background: linear-gradient(135deg, rgba(124,255,199,.22), rgba(89,122,255,.22));
-  border-color: rgba(124,255,199,.32);
+
+.statistik button.primary {
+  background: rgba(0, 188, 212, .28);
+  border-color: rgba(0, 188, 212, .65);
   font-weight: 700;
 }
-.statistik button:disabled{ opacity:.5; cursor:not-allowed; }
 
-/* progress (wie Vorlage) */
-.statistik .progWrap{ display:flex; gap:10px; align-items:center; }
-.statistik .prog{
-  flex:1;
-  height:12px;
-  border-radius:999px;
-  background: rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.10);
-  overflow:hidden;
+.statistik button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
 }
-.statistik .bar{
-  height:100%;
-  width:0%;
-  background: linear-gradient(90deg, rgba(124,255,199,.85), rgba(89,122,255,.85));
-  transition: width .2s ease;
+
+.statistik .progWrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
-.statistik .meta{
+
+.statistik .progWrap[hidden] {
+  display: none;
+}
+
+.statistik .prog {
+  flex: 1;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .12);
+  overflow: hidden;
+}
+
+.statistik .bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accentA), var(--accentB));
+  transition: width .18s ease;
+}
+
+.statistik .meta {
+  min-width: 72px;
+  text-align: right;
   font-family: var(--mono);
-  font-size:12px;
-  color: rgba(255,255,255,.82);
-  white-space:nowrap;
+  font-size: 12px;
+  color: rgba(255, 255, 255, .84);
+  white-space: nowrap;
 }
 
-/* results table wrap */
-.statistik .tableWrap{
+.statistik .loading {
   margin-top: 14px;
-  max-height: 420px;
-  overflow:auto;
-  border-radius: 14px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.03);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
 }
 
-/* table: ohne horizontales scrollen, dafür wrapping */
-.statistik .tableWrap table{
-  width:100%;
-  border-collapse:collapse;
-  table-layout: fixed;
-  min-width: 0; /* wichtig gegen forced min-width */
+.statistik .loading[hidden] {
+  display: none;
+}
+
+.statistik .summary {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.statistik .summary[hidden] {
+  display: none;
+}
+
+.statistik .summary-item {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, .20);
+}
+
+.statistik .summary-item span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.statistik .summary-item strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.statistik .chart-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 12px;
+}
+
+.statistik .chart-grid[hidden] {
+  display: none;
+}
+
+.statistik .chart-card {
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(0, 0, 0, .20);
+}
+
+.statistik .chart-title {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.statistik canvas {
+  width: 100%;
+  height: 230px;
+  display: block;
+}
+
+.statistik .tableWrap {
+  margin-top: 14px;
+  max-height: 520px;
+  overflow: auto;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(0, 0, 0, .18);
+}
+
+.statistik .tableWrap[hidden] {
+  display: none;
+}
+
+.statistik .tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
 }
 
 .statistik .tableWrap th,
-.statistik .tableWrap td{
-  padding:10px;
-  border-bottom:1px solid rgba(255,255,255,.08);
-  font-size:13px;
+.statistik .tableWrap td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  font-size: 13px;
   vertical-align: top;
-  white-space: normal;         /* wrap */
-  word-break: break-word;      /* lange Wörter umbrechen */
+  white-space: normal;
+  word-break: break-word;
 }
 
-.statistik .tableWrap th{
-  position:sticky;
-  top:0;
-  background: rgba(10,16,32,.88);
-  backdrop-filter: blur(10px);
-  text-align:left;
-  font-weight:600;
+.statistik .tableWrap th {
+  position: sticky;
+  top: 0;
+  background: rgba(0, 43, 80, .96);
+  text-align: left;
+  font-weight: 700;
+  z-index: 1;
 }
 
-/* numeric cols right + tabular nums */
 .statistik .tableWrap th:nth-child(5),
 .statistik .tableWrap th:nth-child(6),
 .statistik .tableWrap th:nth-child(7),
 .statistik .tableWrap td:nth-child(5),
 .statistik .tableWrap td:nth-child(6),
-.statistik .tableWrap td:nth-child(7){
-  text-align:right;
+.statistik .tableWrap td:nth-child(7) {
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-/* subtle zebra + hover */
-.statistik .tableWrap tbody tr:nth-child(even){
-  background: rgba(255,255,255,.03);
-}
-.statistik .tableWrap tbody tr:hover{
-  background: rgba(124,255,199,.08);
+.statistik .tableWrap tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, .03);
 }
 
-/* log block (für generated-url) */
-.statistik .log{
-  margin-top: 12px;
-  font-family: var(--mono);
-  font-size:12px;
-  line-height:1.4;
-  background: rgba(0,0,0,.22);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius: 14px;
-  padding:12px;
-  max-height:140px;
-  overflow:auto;
-  white-space:pre-wrap;
-  word-break:break-word;
+.statistik .tableWrap tbody tr:hover {
+  background: rgba(0, 188, 212, .10);
 }
 
-.statistik .muted{
-  color: var(--muted);
-  font-size:12px;
-  line-height:1.45;
-  margin:0;
+.statistik .row-error td {
+  background: rgba(255, 107, 107, .08);
 }
 
-/* chart container */
-.statistik #chart-container{
-  margin-top: 14px;
-  padding: 14px;
-  border-radius: 14px;
-  border:1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.03);
+.statistik .status-ok {
+  color: var(--ok);
+}
+
+.statistik .status-error {
+  color: var(--err);
+}
+
+@media (max-width: 980px) {
+  .statistik .field {
+    grid-column: span 6;
+  }
+
+  .statistik .wide,
+  .statistik .btn {
+    grid-column: span 6;
+  }
+
+  .statistik .summary,
+  .statistik .chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .statistik .field,
+  .statistik .wide,
+  .statistik .btn {
+    grid-column: span 12;
+  }
+
+  .statistik .summary,
+  .statistik .chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .statistik .checkline {
+    width: 100%;
+  }
 }

@@ -1,25 +1,27 @@
 .home {
   display: grid;
-  gap: 22px;
+  gap: 24px;
+  min-height: calc(100vh - 190px);
+  align-content: center;
 }
 
 .home-head {
   display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 18px;
-  padding: 18px 0 4px;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 4px 0;
 }
 
 .home-logo {
-  width: min(280px, 48vw);
+  width: min(720px, 100%);
   height: auto;
   display: block;
 }
 
 .home h1 {
   margin: 0 0 6px;
-  font-size: 48px;
+  font-size: 34px;
   line-height: 1;
 }
 
@@ -36,20 +38,24 @@
 }
 
 .tool-card {
-  min-height: 142px;
+  min-height: 138px;
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 18px;
-  padding: 18px;
+  padding: 20px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  background: rgba(0, 0, 0, .30);
   box-shadow: var(--shadow);
+  text-align: center;
+  justify-items: center;
+  transition: transform .2s ease, background .2s ease;
 }
 
 .tool-card:hover {
   border-color: var(--border-strong);
-  background: linear-gradient(180deg, var(--surface3), var(--surface2));
+  background: rgba(0, 0, 0, .38);
+  transform: translateY(-6px);
   text-decoration: none;
 }
 
@@ -58,18 +64,18 @@
   height: 44px;
   display: inline-grid;
   place-items: center;
-  border: 1px solid rgba(124, 255, 199, .24);
+  border: 1px solid rgba(0, 188, 212, .34);
   border-radius: var(--radius);
-  background: rgba(124, 255, 199, .09);
+  background: rgba(0, 188, 212, .12);
   color: var(--accentA);
-  font-size: 25px;
+  font-size: 28px;
 }
 
 .tool-card strong {
   display: block;
   margin-bottom: 6px;
   color: var(--text);
-  font-size: 17px;
+  font-size: 19px;
 }
 
 .tool-card small {
@@ -88,15 +94,11 @@
 @media (max-width: 760px) {
   .home-head {
     grid-template-columns: 1fr;
-    gap: 14px;
+    justify-items: center;
   }
 
   .tool-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .home h1 {
-    font-size: 34px;
   }
 }
 

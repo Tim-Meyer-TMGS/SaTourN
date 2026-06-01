@@ -1,34 +1,34 @@
-/* ==========================================================================
-   SaTourN shared UI
-   ========================================================================== */
+/* ===============================
+   SaTourN Base UI
+   =============================== */
 
 :root {
   color-scheme: dark;
 
-  --bg0: #071016;
-  --bg1: #0a1620;
-  --bg2: #101821;
-  --surface: rgba(255, 255, 255, .075);
-  --surface2: rgba(255, 255, 255, .035);
-  --surface3: rgba(255, 255, 255, .11);
-  --border: rgba(255, 255, 255, .13);
-  --border-strong: rgba(124, 255, 199, .34);
+  --bg0: #001f3d;
+  --bg1: #003366;
+  --bg2: #002b50;
 
-  --text: rgba(255, 255, 255, .93);
-  --muted: rgba(225, 238, 245, .68);
-  --subtle: rgba(225, 238, 245, .48);
+  --text: rgba(255, 255, 255, .94);
+  --muted: rgba(255, 255, 255, .70);
+  --subtle: rgba(255, 255, 255, .52);
 
-  --accentA: #7cffc7;
-  --accentB: #5f8cff;
-  --accentC: #f2c94c;
+  --surface: rgba(255, 255, 255, .10);
+  --surface2: rgba(0, 0, 0, .22);
+  --surface3: rgba(255, 255, 255, .15);
+  --border: rgba(255, 255, 255, .16);
+  --border-strong: rgba(0, 188, 212, .54);
+
+  --accentA: #00bcd4;
+  --accentB: #28a745;
   --warn: #f2c94c;
   --err: #ff6b6b;
-  --ok: #7cffc7;
+  --ok: #28d17c;
 
-  --radius: 8px;
+  --radius: 10px;
   --radius-sm: 6px;
-  --shadow: 0 18px 48px rgba(0, 0, 0, .34);
-  --focus: 0 0 0 4px rgba(124, 255, 199, .13);
+  --shadow: 0 4px 10px rgba(0, 0, 0, .30);
+  --focus: 0 0 0 3px rgba(0, 188, 212, .22);
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
@@ -36,7 +36,8 @@
   box-sizing: border-box;
 }
 
-html {
+html,
+body {
   min-height: 100%;
 }
 
@@ -44,22 +45,8 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  background:
-    linear-gradient(145deg, rgba(124, 255, 199, .10), transparent 34%),
-    linear-gradient(235deg, rgba(95, 140, 255, .15), transparent 38%),
-    linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 46%, var(--bg2) 100%);
-  background-attachment: fixed;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image: linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px);
-  background-size: 100% 42px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .7), transparent 72%);
+  font-family: Roboto, Arial, sans-serif;
+  background: linear-gradient(to right, var(--bg0), var(--bg1));
 }
 
 a {
@@ -86,9 +73,9 @@ button,
   gap: 8px;
   min-height: 42px;
   padding: 10px 14px;
-  border: 1px solid rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .18);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, .065);
+  background: rgba(0, 0, 0, .28);
   color: var(--text);
   cursor: pointer;
   line-height: 1.15;
@@ -96,21 +83,26 @@ button,
 
 button:hover,
 .btn:hover {
-  background: rgba(255, 255, 255, .10);
+  background: rgba(0, 0, 0, .36);
   text-decoration: none;
 }
 
 button.primary,
 .btn.primary {
-  border-color: var(--border-strong);
-  background: linear-gradient(135deg, rgba(124, 255, 199, .20), rgba(95, 140, 255, .22));
+  border-color: rgba(0, 188, 212, .70);
+  background: rgba(0, 188, 212, .28);
   font-weight: 700;
+}
+
+button.primary:hover,
+.btn.primary:hover {
+  background: rgba(0, 188, 212, .36);
 }
 
 button:disabled,
 .btn:disabled,
 .btn[aria-disabled="true"] {
-  opacity: .52;
+  opacity: .55;
   cursor: not-allowed;
 }
 
@@ -119,9 +111,9 @@ select,
 textarea {
   width: 100%;
   padding: 11px 12px;
-  border: 1px solid rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .18);
   border-radius: var(--radius);
-  background: rgba(0, 0, 0, .22);
+  background: rgba(0, 0, 0, .28);
   color: var(--text);
   outline: none;
 }
@@ -132,7 +124,7 @@ textarea::placeholder {
 }
 
 select option {
-  background: #101821;
+  background: var(--bg2);
   color: var(--text);
 }
 
@@ -142,7 +134,7 @@ textarea:focus,
 button:focus-visible,
 a:focus-visible {
   outline: none;
-  border-color: rgba(124, 255, 199, .56);
+  border-color: var(--accentA);
   box-shadow: var(--focus);
 }
 
@@ -155,11 +147,11 @@ p {
 
 p {
   color: var(--muted);
-  line-height: 1.55;
+  line-height: 1.5;
 }
 
 .container {
-  width: min(1180px, calc(100% - 32px));
+  width: min(1180px, calc(100% - 40px));
   margin: 0 auto;
   padding: 24px 0 36px;
 }
@@ -168,7 +160,7 @@ p {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, var(--surface), var(--surface2));
+  background: var(--surface);
   box-shadow: var(--shadow);
 }
 
@@ -182,8 +174,8 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, .09);
-  background: rgba(255, 255, 255, .045);
+  border-bottom: 1px solid rgba(255, 255, 255, .11);
+  background: rgba(0, 0, 0, .18);
 }
 
 .card-ct {
@@ -196,9 +188,9 @@ p {
   gap: 8px;
   min-height: 28px;
   padding: 5px 10px;
-  border: 1px solid rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .14);
   border-radius: 999px;
-  background: rgba(255, 255, 255, .045);
+  background: rgba(0, 0, 0, .22);
   color: var(--muted);
   font-size: 12px;
   white-space: nowrap;
@@ -208,7 +200,7 @@ p {
   width: 9px;
   height: 9px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, .28);
+  background: rgba(255, 255, 255, .34);
 }
 
 .pill.run .dot,
@@ -232,33 +224,30 @@ p {
   font-family: var(--mono);
 }
 
-/* ==========================================================================
-   Global menu
-   ========================================================================== */
+/* ===============================
+   Global Menu
+   =============================== */
 
 .menu-container {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 12px max(16px, calc((100vw - 1180px) / 2));
-  border-bottom: 1px solid rgba(255, 255, 255, .09);
-  background: rgba(7, 16, 22, .88);
-  backdrop-filter: blur(18px);
+  gap: 20px;
+  padding: 14px max(20px, calc((100vw - 1180px) / 2));
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, .12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
 }
 
 .menu-container .logo {
   width: auto;
-  height: 44px;
+  height: 50px;
   display: block;
 }
 
 .menu-links {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -267,25 +256,22 @@ p {
 .menu-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   min-height: 38px;
   padding: 8px 10px;
-  border: 1px solid transparent;
   border-radius: var(--radius);
-  color: var(--muted);
-  font-weight: 650;
+  color: #004b5f;
+  font-weight: 700;
   line-height: 1;
 }
 
 .menu-item:hover {
-  border-color: rgba(255, 255, 255, .12);
-  background: rgba(255, 255, 255, .06);
-  color: var(--text);
+  background: rgba(0, 188, 212, .10);
   text-decoration: none;
 }
 
 .menu-icon {
-  font-size: 20px;
+  font-size: 21px;
   line-height: 1;
   color: var(--accentA);
 }
@@ -295,26 +281,26 @@ p {
   white-space: nowrap;
 }
 
-/* ==========================================================================
-   Footer
-   ========================================================================== */
+/* ===============================
+   Global Footer
+   =============================== */
 
 .footer {
-  padding: 26px 16px 30px;
-  color: var(--subtle);
+  padding: 24px 16px 28px;
+  color: rgba(255, 255, 255, .75);
   text-align: center;
 }
 
 .footer-container {
   width: min(1180px, 100%);
   margin: 0 auto;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, .08);
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, .12);
 }
 
 .footer p {
   margin: 0;
-  color: var(--subtle);
+  color: rgba(255, 255, 255, .75);
   font-size: 13px;
 }
 
@@ -322,7 +308,7 @@ p {
   .menu-container {
     align-items: flex-start;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
   }
 
   .menu-links {
@@ -337,15 +323,6 @@ p {
   }
 
   .menu-container .logo {
-    height: 38px;
-  }
-
-  .menu-item {
-    min-height: 36px;
-    padding: 7px 8px;
-  }
-
-  .menu-text {
-    font-size: 12px;
+    height: 44px;
   }
 }
