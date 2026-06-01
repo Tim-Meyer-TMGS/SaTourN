@@ -66,6 +66,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const cleanQueryValue = (value) => String(value || '').replaceAll('"', '').trim();
 
+  function getElementsByLocalName(root, name) {
+    try {
+      return Array.from((root || document).getElementsByTagName('*')).filter((el) => el.localName === name);
+    } catch (e) {
+      return [];
+    }
+  }
+
   const shortError = (error) => {
     if (!error) return 'Unbekannter Fehler';
     if (error.name === 'AbortError') return 'Abgebrochen';
@@ -119,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function parseCount(xmlText) {
     const xml = parseXml(xmlText);
-    const raw = xml.getElementsByTagName('overallcount')[0]?.textContent;
+    const raw = getElementsByLocalName(xml, 'overallcount')[0]?.textContent;
     if (raw == null) throw new Error('overallcount fehlt');
 
     const count = Number.parseInt(raw, 10);
@@ -130,8 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function extractItemTitles(xmlText) {
     const xml = parseXml(xmlText);
-    return Array.from(xml.getElementsByTagName('item'))
-      .map((item) => item.getElementsByTagName('title')[0]?.textContent?.trim())
+    return getElementsByLocalName(xml, 'item')
+      .map((item) => getElementsByLocalName(item, 'title')[0]?.textContent?.trim())
       .filter(Boolean)
       .sort((a, b) => a.localeCompare(b, 'de'));
   }
@@ -142,9 +150,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!response.ok) {
       throw new Error(`API-Fehler beim Laden der Gebiete: HTTP ${response.status}`);
     }
-    const titles = extractItemTitles(response.text);
-    state.areaCache = titles;
-    return titles;
+    try {
+      const titles = extractItemTitles(response.text);
+      state.areaCache = titles;
+      return titles;
+    } catch (err) {
+      throw new Error(`${err.message} (URL: ${buildUrl('Area')}, status: ${response.status}, contentType: ${response.contentType})`);
+    }
   }
 
   async function loadCityTitles(area, signal) {
@@ -154,7 +166,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!response.ok) {
       throw new Error(`API-Fehler beim Laden der Orte: HTTP ${response.status}`);
     }
-    return extractItemTitles(response.text);
+    try {
+      return extractItemTitles(response.text);
+    } catch (err) {
+      throw new Error(`${err.message} (URL: ${buildUrl('City', query)}, status: ${response.status}, contentType: ${response.contentType})`);
+    }
   }
 
   async function ensureCategoriesForType(type, signal) {
@@ -172,7 +188,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} beim Laden des Category-Tree`);
       }
-      const xml = parseXml(response.text);
+      let xml;
+      try {
+        xml = parseXml(response.text);
+      } catch (err) {
+        throw new Error(`${err.message} (URL: ${treeUrl}, status: ${response.status}, contentType: ${response.contentType})`);
+      }
       const categories = [...new Set(Array.from(xml.getElementsByTagName('Category'))
         .map((cat) => cat.getAttribute('Name'))
         .filter(Boolean))]
@@ -418,11 +439,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function fetchCountForJob(job, signal) {
-    const response = await fetchText(buildUrl(job.row.type, job.row.query, job.isOpenData), signal);
+    const url = buildUrl(job.row.type, job.row.query, job.isOpenData);
+    const response = await fetchText(url, signal);
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status} beim Abrufen der Zahl`);
+      throw new Error(`HTTP ${response.status} beim Abrufen der Zahl (URL: ${url})`);
     }
-    return parseCount(response.text);
+    try {
+      return parseCount(response.text);
+    } catch (err) {
+      const preview = String(response.text || '').slice(0, 400).replace(/\s+/g, ' ');
+      throw new Error(`${err.message} (URL: ${url}, status: ${response.status}, contentType: ${response.contentType}, preview: "${preview}...")`);
+    }
   }
 
   async function runQueue(rows, run) {
