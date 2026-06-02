@@ -1,6 +1,6 @@
 # SaTourN Tools
 
-SaTourN Tools bündelt interne Web-Werkzeuge für Statistik, Destination.One-Links, Datenprüfung und XML-Bearbeitung.
+SaTourN Tools bündelt interne Web-Werkzeuge für Statistik, Destination.One-Links, Datenprüfung und Kategorien-Bearbeitung.
 
 ## Struktur
 
@@ -59,7 +59,7 @@ Der Proxy läuft danach standardmäßig auf `http://localhost:3000`.
 ## Pages-Builder Daten aktualisieren
 
 ```bash
-npm run update:pagesbuilder-xml
+npm run update:pagesbuilder-json
 ```
 
-Das Skript lädt Areas und Cities über den Proxy und schreibt die statischen XML-Dateien nach `Pages-Builder/data/`.
+Das Skript lädt Areas und Cities über den Proxy und schreibt die statischen JSON-Dateien nach `Pages-Builder/data/`.

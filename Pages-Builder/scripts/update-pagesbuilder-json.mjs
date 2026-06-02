@@ -1,8 +1,8 @@
 /**
- * update-pagesbuilder-xml.mjs
+ * update-pagesbuilder-json.mjs
  * -----------------------------------------------------------------------------
  * Lädt Areas und Cities über den bestehenden Proxy und schreibt die Ergebnisse
- * als statische XML-Dateien in Pages-Builder/data/.
+ * als statische JSON-Dateien in Pages-Builder/data/.
  *
  * Motivation:
  *  - Pages-Builder soll primär aus Repo-Dateien laden (schnell, unabhängig).
@@ -20,21 +20,24 @@ const PROXY_BASE = "https://satourn.onrender.com/api/search";
 const OUT_DIR = path.resolve("Pages-Builder/data");
 
 const URLS = {
-  areas: `${PROXY_BASE}?type=Area`,            // erwartet XML
-  cities: `${PROXY_BASE}?type=City&limit=1000` // sollte idealerweise XML liefern
+  areas: `${PROXY_BASE}?type=Area`,
+  cities: `${PROXY_BASE}?type=City&limit=1000`
 };
 
 async function fetchText(url) {
   const res = await fetch(url, {
-    headers: { Accept: "application/xml,text/xml;q=0.9,*/*;q=0.8" },
+    headers: { Accept: "application/json,*/*;q=0.8" },
   });
   if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
   return await res.text();
 }
 
-function looksLikeXml(text) {
-  const t = (text || "").trim();
-  return t.startsWith("<") || t.startsWith("<?xml");
+function parseAndFormatJson(text, label) {
+  try {
+    return `${JSON.stringify(JSON.parse(text), null, 2)}\n`;
+  } catch {
+    throw new Error(`${label} response is not JSON. Proxy should return JSON for this type.`);
+  }
 }
 
 async function writeFileAtomic(filePath, content) {
@@ -51,30 +54,21 @@ async function main() {
     fetchText(URLS.cities),
   ]);
 
-  // Harte Validierung: Für Repo-Dateien wollen wir XML.
-  // Wenn dein Proxy aktuell Cities als JSON ausliefert (AUTO), bitte Proxy anpassen,
-  // damit Cities ebenfalls XML liefert – dann wird hier einfach 1:1 gespeichert.
-  if (!looksLikeXml(areasText)) {
-    throw new Error("Areas response is not XML. Proxy should return XML for type=Area.");
-  }
-  if (!looksLikeXml(citiesText)) {
-    throw new Error(
-      "Cities response is not XML. For repo storage, proxy should return XML for type=City."
-    );
-  }
+  const areasJson = parseAndFormatJson(areasText, "Areas");
+  const citiesJson = parseAndFormatJson(citiesText, "Cities");
 
-  const areasPath = path.join(OUT_DIR, "areas.xml");
-  const citiesPath = path.join(OUT_DIR, "cities.xml");
+  const areasPath = path.join(OUT_DIR, "areas.json");
+  const citiesPath = path.join(OUT_DIR, "cities.json");
 
-  await writeFileAtomic(areasPath, areasText);
-  await writeFileAtomic(citiesPath, citiesText);
+  await writeFileAtomic(areasPath, areasJson);
+  await writeFileAtomic(citiesPath, citiesJson);
 
-  console.log("✅ Updated:");
+  console.log("Updated:");
   console.log(" -", areasPath);
   console.log(" -", citiesPath);
 }
 
 main().catch((err) => {
-  console.error("❌ update-pagesbuilder-xml failed:", err.message);
+  console.error("update-pagesbuilder-json failed:", err.message);
   process.exit(1);
 });

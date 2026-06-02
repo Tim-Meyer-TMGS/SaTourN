@@ -1,4 +1,4 @@
-import { fetchText, parseXml, downloadText, createSelect, createStatusSetter } from '../lib/browser.js';
+import { fetchText, parseXml, downloadText, createSelect, createStatusSetter, extractItems, extractTotal } from '../lib/browser.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const API_BASE = window.SATOURN_SEARCH_API_BASE
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const CONCURRENCY = Math.max(1, Math.min(10, Number(window.SATOURN_STATISTIK_CONCURRENCY || 6)));
   const WARN_REQUEST_LIMIT = Number(window.SATOURN_STATISTIK_WARN_REQUESTS || 120);
 
-  const xmlUrls = {
+  const categoryTreeUrls = {
     Hotel: 'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml',
     Event: 'https://api.et4.de/Schema/eTouristV4/Veranstaltung/Sachsen-Tourismus/VeranstaltungTree.xml',
     Gastro: 'https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml',
@@ -66,14 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const cleanQueryValue = (value) => String(value || '').replaceAll('"', '').trim();
 
-  function getElementsByLocalName(root, name) {
-    try {
-      return Array.from((root || document).getElementsByTagName('*')).filter((el) => el.localName === name);
-    } catch (e) {
-      return [];
-    }
-  }
-
   const shortError = (error) => {
     if (!error) return 'Unbekannter Fehler';
     if (error.name === 'AbortError') return 'Abgebrochen';
@@ -125,28 +117,40 @@ document.addEventListener('DOMContentLoaded', () => {
     return url.toString();
   }
 
-  function parseCount(xmlText) {
-    const xml = parseXml(xmlText);
-    const raw = getElementsByLocalName(xml, 'overallcount')[0]?.textContent;
-    if (raw == null) throw new Error('overallcount fehlt');
+  function parseJsonPayload(text) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      const preview = String(text || '').slice(0, 300).replace(/\s+/g, ' ');
+      throw new Error(`JSON Parse-Fehler. Inhalt: "${preview}..."`);
+    }
+  }
 
-    const count = Number.parseInt(raw, 10);
-    if (!Number.isFinite(count)) throw new Error(`overallcount ungültig: ${raw}`);
+  function parseCount(jsonText) {
+    const count = extractTotal(parseJsonPayload(jsonText));
+    if (!Number.isFinite(count)) throw new Error('overallcount fehlt oder ist ungültig');
     return count;
   }
 
+  function extractItemTitles(jsonText) {
+    const getTitle = (item) => [
+      item?.title,
+      item?.Title,
+      item?.name,
+      item?.Name,
+      item?.presentation?.title,
+      item?.presentation?.name
+    ].map((value) => String(value ?? '').trim()).find(Boolean) || '';
 
-  function extractItemTitles(xmlText) {
-    const xml = parseXml(xmlText);
-    return getElementsByLocalName(xml, 'item')
-      .map((item) => getElementsByLocalName(item, 'title')[0]?.textContent?.trim())
+    return extractItems(parseJsonPayload(jsonText))
+      .map(getTitle)
       .filter(Boolean)
       .sort((a, b) => a.localeCompare(b, 'de'));
   }
 
   async function loadAreaTitles(signal) {
     if (state.areaCache) return state.areaCache;
-    const response = await fetchText(buildUrl('Area'), signal);
+    const response = await fetchText(buildUrl('Area'), { signal });
     if (!response.ok) {
       throw new Error(`API-Fehler beim Laden der Gebiete: HTTP ${response.status}`);
     }
@@ -162,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadCityTitles(area, signal) {
     if (!area) return [];
     const query = `area:"${cleanQueryValue(area)}"`;
-    const response = await fetchText(buildUrl('City', query), signal);
+    const response = await fetchText(buildUrl('City', query), { signal });
     if (!response.ok) {
       throw new Error(`API-Fehler beim Laden der Orte: HTTP ${response.status}`);
     }
@@ -177,14 +181,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!type) return [];
     if (state.categoriesCache.has(type)) return state.categoriesCache.get(type);
 
-    const treeUrl = xmlUrls[type];
+    const treeUrl = categoryTreeUrls[type];
     if (!treeUrl) {
       state.categoriesCache.set(type, []);
       return [];
     }
 
     try {
-      const response = await fetchText(treeUrl, signal);
+      const response = await fetchText(treeUrl, { signal });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} beim Laden des Category-Tree`);
       }
@@ -440,7 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function fetchCountForJob(job, signal) {
     const url = buildUrl(job.row.type, job.row.query, job.isOpenData);
-    const response = await fetchText(url, signal);
+    const response = await fetchText(url, { signal });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} beim Abrufen der Zahl (URL: ${url})`);
     }

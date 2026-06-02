@@ -1,7 +1,7 @@
-import { $, downloadText, parseXml, createStatusSetter } from '../lib/browser.js';
+import { $, downloadText, createStatusSetter } from '../lib/browser.js';
 
 const ui = {
-  file: $('xmlFile'),
+  file: $('jsonFile'),
   fileInfo: $('fileInfo'),
   convert: $('convertBtn'),
   download: $('downloadBtn'),
@@ -43,38 +43,43 @@ function mergeType(current, next) {
   return 'Gemischt';
 }
 
-function collectFields(xmlDoc) {
+function collectFields(data) {
   const fields = new Map();
-  const elements = Array.from(xmlDoc.getElementsByTagName('*'));
 
-  for (const element of elements) {
-    const name = element.tagName.trim();
-    const directText = Array.from(element.childNodes)
-      .filter((node) => node.nodeType === Node.TEXT_NODE)
-      .map((node) => node.textContent.trim())
-      .filter(Boolean)
-      .join(' ');
+  function remember(name, value, typeHint = '') {
+    const fieldName = String(name || '').trim();
+    if (!fieldName) return;
 
-    const value = directText || element.textContent.trim();
-    const detected = detectDataType(value);
-    const entry = fields.get(name) || { name, type: '', count: 0, example: '' };
+    const example = value == null || typeof value === 'object' ? '' : String(value);
+    const detected = typeHint || detectDataType(example);
+    const entry = fields.get(fieldName) || { name: fieldName, type: '', count: 0, example: '' };
 
     entry.type = mergeType(entry.type, detected);
     entry.count += 1;
-    if (!entry.example && value) entry.example = value.slice(0, 160);
+    if (!entry.example && example) entry.example = example.slice(0, 160);
 
-    fields.set(name, entry);
-
-    for (const attribute of Array.from(element.attributes || [])) {
-      const attrName = `${name}@${attribute.name}`;
-      const attrEntry = fields.get(attrName) || { name: attrName, type: '', count: 0, example: '' };
-      attrEntry.type = mergeType(attrEntry.type, detectDataType(attribute.value));
-      attrEntry.count += 1;
-      if (!attrEntry.example && attribute.value) attrEntry.example = attribute.value.slice(0, 160);
-      fields.set(attrName, attrEntry);
-    }
+    fields.set(fieldName, entry);
   }
 
+  function walk(value, path) {
+    if (Array.isArray(value)) {
+      remember(path, '', 'Array');
+      value.forEach((entry) => walk(entry, `${path}[]`));
+      return;
+    }
+
+    if (value && typeof value === 'object') {
+      if (path) remember(path, '', 'Object');
+      for (const [key, child] of Object.entries(value)) {
+        walk(child, path ? `${path}.${key}` : key);
+      }
+      return;
+    }
+
+    remember(path, value);
+  }
+
+  walk(data, '');
   return Array.from(fields.values()).sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
 
@@ -99,9 +104,9 @@ function renderTable() {
 
 function readSelectedFile() {
   const file = ui.file.files?.[0];
-  if (!file) throw new Error('Bitte eine XML-Datei auswählen.');
-  if (!/\.xml$/i.test(file.name) && !/xml/i.test(file.type || '')) {
-    throw new Error('Bitte eine Datei im XML-Format auswählen.');
+  if (!file) throw new Error('Bitte eine JSON-Datei auswählen.');
+  if (!/\.json$/i.test(file.name) && !/json/i.test(file.type || '')) {
+    throw new Error('Bitte eine Datei im JSON-Format auswählen.');
   }
   return file;
 }
@@ -113,7 +118,7 @@ async function analyse() {
   try {
     const file = readSelectedFile();
     const text = await file.text();
-    rows = collectFields(parseXml(text));
+    rows = collectFields(JSON.parse(text));
     renderTable();
     setStatus('fertig', 'ok');
   } catch (error) {
@@ -131,7 +136,7 @@ function downloadCsvFallback() {
   ]
     .map((line) => line.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';'));
 
-  downloadText(lines.join('\n'), 'fieldnames.csv', 'text/csv;charset=utf-8');
+  downloadText('fieldnames.csv', lines.join('\n'), 'text/csv;charset=utf-8');
 }
 
 function downloadExcel() {

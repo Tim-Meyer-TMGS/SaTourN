@@ -74,14 +74,17 @@ export function registerSearchRoute(app, cache) {
     const cacheKey = cities ? targetUrl : null;
     if (cacheKey) {
       const cached = cache.get(cacheKey);
-      if (cached) return res.type('application/xml').send(cached);
+      if (cached) return res.type('application/json').send(cached);
     }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
-      const response = await fetch(targetUrl, { signal: controller.signal });
+      const response = await fetch(targetUrl, {
+        signal: controller.signal,
+        headers: { Accept: 'application/json,*/*;q=0.8' }
+      });
       const text = await response.text();
 
       if (!response.ok) {
@@ -92,8 +95,18 @@ export function registerSearchRoute(app, cache) {
         });
       }
 
+      try {
+        JSON.parse(text.trim());
+      } catch {
+        console.error('Destination.One returned non-JSON:', text.slice(0, 500));
+        return res.status(502).json({
+          error: 'Upstream did not return JSON',
+          details: text.slice(0, 500)
+        });
+      }
+
       if (cacheKey) cache.set(cacheKey, text);
-      return res.type('application/xml').send(text);
+      return res.type('application/json').send(text);
     } catch (error) {
       const isAbort = error && (error.name === 'AbortError' || /aborted|timeout/i.test(String(error)));
       console.error('Destination.One fetch error:', error);
