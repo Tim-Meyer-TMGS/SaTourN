@@ -12,6 +12,7 @@ import {
   computeFinalLimit,
   isCitiesRequest,
   isCitySearchQuery,
+  normalizeOffsetParam,
   normalizeQueryParam
 } from '../lib/search-utils.js';
 
@@ -19,7 +20,7 @@ const OPEN_DATA_LICENSE_QUERY = '(attribute_license:CC0 OR attribute_license:CC-
 
 export function registerSearchRoute(app, cache) {
   app.get('/api/search', async (req, res) => {
-    const { type, query = '', isOpenData = 'false', limit, scope, forceCities } = req.query;
+    const { type, query = '', isOpenData = 'false', limit, offset, scope, forceCities } = req.query;
 
     if (!API_KEY) {
       console.error('DESTINATION_ONE_API_KEY, LICENSEKEY or LICENSE_KEY is missing');
@@ -41,6 +42,7 @@ export function registerSearchRoute(app, cache) {
     });
 
     const finalLimit = computeFinalLimit({ requestedLimit: limit, isCities: cities });
+    const finalOffset = normalizeOffsetParam(offset);
 
     const targetUrl = buildSearchUrl({
       baseUrl: BASE_URL,
@@ -49,6 +51,7 @@ export function registerSearchRoute(app, cache) {
       type,
       qParam,
       limit: finalLimit,
+      offset: finalOffset,
       apiKey: API_KEY
     });
 
@@ -56,6 +59,7 @@ export function registerSearchRoute(app, cache) {
       scope: scope || null,
       type: (type || '').trim() || null,
       requestedLimit: limit || null,
+      requestedOffset: offset || null,
       isCities: cities,
       reason: {
         scope: String(scope || '').toLowerCase().trim() === 'cities',
@@ -63,12 +67,14 @@ export function registerSearchRoute(app, cache) {
         heuristics: isCitySearchQuery(qParam),
         forceCities: String(forceCities || '') === '1'
       },
-      finalLimit
+      finalLimit,
+      finalOffset
     };
 
     console.log('/api/search', JSON.stringify(diagnostics));
 
     res.setHeader('X-Final-Limit', String(finalLimit));
+    res.setHeader('X-Final-Offset', String(finalOffset));
     res.setHeader('X-Is-Cities', String(cities));
 
     const cacheKey = cities ? targetUrl : null;

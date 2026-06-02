@@ -118,6 +118,63 @@ module: true
           </div>
         </div>
 
+        <div id="quality-summary" class="summary quality-summary" hidden aria-live="polite">
+          <div class="summary-item">
+            <span>Durchschnittlicher Qualitaets-Score</span>
+            <strong id="quality-score">keine Daten</strong>
+          </div>
+          <div class="summary-item">
+            <span>Gut</span>
+            <strong id="quality-good">0</strong>
+          </div>
+          <div class="summary-item">
+            <span>Pruefen</span>
+            <strong id="quality-check">0</strong>
+          </div>
+          <div class="summary-item">
+            <span>Kritisch</span>
+            <strong id="quality-critical">0</strong>
+          </div>
+          <div class="summary-item">
+            <span>Nicht berechenbar</span>
+            <strong id="quality-unknown">0</strong>
+          </div>
+          <div class="summary-item">
+            <span>Haeufigstes Kriterium</span>
+            <strong id="quality-top-issue">keine Daten</strong>
+          </div>
+        </div>
+
+        <section id="issue-summary" class="issue-summary" aria-labelledby="issue-summary-title" hidden>
+          <div class="section-head">
+            <div>
+              <h2 id="issue-summary-title">Haeufigste Pflegebedarfe</h2>
+              <p id="quality-sample-note" class="quality-note" hidden></p>
+            </div>
+          </div>
+          <div id="issue-status" class="issue-status" aria-live="polite"></div>
+          <div id="issue-list" class="issue-list"></div>
+        </section>
+
+        <section id="issue-detail-section" class="issue-detail" aria-labelledby="issue-detail-title" hidden>
+          <div class="issue-detail-head">
+            <div>
+              <h2 id="issue-detail-title">Fehlerliste</h2>
+              <p id="issue-detail-meta" class="issue-detail-meta"></p>
+              <p id="issue-detail-filters" class="issue-detail-filters"></p>
+            </div>
+            <button id="issue-close-button" class="issue-close-button" type="button">Zurueck zur Uebersicht</button>
+          </div>
+
+          <div class="tableWrap issue-table-wrap" id="issue-detail-table" aria-live="polite"></div>
+
+          <div id="issue-pagination" class="issue-pagination" hidden>
+            <button id="issue-prev-button" type="button">Zurueck</button>
+            <span id="issue-page-status"></span>
+            <button id="issue-next-button" type="button">Weiter</button>
+          </div>
+        </section>
+
         <div id="chart-container" class="chart-grid" hidden>
           <div class="chart-card">
             <div class="chart-title">Open-Data Anteil</div>
