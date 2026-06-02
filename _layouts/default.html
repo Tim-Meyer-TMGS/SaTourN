@@ -5,30 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page.title | default: site.title }}</title>
 
-  <!-- Global base -->
-  <link rel="stylesheet" href="{{ site.baseurl }}/base.css">
+  <link rel="stylesheet" href="{{ '/base.css' | relative_url }}">
 
-  <!-- Optional: page-specific CSS from front matter (css:) -->
   {% if page.css %}
-    <link rel="stylesheet" href="{{ site.baseurl }}{{ page.css }}">
+    <link rel="stylesheet" href="{{ page.css | relative_url }}">
   {% endif %}
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
   {% include menu.html %}
 
   <main class="container">
-    <div class="page-surface">
-      {{ content }}
-    </div>
+    {{ content }}
   </main>
 
   {% include footer.html %}
 
-  <!-- Optional: page-specific JS from front matter (js:) -->
   {% if page.js %}
-    <script src="{{ site.baseurl }}{{ page.js }}"></script>
+    <script{% if page.module %} type="module"{% endif %} src="{{ page.js | relative_url }}"></script>
   {% endif %}
 </body>
 </html>

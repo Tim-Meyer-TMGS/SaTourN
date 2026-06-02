@@ -2,7 +2,8 @@
 layout: default
 title: Copyright Checker
 css: /Copyright-Checker/style.css
-js: /Copyright-Checker/script.js
+js: /Copyright-Checker/main.js
+module: true
 ---
 
 <div class="cc">
@@ -33,7 +34,7 @@ js: /Copyright-Checker/script.js
 
         <label class="stackRight">
           <span>License Key (optional)</span>
-          <input id="licensekey" placeholder="enter_your_licensekey" />
+          <input id="licensekey" type="password" placeholder="optional" autocomplete="off" />
         </label>
 
         <div class="btnRow actions wide">

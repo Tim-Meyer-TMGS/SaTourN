@@ -2,10 +2,10 @@
 layout: default
 title: "Outdooractive Data Lookup"
 permalink: /OA-Datenabruf/
+css: /OA-Datenabruf/style.css
+js: /OA-Datenabruf/main.js
+module: true
 ---
-
-<link rel="stylesheet" href="{{ '/OA-Datenabruf/style.css' | relative_url }}">
-<script defer src="{{ '/OA-Datenabruf/script.js' | relative_url }}"></script>
 
 <div class="oaTool">
   <div class="wrap">
@@ -14,7 +14,7 @@ permalink: /OA-Datenabruf/
         <strong>Outdooractive Data Lookup</strong>
         <span id="statusPill" class="pill run">
           <span class="dot"></span>
-          <span id="statusText">ready</span>
+          <span id="statusText">bereit</span>
         </span>
       </div>
 
@@ -30,7 +30,7 @@ permalink: /OA-Datenabruf/
           <div class="field">
             <label>
               API Key
-              <input id="apiKey" placeholder="…">
+              <input id="apiKey" type="password" placeholder="…" autocomplete="off">
             </label>
             <label class="chk">
               <input type="checkbox" id="rememberKey">

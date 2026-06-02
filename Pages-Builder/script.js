@@ -1,8 +1,10 @@
+import { fetchText, extractItems } from '../lib/browser.js';
+
 "use strict";
 
 /**
  * Pages-Builder – Jekyll Version
- * - Lädt Areas bevorzugt lokal (./data/areas.xml), fallback remote via Proxy
+ * - Lädt Areas bevorzugt lokal (./data/areas.json), fallback remote via Proxy
  * - Lädt Cities lokal + merged Remote (damit wirklich alle Städte verfügbar sind)
  * - Lädt Kategorien pro Typ aus ET4 Category-Tree
  * - Generiert Pages-URL + Script-Embed (<script ... src="..."></script>)
@@ -17,13 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const proxyBase = "https://satourn.onrender.com/api/search";
   const areaRemoteUrl = `${proxyBase}?type=Area`;
 
-  const areaLocalUrl = "./data/areas.xml";
-  const cityLocalUrl = "./data/cities.xml";
+  const areaLocalUrl = "./data/areas.json";
+  const cityLocalUrl = "./data/cities.json";
 
   // Basis-URL
   const d1Base = "https://pages.destination.one/de/open-data-sachsen-tourismus";
 
-  const xmlUrls = {
+  const categoryTreeUrls = {
     POI: "https://api.et4.de/Schema/eTouristV4/Poi/Sachsen-Tourismus/POITree.xml",
     Tour: "https://api.et4.de/Schema/eTouristV4/Tour/Sachsen-Tourismus/TourTree.xml",
     Gastronomie: "https://api.et4.de/Schema/eTouristV4/Gastro/Sachsen-Tourismus/GastroTree.xml",
@@ -66,18 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Helper
   // ===========================================================================
 
-  async function fetchText(url) {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.text();
-  }
 
-  function sanitizeXml(txt) {
-    return String(txt)
-      .replace(/<texts[\s\S]*?<\/texts>/gi, "")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/&(?![a-zA-Z]+;|#\d+;|#x[a-fA-F0-9]+;)/g, "&amp;");
-  }
 
   function normalizeKey(s) {
     return (s || "")
@@ -125,73 +116,82 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ===========================================================================
-  // XML Parsing (Areas & Cities) – sicher für echte XML
+  // JSON Parsing (Areas & Cities)
   // ===========================================================================
 
-  function parseAreasFromXml(xmlText) {
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(sanitizeXml(xmlText), "application/xml");
-    const items = Array.from(xml.getElementsByTagName("item"));
+  function parseJsonPayload(text) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      const preview = String(text || "").slice(0, 300).replace(/\s+/g, " ");
+      throw new Error(`JSON Parse-Fehler. Inhalt: "${preview}..."`);
+    }
+  }
 
-    return items
-      .map((it) => it.getElementsByTagName("title")[0]?.textContent?.trim())
+  function pickTitle(item) {
+    return [
+      item?.title,
+      item?.Title,
+      item?.name,
+      item?.Name,
+      item?.presentation?.title,
+      item?.presentation?.name,
+    ].map((value) => String(value ?? "").trim()).find(Boolean) || "";
+  }
+
+  function addValueLike(target, value) {
+    if (value == null) return;
+    if (Array.isArray(value)) {
+      value.forEach((entry) => addValueLike(target, entry));
+      return;
+    }
+    if (typeof value === "object") {
+      const direct = value.value ?? value.title ?? value.name ?? value.area ?? value.region;
+      if (direct != null) {
+        addValueLike(target, direct);
+        return;
+      }
+      Object.values(value).forEach((entry) => {
+        if (typeof entry === "string" || typeof entry === "number") addValueLike(target, entry);
+      });
+      return;
+    }
+    const text = String(value).trim();
+    if (text) target.add(text);
+  }
+
+  function parseAreasFromJson(jsonText) {
+    return extractItems(parseJsonPayload(jsonText))
+      .map(pickTitle)
       .filter(Boolean)
       .sort((a, b) => a.localeCompare(b, "de"));
   }
 
   // Robust: sammelt Gebietsinformationen auch dann, wenn Proxy/Export andere Feldnamen nutzt
-  function parseCitiesFromXml(xmlText) {
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(sanitizeXml(xmlText), "application/xml");
-    const items = Array.from(xml.getElementsByTagName("item"));
+  function parseCitiesFromJson(jsonText) {
     const out = [];
 
-    const extractAreaLikeTexts = (item) => {
+    const extractAreaLikeValues = (item) => {
       const names = new Set();
-
-      // Heuristik: alle Felder, deren Tagname "area"/"gebiet"/"region" enthält
-      const nodes = item.getElementsByTagName("*");
-      for (let i = 0; i < nodes.length; i++) {
-        const ln = (nodes[i].localName || nodes[i].tagName || "").toLowerCase();
-        if (ln.includes("area") || ln.includes("gebiet") || ln.includes("region")) {
-          const t = nodes[i].textContent ? nodes[i].textContent.trim() : "";
-          if (t) names.add(t);
+      for (const [key, value] of Object.entries(item || {})) {
+        const normalized = key.toLowerCase();
+        if (normalized.includes("area") || normalized.includes("gebiet") || normalized.includes("region")) {
+          addValueLike(names, value);
         }
       }
-
       return [...names];
     };
 
-    for (const it of items) {
-      const title = it.getElementsByTagName("title")[0]?.textContent?.trim();
+    for (const it of extractItems(parseJsonPayload(jsonText))) {
+      const title = pickTitle(it);
       if (!title) continue;
 
       const areas = new Set();
+      addValueLike(areas, it.areas);
+      addValueLike(areas, it.areas_old);
 
-      // <areas><value>...</value></areas>
-      Array.from(it.getElementsByTagName("areas")).forEach((aNode) => {
-        Array.from(aNode.getElementsByTagName("value")).forEach((v) => {
-          const t = v.textContent?.trim();
-          if (t) areas.add(t);
-        });
-      });
-
-      // <areas_old> kann Values oder Text enthalten
-      Array.from(it.getElementsByTagName("areas_old")).forEach((aOld) => {
-        const values = Array.from(aOld.getElementsByTagName("value"));
-        if (values.length) {
-          values.forEach((v) => {
-            const t = v.textContent?.trim();
-            if (t) areas.add(t);
-          });
-        } else {
-          const t = aOld.textContent?.trim();
-          if (t) areas.add(t);
-        }
-      });
-
-      // Fallback-Heuristik (falls nicht in <areas>/<areas_old>)
-      extractAreaLikeTexts(it).forEach((t) => areas.add(t));
+      // Fallback-Heuristik (falls nicht in areas/areas_old)
+      extractAreaLikeValues(it).forEach((t) => areas.add(t));
 
       out.push({ title, areas: [...areas] });
     }
@@ -205,11 +205,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function loadAreas() {
     try {
-      const xmlText = await fetchText(areaLocalUrl);
-      setSelect(areaSelect, parseAreasFromXml(xmlText), "Kein Gebiet wählen");
+      const response = await fetchText(areaLocalUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setSelect(areaSelect, parseAreasFromJson(response.text), "Kein Gebiet wählen");
     } catch {
-      const xmlText = await fetchText(areaRemoteUrl);
-      setSelect(areaSelect, parseAreasFromXml(xmlText), "Kein Gebiet wählen");
+      const response = await fetchText(areaRemoteUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      setSelect(areaSelect, parseAreasFromJson(response.text), "Kein Gebiet wählen");
     }
   }
 
@@ -303,8 +305,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 1) Lokal
     try {
-      const rawLocal = await fetchText(cityLocalUrl);
-      localCities = parseCitiesFromXml(rawLocal);
+      const response = await fetchText(cityLocalUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      localCities = parseCitiesFromJson(response.text);
     } catch {
       localCities = [];
     }
@@ -314,8 +317,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (shouldFetchRemote) {
       try {
         const remoteUrl = `${proxyBase}?type=City&limit=5000`;
-        const rawRemote = await fetchText(remoteUrl);
-        remoteCities = parseCitiesFromXml(rawRemote);
+        const response = await fetchText(remoteUrl);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        remoteCities = parseCitiesFromJson(response.text);
       } catch (e) {
         console.warn("Remote Cities konnten nicht geladen werden:", e);
         remoteCities = [];
@@ -336,14 +340,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // ===========================================================================
 
   async function loadCategories() {
-    const url = xmlUrls[typeSelect.value];
+    const url = categoryTreeUrls[typeSelect.value];
     categorySelect.innerHTML = "";
     categorySelect.append(new Option("Keine Kategorie wählen", ""));
 
     if (!url) return;
 
-    const txt = await fetchText(url);
-    const xml = new DOMParser().parseFromString(txt, "application/xml");
+    const response = await fetchText(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const xml = new DOMParser().parseFromString(response.text, "application/xml");
 
     const cats = [...xml.querySelectorAll("Category")]
       .map((c) => c.getAttribute("Name"))

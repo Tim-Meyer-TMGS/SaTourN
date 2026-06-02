@@ -1,0 +1,393 @@
+{
+    "status":  "OK",
+    "count":  19,
+    "overallcount":  19,
+    "channels":  [
+
+                 ],
+    "facetGroups":  [
+
+                    ],
+    "items":  [
+                  {
+                      "global_id":  "r_466",
+                      "id":  "466",
+                      "title":  "Oberlausitz",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_685",
+                      "id":  "685",
+                      "title":  "Nationalpark Sächsische Schweiz",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_467",
+                      "id":  "467",
+                      "title":  "Lausitzer Seenland",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_684",
+                      "id":  "684",
+                      "title":  "Naturpark Erzgebirge Vogtland",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_689",
+                      "id":  "689",
+                      "title":  "Dresden",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_782",
+                      "id":  "782",
+                      "title":  "Nationalpark Sächsische Schweiz Sachsenforst",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_691",
+                      "id":  "691",
+                      "title":  "Leipzig",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_716",
+                      "id":  "716",
+                      "title":  "Zwickau",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_715",
+                      "id":  "715",
+                      "title":  "Rochlitzer Muldental",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_469",
+                      "id":  "469",
+                      "title":  "Dresden Elbland",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_783",
+                      "id":  "783",
+                      "title":  "Chemnitz.Zwickau.Region.",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_727",
+                      "id":  "727",
+                      "title":  "Oberlausitzer Heide- und Teichlandschaft",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_690",
+                      "id":  "690",
+                      "title":  "Chemnitz",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_682",
+                      "id":  "682",
+                      "title":  "Naturpark Zittauer Gebirge",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_460",
+                      "id":  "460",
+                      "title":  "Erzgebirge",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_465",
+                      "id":  "465",
+                      "title":  "Sächsische Schweiz",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_468",
+                      "id":  "468",
+                      "title":  "Vogtland",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_470",
+                      "id":  "470",
+                      "title":  "Leipzig Region",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  },
+                  {
+                      "global_id":  "r_683",
+                      "id":  "683",
+                      "title":  "Naturpark Dübener Heide",
+                      "type":  "Area",
+                      "categories_old":  [
+                                             "Gebiet"
+                                         ],
+                      "areas_old":  [
+
+                                    ],
+                      "categories":  [
+                                         {
+                                             "value":  "Gebiet"
+                                         }
+                                     ],
+                      "areas":  [
+
+                                ]
+                  }
+              ]
+}

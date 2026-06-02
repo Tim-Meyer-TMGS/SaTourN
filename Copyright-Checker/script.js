@@ -8,109 +8,13 @@
    - Ausgabe: ID + Titel + Pages-Link + Anzahl fehlender Medien + Debug-Liste
 */
 
-const el = (id) => document.getElementById(id);
+import { $, buildParams, fetchJson, downloadText, rateLimit, extractItems, extractTotal, extractId, createStatusSetter } from '../lib/browser.js';
+
+const el = $;
 
 /* ------------------------- small utils ------------------------- */
 
-function esc(s) {
-  return String(s ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-function buildParams(obj) {
-  const p = new URLSearchParams();
-  for (const [k, v] of Object.entries(obj)) {
-    if (v === undefined || v === null || v === "") continue;
-    p.set(k, String(v));
-  }
-  return p.toString();
-}
-
-function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-async function rateLimit(minIntervalMs, state) {
-  const now = performance.now();
-  const elapsed = now - state.lastStart;
-  const wait = Math.max(0, minIntervalMs - elapsed);
-  if (wait > 0) await sleep(wait);
-  state.lastStart = performance.now();
-}
-
-async function fetchJson(baseUrl, params, abortSignal) {
-  const url = baseUrl + "?" + buildParams(params);
-  const res = await fetch(url, { method: "GET", signal: abortSignal });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status}: ${txt.slice(0, 300)}`);
-  }
-  return res.json();
-}
-
 /* ------------------------- ET4 response helpers ------------------------- */
-
-function extractItems(payload) {
-  const keys = ["items", "results", "Result", "Documents", "document", "data"];
-  for (const k of keys) {
-    const v = payload?.[k];
-    if (Array.isArray(v)) return v;
-    if (v && typeof v === "object") {
-      for (const kk of keys) {
-        const vv = v?.[kk];
-        if (Array.isArray(vv)) return vv;
-      }
-    }
-  }
-  for (const v of Object.values(payload || {})) {
-    if (Array.isArray(v) && v.length && typeof v[0] === "object") return v;
-  }
-  return [];
-}
-
-function extractTotal(payload) {
-  const keys = [
-    "overallcount",
-    "overallCount",
-    "total",
-    "Total",
-    "totalHits",
-    "TotalHits",
-    "numFound",
-    "NumFound",
-    "count",
-    "Count",
-    "hits",
-    "Hits",
-  ];
-  for (const k of keys) {
-    const v = payload?.[k];
-    if (Number.isInteger(v)) return v;
-    if (typeof v === "string" && /^\d+$/.test(v)) return parseInt(v, 10);
-  }
-  for (const mk of ["meta", "Meta", "info", "Info"]) {
-    const meta = payload?.[mk];
-    if (meta && typeof meta === "object") {
-      for (const k of keys) {
-        const v = meta?.[k];
-        if (Number.isInteger(v)) return v;
-        if (typeof v === "string" && /^\d+$/.test(v)) return parseInt(v, 10);
-      }
-    }
-  }
-  return null;
-}
-
-function extractId(item) {
-  if (item?.global_id != null) return String(item.global_id);
-  if (item?.globalId != null) return String(item.globalId);
-  if (item?.id != null && item?.channel != null)
-    return `${String(item.channel)}_${String(item.id)}`;
-  if (item?.id != null) return String(item.id);
-  return "";
-}
 
 function extractTitle(item) {
   const keys = ["title", "Title", "name", "Name", "headline", "Headline"];
@@ -292,11 +196,7 @@ function findMissingCopyrightMedia(item) {
 
 /* ------------------------- UI helpers ------------------------- */
 
-function setStatus(text, cls) {
-  const s = el("status");
-  s.textContent = text;
-  s.className = "pill " + cls;
-}
+const setStatus = createStatusSetter(el('status'));
 
 function log(msg) {
   const l = el("log");
@@ -315,18 +215,48 @@ function addRow({ id, title, pagesLink, areasOldText, missingMediaCount, missing
 
   const more = missingMediaCount > 5 ? ` (+${missingMediaCount - 5} mehr)` : "";
 
-  const linkHtml = pagesLink
-    ? `<a href="${esc(pagesLink)}" target="_blank" rel="noopener noreferrer">Pages-Link</a>`
-    : `<span style="opacity:.7;">kein Link</span>`;
-
   const tr = document.createElement("tr");
-  tr.innerHTML = `
-    <td><code>${esc(id)}</code></td>
-    <td>${esc(title)}<div style="margin-top:6px;">${linkHtml}</div></td>
-    <td style="font-size:12px; opacity:.9;">${esc(areasOldText || "")}</td>
-    <td><strong>${esc(missingMediaCount)}</strong></td>
-    <td style="font-size:12px; opacity:.85;">${esc(missingShort)}${esc(more)}</td>
-  `;
+
+  const idCell = document.createElement("td");
+  const code = document.createElement("code");
+  code.textContent = id;
+  idCell.appendChild(code);
+
+  const titleCell = document.createElement("td");
+  titleCell.appendChild(document.createTextNode(title));
+  const linkWrap = document.createElement("div");
+  linkWrap.style.marginTop = "6px";
+  if (pagesLink) {
+    const link = document.createElement("a");
+    link.href = pagesLink;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "Pages-Link";
+    linkWrap.appendChild(link);
+  } else {
+    const fallback = document.createElement("span");
+    fallback.style.opacity = ".7";
+    fallback.textContent = "kein Link";
+    linkWrap.appendChild(fallback);
+  }
+  titleCell.appendChild(linkWrap);
+
+  const areaCell = document.createElement("td");
+  areaCell.style.fontSize = "12px";
+  areaCell.style.opacity = ".9";
+  areaCell.textContent = areasOldText || "";
+
+  const countCell = document.createElement("td");
+  const strong = document.createElement("strong");
+  strong.textContent = String(missingMediaCount);
+  countCell.appendChild(strong);
+
+  const detailCell = document.createElement("td");
+  detailCell.style.fontSize = "12px";
+  detailCell.style.opacity = ".85";
+  detailCell.textContent = `${missingShort}${more}`;
+
+  tr.append(idCell, titleCell, areaCell, countCell, detailCell);
   el("tbody").appendChild(tr);
 }
 
@@ -362,19 +292,6 @@ function toCsv(rows) {
   return lines.join("\n");
 }
 
-function downloadBlob(filename, data, mime) {
-  const blob = new Blob([data], { type: mime });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(a.href);
-    a.remove();
-  }, 1000);
-}
-
 function idsFingerprint(items, n = 30) {
   return items
     .map((it) => extractId(it))
@@ -402,7 +319,7 @@ el("stopBtn").addEventListener("click", () => {
 
 el("downloadBtn").addEventListener("click", () => {
   const csv = toCsv(lastMissing);
-  downloadBlob("missing_copyright.csv", csv, "text/csv;charset=utf-8");
+  downloadText('missing_copyright.csv', csv, 'text/csv;charset=utf-8');
 });
 
 el("runBtn").addEventListener("click", async () => {

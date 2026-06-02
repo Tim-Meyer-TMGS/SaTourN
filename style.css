@@ -1,111 +1,113 @@
-/* Grund-Resets */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: "Arial", sans-serif;
+.home {
+  display: grid;
+  gap: 24px;
+  min-height: calc(100vh - 190px);
+  align-content: center;
 }
 
-/* Hintergrund und Zentrierung */
-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: linear-gradient(to right, #001f3d, #003366);
-    padding: 20px;
-    width: 100%;
-    color: white;
+.home-head {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 4px 0;
 }
 
-/* Haupt-Container */
-.container {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    max-width: 1000px;
-    width: 100%;
-    margin-bottom: 20px;
+.home-logo {
+  width: min(720px, 100%);
+  height: auto;
+  display: block;
 }
 
-/* Logo */
-.logo {
-    max-width: 800px;
-    width: 100%;
-    margin-bottom: 30px;
+.home h1 {
+  margin: 0 0 6px;
+  font-size: 34px;
+  line-height: 1;
 }
 
-/* Button-Container */
-.button-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
+.home p {
+  max-width: 54ch;
+  margin: 0;
+  color: var(--muted);
 }
 
-/* Einzelne Tool-Karte */
-.tool {
-    background-color: rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    width: 220px;
-    text-align: center;
-    padding: 20px;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-    margin: 10px;
-    text-decoration: none;
-    color: white;
-    display: block;
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.tool:hover {
-    transform: translateY(-10px);
+.tool-card {
+  min-height: 138px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, .30);
+  box-shadow: var(--shadow);
+  text-align: center;
+  justify-items: center;
+  transition: transform .2s ease, background .2s ease;
 }
 
-/* Icon in der Karte */
-.tool-icon .material-icons {
-    font-size: 48px;
-    color: #00bcd4;
+.tool-card:hover {
+  border-color: var(--border-strong);
+  background: rgba(0, 0, 0, .38);
+  transform: translateY(-6px);
+  text-decoration: none;
 }
 
-/* Überschrift und Text in der Karte */
-.tool h2 {
-    font-size: 24px;
-    margin-top: 10px;
+.tool-icon {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(0, 188, 212, .34);
+  border-radius: var(--radius);
+  background: rgba(0, 188, 212, .12);
+  color: var(--accentA);
+  font-size: 28px;
 }
 
-.tool p {
-    font-size: 14px;
-    color: #bbb;
-    margin-top: 10px;
+.tool-card strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 19px;
 }
 
-/* Footer */
-footer {
-    color: white;
-    padding: 10px;
-    text-align: center;
-    position: fixed;
-    width: 100%;
-    bottom: 0;
+.tool-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
-/* Responsive Anpassungen */
-@media (max-width: 600px) {
-    .container {
-        padding: 15px;
-    }
-    .tool {
-        width: 100%;
-    }
-    .tool h2 {
-        font-size: 20px;
-    }
-    .tool p {
-        font-size: 12px;
-    }
+@media (max-width: 1040px) {
+  .tool-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .home-head {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-card {
+    min-height: 118px;
+  }
 }

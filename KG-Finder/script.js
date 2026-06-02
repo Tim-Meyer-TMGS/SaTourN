@@ -2,13 +2,15 @@
    DZT KG Finder
 ========================== */
 
+import { fetchJson, setText } from '../lib/browser.js';
+
 /* ==========================
    Konfiguration
 ========================== */
-const API_KEY     = '3b49f5e2f44665aec87f761d4cafb9d2';
+const KG_BASE = 'https://proxy.opendatagermany.io/api/ts';
 const DS_LIST_URL = 'https://semantify.it/list/CRkyvcqGqeUu';
-const FIXED_LANG  = 'de';
-const PAGE_SIZE   = 10;
+const FIXED_LANG = 'de';
+const PAGE_SIZE = 10;
 
 /* ==========================
    State
@@ -34,7 +36,53 @@ document.addEventListener('DOMContentLoaded', () => {
      UI/Helpers
   ========================== */
   function status(msg, isError = false) {
-    statusEl.innerHTML = msg ? (isError ? `<span style="color:#ff6b6b">${escapeHtml(msg)}</span>` : msg) : '';
+    setText(statusEl, msg || '');
+    statusEl.classList.toggle('kg-status-error', Boolean(isError));
+  }
+
+  function getApiKey() {
+    const configured = window.SATOURN_DZT_LICENSEKEY || window.DZT_LICENSEKEY || '';
+    const stored = sessionStorage.getItem('satourn.dztLicenseKey') || '';
+    return String(configured || stored).trim();
+  }
+
+  function ensureApiKey() {
+    const key = getApiKey();
+    if (key) return key;
+
+    const entered = prompt('DZT Knowledge Graph API-Key eingeben:');
+    if (entered && entered.trim()) {
+      sessionStorage.setItem('satourn.dztLicenseKey', entered.trim());
+      return entered.trim();
+    }
+
+    return '';
+  }
+
+  function kgHeaders({ page, pageSize, hop } = {}) {
+    const apiKey = ensureApiKey();
+    if (!apiKey) throw new Error('DZT API-Key fehlt.');
+
+    const headers = {
+      'x-api-key': apiKey,
+      accept: 'application/json',
+      inLang: FIXED_LANG
+    };
+
+    if (page) headers.page = String(page);
+    if (pageSize) headers['page-size'] = String(pageSize);
+    if (hop) headers['x-hop'] = String(hop);
+
+    return headers;
+  }
+
+  function loadingStatus(msg) {
+    statusEl.classList.remove('kg-status-error');
+    statusEl.replaceChildren();
+    const spinner = document.createElement('span');
+    spinner.className = 'kg-spinner';
+    spinner.setAttribute('aria-hidden', 'true');
+    statusEl.append(spinner, document.createTextNode(` ${msg}`));
   }
 
   function getFirstProp(obj, keys) {
@@ -95,13 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;");
-  }
-
   /* ==========================
      Bild-Auflösung aus ImageObject
   ========================== */
@@ -121,12 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = u.pathname.split('/').pop();
       const ns = `${u.protocol}//${u.host}/entity`;
 
-      const url = new URL(`https://proxy.opendatagermany.io/api/ts/v1/kg/things/${encodeURIComponent(id)}`);
+      const url = new URL(`${KG_BASE}/v1/kg/things/${encodeURIComponent(id)}`);
       url.searchParams.set('ns', ns);
 
-      const res = await fetch(url.toString(), {
-        headers: { 'x-api-key': API_KEY, 'accept': 'application/json' }
-      });
+      const res = await fetch(url.toString(), { headers: kgHeaders({ hop: 3 }) });
       if (!res.ok) return '';
 
       const data = await res.json();
@@ -223,22 +262,11 @@ document.addEventListener('DOMContentLoaded', () => {
      API Calls
   ========================== */
   async function queryThings({ kw }) {
-    const url = new URL('https://proxy.opendatagermany.io/api/ts/v2/kg/things');
+    const url = new URL(`${KG_BASE}/v2/kg/things`);
     if (kw) url.searchParams.set('kw', kw);
     url.searchParams.set('filterDsList', DS_LIST_URL);
 
-    const res = await fetch(url.toString(), {
-      headers: {
-        'x-api-key': API_KEY,
-        'accept': 'application/json',
-        'inLang': FIXED_LANG,
-        'page': String(page),
-        'page-size': String(PAGE_SIZE)
-      }
-    });
-    if (!res.ok) throw new Error(`Suche fehlgeschlagen (${res.status})`);
-
-    const data = await res.json();
+    const data = await fetchJson(url.toString(), { headers: kgHeaders({ page, pageSize: PAGE_SIZE }) });
     const items = Array.isArray(data) ? data
       : Array.isArray(data?.data) ? data.data
       : Array.isArray(data?.items) ? data.items
@@ -253,15 +281,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const ns = uri.substring(0, p);
     const id = uri.substring(p + 1);
 
-    const url = new URL(`https://proxy.opendatagermany.io/api/ts/v1/kg/things/${encodeURIComponent(id)}`);
+    const url = new URL(`${KG_BASE}/v1/kg/things/${encodeURIComponent(id)}`);
     url.searchParams.set('ns', ns);
 
-    const res = await fetch(url.toString(), {
-      headers: { 'x-api-key': API_KEY, 'accept': 'application/json', 'inLang': FIXED_LANG, 'x-hop': '3' }
-    });
-    if (!res.ok) throw new Error(`Abruf fehlgeschlagen (${res.status})`);
-
-    const data = await res.json();
+    const data = await fetchJson(url.toString(), { headers: kgHeaders({ hop: 3 }) });
     return { uri, data };
   }
 
@@ -273,6 +296,16 @@ document.addEventListener('DOMContentLoaded', () => {
     u.searchParams.set('kbr-entity', thingUri);
     u.searchParams.set('lang', FIXED_LANG);
     return u.toString();
+  }
+
+  function setThumbLink(thumb, landing) {
+    thumb.replaceChildren();
+    const link = document.createElement('a');
+    link.href = landing;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Bild öffnen';
+    thumb.appendChild(link);
   }
 
   async function renderItem(entry) {
@@ -312,14 +345,14 @@ document.addEventListener('DOMContentLoaded', () => {
         img.alt = name || 'Bild';
         img.loading = 'lazy';
         img.decoding = 'async';
-        img.onload = () => { thumb.innerHTML = ''; thumb.appendChild(img); };
-        img.onerror = () => { thumb.innerHTML = `<a href="${landing}" target="_blank" rel="noopener">Bild öffnen</a>`; };
+        img.onload = () => { thumb.replaceChildren(img); };
+        img.onerror = () => setThumbLink(thumb, landing);
         img.src = imgUrl;
       } else {
-        thumb.innerHTML = `<a href="${landing}" target="_blank" rel="noopener">Bild öffnen</a>`;
+        setThumbLink(thumb, landing);
       }
     } catch {
-      thumb.innerHTML = `<a href="${landing}" target="_blank" rel="noopener">Bild öffnen</a>`;
+      setThumbLink(thumb, landing);
     }
 
     results.appendChild(el);
@@ -327,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function search(query) {
     results.innerHTML = '';
-    status(`<span class="spinner"></span> Lädt…`);
+    loadingStatus('Lädt...');
     prevBtn.disabled = true;
     nextBtn.disabled = true;
     countEl.textContent = '';

@@ -1,44 +1,57 @@
-<nav class="menu-container">
-  <img
-    class="logo"
-    src="{{ site.baseurl }}/SaTourN-RGB.png"
-    alt="SaTourN Logo"
-  >
+<nav class="menu-container" aria-label="Hauptnavigation">
+  <a href="{{ '/' | relative_url }}" aria-label="SaTourN Tools Startseite">
+    <img class="logo" src="{{ '/SaTourN-RGB.png' | relative_url }}" alt="SaTourN Logo">
+  </a>
 
   <div class="menu-links">
-
-    <a href="{{ site.baseurl }}/Statistik/index.html" class="menu-item">
-      <span class="material-icons menu-icon">bar_chart</span>
-      <div class="menu-text">Statistik</div>
+    <a href="{{ '/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">apps</span>
+      <span class="menu-text">Tools</span>
     </a>
 
-    <a href="{{ site.baseurl }}/Pages-Builder/index.html" class="menu-item">
-      <span class="material-icons menu-icon">build</span>
-      <div class="menu-text">Pages Builder</div>
+    <a href="{{ '/Statistik/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">bar_chart</span>
+      <span class="menu-text">Statistik</span>
     </a>
 
-    <a href="{{ site.baseurl }}/KG-Finder/index.html" class="menu-item">
-      <span class="material-icons menu-icon">hub</span>
-      <div class="menu-text">Knowledge Graph</div>
+    <a href="{{ '/Pages-Builder/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">build</span>
+      <span class="menu-text">Pages Builder</span>
     </a>
 
-    <a href="{{ site.baseurl }}/Item_Randomizer/index.html" class="menu-item">
-      <span class="material-icons menu-icon">shuffle</span>
-      <div class="menu-text">Item Randomizer</div>
+    <a href="{{ '/KG-Finder/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">hub</span>
+      <span class="menu-text">Knowledge Graph</span>
     </a>
 
-    <a href="{{ site.baseurl }}/Copyright-Checker/index.html" class="menu-item">
-      <span class="material-icons menu-icon">copyright</span>
-      <div class="menu-text">Copyright Checker</div>
+    <a href="{{ '/Item_Randomizer/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">shuffle</span>
+      <span class="menu-text">Randomizer</span>
     </a>
 
-    <a href="{{ site.baseurl }}/OA-Datenabruf/index.html" class="menu-item">
-      <span class="material-icons menu-icon">travel_explore</span>
-      <div class="menu-text">Outdooractive Data Lookup</div>
+    <a href="{{ '/Copyright-Checker/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">copyright</span>
+      <span class="menu-text">Copyright</span>
     </a>
-    <a href="{{ site.baseurl }}/Category-Editor/index.html" class="menu-item">
-      <span class="material-icons menu-icon">category</span>
-      <div class="menu-text">Kategorie-Editor</div>
+
+    <a href="{{ '/OA-Datenabruf/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">travel_explore</span>
+      <span class="menu-text">Outdooractive</span>
+    </a>
+
+    <a href="{{ '/Category-Editor/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">category</span>
+      <span class="menu-text">Kategorien</span>
+    </a>
+
+    <a href="{{ '/Fieldname-Finder/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">table_view</span>
+      <span class="menu-text">Feldnamen</span>
+    </a>
+
+    <a href="{{ '/Chatbot-Test/' | relative_url }}" class="menu-item">
+      <span class="material-icons menu-icon" aria-hidden="true">chat</span>
+      <span class="menu-text">Chatbot</span>
     </a>
   </div>
 </nav>

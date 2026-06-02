@@ -1,4 +1,3 @@
-# _config.yml
 title: SaTourN
-baseurl: "/SaTourN"         # genau so – führender Slash, kein abschließender Slash
-url: "https://tim-meyer-tmgs.github.io"  # optional, aber empfohlen
+baseurl: "/SaTourN"
+url: "https://tim-meyer-tmgs.github.io"

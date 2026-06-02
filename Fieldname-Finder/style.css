@@ -1,0 +1,148 @@
+.fieldname-finder {
+  max-width: 980px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.ff-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ff-head h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.ff-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.ff-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: rgba(124, 255, 199, .12);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ff-upload:hover {
+  background: rgba(124, 255, 199, .18);
+}
+
+.ff-upload .material-icons {
+  font-size: 20px;
+  color: var(--accentA);
+}
+
+#jsonFile {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ff-file {
+  min-width: 0;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ff-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ff-actions button {
+  min-width: 118px;
+}
+
+.ff-error {
+  min-height: 20px;
+  margin-top: 12px;
+  color: var(--err);
+  font-size: 13px;
+}
+
+.ff-results[hidden] {
+  display: none;
+}
+
+.ff-table-wrap {
+  max-height: 540px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, .18);
+}
+
+.fieldname-finder table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.fieldname-finder th,
+.fieldname-finder td {
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  text-align: left;
+  vertical-align: top;
+  font-size: 13px;
+}
+
+.fieldname-finder th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(16, 24, 33, .95);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.fieldname-finder td:nth-child(1),
+.fieldname-finder td:nth-child(4) {
+  font-family: var(--mono);
+  word-break: break-word;
+}
+
+.fieldname-finder td:nth-child(3) {
+  font-variant-numeric: tabular-nums;
+}
+
+.fieldname-finder tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, .025);
+}
+
+@media (max-width: 760px) {
+  .ff-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ff-actions {
+    justify-content: stretch;
+  }
+
+  .ff-actions button,
+  .ff-upload {
+    width: 100%;
+  }
+}
