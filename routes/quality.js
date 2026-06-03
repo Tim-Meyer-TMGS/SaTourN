@@ -18,6 +18,7 @@ import {
 import {
   evaluateQualityForItem,
   getCriteriaForType,
+  getQualityScanConfig,
   qualityCriteria
 } from '../Statistik/quality.js';
 
@@ -101,9 +102,20 @@ function reduceCriterionForResponse(criterion) {
     priority: criterion.priority,
     autoCheck: criterion.autoCheck,
     recommendation: criterion.recommendation,
-    filterStrategy: criterion.apiFilter ? 'api_pushdown' : 'server_scan',
-    apiFilterApplied: Boolean(criterion.apiFilter)
+    method: criterion.method || 'server_scan',
+    api: criterion.api || null,
+    apiByType: criterion.apiByType || null,
+    unsupportedQueries: criterion.unsupportedQueries || []
   };
+}
+
+function combineQueries(baseQuery, criterionQuery) {
+  const base = normalizeQueryParam(baseQuery);
+  const criterion = normalizeQueryParam(criterionQuery);
+
+  if (!base) return criterion;
+  if (!criterion) return base;
+  return `(${base}) AND (${criterion})`;
 }
 
 async function fetchJsonPage(url, signal) {
@@ -182,12 +194,16 @@ export function registerQualityRoute(app) {
     }
 
     const qParam = normalizeQueryParam(query);
+    const scanConfig = getQualityScanConfig(criterion, normalizedType);
+    const effectiveQuery = scanConfig.method === 'api_pushdown'
+      ? combineQueries(qParam, scanConfig.missingQuery)
+      : qParam;
     const resultLimit = clampInteger(limit, DEFAULT_RESULT_LIMIT, 1, MAX_RESULT_LIMIT);
     const pageSize = clampInteger(scanPageSize, DEFAULT_SCAN_PAGE_SIZE, 1, MAX_SCAN_PAGE_SIZE);
     const pageBudget = clampInteger(maxPages, DEFAULT_MAX_PAGES, 1, MAX_SCAN_PAGES);
     const scanTimeoutMs = clampInteger(timeoutMs, DEFAULT_SCAN_TIMEOUT_MS, 1000, REQUEST_TIMEOUT_MS);
     const startOffset = normalizeOffsetParam(cursor ?? offset);
-    const cities = isCitiesRequest({ type: normalizedType, qParam, scope: null, forceCities: false });
+    const cities = isCitiesRequest({ type: normalizedType, qParam: effectiveQuery, scope: null, forceCities: false });
     const finalPageSize = computeFinalLimit({ requestedLimit: pageSize, isCities: cities });
 
     const controller = new AbortController();
@@ -211,7 +227,7 @@ export function registerQualityRoute(app) {
           experience: EXPERIENCE,
           template: TEMPLATE,
           type: normalizedType,
-          qParam,
+          qParam: effectiveQuery,
           limit: finalPageSize,
           offset: currentOffset,
           apiKey: API_KEY
@@ -279,6 +295,17 @@ export function registerQualityRoute(app) {
       res.json({
         items,
         criterion: reduceCriterionForResponse(criterion),
+        diagnostic: {
+          method: scanConfig.method,
+          query: effectiveQuery,
+          sourceQuery: qParam,
+          criterionQuery: scanConfig.missingQuery,
+          positiveQuery: scanConfig.positiveQuery,
+          verified: scanConfig.verified,
+          verifiedForType: scanConfig.verifiedForType,
+          warnings: scanConfig.warnings,
+          unsupportedQueries: scanConfig.unsupportedQueries
+        },
         page: {
           cursor: startOffset,
           nextCursor: complete || paginationRepeated ? null : currentOffset,
@@ -290,6 +317,7 @@ export function registerQualityRoute(app) {
           scannedPages,
           matchedItems: items.length,
           totalSourceItems,
+          overallcount: totalSourceItems,
           budgetExhausted,
           paginationRepeated
         }
@@ -299,6 +327,17 @@ export function registerQualityRoute(app) {
       res.status(isAbort ? 504 : 500).json({
         error: isAbort ? 'Quality scan timeout' : 'Quality scan failed',
         details: isAbort ? undefined : String(error.message || error).slice(0, 300),
+        diagnostic: {
+          method: scanConfig?.method || 'unknown',
+          query: effectiveQuery,
+          sourceQuery: qParam,
+          criterionQuery: scanConfig?.missingQuery || null,
+          positiveQuery: scanConfig?.positiveQuery || null,
+          verified: Boolean(scanConfig?.verified),
+          verifiedForType: Boolean(scanConfig?.verifiedForType),
+          warnings: scanConfig?.warnings || [],
+          unsupportedQueries: scanConfig?.unsupportedQueries || []
+        },
         page: {
           cursor: startOffset,
           nextCursor: currentOffset > startOffset ? currentOffset : startOffset,
@@ -310,6 +349,7 @@ export function registerQualityRoute(app) {
           scannedPages,
           matchedItems: items.length,
           totalSourceItems,
+          overallcount: totalSourceItems,
           budgetExhausted,
           paginationRepeated
         }

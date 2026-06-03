@@ -45,15 +45,21 @@ Proxy:
 - `routes/quality.js`
 - `lib/search-utils.js`
 
+Diagnose:
+
+- `scripts/diagnose-quality-examples.mjs`
+
 Dokumentation:
 
 - `docs/Codex/SaTourN_Codex_Prompt_Datenqualitaetsmonitor.md`
 - `docs/Codex/Datenqualitaetsmonitor_Aktueller_Projektstand.md`
 - `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`
+- `docs/Codex/Datenqualitaetsmonitor_Verifizierte_Annahmen.md`
 - `docs/Codex/Datenqualitaetsmonitor_Datenbasis_und_Limits.md`
 - `docs/Codex/Datenqualitaetsmonitor_Python_Entscheidung.md`
 - `docs/Codex/Zielbild.md`
 - `docs/Codex/zielbild.png`
+- `docs/Codex/examples/`
 
 ## Datenmodell und State
 
@@ -76,41 +82,37 @@ Wichtige State-Felder:
 
 ## Qualitaetskriterien
 
-Kriterien sind zentral in `Statistik/quality.js` definiert.
+Kriterien sind zentral in `Statistik/quality.js` definiert und wurden am
+2026-06-03 auf die verifizierte Zielkonfiguration aus
+`docs/Codex/Datenqualitaetsmonitor_Verifizierte_Annahmen.md` umgestellt.
 
-Aktuelle Kriterien:
+Aktive automatisch pruefbare Kriterien im Codezustand:
 
-- `opening_hours_missing`
-- `license_missing`
+- `opening_hours_missing`: POI, Gastro.
+- `license_missing`: POI, Gastro, Tour, Hotel, Package.
+- `description_missing`: POI, Gastro, Tour.
+- `image_missing`: POI, Gastro, Tour.
+- `image_author_missing`: POI, Tour, Hotel, Event, Gastro, Package.
+- `public_transport_missing`: POI, Gastro, Tour, Hotel, Event.
+- `booking_link_missing`: Hotel, Package.
+
+Entfernt bzw. nicht mehr als automatischer Fehler gefuehrt:
+
 - `geo_missing`
-- `description_missing`
-- `image_missing`
-- `image_author_missing`
-- `public_transport_missing`
-- `booking_link_missing`
 - `touristtrip_incomplete`
 - `manual_image_quality`
 
-Automatisch pruefbare Kriterien:
-
-- `opening_hours_missing`
-- `license_missing`
-- `geo_missing`
-- `description_missing`
-- `image_missing`
-- `image_author_missing`
-- `public_transport_missing`
-- `booking_link_missing`
-- `touristtrip_incomplete`
-
-Manuell bzw. nicht automatisch pruefbar:
-
-- `manual_image_quality`
+Die Kriterien enthalten jetzt eine Scan-Konfiguration mit Methode, verifizierter
+Missing-Query, Positive-Query, Typfreigabe und dokumentierten Warnungen.
+`image_author_missing` bleibt bewusst `server_scan`, weil kein verifizierter
+API-Pushdown fuer fehlende Bildurheber vorliegt. `booking_link_missing` nutzt
+fuer Hotel die bestaetigte Query `*:* NOT booking:*`; Package bleibt vorerst
+serverseitiger Scan, bis Query und Feldstruktur verifiziert sind.
 
 Score-Logik:
 
 - Nur automatisch pruefbare Kriterien mit Gewichtung gehen in den Score ein.
-- `manual_image_quality` wird separat als manuelles Kriterium gefuehrt.
+- Manuelle Bildqualitaet ist aktuell kein Score-Kriterium und bleibt ein spaeterer redaktioneller Workflow.
 - Status:
   - `gut`: 80 bis 100
   - `pruefen`: 60 bis 79
@@ -138,7 +140,7 @@ Proxy-Schutz:
 Wichtige Entscheidung:
 
 - destination.one/eT4-Felder duerfen nicht automatisch als filterbare API-Prefixe angenommen werden.
-- Alle Kriterien nutzen vorerst serverseitigen Scan statt API-Pushdown.
+- Verifizierte Kriterium-/Typ-Kombinationen nutzen API-Pushdown; nicht verifizierte Kriterien bleiben beim serverseitigen Scan.
 
 ## UI-Funktionen
 
@@ -268,6 +270,24 @@ Kurze Testanleitung:
 11. Pruefen, ob Mock-Antwort aktive Filter und aktive Fehlerliste beruecksichtigt.
 12. Filter aendern und pruefen, ob Fehlerliste, CSV-Kontext und KI-Kontext aktualisiert werden.
 13. Empty States pruefen, z. B. leere Filterauswahl, CSV ohne Daten und KI ohne Daten.
+
+## Neue verifizierte Annahmen vom 2026-06-03
+
+Neue fachliche und technische Verifikationen wurden in `docs/Codex/Datenqualitaetsmonitor_Verifizierte_Annahmen.md` zusammengefasst.
+
+Umgesetzt:
+
+- Aktive Kriterien wurden anhand realer eT4-/Lucene-Queries und realer Feldstrukturen korrigiert.
+- `geo_missing` und `touristtrip_incomplete` wurden aus aktiven Checks entfernt.
+- `opening_hours_missing` gilt nur fuer POI und Gastro.
+- `description_missing` und `image_missing` gelten aktuell nur fuer POI, Gastro und Tour.
+- `booking_link_missing` gilt nur fuer Hotel und Package; Hotel nutzt die bestaetigte Query, Package bleibt offen.
+- `image_author_missing` laeuft per Scan-Logik ueber `media_objects[].copyrightText`.
+- Beispiele fuer POI, Gastro, Tour und Hotel liegen unter `docs/Codex/examples/`.
+
+Weiter offen:
+
+- Fehlerlisten sollen perspektivisch erst nach eindeutiger Auswahl von Datentyp und Kriterium serverseitig laden.
 
 ## Pruefung
 

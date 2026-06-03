@@ -71,6 +71,22 @@ function hasValue(value) {
   return String(value).trim() !== '';
 }
 
+export function isNonEmptyHtmlOrText(value) {
+  const text = normalizeString(value);
+  if (!text) return false;
+
+  const withoutMarkup = text
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&[a-z0-9#]+;/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return withoutMarkup.length > 0;
+}
+
 function flattenValues(value) {
   if (value == null) return [];
   if (Array.isArray(value)) return value.flatMap(flattenValues);
@@ -169,6 +185,28 @@ export function hasAnyValue(item, fields) {
   return safeArray(fields).some((field) => getFieldValues(item, field).some(hasValue));
 }
 
+function collectRootArrays(item, field) {
+  return [
+    ...safeArray(item?.[field]),
+    ...safeArray(item?.raw?.[field])
+  ].filter((entry) => entry && typeof entry === 'object');
+}
+
+function normalizeComparable(value) {
+  return normalizeString(value)?.toLowerCase().trim() || '';
+}
+
+export function getTextsByRel(item = {}, rel) {
+  const targetRel = normalizeComparable(rel);
+  if (!targetRel) return [];
+
+  return collectRootArrays(item, 'texts').filter((entry) => normalizeComparable(entry.rel) === targetRel);
+}
+
+export function hasTextByRel(item = {}, rel) {
+  return getTextsByRel(item, rel).some((entry) => isNonEmptyHtmlOrText(entry.value));
+}
+
 export function hasGeoCoordinates(item = {}) {
   if (hasCoordinatePair(item.coordinates)) return true;
 
@@ -181,39 +219,124 @@ export function hasGeoCoordinates(item = {}) {
 
 export function hasDescription(item = {}) {
   if (item.descriptionAvailable === true) return true;
-  return hasAnyValue(item, ['description', 'text', 'shortDescription', 'longDescription', 'teaser', 'presentation.description']);
+  return hasDetailsText(item);
 }
 
 export function hasImages(item = {}) {
   if (Number.isFinite(item.imageCount) && item.imageCount > 0) return true;
-  return hasAnyValue(item, ['images', 'image', 'media', 'photos', 'pictures']);
+  return hasCheckableMedia(item);
 }
 
 export function hasImageAuthor(item = {}) {
-  return hasAnyValue(item, [
-    'imageAuthor',
-    'image_author',
-    'images.author',
-    'images.creator',
-    'images.copyright',
-    'images.photographer',
-    'media.author',
-    'media.creator',
-    'media.copyright',
-    'media.photographer',
-    'copyright',
-    'photographer'
-  ]);
+  return findMissingCopyrightMedia(item).length === 0 && hasCheckableMedia(item);
 }
 
 export function hasOpeningHours(item = {}) {
   if (item.openingHoursAvailable === true) return true;
-  return hasAnyValue(item, ['openingHours', 'opening_hours', 'hours', 'businessHours', 'times']);
+  return (
+    hasTextByRel(item, 'openings') ||
+    safeArray(item.timeIntervals).some(hasValue) ||
+    safeArray(item.raw?.timeIntervals).some(hasValue) ||
+    item.alwaysOpen === true ||
+    item.raw?.alwaysOpen === true
+  );
 }
 
 export function hasBookingLink(item = {}) {
   if (item.bookingLinkAvailable === true) return true;
-  return hasAnyValue(item, ['bookingUrl', 'bookingLink', 'reservationUrl', 'ticketUrl', 'booking.url']);
+  const bookingMedia = getMediaObjects(item).filter((mediaObject) => normalizeComparable(mediaObject.rel) === 'booking');
+  return bookingMedia.some((mediaObject) => isNonEmptyHtmlOrText(mediaObject.url));
+}
+
+export function hasDetailsText(item = {}) {
+  return hasTextByRel(item, 'details');
+}
+
+export function getAttributeValue(item = {}, key) {
+  const targetKey = normalizeComparable(key);
+  if (!targetKey) return null;
+
+  for (const entry of collectRootArrays(item, 'attributes')) {
+    if (normalizeComparable(entry.key) === targetKey) {
+      const value = normalizeString(entry.value);
+      if (value) return value;
+    }
+  }
+
+  return null;
+}
+
+export function hasAttributeValue(item = {}, key) {
+  return Boolean(getAttributeValue(item, key));
+}
+
+export function hasValidDatasetLicense(item = {}) {
+  const value = normalizeComparable(getAttributeValue(item, 'license'));
+  return ['cc0', 'cc-by', 'cc-by-sa', 'pd'].includes(value);
+}
+
+export function getFeatureValues(item = {}) {
+  return [
+    ...safeArray(item.features).map((entry) => normalizeString(entry?.value ?? entry)).filter(Boolean),
+    ...safeArray(item.raw?.features).map((entry) => normalizeString(entry?.value ?? entry)).filter(Boolean),
+    ...safeArray(item.features_old).map(normalizeString).filter(Boolean),
+    ...safeArray(item.raw?.features_old).map(normalizeString).filter(Boolean)
+  ];
+}
+
+export function hasFeature(item = {}, value) {
+  const target = normalizeComparable(value);
+  if (!target) return false;
+  return getFeatureValues(item).some((entry) => normalizeComparable(entry) === target);
+}
+
+function isPublicTransportValue(value) {
+  const text = normalizeComparable(value)
+    .replace(/\u00f6/g, 'oe')
+    .replace(/\u00d6/g, 'oe');
+  return /\boepnv\b/.test(text) || (text.includes('pnv') && text.includes('erreichbar'));
+}
+
+export function hasPublicTransportFeature(item = {}) {
+  return getFeatureValues(item).some(isPublicTransportValue);
+}
+
+export function getMediaObjects(item = {}) {
+  return collectRootArrays(item, 'media_objects');
+}
+
+export function isCheckableMediaObject(mediaObject = {}) {
+  const rel = normalizeComparable(mediaObject.rel);
+  if (['booking', 'canonical', 'logo', 'socialmedia'].includes(rel)) return false;
+  return /^image\//i.test(normalizeString(mediaObject.type) || '') && isNonEmptyHtmlOrText(mediaObject.url);
+}
+
+export function hasCheckableMedia(item = {}) {
+  return getMediaObjects(item).some(isCheckableMediaObject);
+}
+
+export function findMissingCopyrightMedia(item = {}) {
+  return getMediaObjects(item).filter((mediaObject) => (
+    isCheckableMediaObject(mediaObject) &&
+    !isNonEmptyHtmlOrText(mediaObject.copyrightText)
+  ));
+}
+
+function collectValueList(item = {}, modernField, legacyField) {
+  return [
+    ...safeArray(item[modernField]).map((entry) => normalizeString(entry?.value ?? entry)).filter(Boolean),
+    ...safeArray(item.raw?.[modernField]).map((entry) => normalizeString(entry?.value ?? entry)).filter(Boolean),
+    ...safeArray(item[legacyField]).map(normalizeString).filter(Boolean),
+    ...safeArray(item.raw?.[legacyField]).map(normalizeString).filter(Boolean)
+  ];
+}
+
+export function getAreaValues(item = {}) {
+  return collectValueList(item, 'areas', 'areas_old');
+}
+
+export function getCategoryValues(item = {}) {
+  return collectValueList(item, 'categories', 'categories_old');
 }
 
 function parseDate(value) {
@@ -281,56 +404,68 @@ export const qualityCriteria = Object.freeze([
     priority: 'hoch',
     autoCheck: true,
     weight: 10,
-    fields: ['openingHours', 'opening_hours', 'hours', 'businessHours', 'times'],
-    apiFilter: null,
+    fields: ['texts[rel=openings]', 'timeIntervals', 'alwaysOpen'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: 'openings:*',
+      missingQuery: '*:* -openings:*',
+      verified: true,
+      verifiedForTypes: ['POI', 'Gastro']
+    },
     recommendation: 'Oeffnungszeiten ergaenzen oder aktualisieren.',
     check: (item) => !hasOpeningHours(item)
   },
   {
     id: 'license_missing',
     label: 'Lizenzangabe fehlt',
-    types: ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'],
+    types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Package'],
     priority: 'hoch',
     autoCheck: true,
     weight: 10,
-    fields: ['license', 'licenses', 'copyright', 'openData', 'isOpenData', 'attribute_license'],
-    apiFilter: null,
+    fields: ['attributes[key=license]'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
+      missingQuery: '*:* -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
+      verified: true,
+      verifiedForTypes: ['POI', 'Gastro', 'Tour', 'Hotel', 'Package']
+    },
     recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.',
-    check: (item) => !hasAnyValue(item, ['license', 'licenses', 'copyright', 'openData', 'isOpenData', 'attribute_license'])
-  },
-  {
-    id: 'geo_missing',
-    label: 'Geokoordinaten fehlen',
-    types: ['POI', 'Tour', 'Hotel', 'Event', 'Gastro'],
-    priority: 'hoch',
-    autoCheck: true,
-    weight: 8,
-    fields: ['geo', 'coordinates', 'location', 'lat', 'lon', 'latitude', 'longitude'],
-    apiFilter: null,
-    recommendation: 'Geokoordinaten ergaenzen.',
-    check: (item) => !hasGeoCoordinates(item)
+    check: (item) => !hasValidDatasetLicense(item)
   },
   {
     id: 'description_missing',
     label: 'Beschreibung fehlt',
-    types: ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'],
+    types: ['POI', 'Gastro', 'Tour'],
     priority: 'hoch',
     autoCheck: true,
     weight: 8,
-    fields: ['description', 'text', 'shortDescription', 'longDescription', 'teaser'],
-    apiFilter: null,
+    fields: ['texts[rel=details]'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: 'details:*',
+      missingQuery: '*:* -details:*',
+      verified: true,
+      verifiedForTypes: ['POI', 'Gastro', 'Tour']
+    },
     recommendation: 'Beschreibung oder Kurzbeschreibung ergaenzen.',
     check: (item) => !hasDescription(item)
   },
   {
     id: 'image_missing',
     label: 'Bild fehlt',
-    types: ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'],
+    types: ['POI', 'Gastro', 'Tour'],
     priority: 'mittel',
     autoCheck: true,
     weight: 6,
-    fields: ['images', 'media', 'photos', 'pictures'],
-    apiFilter: null,
+    fields: ['media_objects'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: 'media:*',
+      missingQuery: '*:* -media:*',
+      verified: true,
+      verifiedForTypes: ['POI', 'Gastro', 'Tour']
+    },
     recommendation: 'Bildmaterial ergaenzen.',
     check: (item) => !hasImages(item)
   },
@@ -341,58 +476,69 @@ export const qualityCriteria = Object.freeze([
     priority: 'hoch',
     autoCheck: true,
     weight: 8,
-    fields: ['images.author', 'media.creator', 'copyright', 'photographer'],
-    apiFilter: null,
+    fields: ['media_objects.copyrightText'],
+    method: 'server_scan',
+    api: {
+      positiveQuery: null,
+      missingQuery: null,
+      verified: false,
+      verifiedForTypes: []
+    },
+    unsupportedQueries: ['media_objects.copyrightText:*', 'copyrightText:*'],
     recommendation: 'Fotograf oder Urheberhinweis ergaenzen.',
     check: (item) => hasImages(item) && !hasImageAuthor(item)
   },
   {
     id: 'public_transport_missing',
     label: 'OePNV-Anreise fehlt',
-    types: ['POI', 'Tour', 'Event'],
+    types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
     priority: 'mittel',
     autoCheck: true,
     weight: 5,
-    fields: ['publicTransport', 'arrival', 'directions', 'mobility'],
-    apiFilter: null,
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: 'feature:"Mit \u00d6PNV erreichbar"',
+      missingQuery: '*:* -feature:"Mit \u00d6PNV erreichbar"',
+      verified: true,
+      verifiedForTypes: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
+      requiresUtf8Value: 'Mit \u00d6PNV erreichbar'
+    },
     recommendation: 'OePNV-Anreiseinformationen ergaenzen.',
-    check: (item) => !hasAnyValue(item, ['publicTransport', 'arrival', 'directions', 'mobility'])
+    check: (item) => !hasPublicTransportFeature(item)
   },
   {
     id: 'booking_link_missing',
     label: 'Buchungslink fehlt',
-    types: ['Hotel', 'Package', 'Event'],
+    types: ['Hotel', 'Package'],
     priority: 'hoch',
     autoCheck: true,
     weight: 8,
-    fields: ['bookingUrl', 'bookingLink', 'reservationUrl', 'ticketUrl'],
-    apiFilter: null,
+    fields: ['media_objects[rel=booking].url'],
+    method: 'server_scan',
+    api: {
+      positiveQuery: null,
+      missingQuery: null,
+      verified: false,
+      verifiedForTypes: []
+    },
+    apiByType: {
+      Hotel: {
+        method: 'api_pushdown',
+        positiveQuery: 'booking:*',
+        missingQuery: '*:* NOT booking:*',
+        verified: true
+      },
+      Package: {
+        method: 'server_scan',
+        positiveQuery: null,
+        missingQuery: null,
+        verified: false,
+        note: 'Package-Buchungslink ist fachlich offen und muss gegen API und Beispieldaten verifiziert werden.'
+      }
+    },
     recommendation: 'Buchungs-, Reservierungs- oder Ticketlink ergaenzen.',
     check: (item) => !hasBookingLink(item)
-  },
-  {
-    id: 'touristtrip_incomplete',
-    label: 'TouristTrip-Struktur unvollstaendig',
-    types: ['Tour'],
-    priority: 'mittel',
-    autoCheck: true,
-    weight: 8,
-    fields: ['name', 'description', 'touristType', 'distance', 'itinerary', 'url'],
-    apiFilter: null,
-    recommendation: 'Tour fuer schema.org TouristTrip strukturieren.',
-    check: (item) => !isTouristTripReady(item)
-  },
-  {
-    id: 'manual_image_quality',
-    label: 'Bildqualitaet redaktionell pruefen',
-    types: ['POI', 'Tour', 'Hotel', 'Event', 'Gastro'],
-    priority: 'mittel',
-    autoCheck: false,
-    weight: 0,
-    fields: [],
-    apiFilter: null,
-    recommendation: 'Bildqualitaet manuell pruefen.',
-    note: 'Dieses Kriterium ist nicht zuverlaessig automatisch aus JSON pruefbar.'
   }
 ]);
 
@@ -404,6 +550,59 @@ export function getCriteriaForType(type) {
     if (!criterion.types?.length) return true;
     return criterion.types.map(normalizeType).includes(normalizedType);
   });
+}
+
+function getCriterionById(criterionId) {
+  return qualityCriteria.find((criterion) => criterion.id === criterionId) || null;
+}
+
+export function getQualityScanConfig(criterionId, type) {
+  const criterion = typeof criterionId === 'object'
+    ? criterionId
+    : getCriterionById(criterionId);
+  const normalizedType = normalizeType(type);
+
+  if (!criterion || !normalizedType) {
+    return {
+      method: 'unsupported',
+      positiveQuery: null,
+      missingQuery: null,
+      verified: false,
+      warnings: ['missing_criterion_or_type']
+    };
+  }
+
+  const typeConfig = criterion.apiByType?.[normalizedType] || null;
+  const apiConfig = typeConfig || criterion.api || {};
+  const verifiedForType = Array.isArray(apiConfig.verifiedForTypes)
+    ? apiConfig.verifiedForTypes.map(normalizeType).includes(normalizedType)
+    : Boolean(apiConfig.verified);
+  const method = apiConfig.method || criterion.method || (apiConfig.missingQuery ? 'api_pushdown' : 'server_scan');
+  const canUseApiPushdown = method === 'api_pushdown' && Boolean(apiConfig.missingQuery) && verifiedForType;
+  const warnings = [];
+
+  if (method === 'api_pushdown' && !canUseApiPushdown) {
+    warnings.push('api_query_not_verified_for_type');
+  }
+
+  if (criterion.unsupportedQueries?.length) {
+    warnings.push('unsupported_queries_documented');
+  }
+
+  if (apiConfig.note) {
+    warnings.push(apiConfig.note);
+  }
+
+  return {
+    method: canUseApiPushdown ? 'api_pushdown' : 'server_scan',
+    positiveQuery: canUseApiPushdown ? apiConfig.positiveQuery || null : null,
+    missingQuery: canUseApiPushdown ? apiConfig.missingQuery || null : null,
+    verified: canUseApiPushdown,
+    verifiedForType,
+    requestedMethod: method,
+    unsupportedQueries: criterion.unsupportedQueries || [],
+    warnings
+  };
 }
 
 function runCriterionCheck(criterion, item) {
@@ -526,10 +725,6 @@ export function evaluateQualityForItem(item = {}) {
 
 export function evaluateAllItems(items = []) {
   return safeArray(items).map((item) => evaluateQualityForItem(item));
-}
-
-function getCriterionById(criterionId) {
-  return qualityCriteria.find((criterion) => criterion.id === criterionId) || null;
 }
 
 function priorityValue(priority) {
@@ -750,8 +945,24 @@ export function getQualityAggregations(items = []) {
 
 export const qualityHelpers = Object.freeze({
   getNestedValue,
+  isNonEmptyHtmlOrText,
   hasAnyValue,
   hasGeoCoordinates,
+  getTextsByRel,
+  hasTextByRel,
+  hasDetailsText,
+  getAttributeValue,
+  hasAttributeValue,
+  hasValidDatasetLicense,
+  getFeatureValues,
+  hasFeature,
+  hasPublicTransportFeature,
+  getMediaObjects,
+  isCheckableMediaObject,
+  hasCheckableMedia,
+  findMissingCopyrightMedia,
+  getAreaValues,
+  getCategoryValues,
   hasDescription,
   hasImages,
   hasImageAuthor,
@@ -760,6 +971,7 @@ export const qualityHelpers = Object.freeze({
   hasFutureEventDate,
   isTouristTripReady,
   getCriteriaForType,
+  getQualityScanConfig,
   evaluateQualityForItem,
   evaluateAllItems,
   calculateQualityScore,

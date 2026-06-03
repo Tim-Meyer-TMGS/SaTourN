@@ -119,13 +119,19 @@ Destination.One/eT4 kann mit Query-Prefixes filtern. Das gilt aber nur fuer Feld
 
 Das betrifft nicht nur fehlende Oeffnungszeiten, sondern jedes Qualitaetskriterium. Ein JSON-Feld wie Beschreibung, Bild, Bildurheber, Buchungslink, OePNV-Information oder TouristTrip-Struktur ist nicht automatisch als API-Filter verfuegbar.
 
-Aktuell sind deshalb alle Kriterien in `Statistik/quality.js` mit `apiFilter: null` markiert. Der Scan-Endpunkt nutzt fuer diese Kriterien `filterStrategy: "server_scan"`:
+Seit dem Kriterienumbau vom 2026-06-03 enthalten die Kriterien in
+`Statistik/quality.js` eine explizite Scan-Konfiguration. Der Scan-Endpunkt
+leitet aus `criterionId` und `type` ab, ob ein verifizierter API-Pushdown
+moeglich ist oder ob ein serverseitiger Scan notwendig bleibt:
 
-1. Destination.One-Ergebnisse werden paginiert geladen.
-2. Das Qualitaetskriterium wird serverseitig auf dem Item geprueft.
-3. Nur passende Treffer werden an den Browser zurueckgegeben.
+1. Bei verifizierter Missing-Query wird diese serverseitig zur API-Abfrage hinzugefuegt.
+2. Bei nicht verifizierter Query werden Destination.One-Ergebnisse paginiert geladen.
+3. Das Qualitaetskriterium wird serverseitig auf dem Item geprueft.
+4. Nur passende Treffer werden an den Browser zurueckgegeben.
 
-Ein API-Pushdown darf erst aktiviert werden, wenn ein Prefix fuer genau dieses Kriterium verifiziert wurde. Dann kann das Kriterium spaeter eine explizite `apiFilter`-Konfiguration erhalten und der Scan-Endpunkt kann `filterStrategy: "api_pushdown"` melden.
+Die Antwort enthaelt Diagnoseinformationen zu Methode, effektiver Query,
+Kriteriumsquery, Verifikation, Warnungen, `overallcount`, Pagination und
+Scan-Budget.
 
 Empfohlene Regel:
 
@@ -143,6 +149,19 @@ Bis ein vollstaendiger jobbasierter Datenpfad fuer grosse Listen und Exporte exi
 - keine exakte Vollstaendigkeit behaupten.
 - grosse Tabellen begrenzen.
 - CSV-Export nur fuer die aktuell verfuegbare Datenbasis ausgeben oder als unvollstaendig markieren.
+
+## Ergaenzung: verifizierte Query- und Feldannahmen
+
+Am 2026-06-03 wurden mehrere eT4-/Lucene-Annahmen fachlich verifiziert und in `docs/Codex/Datenqualitaetsmonitor_Verifizierte_Annahmen.md` dokumentiert.
+
+Konsequenzen:
+
+- API-Pushdown darf nur fuer explizit verifizierte Kriterium-/Typ-Kombinationen genutzt werden.
+- Nicht verifizierte Kriterien muessen ueber lokalen oder serverseitigen Scan laufen.
+- Negative Queries duerfen nicht pauschal erzeugt werden, weil z. B. Hotel-Buchungslink `*:* NOT booking:*` benoetigt und `*:* -booking:*` nicht funktioniert.
+- `image_author_missing` muss ueber Scan-Logik auf `media_objects[].copyrightText` laufen.
+- Fehlerlisten sollen perspektivisch erst laden, wenn Datentyp und Kriterium eindeutig gewaehlt wurden.
+- Die Beispiel-Datensaetze fuer POI, Gastro, Tour und Hotel liegen unter `docs/Codex/examples/` und dienen als Grundlage fuer Helper- und Kriterien-Tests.
 
 ## Python-Einordnung
 

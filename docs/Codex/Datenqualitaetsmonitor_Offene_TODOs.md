@@ -2,58 +2,84 @@
 
 Stand: 2026-06-03
 
-Diese Datei ist die kompakte TODO-Liste fuer die weitere Arbeit. Sie buendelt offene fachliche, technische und Architekturpunkte aus den bisherigen Abschnittsdokumenten.
+Diese Datei ist die kompakte TODO-Liste fuer die weitere Arbeit. Der
+Kriterienumbau auf die verifizierten Annahmen ist umgesetzt; offen sind vor
+allem Verifikation, UI-Anbindung grosser Fehlerlisten und robuste Vollscan-Pfade.
 
-## Naechster Schritt
+## Erledigt am 2026-06-03
 
-- Manuelle Browser-/UI-Pruefung mit echten destination.one-Daten durchfuehren.
-- Danach entscheiden, ob ein weiterer technischer Abschnitt fuer Vollscan-/Export-Anbindung geplant wird.
+- `Statistik/quality.js` auf verifizierte Kriterienmatrix umgebaut.
+- `geo_missing`, `touristtrip_incomplete` und automatische `manual_image_quality` aus aktiven Kriterien entfernt.
+- Datentypen je Kriterium korrigiert.
+- Reale Helper fuer `texts[]`, `attributes[]`, `features[]`, `features_old[]`, `media_objects[]`, `areas[]` und `categories[]` ergaenzt.
+- Lizenzpruefung inklusive `PD` umgesetzt.
+- Bildurheberpruefung auf `media_objects[].copyrightText` umgestellt.
+- Hotel-Buchungslink ueber `media_objects[rel=booking].url` umgesetzt.
+- Verifizierte Query-Konfiguration mit `method`, `positiveQuery`, `missingQuery`, `verifiedForTypes`, `apiByType` und Warnungen ergaenzt.
+- `/api/quality/scan` leitet Methode und Query aus `criterionId` + `type` ab.
+- Scan-Antwort um Diagnoseinformationen erweitert.
+- Beispiel-Diagnose `scripts/diagnose-quality-examples.mjs` ergaenzt.
+- npm-Script `diagnose:quality-examples` ergaenzt.
 
-## Hohe Prioritaet
+## Naechster Implementierungsschritt
 
-- UI klar kennzeichnen, wenn Qualitaetsdaten nur stichprobenbasiert sind (`qualityDataMeta.truncated === true`).
-- Filterkonsistenz manuell mit echten Daten testen:
-  - Statistik-KPIs mit aggregierten Zeilen.
-  - Qualitaetsbereiche mit Item-Sample.
-  - CSV-Export bei aktiven Zusatzfiltern.
-  - KI-Kontext bei aktiven Zusatzfiltern.
-  - Detailansicht nach Filterwechsel.
-- Empty States visuell mit echten Daten pruefen:
-  - noch keine Abfrage.
-  - Daten werden geladen.
-  - keine Ergebnisse.
-  - Fehlerliste ohne Treffer.
-  - nicht automatisch pruefbares Kriterium.
-  - CSV ohne Daten.
-  - KI ohne Daten.
-- Grosse Fehlerlisten nicht aus Browser-Samples als vollstaendig darstellen.
-- Vollstaendige grosse Fehlerlisten spaeter ueber `/api/quality/scan` oder Job-/Export-Endpunkt anbinden.
+- Frontend-Fehlerlisten an `/api/quality/scan` anbinden, sobald Datentyp und Kriterium eindeutig gewaehlt sind.
+- In der Fehlerlisten-UI Methode, Query, Verifikation, Vollstaendigkeit, `overallcount`, Budget und Warnungen anzeigen.
+- Browser-Stichprobe und serverseitige Fehlerliste klar voneinander trennen.
 
-## Datenbasis, Pagination und Vollstaendigkeit
+## Tests und Diagnose
 
-- `/api/quality/scan` weiter an UI anbinden, damit Fehlerlisten bei Bedarf kontrolliert paginiert nachgeladen werden koennen.
-- Entscheiden, ob fuer vollstaendige Datenqualitaetsauswertungen ein statischer Snapshot, ein Proxy-Scan oder ein eigener Job-Dienst genutzt wird.
-- Optionalen Python-Snapshot- oder Job-Pfad erst einfuehren, wenn klar ist:
-  - reichen Build-Zeit-Snapshots aus?
-  - braucht es einen echten Backend-/Job-Dienst?
-- API-Pushdown nur aktivieren, wenn ein destination.one/eT4-Prefix explizit verifiziert wurde.
-- Wiederholte Seiten, Timeouts und Scan-Budgets weiter robust behandeln.
-- UI und CSV muessen klar unterscheiden zwischen:
-  - Statistik-Counts aus `overallcount`.
-  - stichprobenbasierten Qualitaetsdaten.
-  - vollstaendig gescannten Qualitaetslisten.
+- Lokal oder in GitHub Actions `npm run check` ausfuehren.
+- Lokal oder in GitHub Actions `npm run diagnose:quality-examples` ausfuehren.
+- Diagnose-Skript ausbauen:
+  - Beispiel-IDs je fehlendem Kriterium ausgeben.
+  - Warnungen und offene Verifikationen prominenter ausgeben.
+  - optional JSON-Ausgabe fuer spaetere CI-Auswertung.
+- Query-Diagnose-Skript gegen destination.one ergaenzen, z. B. `scripts/test-et4-quality-filters.mjs`.
+- Plausibilitaet zwischen API-Pushdown und lokalen Helpern stichprobenartig pruefen.
 
-## CSV und Exporte
+## Offene fachliche Verifikationen
 
+- Package-Buchungslink testen:
+  - `type=Package&q=booking:*`
+  - `type=Package&q=*:* NOT booking:*`
+  - `type=Package&q=*:* -booking:*`
+- Package-Beispieldaten nachreichen oder ueber API bereitstellen.
+- Hotel `image_missing` fachlich entscheiden und testen:
+  - `type=Hotel&q=media:*`
+  - `type=Hotel&q=*:* -media:*`
+- Hotel `description_missing` fachlich entscheiden und testen:
+  - `type=Hotel&q=details:*`
+  - `type=Hotel&q=*:* -details:*`
+- Event-Beispieldaten optional nachreichen.
+- Event-spezifische Kriterien nur nach realer Feld- und Query-Verifikation ergaenzen.
+- Logo als Bildpflicht fachlich klaeren; aktuell zaehlen Logos nicht als pruefbare Medien.
+
+## API und grosse Datenmengen
+
+- Fehlerlisten erst nach Datentyp + Kriterium laden.
+- Initial Load maximal 1 bis 2 kleine Requests.
+- Statistikbereich soll nur Statistik-Counts laden, keine itembasierten Qualitaetsscans.
+- Matrix soll zunaechst Struktur zeigen, Counts erst auf Klick oder explizite Aktualisierung.
+- Ergebnisse pro Typ/Kriterium cachen oder TTL-Strategie planen.
+- Fuer sehr grosse Fehlerlisten spaeter Job-/Snapshot-Endpunkt planen.
+- CSV fuer grosse Fehlerlisten an vollstaendige Scan-/Job-Daten anbinden.
+- 50-Item-Grenze des aktuellen API-/Proxy-Pfads als eigenes Architekturthema behandeln.
+
+## UI und Export
+
+- Fehlerlisten-UI auf serverseitig paginierte Ergebnisse umstellen.
+- Bestehende clientseitige Fehlerliste als Stichprobe kennzeichnen, wenn kein Server-Scan aktiv ist.
 - Matrix-CSV optional ergaenzen.
-- Fehlerlisten-CSV spaeter an `/api/quality/scan` oder Job-/Export-Endpunkt anbinden, wenn vollstaendige grosse Fehlerlisten exportiert werden muessen.
-- Exportkontext deutlicher markieren, wenn `qualityDataMeta.truncated === true`.
+- Exportkontext deutlicher markieren, wenn Daten nur stichprobenbasiert sind.
 - Optional Copy-/Export-Aktion fuer einzelne Datensatzdetails ergaenzen.
-- Erledigt mit Abschnitt 13: alter, nicht mehr verdrahteter Statistik-Exportblock `downloadStatsCsv()` wurde entfernt.
+- Such-/Textfilter nach Server-Scan-Anbindung erneut mit realen Daten pruefen.
+- Qualitaetsstatus-, Prioritaets- und Pruefbarkeitsfilter nach Kriterienumbau erneut pruefen.
+- Lange Texte, lange URLs und grosse Rohdaten auf Mobile pruefen.
 
 ## KI-Chatbot und n8n
 
-- Chatbot produktlogisch als Sparringspartner fuer Datenqualitaet schaerfen, nicht als Daten-Orakel oder vollstaendige Statistik-Engine.
+- Chatbot weiterhin als Sparringspartner fuer Datenqualitaet schaerfen.
 - Systemprompt fuer n8n/one.intelligence anpassen:
   - dialogorientiert.
   - handlungsnah.
@@ -71,67 +97,19 @@ Diese Datei ist die kompakte TODO-Liste fuer die weitere Arbeit. Sie buendelt of
 - `AI_CHAT_CONFIG.mockMode` fuer echte Tests bewusst auf `false` setzen.
 - n8n-CORS auf GitHub-Pages-Domain beschraenken.
 - n8n-Webhook mit Authentifizierung, Rate-Limit oder anderer Schutzlogik absichern.
-- In n8n Payload validieren und Kontextgroesse erneut pruefen.
-- one.intelligence-Anbindung in n8n implementieren.
-- Antwortformat in n8n auf `{ answer, suggestions, warnings }` normalisieren.
-- Production-Webhook verwenden, nicht Test-Webhook.
 - Keine n8n-Credentials oder one.intelligence-Keys ins Repository.
-
-## Detailansicht
-
-- Detailpanel spaeter visuell und inhaltlich mit finalen echten destination.one/eT4-Feldnamen schaerfen.
-- Feldwert-Ermittlung fuer komplexe verschachtelte eT4-Strukturen erweitern, sobald reale Beispiel-Rohdaten systematisch ausgewertet sind.
-- Direkte Detailansicht fuer Ergebnislisten-Aggregate fachlich klaeren:
-  - Beispiel-Datensatz.
-  - Liste der Sample-Datensaetze.
-  - separate Detailauswahl.
-- Optional URL im Detailpanel als klickbaren Button statt Text darstellen.
-- Optional Fokus-Ruecksprung nach Schliessen praeziser auf ausloesende Tabellenzeile setzen.
-
-## Qualitaetskriterien
-
-- destination.one/eT4-Feldnamen anhand echter Rohdaten validieren.
-- Kriterien-Feldlisten bei Bedarf an reale Datenstruktur anpassen.
-- `manual_image_quality` redaktionell schaerfen.
-- Fuer jedes Kriterium pruefen, ob es spaeter einen verifizierten API-Pushdown geben kann.
-- Kriteriengewichte und Schwellenwerte fachlich validieren.
-
-## Frontend-Robustheit und manuelle Pruefung
-
-- Such-/Textfilter final mit realen Daten pruefen.
-- Qualitaetsstatus-, Prioritaets- und Pruefbarkeitsfilter final mit realen Daten pruefen.
-- Aktive Filter sichtbar und konsistent beschreiben.
-- Leere Tabellen und leere Matrix-/Typ-Auswertungen einheitlich behandeln.
-- Lange Texte, lange URLs und grosse Rohdaten auf Mobile pruefen.
-- Tastaturbedienung fuer neue Panels und Tabellenaktionen weiter pruefen.
-- Keine sichtbaren UI-Ueberlagerungen zwischen Chatbot-Panel und Detailpanel zulassen oder Prioritaet bewusst definieren.
-
-## Proxy und API
-
-- `/api/quality/scan` mit realen destination.one-Daten testen.
-- Pagination mit `offset` gegen echte API-Antworten validieren.
-- Scan-Abbruchgruende in UI nutzbar machen.
-- Eventuell Job-Endpunkt fuer lange Scans entwerfen:
-  - Start.
-  - Status.
-  - Ergebnis.
-  - Export.
-- Caching fuer wiederholte Scans pruefen.
 
 ## Dokumentation
 
-- Erledigt mit Abschnitt 13: kompakte Projektstanddatei aktualisiert.
-- Erledigt mit Abschnitt 13: kompakte TODO-Datei aktualisiert.
-- Lange Zwischenstandsdateien koennen als Historie liegen bleiben, fuer neue Codex-Kontexte bevorzugt diese Dateien laden:
-  - `docs/Codex/Datenqualitaetsmonitor_Aktueller_Projektstand.md`
-  - `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`
-  - `docs/Codex/SaTourN_Codex_Prompt_Datenqualitaetsmonitor.md`
+- Nach Server-Scan-UI-Anbindung Projektstand aktualisieren.
+- Nach Query-Diagnose Ergebnisse in `Datenqualitaetsmonitor_Verifizierte_Annahmen.md` nachtragen.
+- `docs/Codex/Datenqualitaetsmonitor_Verifizierte_Annahmen.md` als verbindliche fachliche Arbeitsgrundlage behandeln.
 
 ## Bekannte Risiken
 
-- Clientseitige Qualitaets-KPIs sind aktuell stichprobenbasiert, wenn nicht alle Items geladen wurden.
+- Clientseitige Qualitaets-KPIs sind stichprobenbasiert, wenn nicht alle Items geladen wurden.
 - destination.one/eT4 unterstuetzt nicht automatisch Filter fuer fehlende JSON-Felder.
-- API-Pushdown darf nur nach expliziter Prefix-Verifikation aktiviert werden.
+- Kombinierte Queries aus Nutzerfilter und Missing-Query muessen mit echten API-Requests plausibilisiert werden.
 - Grosse Fehlerlisten und CSV-Exporte brauchen einen kontrollierten, paginierten oder jobbasierten Datenpfad.
 - Python ist nicht als direkte GitHub-Pages-Laufzeit geeignet.
 - Ohne Node in der lokalen Umgebung koennen aktuell keine JS-Syntaxchecks per `node` ausgefuehrt werden.

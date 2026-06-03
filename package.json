@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "check": "node --check index.js && node --check lib/config.js && node --check lib/cache.js && node --check lib/search-utils.js && node --check routes/search.js && node --check routes/quality.js && node --check Statistik/quality.js",
+    "check": "node --check index.js && node --check lib/config.js && node --check lib/cache.js && node --check lib/search-utils.js && node --check routes/search.js && node --check routes/quality.js && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs",
+    "diagnose:quality-examples": "node scripts/diagnose-quality-examples.mjs",
     "update:pagesbuilder-json": "node Pages-Builder/scripts/update-pagesbuilder-json.mjs"
   },
   "dependencies": {
