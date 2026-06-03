@@ -25,3 +25,4 @@ Bevorzugte Verwendung:
 Aktuelles Skript:
 
 - `npm run diagnose:quality-examples`
+- `npm run diagnose:quality-examples:json`

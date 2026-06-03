@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
     || (location.hostname === 'localhost' || location.hostname === '127.0.0.1'
       ? 'http://localhost:3000/api/search'
       : 'https://satourn.onrender.com/api/search');
+  const QUALITY_SCAN_API_BASE = window.SATOURN_QUALITY_SCAN_API_BASE
+    || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/scan');
 
   const CONCURRENCY = Math.max(1, Math.min(10, Number(window.SATOURN_STATISTIK_CONCURRENCY || 6)));
   const WARN_REQUEST_LIMIT = Number(window.SATOURN_STATISTIK_WARN_REQUESTS || 120);
@@ -149,9 +151,20 @@ document.addEventListener('DOMContentLoaded', () => {
       search: ''
     },
     activeIssue: null,
+    activeIssueType: null,
     activeView: 'overview',
     issueListPage: 0,
     issueListPageSize: 50,
+    serverIssueList: {
+      criterionId: null,
+      type: null,
+      items: [],
+      diagnostic: null,
+      page: null,
+      stats: null,
+      loading: false,
+      error: null
+    },
     activeDetailItem: null,
     sortBy: 'default',
     sortDirection: 'asc',
@@ -408,8 +421,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return Number.isFinite(normalized) ? normalized : null;
   }
 
+  function firstNormalizedValue(values) {
+    return safeArray(values).map(normalizeString).find(Boolean) || null;
+  }
+
   function normalizeLicense(rawItem) {
-    return normalizeString(firstValue(rawItem, [
+    return qualityHelpers.getAttributeValue(rawItem, 'license') || normalizeString(firstValue(rawItem, [
       'license',
       'licenses',
       'attribute_license',
@@ -432,13 +449,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (explicit != null) return explicit;
     if (context?.isOpenDataRequest) return true;
     if (!license) return null;
-    return /\b(CC0|CC-BY|CC-BY-SA)\b/i.test(license);
+    return /\b(CC0|CC-BY|CC-BY-SA|PD)\b/i.test(license);
   }
 
   function normalizeCoordinates(rawItem) {
     const lat = normalizeNumber(firstValue(rawItem, [
       'lat',
       'latitude',
+      'geo.main.latitude',
       'geo.lat',
       'geo.latitude',
       'coordinates.lat',
@@ -451,6 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'lng',
       'long',
       'longitude',
+      'geo.main.longitude',
       'geo.lon',
       'geo.lng',
       'geo.longitude',
@@ -466,16 +485,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function countMedia(rawItem) {
-    const media = firstValue(rawItem, ['images', 'image', 'media', 'photos', 'pictures']);
-    if (!media) return null;
-    const values = safeArray(media).filter(hasMeaningfulValue);
-    return values.length || null;
-  }
-
-  function normalizeAvailability(rawItem, paths) {
-    const value = firstValue(rawItem, paths);
-    if (value == null) return null;
-    return hasMeaningfulValue(value);
+    const media = qualityHelpers.getMediaObjects(rawItem).filter(qualityHelpers.isCheckableMediaObject);
+    return media.length || null;
   }
 
   function normalizeSourceUrl(rawItem) {
@@ -488,6 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'web',
       'website',
       'homepage',
+      'source.url',
       'presentation.url',
       'presentation.link'
     ]));
@@ -505,6 +517,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const type = normalizeType(firstValue(raw, ['type', 'Type', 'objectType', '@type', 'touristType']) || context.type);
     const license = normalizeLicense(raw);
     const errors = normalizeErrors(raw, context);
+    const category = firstNormalizedValue(qualityHelpers.getCategoryValues(raw)) || normalizeContextValue(context.category);
+    const region = firstNormalizedValue(qualityHelpers.getAreaValues(raw)) || normalizeContextValue(context.region);
 
     return {
       id: normalizeString(extractId(raw)) || normalizeString(firstValue(raw, ['global_id', 'globalId', 'id', 'Id', 'ID'])) || null,
@@ -518,8 +532,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'presentation.name'
       ])) || 'Ohne Titel',
       type,
-      category: normalizeString(firstValue(raw, ['category', 'categories', 'Category', 'classification.category'])) || normalizeContextValue(context.category),
-      region: normalizeString(firstValue(raw, ['area', 'region', 'state', 'federalState', 'address.region'])) || normalizeContextValue(context.region),
+      category,
+      region,
       city: normalizeString(firstValue(raw, ['city', 'place', 'town', 'municipality', 'address.city', 'address.town'])) || normalizeContextValue(context.city),
       isOpenData: normalizeOpenData(raw, context, license),
       license,
@@ -533,9 +547,9 @@ document.addEventListener('DOMContentLoaded', () => {
       recommendations: [],
       coordinates: normalizeCoordinates(raw),
       imageCount: countMedia(raw),
-      descriptionAvailable: normalizeAvailability(raw, ['description', 'shortDescription', 'longDescription', 'teaser', 'text', 'presentation.description']),
-      openingHoursAvailable: normalizeAvailability(raw, ['openingHours', 'opening_hours', 'hours', 'businessHours', 'times']),
-      bookingLinkAvailable: normalizeAvailability(raw, ['bookingUrl', 'bookingLink', 'reservationUrl', 'ticketUrl', 'booking.url']),
+      descriptionAvailable: qualityHelpers.hasDetailsText(raw),
+      openingHoursAvailable: qualityHelpers.hasOpeningHours(raw),
+      bookingLinkAvailable: qualityHelpers.hasBookingLink(raw),
       updatedAt: normalizeString(firstValue(raw, ['updatedAt', 'modifiedAt', 'lastModified', 'changed', 'dateModified'])),
       sourceUrl: normalizeSourceUrl(raw),
       raw
@@ -560,6 +574,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function resetServerIssueList() {
+    state.serverIssueList = {
+      criterionId: null,
+      type: null,
+      items: [],
+      diagnostic: null,
+      page: null,
+      stats: null,
+      loading: false,
+      error: null
+    };
+  }
+
   function resetQualityData() {
     state.rawItemResponses = [];
     state.allItems = [];
@@ -577,6 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
       note: 'Qualitaetsdaten sind aktuell eine begrenzte Stichprobe aus den Statistik-Requests.'
     };
     state.activeIssue = null;
+    state.activeIssueType = null;
+    resetServerIssueList();
     state.activeView = 'overview';
     state.issueListPage = 0;
     state.activeFilters.qualityStatus = null;
@@ -675,6 +704,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function refreshAfterActiveFilterChange() {
     closeItemDetailPanel({ restoreFocus: false });
     syncActiveFilters();
+    if (state.activeIssue && state.activeIssueType) {
+      state.issueListPage = 0;
+      resetServerIssueList();
+      void loadServerIssueList();
+    }
     if (hasQualityOutputContext()) {
       renderAll();
       updateAiContextNote();
@@ -920,6 +954,100 @@ document.addEventListener('DOMContentLoaded', () => {
     if (place) segments.push(`city:"${cleanQueryValue(place)}"`);
     if (category) segments.push(`category:"${cleanQueryValue(category)}"`);
     return segments.join(' AND ');
+  }
+
+  function buildActiveIssueBaseQuery() {
+    return buildQuery({
+      area: state.activeFilters.region,
+      place: state.activeFilters.city,
+      category: state.activeFilters.category
+    });
+  }
+
+  function buildQualityScanUrl({ criterionId, type, cursor = 0 }) {
+    const url = new URL(QUALITY_SCAN_API_BASE, window.location.origin);
+    url.searchParams.set('criterionId', criterionId);
+    url.searchParams.set('type', type);
+    url.searchParams.set('query', buildActiveIssueBaseQuery());
+    url.searchParams.set('limit', String(state.issueListPageSize));
+    url.searchParams.set('scanPageSize', '100');
+    url.searchParams.set('maxPages', '5');
+    if (Number.isFinite(cursor) && cursor > 0) url.searchParams.set('cursor', String(cursor));
+    return url.toString();
+  }
+
+  function canUseServerIssueList() {
+    return Boolean(state.activeIssue && state.activeIssueType);
+  }
+
+  function isActiveServerIssueList() {
+    return (
+      state.serverIssueList?.criterionId === state.activeIssue &&
+      state.serverIssueList?.type === state.activeIssueType
+    );
+  }
+
+  async function loadServerIssueList({ cursor = 0, append = false } = {}) {
+    if (!canUseServerIssueList()) {
+      resetServerIssueList();
+      return;
+    }
+
+    const criterionId = state.activeIssue;
+    const type = state.activeIssueType;
+    const previous = append && isActiveServerIssueList()
+      ? state.serverIssueList
+      : {
+        criterionId,
+        type,
+        items: [],
+        diagnostic: null,
+        page: null,
+        stats: null
+      };
+    state.serverIssueList = {
+      ...previous,
+      criterionId,
+      type,
+      loading: true,
+      error: null
+    };
+    renderIssueList();
+
+    try {
+      const response = await fetch(buildQualityScanUrl({ criterionId, type, cursor }), {
+        headers: { Accept: 'application/json,*/*;q=0.8' }
+      });
+      const text = await response.text();
+      const payload = parseJsonPayload(text);
+      if (!response.ok) {
+        throw new Error(payload?.error || payload?.details || `HTTP ${response.status}`);
+      }
+
+      state.serverIssueList = {
+        criterionId,
+        type,
+        items: append && isActiveServerIssueList()
+          ? [...safeArray(state.serverIssueList.items), ...safeArray(payload.items)]
+          : safeArray(payload.items),
+        diagnostic: payload.diagnostic || null,
+        page: payload.page || null,
+        stats: payload.stats || null,
+        loading: false,
+        error: null
+      };
+    } catch (error) {
+      state.serverIssueList = {
+        ...(isActiveServerIssueList() ? state.serverIssueList : { criterionId, type, items: [] }),
+        criterionId,
+        type,
+        loading: false,
+        error: shortError(error)
+      };
+    }
+
+    renderIssueList();
+    updateAiContextNote();
   }
 
   function makeRow({ type, query, area, place = '-', category = '-' }) {
@@ -1388,19 +1516,26 @@ document.addEventListener('DOMContentLoaded', () => {
   function selectQualityIssue(criterionId, options = {}) {
     const issue = safeArray(state.qualityAggregations?.issueSummary)
       .find((entry) => entry.criterionId === criterionId);
+    const issueTypes = safeArray(issue?.affectedTypes);
+    const issueType = options.type || (issueTypes.length === 1 ? issueTypes[0] : null);
 
-    if (options.type) {
-      state.selectedType = options.type;
-      state.activeFilters.type = options.type;
-      syncTypeSelectValue(options.type);
+    if (issueType) {
+      state.selectedType = issueType;
+      state.activeFilters.type = issueType;
+      syncTypeSelectValue(issueType);
     }
 
     state.activeIssue = criterionId;
+    state.activeIssueType = issueType;
     state.activeFilters.criterionId = criterionId;
     state.activeView = 'issueList';
     state.issueListPage = 0;
+    resetServerIssueList();
     refreshFilteredItems();
     renderQualitySections();
+    if (state.activeIssueType) {
+      void loadServerIssueList();
+    }
 
     if (issue) {
       setPill('ok', 'Pflegebedarf gewaehlt');
@@ -1669,6 +1804,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getIssueListItems() {
+    if (isActiveServerIssueList()) {
+      return safeArray(state.serverIssueList.items).filter((item) => itemMatchesActiveFilters(item, { includeCriterion: true }));
+    }
     return getItemsByMissingCriterion(getBaseFilteredItems(), state.activeIssue);
   }
 
@@ -2093,6 +2231,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function readFieldCandidates(item, field) {
     const raw = item?.raw && typeof item.raw === 'object' ? item.raw : {};
+    const fieldReaders = {
+      'texts[rel=openings]': () => qualityHelpers.getTextsByRel(raw, 'openings').map((entry) => entry.value),
+      'texts[rel=details]': () => qualityHelpers.getTextsByRel(raw, 'details').map((entry) => entry.value),
+      'attributes[key=license]': () => [qualityHelpers.getAttributeValue(raw, 'license')],
+      features: () => qualityHelpers.getFeatureValues(raw),
+      features_old: () => safeArray(raw.features_old),
+      media_objects: () => qualityHelpers.getMediaObjects(raw).map((mediaObject) => mediaObject.url || mediaObject.value),
+      'media_objects.copyrightText': () => qualityHelpers.getMediaObjects(raw).map((mediaObject) => mediaObject.copyrightText),
+      'media_objects[rel=booking].url': () => qualityHelpers.getMediaObjects(raw)
+        .filter((mediaObject) => normalizeString(mediaObject.rel)?.toLowerCase() === 'booking')
+        .map((mediaObject) => mediaObject.url)
+    };
+    if (fieldReaders[field]) {
+      return fieldReaders[field]()
+        .flatMap((value) => safeArray(value))
+        .filter((value) => value != null)
+        .map(formatDetailValue)
+        .filter((value) => value && value !== '-');
+    }
+
     const candidates = [
       field,
       `raw.${field}`,
@@ -2296,25 +2454,60 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  function serverIssueDiagnosticText() {
+    if (!isActiveServerIssueList()) return null;
+    const { diagnostic, page, stats, loading, error } = state.serverIssueList;
+    const parts = [];
+
+    if (loading) parts.push('Server-Scan laedt');
+    if (error) parts.push(`Server-Scan Fehler: ${error}`);
+    if (diagnostic) {
+      parts.push(`Methode: ${diagnostic.method || '-'}`);
+      parts.push(`Query: ${diagnostic.query || '-'}`);
+      parts.push(`Verifiziert: ${diagnostic.verified ? 'ja' : 'nein'}`);
+      if (safeArray(diagnostic.warnings).length) {
+        parts.push(`Warnungen: ${safeArray(diagnostic.warnings).join(', ')}`);
+      }
+    }
+    if (page) {
+      parts.push(`Vollstaendig: ${page.complete ? 'ja' : 'nein'}`);
+      parts.push(`Grund: ${page.reason || '-'}`);
+    }
+    if (stats) {
+      if (Number.isFinite(stats.overallcount)) parts.push(`overallcount: ${formatNumber(stats.overallcount)}`);
+      parts.push(`gescannt: ${formatNumber(stats.scannedItems || 0)} Items / ${formatNumber(stats.scannedPages || 0)} Seiten`);
+    }
+
+    return parts.length ? parts.join(' | ') : null;
+  }
+
   function updateIssueListHeader(items) {
     const criterion = getActiveIssueCriterion();
     const label = criterion?.label || state.activeIssue || 'Unbekanntes Kriterium';
     const count = safeArray(items).length;
+    const sourceText = isActiveServerIssueList()
+      ? `Server-Fehlerliste fuer ${state.activeIssueType}`
+      : 'Stichprobe aus der aktuellen Browser-Auswahl';
 
     elements.issueDetailTitle.textContent = `Fehlerliste: ${label}`;
-    elements.issueDetailMeta.textContent = `${formatNumber(count)} betroffene Datensaetze in der aktuellen Auswahl`;
-    elements.issueDetailFilters.textContent = getActiveFilterDescription();
+    elements.issueDetailMeta.textContent = `${formatNumber(count)} betroffene Datensaetze | ${sourceText}`;
+    elements.issueDetailFilters.textContent = [getActiveFilterDescription(), serverIssueDiagnosticText()]
+      .filter(Boolean)
+      .join(' | ');
   }
 
   function renderIssuePagination(totalItems) {
     const pageSize = state.issueListPageSize;
     const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
     state.issueListPage = Math.max(0, Math.min(state.issueListPage, pageCount - 1));
+    const hasServerNext = isActiveServerIssueList() && Boolean(state.serverIssueList.page?.nextCursor);
 
-    elements.issuePagination.hidden = totalItems <= pageSize;
+    elements.issuePagination.hidden = totalItems <= pageSize && !hasServerNext;
     elements.issuePrevButton.disabled = state.issueListPage <= 0;
-    elements.issueNextButton.disabled = state.issueListPage >= pageCount - 1;
-    elements.issuePageStatus.textContent = `Seite ${formatNumber(state.issueListPage + 1)} von ${formatNumber(pageCount)}`;
+    elements.issueNextButton.disabled = state.issueListPage >= pageCount - 1 && !hasServerNext;
+    elements.issuePageStatus.textContent = hasServerNext
+      ? `Seite ${formatNumber(state.issueListPage + 1)} von ${formatNumber(pageCount)} | weitere Server-Seite verfuegbar`
+      : `Seite ${formatNumber(state.issueListPage + 1)} von ${formatNumber(pageCount)}`;
   }
 
   function renderIssueList() {
@@ -2330,6 +2523,26 @@ document.addEventListener('DOMContentLoaded', () => {
     updateIssueListHeader(items);
     elements.issueDetailTable.replaceChildren();
     elements.issueDetailSection.hidden = false;
+
+    if (isActiveServerIssueList() && state.serverIssueList.loading && !items.length) {
+      const loading = document.createElement('div');
+      loading.className = 'issue-page-empty';
+      loading.textContent = 'Server-Fehlerliste wird geladen ...';
+      elements.issueDetailTable.appendChild(loading);
+      renderIssuePagination(0);
+      elements.issuePagination.hidden = true;
+      return;
+    }
+
+    if (isActiveServerIssueList() && state.serverIssueList.error && !items.length) {
+      const error = document.createElement('div');
+      error.className = 'issue-page-empty';
+      error.textContent = `Server-Fehlerliste konnte nicht geladen werden: ${state.serverIssueList.error}`;
+      elements.issueDetailTable.appendChild(error);
+      renderIssuePagination(0);
+      elements.issuePagination.hidden = true;
+      return;
+    }
 
     if (!items.length) {
       const empty = document.createElement('div');
@@ -2398,9 +2611,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function clearActiveIssue() {
     state.activeIssue = null;
+    state.activeIssueType = null;
     state.activeFilters.criterionId = null;
     state.activeView = 'overview';
     state.issueListPage = 0;
+    resetServerIssueList();
     closeItemDetailPanel({ restoreFocus: false });
     refreshFilteredItems();
     renderQualitySections();
@@ -2860,6 +3075,24 @@ document.addEventListener('DOMContentLoaded', () => {
     renderIssueList();
   });
   elements.issueNextButton.addEventListener('click', () => {
+    const nextClientPageStart = (state.issueListPage + 1) * state.issueListPageSize;
+    const needsServerPage = (
+      isActiveServerIssueList() &&
+      nextClientPageStart >= safeArray(state.serverIssueList.items).length &&
+      state.serverIssueList.page?.nextCursor != null
+    );
+
+    if (needsServerPage) {
+      void loadServerIssueList({
+        cursor: Number(state.serverIssueList.page.nextCursor) || 0,
+        append: true
+      }).then(() => {
+        state.issueListPage += 1;
+        renderIssueList();
+      });
+      return;
+    }
+
     state.issueListPage += 1;
     renderIssueList();
   });

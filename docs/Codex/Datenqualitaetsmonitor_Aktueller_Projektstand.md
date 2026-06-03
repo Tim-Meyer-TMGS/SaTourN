@@ -109,6 +109,31 @@ API-Pushdown fuer fehlende Bildurheber vorliegt. `booking_link_missing` nutzt
 fuer Hotel die bestaetigte Query `*:* NOT booking:*`; Package bleibt vorerst
 serverseitiger Scan, bis Query und Feldstruktur verifiziert sind.
 
+Schritt C - reale Feldmappings:
+
+- Dashboard-Normalisierung nutzt jetzt `attributes[]` fuer Lizenz und Open-Data-Ableitung.
+- Gebiet und Kategorie werden aus `areas[]`/`areas_old[]` bzw. `categories[]`/`categories_old[]` gelesen.
+- Beschreibung, Oeffnungszeiten, Bild, Bildurheber und Booking werden aus den realen Feldern `texts[]`, `timeIntervals[]`, `alwaysOpen` und `media_objects[]` abgeleitet.
+- Synthetische Shortcut-Felder wie `descriptionAvailable`, `imageCount` und `bookingLinkAvailable` entscheiden nicht mehr ueber die Kriterienerfuellung.
+- Detailansicht kann Kriterienfelder wie `texts[rel=details]`, `attributes[key=license]`, `media_objects.copyrightText` und `media_objects[rel=booking].url` anzeigen.
+- `/api/quality/scan` reduziert Treffer mit denselben realen Feldmappings fuer Gebiet, Kategorie, Lizenz und Medien.
+
+Schritt D - Helper und Beispiel-Diagnose:
+
+- Alle in `Datenqualitaetsmonitor_Verifizierte_Annahmen.md` aufgefuehrten D-Helper sind in `Statistik/quality.js` verfuegbar.
+- `scripts/diagnose-quality-examples.mjs` prueft die Helper gegen `docs/Codex/examples/*.json`.
+- Das Skript gibt Helper-Zaehler, Beispiel-IDs, Kriterienergebnisse, Scan-Methode, Query und Warnungen aus.
+- Fuer maschinenlesbare Auswertung gibt es `npm run diagnose:quality-examples:json`.
+
+Schritt E - Proxy, Query-Erzeugung und Fehlerlisten:
+
+- `/api/quality/scan` leitet die effektive Scan-Konfiguration aus `criterionId` und `type` ab.
+- Die Route nutzt nur verifizierte Missing-Queries als API-Pushdown und faellt sonst auf `server_scan` zurueck.
+- Die Antwort enthaelt Diagnoseinformationen zu Methode, Query, Verifikation, Warnungen, Pagination, `overallcount` und Scan-Budget.
+- Bei eindeutigem Datentyp und Kriterium laedt die Fehlerliste serverseitig ueber `/api/quality/scan`.
+- Die Fehlerlisten-UI zeigt Quelle, Methode, Query, Verifikation, Vollstaendigkeit und Scan-Status.
+- Wenn kein eindeutiger Datentyp vorliegt, bleibt die bestehende Browser-Stichprobe aktiv.
+
 Score-Logik:
 
 - Nur automatisch pruefbare Kriterien mit Gewichtung gehen in den Score ein.

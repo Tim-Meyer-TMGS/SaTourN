@@ -218,12 +218,10 @@ export function hasGeoCoordinates(item = {}) {
 }
 
 export function hasDescription(item = {}) {
-  if (item.descriptionAvailable === true) return true;
   return hasDetailsText(item);
 }
 
 export function hasImages(item = {}) {
-  if (Number.isFinite(item.imageCount) && item.imageCount > 0) return true;
   return hasCheckableMedia(item);
 }
 
@@ -232,7 +230,6 @@ export function hasImageAuthor(item = {}) {
 }
 
 export function hasOpeningHours(item = {}) {
-  if (item.openingHoursAvailable === true) return true;
   return (
     hasTextByRel(item, 'openings') ||
     safeArray(item.timeIntervals).some(hasValue) ||
@@ -243,7 +240,6 @@ export function hasOpeningHours(item = {}) {
 }
 
 export function hasBookingLink(item = {}) {
-  if (item.bookingLinkAvailable === true) return true;
   const bookingMedia = getMediaObjects(item).filter((mediaObject) => normalizeComparable(mediaObject.rel) === 'booking');
   return bookingMedia.some((mediaObject) => isNonEmptyHtmlOrText(mediaObject.url));
 }

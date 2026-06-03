@@ -17,8 +17,13 @@ import {
 } from '../lib/search-utils.js';
 import {
   evaluateQualityForItem,
+  getAreaValues,
+  getAttributeValue,
+  getCategoryValues,
   getCriteriaForType,
+  getMediaObjects,
   getQualityScanConfig,
+  isCheckableMediaObject,
   qualityCriteria
 } from '../Statistik/quality.js';
 
@@ -72,15 +77,33 @@ function normalizeItemForEvaluation(rawItem, type) {
   };
 }
 
+function firstListText(values) {
+  return values.map((value) => firstText({ value }, ['value'])).find(Boolean) || null;
+}
+
+function countCheckableMedia(rawItem) {
+  return getMediaObjects(rawItem).filter(isCheckableMediaObject).length;
+}
+
 function reduceItemForResponse(item, criterion) {
   const raw = item.raw || item;
+  const category = firstListText(getCategoryValues(raw))
+    || firstText(item, ['category', 'categories', 'Category', 'classification.category', 'raw.category', 'raw.categories']);
+  const region = firstListText(getAreaValues(raw))
+    || firstText(item, ['area', 'region', 'state', 'federalState', 'address.region', 'raw.area', 'raw.region', 'raw.areas']);
+  const license = getAttributeValue(raw, 'license')
+    || firstText(item, ['license', 'attribute_license', 'raw.license', 'raw.attribute_license']);
+  const mediaCount = countCheckableMedia(raw);
+
   return {
     id: extractId(raw) || item.id || null,
     title: firstText(item, ['title', 'Title', 'name', 'Name', 'headline', 'presentation.title', 'raw.title', 'raw.name', 'raw.presentation.title']) || 'Ohne Titel',
     type: item.type || null,
-    category: firstText(item, ['category', 'categories', 'Category', 'classification.category', 'raw.category', 'raw.categories']),
-    region: firstText(item, ['area', 'region', 'state', 'federalState', 'address.region', 'raw.area', 'raw.region']),
+    category,
+    region,
     city: firstText(item, ['city', 'place', 'town', 'municipality', 'address.city', 'raw.city', 'raw.place']),
+    license,
+    imageCount: mediaCount || null,
     qualityScore: item.qualityScore,
     qualityStatus: item.qualityStatus,
     missingCriteria: item.missingCriteria || [],
@@ -95,14 +118,19 @@ function reduceItemForResponse(item, criterion) {
   };
 }
 
-function reduceCriterionForResponse(criterion) {
+function reduceCriterionForResponse(criterion, type = null) {
+  const scanConfig = type ? getQualityScanConfig(criterion, type) : null;
+
   return {
     id: criterion.id,
     label: criterion.label,
     priority: criterion.priority,
     autoCheck: criterion.autoCheck,
     recommendation: criterion.recommendation,
-    method: criterion.method || 'server_scan',
+    method: scanConfig?.method || criterion.method || 'server_scan',
+    verified: scanConfig?.verified ?? false,
+    missingQuery: scanConfig?.missingQuery || null,
+    positiveQuery: scanConfig?.positiveQuery || null,
     api: criterion.api || null,
     apiByType: criterion.apiByType || null,
     unsupportedQueries: criterion.unsupportedQueries || []
@@ -171,7 +199,7 @@ export function registerQualityRoute(app) {
     if (!isCriterionRelevantForType(criterion, normalizedType)) {
       return res.json({
         items: [],
-        criterion: reduceCriterionForResponse(criterion),
+        criterion: reduceCriterionForResponse(criterion, normalizedType),
         page: {
           cursor: normalizeOffsetParam(cursor ?? offset),
           nextCursor: null,
@@ -294,7 +322,7 @@ export function registerQualityRoute(app) {
 
       res.json({
         items,
-        criterion: reduceCriterionForResponse(criterion),
+        criterion: reduceCriterionForResponse(criterion, normalizedType),
         diagnostic: {
           method: scanConfig.method,
           query: effectiveQuery,

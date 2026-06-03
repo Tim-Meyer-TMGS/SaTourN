@@ -3,8 +3,9 @@
 Stand: 2026-06-03
 
 Diese Datei ist die kompakte TODO-Liste fuer die weitere Arbeit. Der
-Kriterienumbau auf die verifizierten Annahmen ist umgesetzt; offen sind vor
-allem Verifikation, UI-Anbindung grosser Fehlerlisten und robuste Vollscan-Pfade.
+Kriterienumbau, die reale Helper-Diagnose und die erste serverseitige
+Fehlerlisten-Anbindung sind umgesetzt; offen sind vor allem Live-Verifikation,
+Export und robuste Vollscan-Pfade.
 
 ## Erledigt am 2026-06-03
 
@@ -12,29 +13,42 @@ allem Verifikation, UI-Anbindung grosser Fehlerlisten und robuste Vollscan-Pfade
 - `geo_missing`, `touristtrip_incomplete` und automatische `manual_image_quality` aus aktiven Kriterien entfernt.
 - Datentypen je Kriterium korrigiert.
 - Reale Helper fuer `texts[]`, `attributes[]`, `features[]`, `features_old[]`, `media_objects[]`, `areas[]` und `categories[]` ergaenzt.
+- Schritt C umgesetzt: Dashboard-Normalisierung, Detailanzeige und Proxy-Fehlerlisten nutzen die realen Feldmappings.
 - Lizenzpruefung inklusive `PD` umgesetzt.
 - Bildurheberpruefung auf `media_objects[].copyrightText` umgestellt.
 - Hotel-Buchungslink ueber `media_objects[rel=booking].url` umgesetzt.
 - Verifizierte Query-Konfiguration mit `method`, `positiveQuery`, `missingQuery`, `verifiedForTypes`, `apiByType` und Warnungen ergaenzt.
 - `/api/quality/scan` leitet Methode und Query aus `criterionId` + `type` ab.
 - Scan-Antwort um Diagnoseinformationen erweitert.
-- Beispiel-Diagnose `scripts/diagnose-quality-examples.mjs` ergaenzt.
-- npm-Script `diagnose:quality-examples` ergaenzt.
+- Schritt E umgesetzt: Fehlerlisten laden bei eindeutigem Typ/Kriterium serverseitig ueber `/api/quality/scan`.
+- Fehlerlisten-UI zeigt Quelle, Methode, Query, Verifikation, Vollstaendigkeit, `overallcount`, gescannte Items/Seiten und Warnungen.
+- Schritt D umgesetzt: alle D-Helper sind in `Statistik/quality.js` verfuegbar.
+- Beispiel-Diagnose `scripts/diagnose-quality-examples.mjs` ergaenzt und auf Helper-Zaehler, Beispiel-IDs, Kriterienergebnisse, Query-Infos und Warnungen erweitert.
+- npm-Scripts `diagnose:quality-examples` und `diagnose:quality-examples:json` ergaenzt.
+- Shortcut-Risiko entfernt: Beschreibung, Bild und Booking werden in `Statistik/quality.js` nicht mehr ueber synthetische Flags wie `descriptionAvailable`, `imageCount` oder `bookingLinkAvailable` als erfuellt markiert.
+- Doppelte Medienlogik reduziert: `/api/quality/scan` nutzt fuer pruefbare Medien denselben Helper wie die zentrale Qualitaetslogik.
 
 ## Naechster Implementierungsschritt
 
-- Frontend-Fehlerlisten an `/api/quality/scan` anbinden, sobald Datentyp und Kriterium eindeutig gewaehlt sind.
-- In der Fehlerlisten-UI Methode, Query, Verifikation, Vollstaendigkeit, `overallcount`, Budget und Warnungen anzeigen.
-- Browser-Stichprobe und serverseitige Fehlerliste klar voneinander trennen.
+- Kombinierte destination.one-Queries live verifizieren.
+- Danach entscheiden, ob die generische Query-Kombination stabil bleibt oder pro Kriterium/Typ explizit konfiguriert werden muss.
+- Fehlerlisten-CSV perspektivisch an serverseitige Treffer anbinden.
 
 ## Tests und Diagnose
 
 - Lokal oder in GitHub Actions `npm run check` ausfuehren.
 - Lokal oder in GitHub Actions `npm run diagnose:quality-examples` ausfuehren.
-- Diagnose-Skript ausbauen:
-  - Beispiel-IDs je fehlendem Kriterium ausgeben.
-  - Warnungen und offene Verifikationen prominenter ausgeben.
-  - optional JSON-Ausgabe fuer spaetere CI-Auswertung.
+- Optional maschinenlesbar ausfuehren: `npm run diagnose:quality-examples:json`.
+- Kombinierte destination.one-Queries live testen, weil Basisfilter und Missing-Query aktuell serverseitig mit `AND` kombiniert werden:
+  - `area:"Sachsen" AND (*:* NOT booking:*)` bzw. die vom Proxy erzeugte Variante fuer Hotel.
+  - `area:"Sachsen" AND (*:* -openings:*)` fuer POI/Gastro.
+  - `category:"..." AND (*:* -details:*)` fuer POI/Gastro/Tour.
+  - `category:"..." AND (*:* -media:*)` fuer POI/Gastro/Tour.
+  - `area:"Sachsen" AND (*:* -feature:"Mit OePNV erreichbar")` fuer die OePNV-Pruefung.
+- Falls kombinierte Negativqueries bei destination.one nicht stabil funktionieren, Query-Komposition pro Kriterium/Typ explizit konfigurieren statt generisch zu kombinieren.
+- Diagnose-Skript bei Bedarf weiter ausbauen:
+  - feste Erwartungswerte je Beispiel-Datei definieren, sobald fachlich gewuenschte Zielquoten bekannt sind.
+  - API-Abgleich gegen Live-Queries integrieren, sobald Query-Diagnose stabil ist.
 - Query-Diagnose-Skript gegen destination.one ergaenzen, z. B. `scripts/test-et4-quality-filters.mjs`.
 - Plausibilitaet zwischen API-Pushdown und lokalen Helpern stichprobenartig pruefen.
 
@@ -57,7 +71,7 @@ allem Verifikation, UI-Anbindung grosser Fehlerlisten und robuste Vollscan-Pfade
 
 ## API und grosse Datenmengen
 
-- Fehlerlisten erst nach Datentyp + Kriterium laden.
+- Fehlerlisten laden serverseitig erst nach Datentyp + Kriterium; fuer uneindeutige Problemcluster bleibt die Browser-Stichprobe aktiv.
 - Initial Load maximal 1 bis 2 kleine Requests.
 - Statistikbereich soll nur Statistik-Counts laden, keine itembasierten Qualitaetsscans.
 - Matrix soll zunaechst Struktur zeigen, Counts erst auf Klick oder explizite Aktualisierung.
@@ -68,8 +82,8 @@ allem Verifikation, UI-Anbindung grosser Fehlerlisten und robuste Vollscan-Pfade
 
 ## UI und Export
 
-- Fehlerlisten-UI auf serverseitig paginierte Ergebnisse umstellen.
-- Bestehende clientseitige Fehlerliste als Stichprobe kennzeichnen, wenn kein Server-Scan aktiv ist.
+- Server-Fehlerlisten mit echten Daten manuell im Browser pruefen.
+- Bestehende clientseitige Fehlerliste bleibt Fallback/Stichprobe, wenn kein eindeutiger Datentyp vorliegt.
 - Matrix-CSV optional ergaenzen.
 - Exportkontext deutlicher markieren, wenn Daten nur stichprobenbasiert sind.
 - Optional Copy-/Export-Aktion fuer einzelne Datensatzdetails ergaenzen.

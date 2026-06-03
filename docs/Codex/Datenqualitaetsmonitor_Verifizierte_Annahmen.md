@@ -62,6 +62,9 @@ Wichtig:
 
 ## Neuer Teilschritt C - Reale Feldmappings nutzen
 
+Status: umgesetzt am 2026-06-03 in `Statistik/quality.js`,
+`Statistik/scripts.js` und `routes/quality.js`.
+
 Gemeinsame Felder:
 
 - `id`, `global_id`, `title`, `type`
@@ -88,6 +91,9 @@ Wichtige lokale Fallbacks:
 
 ## Neuer Teilschritt D - Helper und Tests auf reale Beispiele ausrichten
 
+Status: umgesetzt am 2026-06-03 in `Statistik/quality.js` und
+`scripts/diagnose-quality-examples.mjs`.
+
 Beispieldaten liegen unter:
 
 - `docs/Codex/examples/poi.json`
@@ -113,7 +119,22 @@ Zu implementierende oder zu korrigierende Helper:
 - `getAreaValues(item)`
 - `getCategoryValues(item)`
 
+Diagnose:
+
+- `npm run diagnose:quality-examples`
+- `npm run diagnose:quality-examples:json`
+
+Die Diagnose prueft:
+
+- Verfuegbarkeit aller D-Helper.
+- Helper-Zaehler und Beispiel-IDs je Datentyp.
+- fehlende und erfuellte Kriterien je Datentyp.
+- Scan-Methode, verifizierte Query, Warnungen und Beispiel-IDs je Kriterium.
+
 ## Neuer Teilschritt E - Proxy und Query-Erzeugung umbauen
+
+Status: umgesetzt am 2026-06-03 in `routes/quality.js` und
+`Statistik/scripts.js`.
 
 Ziel:
 
@@ -127,6 +148,15 @@ Mindestanforderung fuer Fehlerlisten:
 - Typ und Kriterium muessen eindeutig gewaehlt sein.
 - Fehlerliste laedt erst nach dieser Auswahl.
 - UI zeigt Methode, Query, Verifikation und Vollstaendigkeitsstatus.
+
+Umsetzung:
+
+- `/api/quality/scan` leitet Query, Methode und Verifikation aus `criterionId` und `type` ab.
+- Verifizierte Missing-Queries werden serverseitig mit der Basisquery kombiniert.
+- Nicht verifizierte Kriterien fallen auf serverseitigen Scan zurueck.
+- Die Antwort enthaelt `diagnostic`, `page`, `stats` und effektive Criterion-Metadaten fuer den angefragten Typ.
+- Die Fehlerliste nutzt den Server-Scan, sobald Kriterium und Datentyp eindeutig sind.
+- Die UI zeigt Quelle, Methode, Query, Verifikation, Vollstaendigkeit, `overallcount`, gescannte Items/Seiten und Warnungen.
 
 ## Neuer Teilschritt F - UI-Struktur API-schonend weiterentwickeln
 
