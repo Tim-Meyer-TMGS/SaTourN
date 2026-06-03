@@ -15,9 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const QUALITY_ITEM_MAX_ITEMS = Math.max(0, Math.min(5000, Number(window.SATOURN_STATISTIK_QUALITY_ITEM_MAX_ITEMS || 2000)));
   const AI_CHAT_CONFIG = {
     enabled: true,
-    webhookUrl: '',
-    authHeaderName: '',
-    authHeaderValue: '',
+    webhookUrl: 'https://n8n.oi.destination.one/webhook/b5b2471c-c5cf-4573-b965-ea60537d128d/chat',
+    authHeaderName: 'satourn',
+    authHeaderValue: 'satourn',
     maxItemsForContext: 50,
     timeoutMs: 30000,
     mockMode: true,
