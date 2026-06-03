@@ -20,6 +20,7 @@ Bis Abschnitt 13 umgesetzt:
 - Fehlerlisten-Ansicht mit Pagination.
 - Datentyp-Uebersicht.
 - Qualitaetskriterien-Matrix.
+- seitliche Arbeitsbereich-Navigation nach Zielbild-Logik.
 - kontextsensitiver CSV-Export.
 - vorbereiteter KI-Chatbot ueber n8n-Webhook mit Mock-Modus.
 - Datensatz-Detailansicht als Seitenpanel.
@@ -78,6 +79,7 @@ Wichtige State-Felder:
 - `activeFilters`: Gebiet, Ort, Typ, Kategorie, Qualitaetsstatus, Kriterium, Prioritaet, Pruefbarkeit, Suche.
 - `activeIssue`: aktives fehlendes Kriterium.
 - `activeView`: z. B. `overview` oder `issueList`.
+- `activePanel`: sichtbarer Arbeitsbereich, z. B. `overview`, `stats`, `quality`, `issues`, `types`, `matrix`, `results`.
 - `activeDetailItem`: aktuell geoeffneter Detaildatensatz.
 
 ## Qualitaetskriterien
@@ -134,6 +136,15 @@ Schritt E - Proxy, Query-Erzeugung und Fehlerlisten:
 - Die Fehlerlisten-UI zeigt Quelle, Methode, Query, Verifikation, Vollstaendigkeit und Scan-Status.
 - Wenn kein eindeutiger Datentyp vorliegt, bleibt die bestehende Browser-Stichprobe aktiv.
 
+Schritt F - UI-Struktur:
+
+- `Statistik/index.html` enthaelt jetzt eine seitliche Navigation fuer die Arbeitsbereiche.
+- Vorhandene Bereiche sind ueber `data-view-panel` Views zugeordnet.
+- `Statistik/scripts.js` steuert die Sichtbarkeit ueber `activePanel`.
+- Klick auf ein Qualitaetsproblem wechselt direkt zur Fehlerlisten-Ansicht.
+- Ruecksprung aus einer Fehlerliste setzt wieder die Uebersicht.
+- Bei aktivem Server-Scan wird ein geaenderter Typfilter in `activeIssueType` uebernommen, damit die API-Anfrage zum sichtbaren Filterkontext passt.
+
 Score-Logik:
 
 - Nur automatisch pruefbare Kriterien mit Gewichtung gehen in den Score ein.
@@ -179,6 +190,7 @@ Problemcluster:
 
 - klickbare Pflegebedarfe.
 - setzen `activeIssue` und oeffnen die Fehlerliste.
+- wechseln automatisch in den Arbeitsbereich `Fehlerlisten`.
 
 Fehlerliste:
 
@@ -229,6 +241,7 @@ CSV:
 KI-Chatbot:
 
 - Panel `KI-Analyse`.
+- ueber Floating-Button und seitliche Navigation erreichbar.
 - Mock-Modus aktiv, solange keine n8n-Webhook-URL konfiguriert ist.
 - keine one.intelligence-Keys im Frontend.
 - `buildAiContext()` erzeugt reduzierten Kontext.
@@ -255,13 +268,14 @@ Python ist spaeter sinnvoll fuer:
 5. `refreshNormalizedItems()` normalisiert und bewertet Items.
 6. `refreshFilteredItems()` baut Basislisten, `qualityAggregations` und ggf. `filteredItems`.
 7. `renderAll()` rendert Statistik, Qualitaetsbereiche, Matrix, Tabellen und Charts.
-8. Klick auf Pflegebedarf setzt `activeIssue` und rendert die Fehlerliste.
-9. Matrix-/Datentyp-Klicks koennen zusaetzlich Typ-Kontext setzen.
-10. CSV-Button exportiert je nach Kontext Statistik oder aktive Fehlerliste.
-11. Chatbot baut mit `buildAiContext()` einen kompakten Kontext.
-12. Detailpanel oeffnet einen konkreten Datensatz oder ein Beispiel aus der Stichprobe.
-13. Zusatzfilter fuer Suche, Qualitaetsstatus, Prioritaet und Pruefbarkeit aktualisieren `activeFilters`.
-14. Filteraenderungen berechnen `filteredItems`, `qualityAggregations`, Fehlerliste, CSV-Kontext und KI-Kontext neu.
+8. `updateViewNavigation()` zeigt nur die Bereiche des aktiven Arbeitsbereichs.
+9. Klick auf Pflegebedarf setzt `activeIssue`, wechselt zu `activePanel = issues` und rendert die Fehlerliste.
+10. Matrix-/Datentyp-Klicks koennen zusaetzlich Typ-Kontext setzen.
+11. CSV-Button exportiert je nach Kontext Statistik oder aktive Fehlerliste.
+12. Chatbot baut mit `buildAiContext()` einen kompakten Kontext.
+13. Detailpanel oeffnet einen konkreten Datensatz oder ein Beispiel aus der Stichprobe.
+14. Zusatzfilter fuer Suche, Qualitaetsstatus, Prioritaet und Pruefbarkeit aktualisieren `activeFilters`.
+15. Filteraenderungen berechnen `filteredItems`, `qualityAggregations`, Fehlerliste, CSV-Kontext und KI-Kontext neu.
 
 ## Abschnitt 13 - Finale Pruefung und Bereinigung
 
@@ -312,7 +326,9 @@ Umgesetzt:
 
 Weiter offen:
 
-- Fehlerlisten sollen perspektivisch erst nach eindeutiger Auswahl von Datentyp und Kriterium serverseitig laden.
+- Kombinierte destination.one-Queries muessen live verifiziert werden.
+- Matrix-Counts und grosse CSV-Exporte brauchen perspektivisch einen kontrollierten Server-/Job-Pfad.
+- Ein eigener Diagnose-/Einstellungsbereich ist noch offen.
 
 ## Pruefung
 

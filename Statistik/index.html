@@ -8,7 +8,43 @@ module: true
 ---
 
 <div class="statistik">
-  <div class="wrap">
+  <div class="statistik-shell">
+    <nav class="statistik-side-nav" aria-label="Datenqualitaetsmonitor Navigation">
+      <button class="statistik-nav-button active" type="button" data-statistik-view="overview" aria-current="page">
+        <span>01</span>
+        Ueberblick
+      </button>
+      <button class="statistik-nav-button" type="button" data-statistik-view="stats">
+        <span>02</span>
+        Statistik
+      </button>
+      <button class="statistik-nav-button" type="button" data-statistik-view="quality">
+        <span>03</span>
+        Datenqualitaet
+      </button>
+      <button class="statistik-nav-button" type="button" data-statistik-view="issues">
+        <span>04</span>
+        Fehlerlisten
+      </button>
+      <button class="statistik-nav-button" type="button" data-statistik-view="types">
+        <span>05</span>
+        Datentypen
+      </button>
+      <button class="statistik-nav-button" type="button" data-statistik-view="matrix">
+        <span>06</span>
+        Kriterien
+      </button>
+      <button class="statistik-nav-button" type="button" data-statistik-view="results">
+        <span>07</span>
+        Ergebnisse
+      </button>
+      <button class="statistik-nav-button" type="button" data-statistik-view="ai">
+        <span>08</span>
+        KI-Analyse
+      </button>
+    </nav>
+
+    <div class="wrap statistik-main">
 
     <section class="card">
       <div class="hd">
@@ -148,7 +184,7 @@ module: true
 
         <div id="empty-state" class="empty-state" aria-live="polite">Noch keine Abfrage gestartet.</div>
 
-        <div id="summary" class="summary" hidden>
+        <div id="summary" class="summary" data-view-panel="overview stats" hidden>
           <div class="summary-item">
             <span>SaTourN</span>
             <strong id="summary-stat">0</strong>
@@ -167,7 +203,7 @@ module: true
           </div>
         </div>
 
-        <div id="quality-summary" class="summary quality-summary" hidden aria-live="polite">
+        <div id="quality-summary" class="summary quality-summary" data-view-panel="overview quality" hidden aria-live="polite">
           <div class="summary-item">
             <span>Durchschnittlicher Qualitaets-Score</span>
             <strong id="quality-score">keine Daten</strong>
@@ -194,7 +230,7 @@ module: true
           </div>
         </div>
 
-        <section id="issue-summary" class="issue-summary" aria-labelledby="issue-summary-title" hidden>
+        <section id="issue-summary" class="issue-summary" data-view-panel="overview quality issues" aria-labelledby="issue-summary-title" hidden>
           <div class="section-head">
             <div>
               <h2 id="issue-summary-title">Haeufigste Pflegebedarfe</h2>
@@ -205,7 +241,7 @@ module: true
           <div id="issue-list" class="issue-list"></div>
         </section>
 
-        <section id="issue-detail-section" class="issue-detail" aria-labelledby="issue-detail-title" hidden>
+        <section id="issue-detail-section" class="issue-detail" data-view-panel="issues" aria-labelledby="issue-detail-title" hidden>
           <div class="issue-detail-head">
             <div>
               <h2 id="issue-detail-title">Fehlerliste</h2>
@@ -224,7 +260,7 @@ module: true
           </div>
         </section>
 
-        <section id="type-summary-section" class="quality-table-section" aria-labelledby="type-summary-title" hidden>
+        <section id="type-summary-section" class="quality-table-section" data-view-panel="overview types" aria-labelledby="type-summary-title" hidden>
           <div class="section-head">
             <div>
               <h2 id="type-summary-title">Datentypen im Ueberblick</h2>
@@ -233,7 +269,7 @@ module: true
           <div class="tableWrap quality-table-wrap" id="type-summary-table"></div>
         </section>
 
-        <section id="criteria-matrix-section" class="quality-table-section" aria-labelledby="criteria-matrix-title" hidden>
+        <section id="criteria-matrix-section" class="quality-table-section" data-view-panel="matrix" aria-labelledby="criteria-matrix-title" hidden>
           <div class="section-head">
             <div>
               <h2 id="criteria-matrix-title">Qualitaetskriterien-Matrix</h2>
@@ -242,7 +278,7 @@ module: true
           <div class="tableWrap quality-table-wrap matrix-table-wrap" id="criteria-matrix-table"></div>
         </section>
 
-        <div id="chart-container" class="chart-grid" hidden>
+        <div id="chart-container" class="chart-grid" data-view-panel="stats" hidden>
           <div class="chart-card">
             <div class="chart-title">Open-Data Anteil</div>
             <canvas id="ratio-chart" height="230"></canvas>
@@ -253,10 +289,11 @@ module: true
           </div>
         </div>
 
-        <div class="tableWrap" id="result" hidden></div>
+        <div class="tableWrap" id="result" data-view-panel="results stats" hidden></div>
       </div>
     </section>
 
+    </div>
   </div>
 
   <button id="ai-chat-open-button" class="ai-chat-open-button" type="button" aria-controls="ai-chat-panel" aria-expanded="false">

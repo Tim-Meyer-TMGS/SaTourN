@@ -160,6 +160,9 @@ Umsetzung:
 
 ## Neuer Teilschritt F - UI-Struktur API-schonend weiterentwickeln
 
+Status: umgesetzt am 2026-06-03 in `Statistik/index.html`,
+`Statistik/style.css` und `Statistik/scripts.js`.
+
 Langfristige Zielstruktur:
 
 - Uebersicht
@@ -178,6 +181,31 @@ Mindestregeln:
 - Fehlerlisten laden erst nach Datentyp + Kriterium.
 - Matrix zeigt zuerst Struktur, Counts erst auf Klick oder gezielte Aktualisierung.
 - KI baut Kontext nur beim Oeffnen oder explizitem Start.
+
+Umsetzung:
+
+- Seitliche Arbeitsbereich-Navigation ergaenzt.
+- Bestehende Dashboard-Bereiche in Views getrennt:
+  - `Uebersicht`
+  - `Statistik`
+  - `Datenqualitaet`
+  - `Fehlerlisten`
+  - `Datentypen`
+  - `Kriterien`
+  - `Ergebnisse`
+  - `KI-Analyse`
+- View-State `activePanel` in `dashboardState` ergaenzt.
+- Sichtbarkeit der vorhandenen Bereiche laeuft ueber `data-view-panel`.
+- Klick auf ein Qualitaetsproblem wechselt automatisch in die Fehlerlisten-Ansicht.
+- Ruecksprung aus einer Fehlerliste oeffnet wieder die Uebersicht.
+- Bei aktivem Server-Scan wird der Typkontext an den aktuellen Typfilter angepasst, damit UI und API-Anfrage nicht auseinanderlaufen.
+- Die KI bleibt als Panel erhalten und wird ueber Navigation oder Floating-Button geoeffnet.
+
+Noch nicht umgesetzt:
+
+- Matrix-Counts sind weiterhin aus dem aktuellen Browser-Sample abgeleitet.
+- Ein separater Einstellungs-/Diagnosebereich ist noch nicht angelegt.
+- KI-Kontext wird weiterhin beim Oeffnen/Aktualisieren aus dem aktuellen Dashboard-State gebaut; ein separater Server-Kontextpfad fuer grosse Datenmengen bleibt offen.
 
 ## Neuer Teilschritt G - Diagnose und Tests
 

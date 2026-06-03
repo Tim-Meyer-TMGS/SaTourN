@@ -3,9 +3,9 @@
 Stand: 2026-06-03
 
 Diese Datei ist die kompakte TODO-Liste fuer die weitere Arbeit. Der
-Kriterienumbau, die reale Helper-Diagnose und die erste serverseitige
-Fehlerlisten-Anbindung sind umgesetzt; offen sind vor allem Live-Verifikation,
-Export und robuste Vollscan-Pfade.
+Kriterienumbau, die reale Helper-Diagnose, die erste serverseitige
+Fehlerlisten-Anbindung und die seitliche UI-Struktur sind umgesetzt; offen
+sind vor allem Live-Verifikation, Export und robuste Vollscan-Pfade.
 
 ## Erledigt am 2026-06-03
 
@@ -27,11 +27,15 @@ Export und robuste Vollscan-Pfade.
 - npm-Scripts `diagnose:quality-examples` und `diagnose:quality-examples:json` ergaenzt.
 - Shortcut-Risiko entfernt: Beschreibung, Bild und Booking werden in `Statistik/quality.js` nicht mehr ueber synthetische Flags wie `descriptionAvailable`, `imageCount` oder `bookingLinkAvailable` als erfuellt markiert.
 - Doppelte Medienlogik reduziert: `/api/quality/scan` nutzt fuer pruefbare Medien denselben Helper wie die zentrale Qualitaetslogik.
+- Schritt F umgesetzt: seitliche Arbeitsbereich-Navigation ergaenzt und bestehende Bereiche in Views fuer Uebersicht, Statistik, Datenqualitaet, Fehlerlisten, Datentypen, Kriterien, Ergebnisse und KI getrennt.
+- Fehlerlisten-Klicks wechseln automatisch in die Fehlerlisten-Ansicht.
+- Aktiver Server-Scan uebernimmt geaenderte Typfilter in den API-Kontext.
 
 ## Naechster Implementierungsschritt
 
 - Kombinierte destination.one-Queries live verifizieren.
 - Danach entscheiden, ob die generische Query-Kombination stabil bleibt oder pro Kriterium/Typ explizit konfiguriert werden muss.
+- Separaten Diagnose-/Einstellungsbereich planen, falls Live-Query-Tests direkt im Dashboard sichtbar werden sollen.
 - Fehlerlisten-CSV perspektivisch an serverseitige Treffer anbinden.
 
 ## Tests und Diagnose
@@ -83,6 +87,7 @@ Export und robuste Vollscan-Pfade.
 ## UI und Export
 
 - Server-Fehlerlisten mit echten Daten manuell im Browser pruefen.
+- Seitliche Navigation auf Desktop, Tablet und Mobile visuell pruefen.
 - Bestehende clientseitige Fehlerliste bleibt Fallback/Stichprobe, wenn kein eindeutiger Datentyp vorliegt.
 - Matrix-CSV optional ergaenzen.
 - Exportkontext deutlicher markieren, wenn Daten nur stichprobenbasiert sind.
@@ -90,6 +95,7 @@ Export und robuste Vollscan-Pfade.
 - Such-/Textfilter nach Server-Scan-Anbindung erneut mit realen Daten pruefen.
 - Qualitaetsstatus-, Prioritaets- und Pruefbarkeitsfilter nach Kriterienumbau erneut pruefen.
 - Lange Texte, lange URLs und grosse Rohdaten auf Mobile pruefen.
+- Eigenen Diagnose-/Einstellungsbereich ergaenzen, wenn API-Diagnosen, Limits oder Scan-Parameter im UI steuerbar werden sollen.
 
 ## KI-Chatbot und n8n
 

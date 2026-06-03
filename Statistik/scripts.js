@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
     prioritySelect: document.getElementById('priority-select'),
     autoCheckSelect: document.getElementById('autocheck-select'),
     clearQualityFiltersButton: document.getElementById('clear-quality-filters-button'),
+    viewNavButtons: Array.from(document.querySelectorAll('[data-statistik-view]')),
+    viewPanels: Array.from(document.querySelectorAll('[data-view-panel]')),
     emptyState: document.getElementById('empty-state'),
     resultDiv: document.getElementById('result'),
     summary: document.getElementById('summary'),
@@ -153,6 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     activeIssue: null,
     activeIssueType: null,
     activeView: 'overview',
+    activePanel: 'overview',
     issueListPage: 0,
     issueListPageSize: 50,
     serverIssueList: {
@@ -219,6 +222,42 @@ document.addEventListener('DOMContentLoaded', () => {
     'Empfohlene Aktion',
     'Link / URL'
   ];
+
+  function panelMatchesActiveView(panel) {
+    const viewIds = String(panel?.dataset?.viewPanel || '')
+      .split(/\s+/)
+      .map((value) => value.trim())
+      .filter(Boolean);
+    return viewIds.includes(state.activePanel);
+  }
+
+  function updateViewNavigation() {
+    elements.viewNavButtons.forEach((button) => {
+      const active = button.dataset.statistikView === state.activePanel;
+      button.classList.toggle('active', active);
+      if (active) {
+        button.setAttribute('aria-current', 'page');
+      } else {
+        button.removeAttribute('aria-current');
+      }
+    });
+
+    elements.viewPanels.forEach((panel) => {
+      panel.classList.toggle('panel-hidden', !panelMatchesActiveView(panel));
+    });
+  }
+
+  function setActivePanel(panelId) {
+    if (!panelId) return;
+    if (panelId === 'ai') {
+      openAiChatPanel();
+      return;
+    }
+
+    state.activePanel = panelId;
+    updateViewNavigation();
+    updateAiContextNote();
+  }
 
   const cleanQueryValue = (value) => String(value || '').replaceAll('"', '').trim();
 
@@ -704,10 +743,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function refreshAfterActiveFilterChange() {
     closeItemDetailPanel({ restoreFocus: false });
     syncActiveFilters();
-    if (state.activeIssue && state.activeIssueType) {
+    if (state.activeIssue) {
+      state.activeIssueType = state.activeFilters.type || null;
       state.issueListPage = 0;
       resetServerIssueList();
-      void loadServerIssueList();
+      if (state.activeIssueType) void loadServerIssueList();
     }
     if (hasQualityOutputContext()) {
       renderAll();
@@ -1529,10 +1569,12 @@ document.addEventListener('DOMContentLoaded', () => {
     state.activeIssueType = issueType;
     state.activeFilters.criterionId = criterionId;
     state.activeView = 'issueList';
+    state.activePanel = 'issues';
     state.issueListPage = 0;
     resetServerIssueList();
     refreshFilteredItems();
     renderQualitySections();
+    updateViewNavigation();
     if (state.activeIssueType) {
       void loadServerIssueList();
     }
@@ -2614,11 +2656,13 @@ document.addEventListener('DOMContentLoaded', () => {
     state.activeIssueType = null;
     state.activeFilters.criterionId = null;
     state.activeView = 'overview';
+    state.activePanel = 'overview';
     state.issueListPage = 0;
     resetServerIssueList();
     closeItemDetailPanel({ restoreFocus: false });
     refreshFilteredItems();
     renderQualitySections();
+    updateViewNavigation();
     setPill('ok', 'Uebersicht');
   }
 
@@ -2766,6 +2810,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCharts(visibleRows);
     elements.exportButton.disabled = state.latestRows.length === 0 || !!state.currentRun;
     setEmptyState(visibleRows.length ? '' : EMPTY_STATES.noResults, !visibleRows.length);
+    updateViewNavigation();
   }
 
   function csvValue(value) {
@@ -3057,6 +3102,9 @@ document.addEventListener('DOMContentLoaded', () => {
   elements.searchButton.addEventListener('click', fetchData);
   elements.cancelButton.addEventListener('click', cancelRun);
   elements.exportButton.addEventListener('click', exportCurrentViewToCSV);
+  elements.viewNavButtons.forEach((button) => {
+    button.addEventListener('click', () => setActivePanel(button.dataset.statistikView));
+  });
   elements.aiChatOpenButton.addEventListener('click', openAiChatPanel);
   elements.aiChatCloseButton.addEventListener('click', closeAiChatPanel);
   elements.aiChatForm.addEventListener('submit', (event) => {
@@ -3112,6 +3160,7 @@ document.addEventListener('DOMContentLoaded', () => {
   toggleLoading(false);
   setPill('ok', 'bereit');
   syncActiveFilters();
+  updateViewNavigation();
   updateAiContextNote();
   renderAiMessages();
   loadTypes();
