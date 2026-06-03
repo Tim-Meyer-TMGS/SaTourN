@@ -34,6 +34,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`SaTourN proxy listening on port ${PORT}`);
-});
+app.listen(PORT);

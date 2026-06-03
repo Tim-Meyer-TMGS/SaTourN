@@ -2,6 +2,8 @@
 
 Stand: 2026-06-02
 
+Ergaenzung: 2026-06-03
+
 ## Problem
 
 Der aktuelle Statistik-Proxy liefert pro `/api/search`-Request nur eine begrenzte Anzahl von Items aus. Gleichzeitig enthaelt die Antwort aber `overallcount`, das fuer die bestehende Statistik ausreicht.
@@ -141,3 +143,19 @@ Bis ein vollstaendiger jobbasierter Datenpfad fuer grosse Listen und Exporte exi
 - keine exakte Vollstaendigkeit behaupten.
 - grosse Tabellen begrenzen.
 - CSV-Export nur fuer die aktuell verfuegbare Datenbasis ausgeben oder als unvollstaendig markieren.
+
+## Python-Einordnung
+
+Python ist fuer grosse Datenmengen grundsaetzlich gut geeignet, aber nicht als direkte Laufzeit auf GitHub Pages. Die Statistikseite wird statisch ausgeliefert; GitHub Pages fuehrt keine serverseitigen Sprachen wie Python aus.
+
+Deshalb wurden `Statistik/scripts.js` und `Statistik/quality.js` nicht durch Python-Dateien ersetzt.
+
+Sinnvolle Python-Einsatzorte sind:
+
+- GitHub Actions zur Build-Zeit, um statische Snapshots oder Aggregations-JSONs zu erzeugen.
+- ein separater Backend-/Job-Dienst fuer Vollscans, grosse Fehlerlisten und CSV-Exporte.
+- lokale redaktionelle Analysewerkzeuge.
+
+Nicht sinnvoll ist Python im Browser als Ersatz fuer die bestehende JavaScript-UI, weil dadurch weiterhin grosse Datenmengen im Browser verarbeitet wuerden und zusaetzliche Laufzeitpakete noetig waeren.
+
+Die ausfuehrliche Entscheidung steht in `docs/Codex/Datenqualitaetsmonitor_Python_Entscheidung.md`.

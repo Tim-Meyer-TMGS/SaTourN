@@ -1,6 +1,8 @@
-# Datenqualitaets-Monitor - Projektstand Abschnitte 1 bis 7
+# Datenqualitaets-Monitor - Projektstand Abschnitte 1 bis 9
 
 Stand: 2026-06-02
+
+Ergaenzung: 2026-06-03
 
 ## Zweck
 
@@ -8,6 +10,7 @@ Dieses Dokument fasst die bisherige Umsetzung des SaTourN-Datenqualitaets-Monito
 
 - `docs/Codex/Datenqualitaetsmonitor_Abschnitt_1_Analyse.md`
 - `docs/Codex/Datenqualitaetsmonitor_Datenbasis_und_Limits.md`
+- `docs/Codex/Datenqualitaetsmonitor_Python_Entscheidung.md`
 - `docs/Codex/SaTourN_Codex_Prompt_Datenqualitaetsmonitor.md`
 - `docs/Codex/Zielbild.md`
 - `docs/Codex/zielbild.png`
@@ -22,9 +25,9 @@ Das Zielbild sieht ein erweitertes Dashboard vor:
 2. Qualitaets-KPIs werden ergaenzt.
 3. haeufige Pflegebedarfe werden sichtbar und klickbar.
 4. Klicks auf Pflegebedarfe fuehren zu gefilterten Fehlerlisten.
-5. Matrix, Datentyp-Uebersicht, CSV-Export, Detailansicht und KI-Kontext folgen spaeter.
+5. CSV-Export, Detailansicht und KI-Kontext folgen spaeter.
 
-Bis Abschnitt 7 ist die Uebersichtsebene inklusive klickbarer Fehlerlisten umgesetzt. Der CSV-Export der Fehlerliste ist bewusst noch offen.
+Bis Abschnitt 9 ist die Uebersichtsebene inklusive klickbarer Fehlerlisten, Datentyp-Uebersicht, Qualitaetskriterien-Matrix und kontextsensitivem CSV-Export umgesetzt.
 
 ## Abschnitt 1 - Analyse und Plan
 
@@ -251,6 +254,28 @@ Wichtige Entscheidung:
 - API-Pushdown fuer fehlende Felder wird nicht angenommen.
 - Fuer alle Kriterien gilt aktuell `filterStrategy: "server_scan"`, bis konkrete destination.one/eT4-Prefixe verifiziert sind.
 
+## Python-Auslagerung
+
+Am 2026-06-03 wurde geprueft, ob Statistiklogik wegen grosser Datenmengen nach Python ausgelagert werden sollte.
+
+Ergebnis:
+
+- Python ist nicht als direkte Laufzeit fuer die GitHub-Pages-Statistik geeignet.
+- GitHub Pages liefert statische Dateien aus und fuehrt keine serverseitigen Python-Prozesse aus.
+- `Statistik/scripts.js` und `Statistik/quality.js` wurden deshalb nicht durch Python ersetzt.
+- Die bestehende JavaScript-UI bleibt fuer Filter, Tabellen, Charts und Interaktion zustaendig.
+- Der bestehende Node/Express-Proxy bleibt fuer API-Requests und budgetierte Live-Scans zustaendig.
+
+Geeignete Python-Pfade fuer spaeter:
+
+- GitHub Actions zur Erzeugung statischer Snapshot-JSONs.
+- separater Backend-/Job-Dienst fuer Vollscans und grosse CSV-Exporte.
+- lokale redaktionelle Analysewerkzeuge.
+
+Dokumentation:
+
+- `docs/Codex/Datenqualitaetsmonitor_Python_Entscheidung.md`
+
 ## Abschnitt 6 - Qualitaets-KPIs und Problemcluster UI
 
 Umgesetzt in `Statistik/index.html`:
@@ -309,7 +334,6 @@ Wichtige technische Entscheidung:
 Noch nicht umgesetzt:
 
 - CSV-Export fuer Fehlerlisten.
-- Matrix- und Datentyp-Uebersicht als UI.
 
 ## Abschnitt 7 - Fehlerlisten-Ansicht
 
@@ -390,6 +414,150 @@ Wichtige Einschraenkung:
 
 - Die aktuell gerenderte Fehlerliste basiert auf den im Browser verfuegbaren, normalisierten Items. Wenn `qualityDataMeta.truncated === true`, ist sie eine Stichprobe. Fuer vollstaendige grosse Fehlerlisten soll spaeter der budgetierte Scan-Endpunkt `/api/quality/scan` angebunden werden.
 
+## Abschnitt 8 - Datentyp-Uebersicht und Kriterien-Matrix
+
+Umgesetzt in `Statistik/index.html`:
+
+- neue Sektion `type-summary-section` fuer `Datentypen im Ueberblick`.
+- neue Sektion `criteria-matrix-section` fuer `Qualitaetskriterien-Matrix`.
+- beide Sektionen liegen unter der Fehlerlisten-Sektion und vor den bestehenden Charts.
+
+Umgesetzt in `Statistik/style.css`:
+
+- gemeinsame Styles fuer `quality-table-section` und `quality-table-wrap`.
+- breitere, scrollbare Tabellen fuer verdichtete Auswertungen.
+- klickbare Tabellenaktionen ueber `table-link-button`.
+- Fokuszustand fuer Tastaturbedienung.
+- vorhandene Statistik-Tabelle bleibt optisch getrennt.
+
+Umgesetzt in `Statistik/scripts.js`:
+
+- neue DOM-Referenzen fuer Datentyp-Uebersicht und Matrix.
+- `renderTypeSummary()`
+- `renderCriteriaMatrix()`
+- `getTopIssueForType(type)`
+- `getTypeItems(type)`
+- `appendButtonCell(...)`
+- `appendHeaderCells(...)`
+- `renderTableEmpty(...)`
+- `syncTypeSelectValue(type)`
+- `renderQualitySections()` rendert jetzt zusaetzlich Datentyp-Uebersicht und Matrix.
+
+Datentyp-Uebersicht:
+
+- basiert auf `state.qualityAggregations.typeSummary`.
+- zeigt Typ, Datensatzanzahl, Open-Data-Werte, Qualitaets-Score, Statuszaehler, haeufigstes fehlendes Kriterium und naechste Massnahme.
+- Das haeufigste fehlende Kriterium ist klickbar, wenn eines vorhanden ist.
+
+Qualitaetskriterien-Matrix:
+
+- basiert auf `state.qualityAggregations.criteriaMatrix`.
+- zeigt Datentyp, Kriterium, Prioritaet, automatische Pruefbarkeit, erfuellte und nicht erfuellte Datensaetze, Quote, Status, Datenfelder, Hinweis und Empfehlung.
+- Nicht automatisch pruefbare Kriterien werden ebenfalls angezeigt und erhalten den Status `nicht automatisch pruefbar`.
+- Bei fehlenden Item-Daten kann die Matrix trotzdem den Kriterienrahmen anzeigen, weil `getCriteriaMatrix([])` auf die in `qualityCriteria` hinterlegten Typen zurueckfaellt.
+
+Klickverhalten:
+
+- Klick auf ein Kriterium in der Datentyp-Uebersicht oeffnet die Fehlerliste fuer dieses Kriterium und setzt zusaetzlich den Typ-Kontext.
+- Klick auf eine Matrix-Zeile oeffnet die Fehlerliste fuer genau dieses Kriterium und diesen Datentyp.
+- Intern nutzt dies `selectQualityIssue(criterionId, { type })`.
+- `selectedType`, `activeFilters.type` und der Typ-Dropdown werden synchronisiert, damit die Fehlerliste den Datentyp-Kontext beruecksichtigt.
+- Gebiet, Ort und Kategorie bleiben als aktive Filter erhalten.
+
+Beispiel:
+
+1. Nutzer klickt in der Matrix auf `POI | Oeffnungszeiten fehlen`.
+2. `selectQualityIssue("opening_hours_missing", { type: "POI" })` wird ausgefuehrt.
+3. `activeFilters.type = "POI"` und `activeFilters.criterionId = "opening_hours_missing"`.
+4. Die Fehlerliste zeigt nur POI mit fehlenden Oeffnungszeiten, zusaetzlich eingeschraenkt durch Gebiet, Ort und Kategorie.
+
+## Abschnitt 9 - Kontextsensitiver CSV-Export
+
+Umgesetzt in `Statistik/scripts.js`:
+
+- CSV-Exportbutton ruft jetzt `exportCurrentViewToCSV()` auf.
+- Normale Statistikansicht exportiert weiterhin die Aggregat-Ergebniszeilen.
+- Aktive Fehlerliste exportiert die aktuell gefilterten Fehlerlisten-Datensaetze.
+- CSV-Helfer:
+  - `csvValue(value)`
+  - `downloadCsv(filename, rows)`
+  - `slugifyFilenamePart(value)`
+  - `buildCsvRowsForResults(rows)`
+  - `buildCsvRowsForIssueList(items, criterion)`
+  - `activeFilterFilenameParts()`
+  - `issueListFilename(criterion)`
+  - `exportCurrentViewToCSV()`
+
+Normale Ergebnisansicht:
+
+- Dateiname: `satourn_export.csv`.
+- Spalten bleiben wie bisher:
+  - Gebiet
+  - Ort
+  - Typ
+  - Kategorie
+  - SaTourN
+  - Open-Data
+  - Open-Data %
+  - Status
+
+Aktive Fehlerliste:
+
+- Dateiname: `satourn_fehlerliste_{kriterium}_{filter}.csv`.
+- Beispiel: `satourn_fehlerliste_oeffnungszeiten-fehlen_sachsen_poi.csv`.
+- Exportiert wird `getIssueListItems()`, also dieselbe aktuell gefilterte Datenbasis wie in der Fehlerlisten-Ansicht.
+- Beruecksichtigt werden:
+  - Gebiet
+  - Ort
+  - Typ
+  - Kategorie
+  - aktives Qualitaetskriterium
+- Der Export enthaelt keine unpassenden Datensaetze ausserhalb der aktiven Fehlerliste.
+
+CSV-Spalten fuer Fehlerlisten:
+
+- ID
+- Titel
+- Typ
+- Gebiet
+- Ort
+- Kategorie
+- Fehlendes Kriterium
+- Kriterium-ID
+- Prioritaet
+- Automatisch pruefbar
+- Qualitaets-Score
+- Qualitaetsstatus
+- Open-Data
+- Lizenz
+- Fehlende Felder
+- Empfohlene Aktion
+- Letzte Aktualisierung
+- URL
+- Quelle / Datensatztyp
+
+CSV-Regeln:
+
+- UTF-8 ueber `text/csv;charset=utf-8`.
+- Semikolon als Trenner.
+- Werte werden in Anfuehrungszeichen gesetzt.
+- Anfuehrungszeichen werden verdoppelt.
+- Zeilenumbrueche in Zellwerten werden durch Leerzeichen ersetzt.
+- `null` und `undefined` werden als leeres Feld geschrieben.
+- Boolean-/Open-Data-Werte werden als `Ja`, `Nein` oder `Unbekannt` ausgegeben.
+
+Hinweis:
+
+- Der Export der Kriterien-Matrix ist noch nicht umgesetzt. Abschnitt 9 erlaubt diesen Export optional; aktuell exportiert ohne aktive Fehlerliste weiterhin die normale Ergebnisansicht.
+- Der Fehlerlisten-Export basiert wie die Fehlerlisten-UI auf der aktuell im Browser verfuegbaren Datenbasis. Wenn die Qualitaetsdaten nur eine Stichprobe sind, ist auch der CSV-Export eine Stichprobe.
+
+TODOs aus Abschnitt 9:
+
+- Matrix-CSV optional spaeter ergaenzen, sobald die Ansicht als eigener Exportkontext behandelt werden soll.
+- Fehlerlisten-CSV spaeter an `/api/quality/scan` oder einen Job-/Export-Endpunkt anbinden, wenn vollstaendige grosse Fehlerlisten exportiert werden muessen.
+- UI-Hinweis im Exportkontext deutlicher machen, wenn `qualityDataMeta.truncated === true`.
+- Alten, nicht mehr verdrahteten Statistik-Exportblock in `Statistik/scripts.js` bei der finalen Bereinigung entfernen, sobald Node-/Syntaxchecks lokal moeglich sind.
+
 ## Aktueller Datenfluss
 
 1. Nutzer setzt Filter im Statistik-Dashboard.
@@ -404,6 +572,8 @@ Wichtige Einschraenkung:
 7. `renderAll()` rendert bestehende Statistikbereiche und neue Qualitaetsuebersicht.
 8. Klick auf Pflegebedarf setzt `activeIssue` und rendert die Fehlerliste.
 9. `clearActiveIssue()` schliesst die Fehlerliste und kehrt zur Uebersicht zurueck.
+10. Datentyp- und Matrix-Klicks setzen zusaetzlich einen Typ-Kontext und oeffnen die Fehlerliste.
+11. Der CSV-Button exportiert je nach aktivem Kontext Statistik-Ergebnisliste oder aktive Fehlerliste.
 
 ## Aktuell relevante Dateien
 
@@ -426,7 +596,8 @@ Dokumentation:
 
 - `docs/Codex/Datenqualitaetsmonitor_Abschnitt_1_Analyse.md`
 - `docs/Codex/Datenqualitaetsmonitor_Datenbasis_und_Limits.md`
-- `docs/Codex/Datenqualitaetsmonitor_Projektstand_Abschnitte_1_bis_7.md`
+- `docs/Codex/Datenqualitaetsmonitor_Python_Entscheidung.md`
+- `docs/Codex/Datenqualitaetsmonitor_Projektstand_Abschnitte_1_bis_9.md`
 - `docs/Codex/Zielbild.md`
 - `docs/Codex/SaTourN_Codex_Prompt_Datenqualitaetsmonitor.md`
 
@@ -452,14 +623,16 @@ Grund:
 
 Naechster fachlicher Abschnitt:
 
-- Abschnitt 8: Kriterien-Matrix und Datentyp-Uebersicht anzeigen.
+- Abschnitt 10: KI-Chatbot ueber n8n-Webhook.
 
 Technische TODOs:
 
 - spaeter `/api/quality/scan` fuer vollstaendigere Fehlerlisten anbinden.
-- CSV-Export fuer aktive Fehlerliste ergaenzen.
+- optionalen Python-Snapshot- oder Job-Pfad erst einfuehren, wenn klar ist, ob Build-Zeit-Snapshots ausreichen oder ein echter Backend-Dienst noetig ist.
+- Matrix-CSV optional spaeter ergaenzen.
+- Vollstaendige grosse Fehlerlisten-CSV spaeter ueber Scan-/Job-Endpunkt statt Browser-Stichprobe erzeugen.
+- Nicht mehr verdrahteten alten Statistik-Exportblock in `Statistik/scripts.js` bei finaler Bereinigung entfernen.
 - UI klar kennzeichnen, wenn Qualitaetswerte nur auf Stichproben basieren.
-- Matrix und Datentyp-Uebersicht rendern.
 - Detailansicht pro Datensatz ergaenzen.
 - KI-Kontext und n8n-Webhook vorbereiten.
 - finale Robustheit, Empty States und Filterkonsistenz in Abschnitt 12 schaerfen.
@@ -476,5 +649,6 @@ Risiken:
 - Bestehende Statistikansicht nicht umdeuten.
 - Neue Qualitaetsansichten aus `dashboardState` und `Statistik/quality.js` ableiten.
 - Bei grossen Datenmengen immer Limits, Pagination, Stichprobenhinweise und Abbruchbedingungen beruecksichtigen.
+- Python nicht als direkte GitHub-Pages-Laufzeit einplanen; nur fuer Build-/Job-/Offline-Pfade.
 - Keine Secrets oder API-Keys ins Frontend.
 - Abschnittsweise weiterarbeiten und pro Abschnitt die Dokumentation aktualisieren.

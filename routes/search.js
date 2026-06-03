@@ -11,7 +11,6 @@ import {
   buildSearchUrl,
   computeFinalLimit,
   isCitiesRequest,
-  isCitySearchQuery,
   normalizeOffsetParam,
   normalizeQueryParam
 } from '../lib/search-utils.js';
@@ -54,24 +53,6 @@ export function registerSearchRoute(app, cache) {
       offset: finalOffset,
       apiKey: API_KEY
     });
-
-    const diagnostics = {
-      scope: scope || null,
-      type: (type || '').trim() || null,
-      requestedLimit: limit || null,
-      requestedOffset: offset || null,
-      isCities: cities,
-      reason: {
-        scope: String(scope || '').toLowerCase().trim() === 'cities',
-        type: String(type || '').toLowerCase().trim(),
-        heuristics: isCitySearchQuery(qParam),
-        forceCities: String(forceCities || '') === '1'
-      },
-      finalLimit,
-      finalOffset
-    };
-
-    console.log('/api/search', JSON.stringify(diagnostics));
 
     res.setHeader('X-Final-Limit', String(finalLimit));
     res.setHeader('X-Final-Offset', String(finalOffset));

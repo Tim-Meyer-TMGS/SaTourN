@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const WARN_REQUEST_LIMIT = Number(window.SATOURN_STATISTIK_WARN_REQUESTS || 120);
   const QUALITY_ITEMS_PER_QUERY = Math.max(0, Math.min(50, Number(window.SATOURN_STATISTIK_QUALITY_ITEMS_PER_QUERY || 25)));
   const QUALITY_ITEM_MAX_ITEMS = Math.max(0, Math.min(5000, Number(window.SATOURN_STATISTIK_QUALITY_ITEM_MAX_ITEMS || 2000)));
+  const AI_CHAT_CONFIG = {
+    enabled: true,
+    webhookUrl: '',
+    authHeaderName: '',
+    authHeaderValue: '',
+    maxItemsForContext: 50,
+    timeoutMs: 30000,
+    mockMode: true,
+    ...(window.SATOURN_AI_CHAT_CONFIG || {})
+  };
+
+  const AI_SYSTEM_PROMPT_FOR_N8N = 'Du bist ein Datenqualitaets-Assistent fuer den SaTourN-Datenqualitaets-Monitor. Analysiere ausschliesslich den bereitgestellten Dashboard-Kontext. Beziehe dich auf die aktuell gefilterte Ansicht, aktive Fehlerlisten und aggregierte Kennzahlen. Erfinde keine Daten, die nicht im Kontext enthalten sind. Wenn Informationen fehlen, sage klar, dass sie in der aktuellen Ansicht oder im bereitgestellten Kontext nicht verfuegbar sind. Gib konkrete, priorisierte Empfehlungen zur Datenpflege. Antworte knapp, fachlich und handlungsorientiert.';
 
   const categoryTreeUrls = {
     Hotel: 'https://api.et4.de/Schema/eTouristV4/Vermieter/Sachsen-Tourismus/VermieterTree.xml',
@@ -32,6 +44,12 @@ document.addEventListener('DOMContentLoaded', () => {
     cancelButton: document.getElementById('cancel-button'),
     exportButton: document.getElementById('export-button'),
     sortSelect: document.getElementById('sort-select'),
+    qualitySearchInput: document.getElementById('quality-search-input'),
+    qualityStatusSelect: document.getElementById('quality-status-select'),
+    prioritySelect: document.getElementById('priority-select'),
+    autoCheckSelect: document.getElementById('autocheck-select'),
+    clearQualityFiltersButton: document.getElementById('clear-quality-filters-button'),
+    emptyState: document.getElementById('empty-state'),
     resultDiv: document.getElementById('result'),
     summary: document.getElementById('summary'),
     summaryStat: document.getElementById('summary-stat'),
@@ -59,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
     issuePrevButton: document.getElementById('issue-prev-button'),
     issueNextButton: document.getElementById('issue-next-button'),
     issuePageStatus: document.getElementById('issue-page-status'),
+    typeSummarySection: document.getElementById('type-summary-section'),
+    typeSummaryTable: document.getElementById('type-summary-table'),
+    criteriaMatrixSection: document.getElementById('criteria-matrix-section'),
+    criteriaMatrixTable: document.getElementById('criteria-matrix-table'),
     chartContainer: document.getElementById('chart-container'),
     ratioChart: document.getElementById('ratio-chart'),
     typeChart: document.getElementById('type-chart'),
@@ -70,7 +92,22 @@ document.addEventListener('DOMContentLoaded', () => {
     progWrap: document.querySelector('.progWrap'),
     progBar: document.getElementById('prog-bar'),
     progMeta: document.getElementById('prog-meta'),
-    prog: document.querySelector('.prog')
+    prog: document.querySelector('.prog'),
+    aiChatOpenButton: document.getElementById('ai-chat-open-button'),
+    aiChatPanel: document.getElementById('ai-chat-panel'),
+    aiChatCloseButton: document.getElementById('ai-chat-close-button'),
+    aiChatContextNote: document.getElementById('ai-chat-context-note'),
+    aiChatStatus: document.getElementById('ai-chat-status'),
+    aiChatMessages: document.getElementById('ai-chat-messages'),
+    aiChatChips: document.getElementById('ai-chat-chips'),
+    aiChatForm: document.getElementById('ai-chat-form'),
+    aiChatInput: document.getElementById('ai-chat-input'),
+    aiChatSendButton: document.getElementById('ai-chat-send-button'),
+    itemDetailPanel: document.getElementById('item-detail-panel'),
+    itemDetailTitle: document.getElementById('item-detail-title'),
+    itemDetailSubtitle: document.getElementById('item-detail-subtitle'),
+    itemDetailContent: document.getElementById('item-detail-content'),
+    itemDetailCloseButton: document.getElementById('item-detail-close-button')
   };
 
   const dashboardState = {
@@ -115,8 +152,14 @@ document.addEventListener('DOMContentLoaded', () => {
     activeView: 'overview',
     issueListPage: 0,
     issueListPageSize: 50,
+    activeDetailItem: null,
     sortBy: 'default',
-    sortDirection: 'asc'
+    sortDirection: 'asc',
+    aiChat: {
+      open: false,
+      isLoading: false,
+      messages: []
+    }
   };
 
   const state = dashboardState;
@@ -129,9 +172,23 @@ document.addEventListener('DOMContentLoaded', () => {
     getQualityAggregations,
     helpers: qualityHelpers
   };
+  window.satournAiChat = {
+    config: AI_CHAT_CONFIG,
+    systemPromptForN8n: AI_SYSTEM_PROMPT_FOR_N8N,
+    buildAiContext,
+    askN8nAiWebhook
+  };
 
   const formatNumber = (value) => Number(value || 0).toLocaleString('de-DE');
   const QUALITY_EMPTY_TEXT = 'Fuer die aktuelle Auswahl wurden keine Qualitaetsprobleme gefunden.';
+  const EMPTY_STATES = Object.freeze({
+    initial: 'Noch keine Abfrage gestartet.',
+    loading: 'Daten werden geladen ...',
+    noResults: 'Fuer die aktuelle Auswahl wurden keine Datensaetze gefunden.',
+    emptyJson: 'Die Abfrage war erfolgreich, enthielt aber keine auswertbaren Datensaetze.',
+    noExport: 'Fuer die aktuelle Ansicht liegen keine exportierbaren Daten vor.',
+    noAiData: 'Fuer die aktuelle Ansicht liegen keine auswertbaren Daten fuer die KI-Analyse vor.'
+  });
   const ISSUE_LIST_COLUMNS = [
     'Titel',
     'ID',
@@ -160,6 +217,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const setPill = createStatusSetter(elements.statusPill);
 
+  function setEmptyState(message, show = true) {
+    if (!elements.emptyState) return;
+    elements.emptyState.textContent = message || '';
+    elements.emptyState.hidden = !show;
+  }
+
+  function debounce(fn, delay = 220) {
+    let timer = null;
+    return (...args) => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => fn(...args), delay);
+    };
+  }
+
   function setProgress(done, total) {
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     if (elements.progBar) elements.progBar.style.width = `${Math.max(0, Math.min(100, pct))}%`;
@@ -173,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function toggleLoading(show) {
     elements.loadingContainer.hidden = !show;
+    if (show) setEmptyState(EMPTY_STATES.loading);
     if (elements.coffeeFill) {
       elements.coffeeFill.style.transform = show ? 'scaleY(1)' : 'scaleY(0)';
     }
@@ -202,8 +274,15 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.issueDetailMeta.textContent = '';
     elements.issueDetailFilters.textContent = '';
     elements.issuePagination.hidden = true;
+    elements.typeSummarySection.hidden = true;
+    elements.typeSummaryTable.replaceChildren();
+    elements.criteriaMatrixSection.hidden = true;
+    elements.criteriaMatrixTable.replaceChildren();
     elements.chartContainer.hidden = true;
     elements.exportButton.disabled = true;
+    closeItemDetailPanel({ restoreFocus: false });
+    setEmptyState(EMPTY_STATES.initial);
+    updateAiContextNote();
   }
 
   function buildUrl(type, rawQuery = '', isOpenData = false, limit = null) {
@@ -519,8 +598,25 @@ document.addEventListener('DOMContentLoaded', () => {
     state.activeFilters.city = activeFilters.place || null;
     state.activeFilters.type = activeFilters.type || null;
     state.activeFilters.category = activeFilters.category || null;
+    state.activeFilters.qualityStatus = elements.qualityStatusSelect?.value || null;
+    state.activeFilters.priority = elements.prioritySelect?.value || null;
+    state.activeFilters.autoCheck = elements.autoCheckSelect?.value === ''
+      ? null
+      : elements.autoCheckSelect?.value === 'true';
+    state.activeFilters.search = normalizeString(elements.qualitySearchInput?.value) || '';
     state.sortBy = elements.sortSelect.value || 'default';
     state.sortDirection = state.sortBy.endsWith('-desc') ? 'desc' : 'asc';
+  }
+
+  function itemMatchesCriterionMeta(item, predicate) {
+    const criterionIds = Array.from(new Set([
+      ...safeArray(item?.missingCriteria),
+      ...safeArray(item?.manualCriteria)
+    ]));
+    return criterionIds.some((criterionId) => {
+      const criterion = getCriterionById(criterionId);
+      return criterion ? predicate(criterion) : false;
+    });
   }
 
   function itemMatchesActiveFilters(item, options = {}) {
@@ -533,6 +629,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!matches(item.type, filters.type)) return false;
     if (!matches(item.category, filters.category)) return false;
     if (filters.qualityStatus && item.qualityStatus !== filters.qualityStatus) return false;
+    if (filters.priority && !itemMatchesCriterionMeta(item, (criterion) => normalizeString(criterion.priority) === filters.priority)) return false;
+    if (filters.autoCheck != null && !itemMatchesCriterionMeta(item, (criterion) => (criterion.autoCheck !== false) === filters.autoCheck)) return false;
     if (includeCriterion && filters.criterionId && !safeArray(item.missingCriteria).includes(filters.criterionId)) return false;
     if (filters.search) {
       const haystack = [
@@ -575,11 +673,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function refreshAfterActiveFilterChange() {
+    closeItemDetailPanel({ restoreFocus: false });
+    syncActiveFilters();
     if (hasQualityOutputContext()) {
-      renderQualitySections();
+      renderAll();
+      updateAiContextNote();
       return;
     }
     refreshFilteredItems();
+    updateAiContextNote();
+  }
+
+  function clearQualityFilters() {
+    elements.qualitySearchInput.value = '';
+    elements.qualityStatusSelect.value = '';
+    elements.prioritySelect.value = '';
+    elements.autoCheckSelect.value = '';
+    state.activeFilters.search = '';
+    state.activeFilters.qualityStatus = null;
+    state.activeFilters.priority = null;
+    state.activeFilters.autoCheck = null;
+    refreshAfterActiveFilterChange();
   }
 
   function extractItemTitles(jsonText) {
@@ -1060,8 +1174,60 @@ document.addEventListener('DOMContentLoaded', () => {
     return cell;
   }
 
+  function resultRowMatchesSearch(row) {
+    const search = normalizeString(state.activeFilters.search);
+    if (!search) return true;
+    const haystack = [
+      row.area,
+      row.place,
+      row.type,
+      row.category,
+      row.errors?.join?.(' ')
+    ].map((value) => normalizeString(value) || '').join(' ').toLowerCase();
+    return haystack.includes(search.toLowerCase());
+  }
+
+  function resultRowValueMatches(actual, expected) {
+    const expectedText = normalizeString(expected);
+    if (!expectedText || expectedText === '-') return true;
+    return normalizeString(actual) === expectedText;
+  }
+
+  function resultRowHasMatchingItem(row) {
+    return state.normalizedItems.some((item) => (
+      resultRowValueMatches(item.region, row.area)
+      && resultRowValueMatches(item.city, row.place)
+      && resultRowValueMatches(item.type, row.type)
+      && resultRowValueMatches(item.category, row.category)
+      && itemMatchesActiveFilters(item, { includeCriterion: true })
+    ));
+  }
+
+  function getFilteredResultRows(rows) {
+    const hasItemLevelFilters = Boolean(
+      state.activeFilters.search
+      || state.activeFilters.qualityStatus
+      || state.activeFilters.priority
+      || state.activeFilters.autoCheck != null
+      || state.activeFilters.criterionId
+    );
+
+    return safeArray(rows).filter((row) => {
+      if (!resultRowMatchesSearch(row)) return false;
+      if (!hasItemLevelFilters) return true;
+      if (!state.normalizedItems.length) return true;
+      return resultRowHasMatchingItem(row);
+    });
+  }
+
   function renderTable(rows) {
     elements.resultDiv.replaceChildren();
+    const visibleRows = getFilteredResultRows(rows);
+
+    if (!visibleRows.length) {
+      elements.resultDiv.hidden = true;
+      return;
+    }
 
     const table = document.createElement('table');
     const thead = document.createElement('thead');
@@ -1077,11 +1243,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tbody = document.createElement('tbody');
 
-    sortedRows(rows).forEach((row) => {
+    sortedRows(visibleRows).forEach((row) => {
       const tr = document.createElement('tr');
       const pct = rowPercent(row);
       const error = row.errors.length > 0 || !hasValidCounts(row);
       if (error) tr.classList.add('row-error');
+      const detailItem = findItemForResultRow(row);
+      if (detailItem) {
+        tr.classList.add('detail-row-button');
+        tr.tabIndex = 0;
+        tr.setAttribute('role', 'button');
+        tr.setAttribute('aria-label', `Details zu ${detailItem.title || detailItem.id || 'Datensatz'} anzeigen`);
+        tr.addEventListener('click', () => openItemDetailPanel(detailItem));
+        tr.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openItemDetailPanel(detailItem);
+          }
+        });
+      }
 
       appendCell(tr, row.area);
       appendCell(tr, row.place);
@@ -1097,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     table.appendChild(tbody);
     elements.resultDiv.appendChild(table);
-    elements.resultDiv.hidden = rows.length === 0;
+    elements.resultDiv.hidden = false;
   }
 
   function hasQualityOutputContext() {
@@ -1126,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!collectedItems) {
-      elements.qualitySampleNote.textContent = 'Qualitaetsdaten: keine auswertbaren Datensaetze in der aktuellen Stichprobe.';
+      elements.qualitySampleNote.textContent = `Qualitaetsdaten: ${EMPTY_STATES.emptyJson}`;
       elements.qualitySampleNote.hidden = false;
       return;
     }
@@ -1188,7 +1368,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const issue = safeArray(issues).find((entry) => entry.criterionId === state.activeIssue);
     if (!issue) {
-      elements.issueStatus.textContent = 'Das ausgewaehlte Qualitaetsproblem kommt in der aktuellen Auswahl nicht vor.';
+      const criterion = getActiveIssueCriterion();
+      elements.issueStatus.textContent = criterion?.autoCheck === false
+        ? 'Dieses Kriterium kann aus den verfuegbaren JSON-Daten nicht automatisch geprueft werden.'
+        : 'Das ausgewaehlte Qualitaetsproblem kommt in der aktuellen Auswahl nicht vor.';
       return;
     }
 
@@ -1196,9 +1379,21 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.issueStatus.textContent = `${issue.label}: Fehlerliste mit ${formatNumber(affectedCount)} betroffenen Datensaetzen vorbereitet.`;
   }
 
-  function selectQualityIssue(criterionId) {
+  function syncTypeSelectValue(type) {
+    const dropdown = elements.typeContainer?.querySelector?.('select');
+    if (!dropdown || !type) return;
+    dropdown.value = type;
+  }
+
+  function selectQualityIssue(criterionId, options = {}) {
     const issue = safeArray(state.qualityAggregations?.issueSummary)
       .find((entry) => entry.criterionId === criterionId);
+
+    if (options.type) {
+      state.selectedType = options.type;
+      state.activeFilters.type = options.type;
+      syncTypeSelectValue(options.type);
+    }
 
     state.activeIssue = criterionId;
     state.activeFilters.criterionId = criterionId;
@@ -1268,6 +1463,173 @@ document.addEventListener('DOMContentLoaded', () => {
     updateIssueStatus(issues);
   }
 
+  function appendHeaderCells(rowEl, labels) {
+    labels.forEach((label) => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      rowEl.appendChild(th);
+    });
+  }
+
+  function renderTableEmpty(container, message) {
+    const empty = document.createElement('div');
+    empty.className = 'issue-page-empty';
+    empty.textContent = message;
+    container.appendChild(empty);
+  }
+
+  function statusClass(status) {
+    const normalized = normalizeString(status);
+    if (normalized === 'gut') return 'status-ok';
+    if (normalized === 'kritisch') return 'status-error';
+    return '';
+  }
+
+  function getTypeItems(type) {
+    return getBaseFilteredItems().filter((item) => normalizeString(item.type) === normalizeString(type));
+  }
+
+  function getTopIssueForType(type) {
+    return getQualityAggregations(getTypeItems(type)).issueSummary[0] || null;
+  }
+
+  function appendButtonCell(rowEl, label, onClick, disabled = false) {
+    const cell = document.createElement('td');
+    if (disabled) {
+      cell.textContent = label || '-';
+    } else {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'table-link-button';
+      button.textContent = label || '-';
+      button.addEventListener('click', onClick);
+      cell.appendChild(button);
+    }
+    rowEl.appendChild(cell);
+    return cell;
+  }
+
+  function renderTypeSummary() {
+    elements.typeSummaryTable.replaceChildren();
+
+    if (!hasQualityOutputContext()) {
+      elements.typeSummarySection.hidden = true;
+      return;
+    }
+
+    const rows = safeArray(state.qualityAggregations?.typeSummary);
+    elements.typeSummarySection.hidden = false;
+
+    if (!rows.length) {
+      renderTableEmpty(elements.typeSummaryTable, 'Fuer die aktuelle Auswahl liegen keine Datentyp-Aggregationen vor.');
+      return;
+    }
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    appendHeaderCells(headerRow, [
+      'Typ',
+      'Datensaetze gesamt',
+      'Open-Data',
+      'Open-Data-Quote',
+      'Qualitaets-Score',
+      'Gut',
+      'Pruefen',
+      'Kritisch',
+      'Haeufigstes Kriterium',
+      'Naechste Massnahme'
+    ]);
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach((row) => {
+      const topIssue = getTopIssueForType(row.type);
+      const tr = document.createElement('tr');
+      appendCell(tr, textOrDash(row.type));
+      appendCell(tr, formatNumber(row.totalCount));
+      appendCell(tr, formatNumber(row.openDataCount));
+      appendCell(tr, Number.isFinite(row.openDataRate) ? `${row.openDataRate.toFixed(2)}%` : '-');
+      appendCell(tr, Number.isFinite(row.averageQualityScore) ? formatNumber(row.averageQualityScore) : '-');
+      appendCell(tr, formatNumber(row.goodCount));
+      appendCell(tr, formatNumber(row.checkCount));
+      appendCell(tr, formatNumber(row.criticalCount));
+      appendButtonCell(
+        tr,
+        topIssue?.label || row.mostCommonMissingCriterion || '-',
+        () => selectQualityIssue(topIssue.criterionId, { type: row.type }),
+        !topIssue
+      );
+      appendCell(tr, row.nextRecommendedAction || '-');
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    elements.typeSummaryTable.appendChild(table);
+  }
+
+  function renderCriteriaMatrix() {
+    elements.criteriaMatrixTable.replaceChildren();
+
+    if (!hasQualityOutputContext()) {
+      elements.criteriaMatrixSection.hidden = true;
+      return;
+    }
+
+    const rows = safeArray(state.qualityAggregations?.criteriaMatrix);
+    elements.criteriaMatrixSection.hidden = false;
+
+    if (!rows.length) {
+      renderTableEmpty(elements.criteriaMatrixTable, 'Es sind keine Qualitaetskriterien verfuegbar.');
+      return;
+    }
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    appendHeaderCells(headerRow, [
+      'Datentyp',
+      'Kriterium',
+      'Prioritaet',
+      'Autom. pruefbar',
+      'Erfuellt',
+      'Nicht erfuellt',
+      'Quote',
+      'Status',
+      'Datenfelder',
+      'Hinweis',
+      'Empfohlene Aktion'
+    ]);
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      appendCell(tr, textOrDash(row.type));
+      appendButtonCell(
+        tr,
+        row.label || row.criterionId,
+        () => selectQualityIssue(row.criterionId, { type: row.type }),
+        !row.criterionId
+      );
+      appendCell(tr, textOrDash(row.priority));
+      appendCell(tr, row.autoCheck ? 'ja' : 'nein');
+      appendCell(tr, formatNumber(row.fulfilledCount));
+      appendCell(tr, formatNumber(row.missingCount));
+      appendCell(tr, Number.isFinite(row.quote) ? `${row.quote.toFixed(2)}%` : '-');
+      appendCell(tr, row.autoCheck ? textOrDash(row.status) : 'nicht automatisch pruefbar', statusClass(row.status));
+      appendCell(tr, safeArray(row.fields).join(', ') || '-');
+      appendCell(tr, row.note || '-');
+      appendCell(tr, row.recommendation || '-');
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    elements.criteriaMatrixTable.appendChild(table);
+  }
+
   function getCriterionById(criterionId) {
     return qualityCriteria.find((criterion) => criterion.id === criterionId) || null;
   }
@@ -1315,6 +1677,356 @@ document.addEventListener('DOMContentLoaded', () => {
     return safeArray(item?.recommendations).map(normalizeString).find(Boolean) || '-';
   }
 
+  function limitItemsForAi(items, maxItems = AI_CHAT_CONFIG.maxItemsForContext) {
+    const list = safeArray(items);
+    const limit = Math.max(0, Math.min(100, Number(maxItems) || 0));
+    return {
+      items: list.slice(0, limit),
+      total: list.length,
+      sampleSize: Math.min(list.length, limit),
+      truncated: list.length > limit
+    };
+  }
+
+  function reduceItemForAi(item) {
+    const missingCriteria = safeArray(item?.missingCriteria).slice(0, 8);
+    return {
+      id: item?.id || '',
+      title: item?.title || '',
+      type: item?.type || '',
+      region: item?.region || '',
+      city: item?.city || '',
+      category: item?.category || '',
+      qualityScore: Number.isFinite(item?.qualityScore) ? item.qualityScore : null,
+      qualityStatus: item?.qualityStatus || null,
+      isOpenData: item?.isOpenData ?? null,
+      license: item?.license || '',
+      missingCriteria,
+      recommendations: safeArray(item?.recommendations).slice(0, 5),
+      sourceUrl: item?.sourceUrl || ''
+    };
+  }
+
+  function getActiveIssueForAi() {
+    const criterion = getActiveIssueCriterion();
+    if (!state.activeIssue && !criterion) return null;
+    return {
+      id: criterion?.id || state.activeIssue,
+      label: criterion?.label || state.activeIssue,
+      priority: criterion?.priority || null,
+      recommendation: criterion?.recommendation || null,
+      autoCheck: criterion?.autoCheck ?? null,
+      fields: safeArray(criterion?.fields)
+    };
+  }
+
+  function getVisibleItemsForAi() {
+    return state.activeIssue ? getIssueListItems() : getBaseFilteredItems();
+  }
+
+  function buildAiSummaryContext(baseItems) {
+    const items = safeArray(baseItems);
+    const aggregations = getQualityAggregations(items);
+    const totalItems = items.length;
+    const openDataCount = aggregations.openDataCapableCount || 0;
+    const statusCounts = aggregations.qualityStatusCounts || {};
+
+    return {
+      totalItems,
+      averageQualityScore: aggregations.averageQualityScore,
+      openDataCount,
+      openDataRate: totalItems > 0 ? openDataCount / totalItems : null,
+      goodCount: statusCounts.gut || 0,
+      checkCount: statusCounts.pruefen || 0,
+      criticalCount: statusCounts.kritisch || 0,
+      unknownCount: statusCounts.nichtBerechenbar || 0
+    };
+  }
+
+  function buildAiIssueListContext() {
+    return safeArray(state.qualityAggregations?.issueSummary).slice(0, 8).map((issue) => ({
+      criterionId: issue.criterionId,
+      label: issue.label,
+      affectedCount: issue.affectedCount,
+      priority: issue.priority,
+      recommendation: issue.recommendation
+    }));
+  }
+
+  function buildAiMatrixContext() {
+    return safeArray(state.qualityAggregations?.criteriaMatrix)
+      .filter((row) => Number(row?.missingCount || 0) > 0)
+      .sort((a, b) => Number(b.missingCount || 0) - Number(a.missingCount || 0))
+      .slice(0, 20)
+      .map((row) => ({
+        type: row.type,
+        criterionId: row.criterionId,
+        label: row.label,
+        priority: row.priority,
+        autoCheck: !!row.autoCheck,
+        fulfilledCount: row.fulfilledCount,
+        missingCount: row.missingCount,
+        quote: row.quote,
+        status: row.status,
+        recommendation: row.recommendation
+      }));
+  }
+
+  function buildAiDetailContext() {
+    if (!state.activeDetailItem) return null;
+    return reduceItemForAi(state.activeDetailItem);
+  }
+
+  function buildAiContext() {
+    refreshFilteredItems();
+    const baseItems = getBaseFilteredItems();
+    const visibleItems = getVisibleItemsForAi();
+    const sample = limitItemsForAi(visibleItems);
+
+    return {
+      dashboard: 'SaTourN-Statistik / Datenqualitaets-Monitor',
+      activeView: state.activeView,
+      activeFilters: {
+        region: state.activeFilters.region,
+        city: state.activeFilters.city,
+        type: state.activeFilters.type,
+        category: state.activeFilters.category,
+        qualityStatus: state.activeFilters.qualityStatus,
+        criterionId: state.activeFilters.criterionId,
+        priority: state.activeFilters.priority,
+        autoCheck: state.activeFilters.autoCheck,
+        search: state.activeFilters.search || ''
+      },
+      activeFilterDescription: getActiveFilterDescription(),
+      activeIssue: getActiveIssueForAi(),
+      summary: buildAiSummaryContext(baseItems),
+      topIssues: buildAiIssueListContext(),
+      typeSummary: safeArray(state.qualityAggregations?.typeSummary).slice(0, 8).map((row) => ({
+        type: row.type,
+        totalCount: row.totalCount,
+        openDataCount: row.openDataCount,
+        openDataRate: row.openDataRate,
+        averageQualityScore: row.averageQualityScore,
+        mostCommonMissingCriterion: row.mostCommonMissingCriterion,
+        nextRecommendedAction: row.nextRecommendedAction
+      })),
+      matrixSummary: buildAiMatrixContext(),
+      visibleItemsSample: sample.items.map(reduceItemForAi),
+      selectedItem: buildAiDetailContext(),
+      dataLimit: {
+        totalMatchingItems: sample.total,
+        sampleSize: sample.sampleSize,
+        truncated: sample.truncated || !!state.qualityDataMeta?.truncated,
+        browserDataMode: state.qualityDataMeta?.mode || 'sample',
+        collectedItems: state.qualityDataMeta?.collectedItems || state.normalizedItems.length,
+        estimatedTotalItems: state.qualityDataMeta?.estimatedTotalItems || null,
+        note: state.qualityDataMeta?.note || ''
+      }
+    };
+  }
+
+  function getAiContextNote() {
+    if (!state.normalizedItems.length && !state.latestRows.length) {
+      return 'Fuer die aktuelle Ansicht liegen keine auswertbaren Daten vor.';
+    }
+    if (state.activeDetailItem) {
+      return `Die KI beruecksichtigt aktuell den Datensatz: ${state.activeDetailItem.title || state.activeDetailItem.id || 'ohne Titel'}.`;
+    }
+    const activeIssue = getActiveIssueForAi();
+    if (activeIssue) {
+      return `Die KI analysiert aktuell die Fehlerliste: ${activeIssue.label}.`;
+    }
+    return 'Die KI analysiert die aktuell gefilterte Dashboard-Ansicht.';
+  }
+
+  function setAiLoading(isLoading) {
+    state.aiChat.isLoading = isLoading;
+    elements.aiChatSendButton.disabled = isLoading;
+    elements.aiChatInput.disabled = isLoading;
+    elements.aiChatStatus.textContent = isLoading ? 'KI-Anfrage laeuft...' : '';
+  }
+
+  function addAiMessage(role, text, extra = {}) {
+    state.aiChat.messages.push({
+      role,
+      text: normalizeString(text),
+      suggestions: safeArray(extra.suggestions),
+      warnings: safeArray(extra.warnings)
+    });
+    renderAiMessages();
+  }
+
+  function appendAiList(container, title, values) {
+    const list = safeArray(values).map(normalizeString).filter(Boolean);
+    if (!list.length) return;
+    const ul = document.createElement('ul');
+    ul.className = 'ai-chat-extra';
+    list.forEach((value) => {
+      const item = document.createElement('li');
+      item.textContent = value;
+      ul.appendChild(item);
+    });
+    const label = document.createElement('div');
+    label.className = 'ai-chat-role';
+    label.textContent = title;
+    container.appendChild(label);
+    container.appendChild(ul);
+  }
+
+  function renderAiMessages() {
+    elements.aiChatMessages.replaceChildren();
+    const messages = state.aiChat.messages.length
+      ? state.aiChat.messages
+      : [{ role: 'assistant', text: 'Stelle eine Frage zur aktuellen Auswahl oder nutze eine Schnellfrage.' }];
+
+    messages.forEach((message) => {
+      const item = document.createElement('div');
+      item.className = `ai-chat-message ${message.role === 'user' ? 'user' : message.role === 'error' ? 'error' : 'assistant'}`;
+
+      const role = document.createElement('div');
+      role.className = 'ai-chat-role';
+      role.textContent = message.role === 'user' ? 'Du' : message.role === 'error' ? 'Fehler' : 'Assistenz';
+      item.appendChild(role);
+
+      const text = document.createElement('div');
+      text.className = 'ai-chat-text';
+      text.textContent = message.text;
+      item.appendChild(text);
+
+      appendAiList(item, 'Hinweise', message.warnings);
+      appendAiList(item, 'Vorschlaege', message.suggestions);
+      elements.aiChatMessages.appendChild(item);
+    });
+
+    elements.aiChatMessages.scrollTop = elements.aiChatMessages.scrollHeight;
+  }
+
+  function updateAiContextNote() {
+    elements.aiChatContextNote.textContent = getAiContextNote();
+  }
+
+  function openAiChatPanel() {
+    state.aiChat.open = true;
+    elements.aiChatPanel.hidden = false;
+    elements.aiChatOpenButton.setAttribute('aria-expanded', 'true');
+    updateAiContextNote();
+    renderAiMessages();
+    elements.aiChatInput.focus();
+  }
+
+  function closeAiChatPanel() {
+    state.aiChat.open = false;
+    elements.aiChatPanel.hidden = true;
+    elements.aiChatOpenButton.setAttribute('aria-expanded', 'false');
+    elements.aiChatOpenButton.focus();
+  }
+
+  function buildMockAiResponse(userMessage, context) {
+    const total = context?.dataLimit?.totalMatchingItems ?? context?.summary?.totalItems ?? 0;
+    const topIssue = safeArray(context?.topIssues)[0];
+    const issueText = topIssue?.label || 'kein dominantes Qualitaetsproblem';
+    const mode = context?.activeIssue ? ` zur Fehlerliste "${context.activeIssue.label}"` : '';
+    const filterText = context?.activeFilterDescription || 'Filter: keine Einschraenkung';
+    const warning = context?.dataLimit?.truncated
+      ? 'Der KI-Kontext enthaelt nur ein begrenztes Sample der verfuegbaren Datensaetze.'
+      : 'Mock-Modus aktiv, es wurde keine externe Anfrage gesendet.';
+
+    return {
+      answer: `Mock-Antwort: In der aktuellen Auswahl${mode} wurden ${formatNumber(total)} Datensaetze beruecksichtigt. Das haeufigste Qualitaetsproblem ist ${issueText}. ${filterText}. Fuer echte KI-Antworten muss der n8n-Webhook konfiguriert werden.`,
+      suggestions: [
+        'Fehlerliste exportieren, wenn konkrete Pflegeaufgaben verteilt werden sollen.',
+        'n8n-Webhook konfigurieren, um echte KI-Antworten zu erhalten.'
+      ],
+      warnings: [warning]
+    };
+  }
+
+  function normalizeAiResponse(response) {
+    if (typeof response === 'string') {
+      return { answer: response, suggestions: [], warnings: [] };
+    }
+    return {
+      answer: normalizeString(response?.answer || response?.text || response?.message || 'Die Anfrage konnte nicht verarbeitet werden.'),
+      suggestions: safeArray(response?.suggestions),
+      warnings: safeArray(response?.warnings)
+    };
+  }
+
+  async function askN8nAiWebhook(userMessage, context) {
+    const webhookUrl = normalizeString(AI_CHAT_CONFIG.webhookUrl);
+    const useMock = !AI_CHAT_CONFIG.enabled || AI_CHAT_CONFIG.mockMode || !webhookUrl;
+    if (useMock) return buildMockAiResponse(userMessage, context);
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), Math.max(1000, Number(AI_CHAT_CONFIG.timeoutMs) || 30000));
+    const headers = { 'Content-Type': 'application/json' };
+    if (AI_CHAT_CONFIG.authHeaderName && AI_CHAT_CONFIG.authHeaderValue) {
+      headers[AI_CHAT_CONFIG.authHeaderName] = AI_CHAT_CONFIG.authHeaderValue;
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers,
+        signal: controller.signal,
+        body: JSON.stringify({
+          message: userMessage,
+          context,
+          meta: {
+            source: 'satourn-dashboard',
+            version: '1',
+            timestamp: new Date().toISOString(),
+            pageUrl: window.location.href
+          }
+        })
+      });
+
+      const text = await response.text();
+      if (!response.ok) throw new Error('Der KI-Dienst ist aktuell nicht erreichbar.');
+      if (!text) return { answer: 'Die Anfrage konnte nicht verarbeitet werden.', suggestions: [], warnings: [] };
+
+      try {
+        return normalizeAiResponse(JSON.parse(text));
+      } catch {
+        return normalizeAiResponse(text);
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') throw new Error('Zeitueberschreitung bei der KI-Anfrage.');
+      throw new Error(error?.message || 'Der KI-Dienst ist aktuell nicht erreichbar.');
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
+  async function submitAiChatMessage(message) {
+    const userMessage = normalizeString(message);
+    if (!userMessage || state.aiChat.isLoading) return;
+
+    const context = buildAiContext();
+    if (!context.summary.totalItems && !context.visibleItemsSample.length && !state.latestRows.length) {
+      addAiMessage('error', EMPTY_STATES.noAiData);
+      return;
+    }
+
+    addAiMessage('user', userMessage);
+    elements.aiChatInput.value = '';
+    setAiLoading(true);
+
+    try {
+      const result = await askN8nAiWebhook(userMessage, context);
+      const normalized = normalizeAiResponse(result);
+      addAiMessage('assistant', normalized.answer, {
+        suggestions: normalized.suggestions,
+        warnings: normalized.warnings
+      });
+    } catch (error) {
+      addAiMessage('error', error?.message || 'Die Anfrage konnte nicht verarbeitet werden.');
+    } finally {
+      setAiLoading(false);
+      elements.aiChatInput.focus();
+    }
+  }
+
   function issueSourceCell(cell, item) {
     const url = normalizeString(item?.sourceUrl);
     if (!url) {
@@ -1328,7 +2040,236 @@ document.addEventListener('DOMContentLoaded', () => {
     link.className = 'issue-link';
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
+    link.addEventListener('click', (event) => event.stopPropagation());
     cell.appendChild(link);
+  }
+
+  function findItemForResultRow(row) {
+    return state.normalizedItems.find((item) => (
+      normalizeString(item.region) === normalizeString(row.area)
+      && normalizeString(item.city) === normalizeString(row.place)
+      && normalizeString(item.type) === normalizeString(row.type)
+      && normalizeString(item.category) === normalizeString(row.category)
+    )) || null;
+  }
+
+  function formatDetailValue(value) {
+    if (value == null) return '-';
+    if (typeof value === 'boolean') return value ? 'Ja' : 'Nein';
+    if (Array.isArray(value)) return value.map(formatDetailValue).filter((entry) => entry !== '-').join(', ') || '-';
+    if (typeof value === 'object') {
+      const text = normalizeString(value);
+      return text || JSON.stringify(value);
+    }
+    return normalizeString(value) || '-';
+  }
+
+  function appendDetailSection(title) {
+    const section = document.createElement('section');
+    section.className = 'item-detail-section';
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    section.appendChild(heading);
+    elements.itemDetailContent.appendChild(section);
+    return section;
+  }
+
+  function appendDetailGrid(section, rows) {
+    const grid = document.createElement('div');
+    grid.className = 'item-detail-grid';
+    rows.forEach(([label, value]) => {
+      const labelEl = document.createElement('div');
+      labelEl.className = 'item-detail-label';
+      labelEl.textContent = label;
+      const valueEl = document.createElement('div');
+      valueEl.className = 'item-detail-value';
+      valueEl.textContent = formatDetailValue(value);
+      grid.appendChild(labelEl);
+      grid.appendChild(valueEl);
+    });
+    section.appendChild(grid);
+    return grid;
+  }
+
+  function readFieldCandidates(item, field) {
+    const raw = item?.raw && typeof item.raw === 'object' ? item.raw : {};
+    const candidates = [
+      field,
+      `raw.${field}`,
+      field.replace(/^raw\./, '')
+    ];
+    return Array.from(new Set(candidates))
+      .flatMap((path) => {
+        const value = qualityHelpers.getNestedValue(item, path)
+          ?? qualityHelpers.getNestedValue(raw, path.replace(/^raw\./, ''));
+        return safeArray(value);
+      })
+      .filter((value) => value != null)
+      .map(formatDetailValue)
+      .filter((value) => value && value !== '-');
+  }
+
+  function usedDataFieldsForCriterion(item, criterion) {
+    return safeArray(criterion?.fields).map((field) => {
+      const values = readFieldCandidates(item, field).slice(0, 3);
+      return values.length ? `${field}: ${values.join(' | ')}` : `${field}: -`;
+    });
+  }
+
+  function criterionMetaLines(item, criterion, statusText) {
+    const fields = safeArray(criterion?.fields);
+    const lines = [
+      `Prioritaet: ${criterion?.priority || '-'}`,
+      `Automatisch pruefbar: ${criterion?.autoCheck === false ? 'Nein' : 'Ja'}`
+    ];
+    if (statusText) lines.push(statusText);
+    if (fields.length) lines.push(`Vermutete Datenfelder: ${fields.join(', ')}`);
+    if (criterion?.note) lines.push(`Hinweis: ${criterion.note}`);
+    if (criterion?.recommendation) lines.push(`Empfehlung: ${criterion.recommendation}`);
+    const usedFields = usedDataFieldsForCriterion(item, criterion).slice(0, 6);
+    if (usedFields.length) lines.push(`Feldwerte: ${usedFields.join('; ')}`);
+    return lines;
+  }
+
+  function appendCriterionList(section, item, criterionIds, variant, emptyText, statusTextFactory) {
+    const list = document.createElement('div');
+    list.className = 'criterion-list';
+    const ids = safeArray(criterionIds);
+    if (!ids.length) {
+      const empty = document.createElement('div');
+      empty.className = 'issue-page-empty';
+      empty.textContent = emptyText;
+      list.appendChild(empty);
+      section.appendChild(list);
+      return;
+    }
+
+    ids.forEach((criterionId) => {
+      const criterion = getCriterionById(criterionId) || { id: criterionId, label: criterionId };
+      const card = document.createElement('div');
+      card.className = `criterion-card ${variant}`;
+      const title = document.createElement('strong');
+      title.textContent = criterion.label || criterion.id;
+      card.appendChild(title);
+      criterionMetaLines(item, criterion, statusTextFactory?.(criterion) || '').forEach((line) => {
+        const meta = document.createElement('span');
+        meta.textContent = line;
+        card.appendChild(meta);
+      });
+      list.appendChild(card);
+    });
+
+    section.appendChild(list);
+  }
+
+  function appendRecommendations(section, item) {
+    const recommendations = safeArray(item?.recommendations).map(normalizeString).filter(Boolean);
+    if (!recommendations.length) {
+      appendDetailGrid(section, [['Empfehlung', '-']]);
+      return;
+    }
+
+    const list = document.createElement('ul');
+    list.className = 'ai-chat-extra';
+    recommendations.forEach((recommendation) => {
+      const entry = document.createElement('li');
+      entry.textContent = recommendation;
+      list.appendChild(entry);
+    });
+    section.appendChild(list);
+  }
+
+  function stringifyRawData(value) {
+    try {
+      return JSON.stringify(value || {}, null, 2);
+    } catch {
+      return 'Rohdaten konnten nicht serialisiert werden.';
+    }
+  }
+
+  function appendRawDataSection(item) {
+    const section = appendDetailSection('Rohdaten');
+    const details = document.createElement('details');
+    details.className = 'item-detail-raw';
+    const summary = document.createElement('summary');
+    summary.textContent = 'Rohdaten anzeigen';
+    const pre = document.createElement('pre');
+    pre.textContent = stringifyRawData(item?.raw || item);
+    details.appendChild(summary);
+    details.appendChild(pre);
+    section.appendChild(details);
+  }
+
+  function openItemDetailPanel(item, options = {}) {
+    if (!item) {
+      setPill('err', 'keine Detaildaten');
+      return;
+    }
+
+    state.activeDetailItem = item;
+    elements.itemDetailContent.replaceChildren();
+    elements.itemDetailTitle.textContent = textOrDash(item.title);
+    elements.itemDetailSubtitle.textContent = `${textOrDash(item.type)} | ${textOrDash(item.region)} | ${textOrDash(item.city)}`;
+
+    appendDetailGrid(appendDetailSection('Stammdaten'), [
+      ['Titel', item.title],
+      ['ID', item.id],
+      ['Typ', item.type],
+      ['Gebiet', item.region],
+      ['Ort', item.city],
+      ['Kategorie', item.category],
+      ['Open-Data-Status', openDataLabel(item.isOpenData)],
+      ['Lizenz', item.license],
+      ['Qualitaets-Score', Number.isFinite(item.qualityScore) ? formatNumber(item.qualityScore) : '-'],
+      ['Qualitaetsstatus', item.qualityStatus],
+      ['Letzte Aktualisierung', item.updatedAt],
+      ['URL / Link', item.sourceUrl]
+    ]);
+
+    const missingSection = appendDetailSection('Fehlende Kriterien');
+    appendCriterionList(
+      missingSection,
+      item,
+      item.missingCriteria,
+      'missing',
+      'Keine fehlenden automatisch pruefbaren Kriterien im aktuellen Sample.',
+      () => 'Status: fehlt oder unvollstaendig'
+    );
+
+    const fulfilledSection = appendDetailSection('Erfuellte Kriterien');
+    appendCriterionList(
+      fulfilledSection,
+      item,
+      item.fulfilledCriteria,
+      'fulfilled',
+      'Keine erfuellten automatisch pruefbaren Kriterien vorhanden.',
+      () => 'Status: erfuellt'
+    );
+
+    const manualSection = appendDetailSection('Manuell zu pruefende Kriterien');
+    appendCriterionList(
+      manualSection,
+      item,
+      item.manualCriteria,
+      'manual',
+      'Keine manuellen Kriterien fuer diesen Datentyp hinterlegt.',
+      (criterion) => criterion?.note || 'Status: redaktionell pruefen'
+    );
+
+    appendRecommendations(appendDetailSection('Empfohlene Massnahmen'), item);
+    appendRawDataSection(item);
+
+    elements.itemDetailPanel.hidden = false;
+    updateAiContextNote();
+    if (options.focus !== false) elements.itemDetailCloseButton.focus();
+  }
+
+  function closeItemDetailPanel(options = {}) {
+    state.activeDetailItem = null;
+    if (elements.itemDetailPanel) elements.itemDetailPanel.hidden = true;
+    if (elements.itemDetailContent) elements.itemDetailContent.replaceChildren();
+    updateAiContextNote();
+    if (options.restoreFocus && elements.resultDiv) elements.resultDiv.focus?.();
   }
 
   function appendIssueTableCell(rowEl, value, className = '') {
@@ -1393,7 +2334,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!items.length) {
       const empty = document.createElement('div');
       empty.className = 'issue-page-empty';
-      empty.textContent = `Fuer das Kriterium '${criterion?.label || state.activeIssue}' wurden in der aktuellen Auswahl keine betroffenen Datensaetze gefunden.`;
+      empty.textContent = criterion?.autoCheck === false
+        ? 'Dieses Kriterium kann aus den verfuegbaren JSON-Daten nicht automatisch geprueft werden.'
+        : `Fuer das Kriterium '${criterion?.label || state.activeIssue}' wurden in der aktuellen Auswahl keine betroffenen Datensaetze gefunden.`;
       elements.issueDetailTable.appendChild(empty);
       renderIssuePagination(0);
       elements.issuePagination.hidden = true;
@@ -1420,6 +2363,17 @@ document.addEventListener('DOMContentLoaded', () => {
     visibleItems.forEach((item) => {
       const values = issueRowValues(item, criterion);
       const tr = document.createElement('tr');
+      tr.classList.add('detail-row-button');
+      tr.tabIndex = 0;
+      tr.setAttribute('role', 'button');
+      tr.setAttribute('aria-label', `Details zu ${item?.title || item?.id || 'Datensatz'} anzeigen`);
+      tr.addEventListener('click', () => openItemDetailPanel(item));
+      tr.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openItemDetailPanel(item);
+        }
+      });
       appendIssueTableCell(tr, values.title);
       appendIssueTableCell(tr, values.id);
       appendIssueTableCell(tr, values.type);
@@ -1447,6 +2401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.activeFilters.criterionId = null;
     state.activeView = 'overview';
     state.issueListPage = 0;
+    closeItemDetailPanel({ restoreFocus: false });
     refreshFilteredItems();
     renderQualitySections();
     setPill('ok', 'Uebersicht');
@@ -1457,6 +2412,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderQualitySummary();
     renderIssueSummary();
     renderIssueList();
+    renderTypeSummary();
+    renderCriteriaMatrix();
+    updateAiContextNote();
   }
 
   function canvasContext(canvas) {
@@ -1586,20 +2544,56 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderAll() {
-    renderSummary(state.latestRows);
+    const visibleRows = getFilteredResultRows(state.latestRows);
+    renderSummary(visibleRows);
     renderQualitySections();
-    renderTable(state.latestRows);
-    renderCharts(state.latestRows);
+    renderTable(visibleRows);
+    renderCharts(visibleRows);
     elements.exportButton.disabled = state.latestRows.length === 0 || !!state.currentRun;
+    setEmptyState(visibleRows.length ? '' : EMPTY_STATES.noResults, !visibleRows.length);
   }
 
-  function downloadCsv() {
-    if (!state.latestRows.length) return;
+  function csvValue(value) {
+    const text = value == null ? '' : String(value).replace(/\r?\n|\r/g, ' ');
+    return `"${text.replaceAll('"', '""')}"`;
+  }
 
-    const rows = sortedRows(state.latestRows);
-    const lines = [
+  function downloadCsv(filename, rows) {
+    const lines = safeArray(rows).map((line) => safeArray(line).map(csvValue).join(';'));
+    downloadText(filename, lines.join('\n'), 'text/csv;charset=utf-8');
+  }
+
+  function normalizeFilenameUmlauts(value) {
+    return String(value || '')
+      .replaceAll('\u00e4', 'ae')
+      .replaceAll('\u00f6', 'oe')
+      .replaceAll('\u00fc', 'ue')
+      .replaceAll('\u00c4', 'Ae')
+      .replaceAll('\u00d6', 'Oe')
+      .replaceAll('\u00dc', 'Ue')
+      .replaceAll('\u00df', 'ss');
+  }
+
+  function slugifyFilenamePart(value) {
+    return normalizeFilenameUmlauts(value)
+      .trim()
+      .toLowerCase()
+      .replaceAll('ä', 'ae')
+      .replaceAll('ö', 'oe')
+      .replaceAll('ü', 'ue')
+      .replaceAll('Ä', 'ae')
+      .replaceAll('Ö', 'oe')
+      .replaceAll('Ü', 'ue')
+      .replaceAll('ß', 'ss')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80);
+  }
+
+  function buildCsvRowsForResults(rows) {
+    return [
       ['Gebiet', 'Ort', 'Typ', 'Kategorie', 'SaTourN', 'Open-Data', 'Open-Data %', 'Status'],
-      ...rows.map((row) => {
+      ...sortedRows(rows).map((row) => {
         const pct = rowPercent(row);
         return [
           row.area,
@@ -1609,13 +2603,108 @@ document.addEventListener('DOMContentLoaded', () => {
           Number.isFinite(row.statistikCount) ? row.statistikCount : '',
           Number.isFinite(row.openDataCount) ? row.openDataCount : '',
           pct == null ? '' : pct.toFixed(2),
-          row.errors.join(' | ') || (hasValidCounts(row) ? 'OK' : 'Unvollständig')
+          row.errors.join(' | ') || (hasValidCounts(row) ? 'OK' : 'Unvollstaendig')
         ];
       })
-    ].map((line) => line.map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(';'));
+    ];
+  }
 
-    const filename = `satourn-statistik-${new Date().toISOString().slice(0, 10)}.csv`;
-    downloadText(filename, lines.join('\n'), 'text/csv;charset=utf-8');
+  function buildCsvRowsForIssueList(items, criterion) {
+    return [
+      [
+        'ID',
+        'Titel',
+        'Typ',
+        'Gebiet',
+        'Ort',
+        'Kategorie',
+        'Fehlendes Kriterium',
+        'Kriterium-ID',
+        'Prioritaet',
+        'Automatisch pruefbar',
+        'Qualitaets-Score',
+        'Qualitaetsstatus',
+        'Open-Data',
+        'Lizenz',
+        'Fehlende Felder',
+        'Empfohlene Aktion',
+        'Letzte Aktualisierung',
+        'URL',
+        'Quelle / Datensatztyp'
+      ],
+      ...safeArray(items).map((item) => [
+        item?.id || '',
+        item?.title || '',
+        item?.type || '',
+        item?.region || '',
+        item?.city || '',
+        item?.category || '',
+        criterion?.label || state.activeIssue || '',
+        criterion?.id || state.activeIssue || '',
+        criterion?.priority || '',
+        criterion?.autoCheck === false ? 'Nein' : 'Ja',
+        Number.isFinite(item?.qualityScore) ? item.qualityScore : '',
+        item?.qualityStatus || '',
+        openDataLabel(item?.isOpenData),
+        item?.license || '',
+        safeArray(criterion?.fields).join(', '),
+        issueRecommendation(item, criterion),
+        item?.updatedAt || '',
+        item?.sourceUrl || '',
+        item?.type || ''
+      ])
+    ];
+  }
+
+  function activeFilterFilenameParts() {
+    return [
+      state.activeFilters.region,
+      state.activeFilters.city,
+      state.activeFilters.type,
+      state.activeFilters.category,
+      state.activeFilters.qualityStatus,
+      state.activeFilters.priority,
+      state.activeFilters.autoCheck == null ? null : (state.activeFilters.autoCheck ? 'automatisch' : 'manuell'),
+      state.activeFilters.search
+    ].map(slugifyFilenamePart).filter(Boolean);
+  }
+
+  function issueListFilename(criterion) {
+    const criterionPart = slugifyFilenamePart(criterion?.label || state.activeIssue || 'kriterium');
+    const filterParts = activeFilterFilenameParts();
+    return ['satourn', 'fehlerliste', criterionPart, ...filterParts].filter(Boolean).join('_') + '.csv';
+  }
+
+  function exportCurrentViewToCSV() {
+    if (state.activeIssue) {
+      const criterion = getActiveIssueCriterion();
+      const items = getIssueListItems();
+      if (!items.length) {
+        setPill('err', 'keine Exportdaten');
+        setEmptyState(EMPTY_STATES.noExport);
+        return;
+      }
+
+      downloadCsv(issueListFilename(criterion), buildCsvRowsForIssueList(items, criterion));
+      setPill('ok', 'Fehlerliste exportiert');
+      return;
+    }
+
+    if (!state.latestRows.length) {
+      setPill('err', 'keine Exportdaten');
+      setEmptyState(EMPTY_STATES.noExport);
+      return;
+    }
+
+    const rows = getFilteredResultRows(state.latestRows);
+    if (!rows.length) {
+      setPill('err', 'keine Exportdaten');
+      setEmptyState(EMPTY_STATES.noExport);
+      return;
+    }
+
+    downloadCsv('satourn_export.csv', buildCsvRowsForResults(rows));
+    setPill('ok', 'CSV exportiert');
   }
 
   function currentFilters() {
@@ -1658,6 +2747,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!rows.length) {
         setPill('err', 'keine Abfrage');
+        setEmptyState(EMPTY_STATES.noResults);
         return;
       }
 
@@ -1690,6 +2780,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         elements.resultDiv.hidden = false;
         elements.resultDiv.textContent = `Fehler: ${shortError(error)}`;
+        setEmptyState('Die Anfrage konnte nicht verarbeitet werden.');
         setPill('err', 'fehler');
         console.error(error);
       }
@@ -1708,6 +2799,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.currentRun) return;
     state.currentRun.aborted = true;
     state.currentRun.controller.abort();
+    setEmptyState('Abfrage wurde abgebrochen.');
     setPill('err', 'abbrechen...');
   }
 
@@ -1720,6 +2812,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const categoryDropdown = elements.categoryContainer?.querySelector?.('select');
     if (categoryDropdown) categoryDropdown.disabled = disable || !state.selectedType;
+    const disableQualityFilters = !!state.currentRun;
+    [
+      elements.qualitySearchInput,
+      elements.qualityStatusSelect,
+      elements.prioritySelect,
+      elements.autoCheckSelect,
+      elements.clearQualityFiltersButton
+    ].forEach((element) => {
+      if (element) element.disabled = disableQualityFilters;
+    });
   }
 
   elements.allAreasCheckbox.addEventListener('change', () => {
@@ -1727,10 +2829,31 @@ document.addEventListener('DOMContentLoaded', () => {
     currentFilters();
     refreshAfterActiveFilterChange();
   });
+  elements.qualitySearchInput.addEventListener('input', debounce(refreshAfterActiveFilterChange));
+  [
+    elements.qualityStatusSelect,
+    elements.prioritySelect,
+    elements.autoCheckSelect
+  ].forEach((element) => {
+    element.addEventListener('change', refreshAfterActiveFilterChange);
+  });
+  elements.clearQualityFiltersButton.addEventListener('click', clearQualityFilters);
 
   elements.searchButton.addEventListener('click', fetchData);
   elements.cancelButton.addEventListener('click', cancelRun);
-  elements.exportButton.addEventListener('click', downloadCsv);
+  elements.exportButton.addEventListener('click', exportCurrentViewToCSV);
+  elements.aiChatOpenButton.addEventListener('click', openAiChatPanel);
+  elements.aiChatCloseButton.addEventListener('click', closeAiChatPanel);
+  elements.aiChatForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submitAiChatMessage(elements.aiChatInput.value);
+  });
+  elements.aiChatChips.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-prompt]');
+    if (!button) return;
+    submitAiChatMessage(button.dataset.prompt);
+  });
+  elements.itemDetailCloseButton.addEventListener('click', () => closeItemDetailPanel({ restoreFocus: false }));
   elements.issueCloseButton.addEventListener('click', clearActiveIssue);
   elements.issuePrevButton.addEventListener('click', () => {
     state.issueListPage = Math.max(0, state.issueListPage - 1);
@@ -1756,6 +2879,8 @@ document.addEventListener('DOMContentLoaded', () => {
   toggleLoading(false);
   setPill('ok', 'bereit');
   syncActiveFilters();
+  updateAiContextNote();
+  renderAiMessages();
   loadTypes();
   loadCategorySelect(null);
   loadPlaces(null);

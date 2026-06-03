@@ -47,6 +47,12 @@ window.SATOURN_STATISTIK_CONCURRENCY = 6;
 window.SATOURN_STATISTIK_WARN_REQUESTS = 120;
 ```
 
+## Statistik und Python
+
+Die Statistik-Oberflaeche laeuft auf GitHub Pages als statisches HTML/CSS/JavaScript. Python kann dort nicht als serverseitige Laufzeit fuer Nutzeranfragen ausgefuehrt werden. Deshalb bleibt die Live-Statistik im Browser bei JavaScript und der API-Zugriff beim bestehenden Node/Express-Proxy.
+
+Python ist nur fuer Build- oder Job-Pfade sinnvoll, z. B. GitHub Actions zur Erzeugung statischer Snapshot-JSONs oder ein separater Backend-Dienst fuer Vollscans und grosse CSV-Exporte. Die Architekturentscheidung ist dokumentiert in `docs/Codex/Datenqualitaetsmonitor_Python_Entscheidung.md`.
+
 ## Lokal starten
 
 ```bash

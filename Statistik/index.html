@@ -70,6 +70,53 @@ module: true
             </label>
           </div>
 
+          <div class="field">
+            <label>
+              Suche
+              <input id="quality-search-input" type="search" placeholder="Titel, ID, Ort, Kategorie">
+            </label>
+          </div>
+
+          <div class="field">
+            <label>
+              Qualitaetsstatus
+              <select id="quality-status-select">
+                <option value="">Alle</option>
+                <option value="gut">Gut</option>
+                <option value="pruefen">Pruefen</option>
+                <option value="kritisch">Kritisch</option>
+                <option value="nicht berechenbar">Nicht berechenbar</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>
+              Prioritaet
+              <select id="priority-select">
+                <option value="">Alle</option>
+                <option value="hoch">Hoch</option>
+                <option value="mittel">Mittel</option>
+                <option value="niedrig">Niedrig</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="field">
+            <label>
+              Pruefbarkeit
+              <select id="autocheck-select">
+                <option value="">Alle</option>
+                <option value="true">Automatisch pruefbar</option>
+                <option value="false">Manuell pruefen</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="btn">
+            <button id="clear-quality-filters-button" type="button">Filter leeren</button>
+          </div>
+
           <div class="btn">
             <button id="search-button" class="primary" type="button">Ergebnisse suchen</button>
           </div>
@@ -98,6 +145,8 @@ module: true
           </svg>
           <p class="muted">Abfrage läuft...</p>
         </div>
+
+        <div id="empty-state" class="empty-state" aria-live="polite">Noch keine Abfrage gestartet.</div>
 
         <div id="summary" class="summary" hidden>
           <div class="summary-item">
@@ -175,6 +224,24 @@ module: true
           </div>
         </section>
 
+        <section id="type-summary-section" class="quality-table-section" aria-labelledby="type-summary-title" hidden>
+          <div class="section-head">
+            <div>
+              <h2 id="type-summary-title">Datentypen im Ueberblick</h2>
+            </div>
+          </div>
+          <div class="tableWrap quality-table-wrap" id="type-summary-table"></div>
+        </section>
+
+        <section id="criteria-matrix-section" class="quality-table-section" aria-labelledby="criteria-matrix-title" hidden>
+          <div class="section-head">
+            <div>
+              <h2 id="criteria-matrix-title">Qualitaetskriterien-Matrix</h2>
+            </div>
+          </div>
+          <div class="tableWrap quality-table-wrap matrix-table-wrap" id="criteria-matrix-table"></div>
+        </section>
+
         <div id="chart-container" class="chart-grid" hidden>
           <div class="chart-card">
             <div class="chart-title">Open-Data Anteil</div>
@@ -191,4 +258,49 @@ module: true
     </section>
 
   </div>
+
+  <button id="ai-chat-open-button" class="ai-chat-open-button" type="button" aria-controls="ai-chat-panel" aria-expanded="false">
+    KI-Analyse
+  </button>
+
+  <aside id="ai-chat-panel" class="ai-chat-panel" aria-labelledby="ai-chat-title" hidden>
+    <div class="ai-chat-head">
+      <div>
+        <h2 id="ai-chat-title">KI-Analyse</h2>
+        <p id="ai-chat-context-note">Die KI analysiert die aktuell gefilterte Dashboard-Ansicht.</p>
+      </div>
+      <button id="ai-chat-close-button" class="ai-chat-close-button" type="button">Schliessen</button>
+    </div>
+
+    <div id="ai-chat-status" class="ai-chat-status" aria-live="polite"></div>
+
+    <div id="ai-chat-messages" class="ai-chat-messages" aria-live="polite"></div>
+
+    <div id="ai-chat-chips" class="ai-chat-chips" aria-label="Schnellfragen">
+      <button type="button" data-prompt="Aktuelle Auswahl zusammenfassen">Aktuelle Auswahl zusammenfassen</button>
+      <button type="button" data-prompt="Haeufigste Probleme erklaeren">Haeufigste Probleme erklaeren</button>
+      <button type="button" data-prompt="Prioritaeten fuer Datenpflege vorschlagen">Prioritaeten vorschlagen</button>
+      <button type="button" data-prompt="Open-Data-Potenzial bewerten">Open-Data-Potenzial bewerten</button>
+      <button type="button" data-prompt="Fehlerliste zusammenfassen">Fehlerliste zusammenfassen</button>
+      <button type="button" data-prompt="CSV-Export empfehlen">CSV-Export empfehlen</button>
+    </div>
+
+    <form id="ai-chat-form" class="ai-chat-form">
+      <label for="ai-chat-input">Frage zur aktuellen Ansicht</label>
+      <textarea id="ai-chat-input" rows="3" placeholder="Frage zur aktuellen Auswahl stellen"></textarea>
+      <button id="ai-chat-send-button" class="primary" type="submit">Senden</button>
+    </form>
+  </aside>
+
+  <aside id="item-detail-panel" class="item-detail-panel" aria-labelledby="item-detail-title" hidden>
+    <div class="item-detail-head">
+      <div>
+        <h2 id="item-detail-title">Datensatzdetails</h2>
+        <p id="item-detail-subtitle"></p>
+      </div>
+      <button id="item-detail-close-button" class="item-detail-close-button" type="button">Schliessen</button>
+    </div>
+
+    <div id="item-detail-content" class="item-detail-content"></div>
+  </aside>
 </div>
