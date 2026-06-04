@@ -8,6 +8,9 @@ Rohdaten.
 
 1. `Datenqualitaetsmonitor_Aktueller_Projektstand.md`
 2. `Datenqualitaetsmonitor_Offene_TODOs.md`
+3. `Datenqualitaetsmonitor_Arbeitsstand.md`
+4. `../Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md`, wenn am neuen
+   Arbeitsauftrag abschnittsweise gearbeitet wird.
 
 Diese beiden Dateien reichen fuer normale Weiterarbeit am Dashboard.
 

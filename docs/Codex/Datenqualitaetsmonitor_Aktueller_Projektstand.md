@@ -12,6 +12,9 @@ neue Build-Kette, keine Secrets im Frontend.
 - Statistik-Dashboard wurde zum Datenqualitaets-Monitor erweitert.
 - Arbeitsbereiche: Ueberblick, Statistik, Datenqualitaet, Fehlerlisten,
   Datentypen, Kriterien, Ergebnisse, KI-Analyse.
+- Diese acht Arbeitsbereiche sind ein funktionaler Zwischenstand. Das neue
+  Produktziel aus dem Arbeitsauftrag ist eine ruhigere Struktur mit wenigen
+  Hauptbereichen und perspektivisch mehreren statischen HTML-Seiten.
 - Bestehende Statistik-KPIs, Charts, Ergebnisliste und Statistik-CSV bleiben
   auf Aggregatzeilen/`overallcount` basiert.
 - Qualitaets-KPIs, Problemcluster, Matrix, Datentypen, Fehlerlisten, Detailpanel,
@@ -44,6 +47,18 @@ neue Build-Kette, keine Secrets im Frontend.
   `aiChat`.
 - `Statistik/quality.js` exportiert `qualityCriteria`, Helper,
   Einzelbewertung, Aggregationen und `getQualityScanConfig()`.
+- `qualityScore` und `qualityStatus` sind Orientierung fuer Datenpflege. Die
+  weitere UI soll zusaetzlich fachliche Nutzbarkeit erklaeren, nicht Score als
+  absolute Wahrheit behandeln.
+- Gebiet, Ort und Typ sind aktuell technisch als Filter umgesetzt, werden fuer
+  die weitere Arbeit aber als fachlicher Arbeitskontext der Datenpflege
+  behandelt.
+- UI-Ziel fuer die naechste Arbeit: weniger sichtbare Hauptnavigation, weniger
+  Filterdichte im ersten Sichtbereich, Spezialfunktionen kontextuell statt als
+  gleichwertige Hauptbereiche.
+- UI-Verschlankung startet bei Fehlerlisten, Statusmeldungen und Loadern. Die
+  aktuelle Fehlerliste ist noch zu breit und technisch; Detailpanel und CSV
+  duerfen die Tiefe behalten.
 
 ## Aktive Kriterien
 
@@ -74,6 +89,28 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
 8. CSV exportiert entweder Statistik-Aggregate oder die aktive Fehlerliste.
 9. Detailpanel und KI-Kontext nutzen reduzierte, gefilterte Daten.
 
+## Zielseitenlogik
+
+- Uebersicht: ruhige Lage im Arbeitskontext, kompakte Qualitaetslage,
+  wichtigste Pflegeaufgaben, dezente Open-Data-Kennzahl, keine langen Listen,
+  Rohdaten, Matrix oder Voll-Scans.
+- Pflegeaufgaben: primaerer Arbeitsbereich; Aufgaben fachlich benennen und
+  klickbar zu konkreten Fehlerlisten bzw. Datensatzlisten fuehren.
+- Datensaetze: schlanke Arbeitsliste auf Datensatzebene; Details, IDs, Links,
+  Rohdaten und vollstaendige Kriterienbewertung bleiben im Detailpanel.
+- Statistik: aggregierte `overallcount`-basierte Zahlen, Vergleiche, Charts und
+  Statistik-CSV; keine Datensatzdetails und keine unnoetigen Qualitaets-Scans.
+
+## Naechste Umsetzungsreihenfolge
+
+1. UI auditieren: Tabellen, Statusmeldungen, Loader, Panels, Navigation.
+2. Fehlerlisten verschlanken: UI-Spalten auf Arbeitsentscheidung reduzieren.
+3. Technische Statusmeldungen aus UI in Console verschieben.
+4. Ladezustaende komponentennah integrieren.
+5. Arbeitskontext mit Gebiet, Ort und Datentyp vorbereiten.
+6. Hauptnavigation auf Uebersicht, Pflegeaufgaben, Datensaetze, Statistik
+   ausrichten.
+
 ## Tests
 
 - Standard: `git diff --check`.
@@ -81,3 +118,49 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
   `npm run diagnose:quality-examples`.
 - Falls Node fehlt, JSON-Fixtures mit PowerShell parsebar pruefen und Node-Checks
   als nicht ausgefuehrt dokumentieren.
+
+## Abschnittsarbeit
+
+- Punkt 1 `Technischer Rahmen` aus
+  `docs/Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md` ist in
+  `docs/Codex/Datenqualitaetsmonitor_Arbeitsstand.md` konsolidiert.
+- Punkt 2 `Produktziel` ist dort ebenfalls konsolidiert: Mehrseitenziel,
+  API-Schonung und Reduktion weiterer Panel-Komplexitaet.
+- Punkt 3 `Zentrale Produktperspektive` ist konsolidiert: Fokus auf
+  Datenpfleger, Arbeitskontext und konkrete Pflegeaufgaben statt abstrakter
+  Gesamtstatistik.
+- Punkt 4 `UI-Grundprinzip` ist konsolidiert: UI ruhiger fuehren,
+  Progressive Disclosure nutzen und technische Details aus der Startansicht
+  herausnehmen.
+- Punkt 5 `Navigation und Mehrseitenstruktur` ist konsolidiert: Zielnavigation
+  Uebersicht, Pflegeaufgaben, Datensaetze, Statistik; `activePanel` bleibt nur
+  Uebergang.
+- Punkt 6 `Arbeitskontext statt Einstellungsflut` ist konsolidiert: Gebiet,
+  Ort und Datentyp bilden den kleinen lokalen Arbeitskontext; weitere Filter
+  bleiben ansichtsspezifisch.
+- Punkt 7 `API-schonende Grundregeln` ist konsolidiert: keine impliziten
+  Vollabfragen, grosse Fehlerlisten nur nach konkretem Nutzerklick,
+  Stichproben transparent kennzeichnen.
+- Punkt 8 `Datenfluss beibehalten und sinnvoll modularisieren` ist
+  konsolidiert: bestehender Filter-/Sample-/Normalisierungs-/Renderfluss bleibt
+  fachlich richtig und wird nur an klaren Grenzen modularisiert.
+- Punkt 9 `Seitenlogik` ist konsolidiert: vier Zielbereiche mit klar getrennten
+  Aufgaben und Datenquellen.
+- Punkt 10 `Nutzbarkeit statt nur Vollstaendigkeit` ist konsolidiert:
+  Pflegehinweise sollen praktische Wirkung erklaeren, nicht nur fehlende Felder
+  melden.
+- Punkt 11 `Qualitaetslogik` ist konsolidiert: aktive Kriterien und
+  Score-Schwellen bleiben wie in `Statistik/quality.js`; Geo, TouristTrip und
+  manuelle Bildqualitaet werden nicht automatisch aktiviert.
+- Punkt 12 `Reale Feldmappings` ist konsolidiert: bestehende Feldchecks bleiben
+  verbindlich; neue Annahmen brauchen dokumentierte Pruefung.
+- Punkte 13 bis 25 sind konsolidiert: Tabellen werden Entscheidungshilfen,
+  Detailpanel entlastet Listen, Aktionen ersetzen technische Spalten,
+  Statusmeldungen und Loader werden ruhiger, KI bleibt dezent, CSV bleibt
+  ansichtsspezifisch und Migration erfolgt schrittweise.
+- Der erste Mockup-Umbau aus `docs/Codex/Umbau_Statistik` ist gestartet:
+  `Startseite.png`/`Startseite.md` wurden in `Statistik/index.html`,
+  `Statistik/scripts.js`, `Statistik/style.css` und die vorbereiteten
+  Zielseiten `tasks.html`, `records.html`, `stats.html` uebernommen.
+- Offene Punkte aus der Abschnittsarbeit stehen in
+  `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`.

@@ -14,6 +14,11 @@ genannten Standard-Kontextdateien laden:
 - `docs/Codex/Datenqualitaetsmonitor_Aktueller_Projektstand.md`
 - `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`
 
+Wenn der Nutzer auf den neuen Arbeitsauftrag oder einzelne Punkte daraus Bezug
+nimmt, zusaetzlich lesen:
+
+- `docs/Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md`
+
 Bei Architektur-, API-, Kriterien- oder KI-Fragen zusaetzlich:
 
 - `docs/Codex/Datenqualitaetsmonitor_Entscheidungen.md`
@@ -31,6 +36,10 @@ Grosse Fixtures unter `testdata/quality-examples/` und alte Arbeitsstaende unter
 - GitHub Pages bleibt statisches Hosting.
 - KI-Anbindung nur ueber n8n-Webhook als Middleware vorbereiten.
 - Fuer grosse Aufgaben immer nur den jeweils angeforderten Abschnitt umsetzen.
+- Vorgaben ab Punkt 25 des Arbeitsauftrags gelten als operative
+  Aufgabenbeschreibung: UI auditieren, Tabellen verschlanken,
+  Statusmeldungen umbauen, Loader lokal integrieren, Arbeitskontext vorbereiten
+  und Navigation beruhigen.
 - Nach jeder Aenderung kurz zusammenfassen:
   - geaenderte Dateien
   - was umgesetzt wurde
