@@ -1148,3 +1148,53 @@ Pruefung:
 
 - `rg` gegen alte Dashboard-Haken und `quality/scan` in `Statistik` ohne Treffer.
 - `git diff --check` ohne Fehler.
+
+## Umsetzung: Umbau Statistik - Pflegeaufgaben
+
+Status: umgesetzt am 2026-06-04, technische Abschlusspruefung lokal erfolgt.
+
+Gepruefte Quellen:
+
+- `docs/Codex/Umbau_Statistik/Pflegeaufgaben.png`
+- `docs/Codex/Umbau_Statistik/Datenqualitaetsmonitor_Pflegeaufgaben_Seite.md`
+
+Umgesetzte Anpassungen:
+
+- `Statistik/tasks.html` wurde von einem Platzhalter zu einer echten
+  Pflegeaufgaben-Seite nach Mockup umgebaut.
+- Die Seite nutzt dieselbe helle App-Shell mit Header, Arbeitskontext,
+  Seitenleiste und Aktualisierung wie die Startseite.
+- Obere KPI-Zeile zeigt offene Aufgaben, hohe Prioritaet, betroffene
+  Datensatz-Treffer, Open-Data-Relevanz und abgeleitetes Potenzial.
+- Filterleiste fuer Suche, Prioritaet, Datentyp, Pruefbarkeit und Auswirkung
+  wirkt lokal auf die Aufgabenuebersicht.
+- Aufgabenliste entsteht aus `qualityCriteria` und
+  `qualityAggregations.issueSummary` auf Basis begrenzter Samples.
+- Aufgaben ohne betroffene Datensaetze werden nicht angezeigt.
+- Detailkarte zeigt Problem, Auswirkung, empfohlene Aktion, betroffene Typen,
+  Pruefbarkeit und Datenbasis-Hinweis.
+- `/api/quality/scan` wird nicht beim Seitenaufruf genutzt, sondern erst nach
+  Klick auf `Datensaetze anzeigen` fuer konkrete Aufgabe und konkreten Typ.
+- Datensatzliste bleibt schlank: Titel, Typ, Ort/Gebiet, Problem, naechster
+  Schritt und Aktion.
+- CSV-Export ist nur aktiv, wenn Datensatzzeilen geladen wurden.
+- Primaersystem-Hinweise werden nur funktional gerendert: Outdooractive nur mit
+  vorhandener Source-ID, Feratel Deskline nur fuer Hotel/Unterkunft ohne
+  geratenen Link.
+
+Bewusste Einschraenkungen:
+
+- Betroffenen-Zahlen auf der Aufgabenuebersicht sind Sample-basiert und werden
+  entsprechend gekennzeichnet.
+- Vollstaendigere Trefferlisten entstehen erst ueber den budgetierten
+  Server-Scan pro Aufgabe und Typ.
+- Browser-Sichtpruefung gegen das Mockup konnte in dieser Umgebung weiterhin
+  nicht automatisiert werden, weil keine lokale Preview-/Build-Umgebung und
+  kein Node/npm verfuegbar sind.
+
+Pruefung:
+
+- `rg` gegen Mock-/Ticketsystem-Begriffe in `Statistik/tasks.html` und
+  `Statistik/scripts.js` ohne Treffer.
+- `/api/quality/scan` in `Statistik/scripts.js` nur fuer `loadTaskRecords()`.
+- `git diff --check` ohne Fehler.

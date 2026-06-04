@@ -724,11 +724,23 @@ Eine Abschnittsumsetzung ist erst fertig, wenn:
   `docs/Codex/Umbau_Statistik/Startseite.png` pruefen.
 - Entscheiden, ob die Qualitaets-KPIs der Startseite dauerhaft als Stichprobe
   gekennzeichnet bleiben oder spaeter serverseitige Snapshot-Werte bekommen.
-- Mockup `Pflegeaufgaben.png` mit zugehoerigem Aufgabenpaket als naechsten
-  Abschnitt umsetzen.
 - Mockups fuer Datensatz-Hauptseite, Datensatzliste und Detailansichten
   nacheinander auf die vorbereiteten Zielseiten migrieren.
 - Schnellzugriff `KI-Analyse` erst nach fachlicher Webhook-/Auth-Klaerung aktiv
   schalten.
 - Browser-QA und Responsive-Abgleich nachholen, sobald eine lokale Server- oder
   Preview-Umgebung verfuegbar ist.
+
+## Umbau Statistik: offene Folgepunkte nach Pflegeaufgaben
+
+- Pflegeaufgaben-Seite im Browser mit echten API-Daten gegen
+  `docs/Codex/Umbau_Statistik/Pflegeaufgaben.png` pruefen.
+- Verhalten von `/api/quality/scan` fuer alle aktiven Kriterien und Typen mit
+  echten Daten validieren, besonders `image_author_missing` und
+  `booking_link_missing`.
+- Pagination fuer Datensatzlisten erweitern, falls mehr als die aktuell
+  geladenen 25 Treffer pro Aufgabe benoetigt werden.
+- Datensatzliste in `records.html` mit den naechsten Mockups verbinden und
+  Parameteruebergabe von Pflegeaufgaben vorbereiten.
+- Primaersystem-Erkennung mit echten Feldern validieren, insbesondere
+  Outdooractive-Source-ID und Feratel-Hotel-Zuordnung.

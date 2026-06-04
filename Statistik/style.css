@@ -652,11 +652,458 @@
   font-size: 30px;
 }
 
+.statistik .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .statistik .eyebrow {
   margin-bottom: 8px;
   color: var(--blue);
   font-weight: 800;
   letter-spacing: 0;
+}
+
+.statistik .tasks-main {
+  width: min(1340px, 100%);
+  padding: 28px;
+}
+
+.statistik .task-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.statistik .task-kpi-card {
+  min-height: 120px;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.statistik .task-kpi-card span,
+.statistik .task-kpi-card small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.statistik .task-kpi-card strong {
+  display: block;
+  margin: 7px 0 10px;
+  color: var(--text);
+  font-size: 29px;
+  line-height: 1;
+}
+
+.statistik .task-kpi-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 850;
+}
+
+.statistik .task-kpi-icon.critical {
+  color: var(--red);
+  background: var(--red-soft);
+}
+
+.statistik .task-kpi-icon.review {
+  color: var(--amber);
+  background: var(--amber-soft);
+}
+
+.statistik .task-kpi-icon.good {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.statistik .task-kpi-icon.blue {
+  color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.statistik .task-filter-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, .7fr)) auto;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.statistik .task-filter-card input,
+.statistik .task-filter-card select {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.statistik .plain-button,
+.statistik .row-arrow {
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.statistik .tasks-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(330px, .44fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.statistik .tasks-table-card {
+  min-width: 0;
+}
+
+.statistik .tasks-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.statistik .tasks-table,
+.statistik .records-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.statistik .tasks-table th,
+.statistik .records-table th {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: #475467;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.statistik .tasks-table td,
+.statistik .records-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.statistik .records-table td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.statistik .tasks-table tr:last-child td,
+.statistik .records-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.statistik .table-empty {
+  padding: 28px 12px !important;
+  color: var(--muted) !important;
+  text-align: center;
+}
+
+.statistik .task-table-action {
+  display: grid;
+  grid-template-columns: 42px minmax(180px, 1fr);
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.statistik .task-table-action.active strong {
+  color: var(--blue);
+}
+
+.statistik .task-table-action small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.statistik .status-badge.good {
+  border: 1px solid #abefc6;
+  color: #067647;
+  background: #ecfdf3;
+}
+
+.statistik .status-badge.medium {
+  border: 1px solid #fedf89;
+  color: #b54708;
+  background: #fffbeb;
+}
+
+.statistik .type-chip-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 128px;
+}
+
+.statistik .type-chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  min-height: 24px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #344054;
+  background: #f2f4f7;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.statistik .type-chip.poi,
+.statistik .type-dot.poi {
+  background: #dcfae6;
+  color: #067647;
+}
+
+.statistik .type-chip.hotel,
+.statistik .type-dot.hotel {
+  background: #f3e8ff;
+  color: #7f56d9;
+}
+
+.statistik .type-chip.gastro,
+.statistik .type-dot.gastro {
+  background: #fff4df;
+  color: #b54708;
+}
+
+.statistik .type-chip.tour,
+.statistik .type-dot.tour {
+  background: #e6f4ee;
+  color: #087443;
+}
+
+.statistik .type-chip.event,
+.statistik .type-dot.event {
+  background: #f5e9ff;
+  color: #9333ea;
+}
+
+.statistik .type-chip.package,
+.statistik .type-dot.package {
+  background: #eff6ff;
+  color: #155eef;
+}
+
+.statistik .type-chip.more {
+  background: #f2f4f7;
+}
+
+.statistik .muted-text {
+  color: var(--muted);
+}
+
+.statistik .table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 16px;
+  color: #475467;
+  font-size: 13px;
+}
+
+.statistik .pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statistik .pager .icon-button {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+}
+
+.statistik .pager .icon-button:disabled {
+  opacity: .42;
+  cursor: default;
+}
+
+.statistik .task-side-column {
+  display: grid;
+  gap: 16px;
+}
+
+.statistik .task-detail-content h3 {
+  margin: 0 0 14px;
+  font-size: 17px;
+}
+
+.statistik .task-detail-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.statistik .task-detail-list dt {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.statistik .task-detail-list dd {
+  margin: 0 0 8px;
+  color: #344054;
+  line-height: 1.5;
+}
+
+.statistik .impact-dot {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.statistik .impact-dot.critical {
+  background: var(--red);
+}
+
+.statistik .impact-dot.review,
+.statistik .impact-dot.medium {
+  background: var(--amber);
+}
+
+.statistik .detail-type-select {
+  display: grid;
+  gap: 7px;
+  margin: 8px 0 14px;
+  color: #344054;
+  font-weight: 800;
+}
+
+.statistik .detail-type-select select {
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.statistik .primary-action {
+  width: 100%;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.statistik .primary-system-list {
+  display: grid;
+  gap: 10px;
+}
+
+.statistik .primary-system-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.statistik .primary-system-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.statistik .primary-system-logo {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--green);
+  background: var(--green-soft);
+  font-weight: 850;
+}
+
+.statistik .primary-system-row small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.statistik .task-hint-card {
+  background: var(--surface-soft);
+}
+
+.statistik .task-hint-card strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.statistik .task-records-section {
+  margin-top: 16px;
+}
+
+.statistik .task-type-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.statistik .task-type-legend span {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  color: #344054;
+  font-size: 13px;
+}
+
+.statistik .type-dot {
+  width: 18px;
+  height: 18px;
+  display: inline-block;
+  border-radius: 50%;
 }
 
 .statistik .context-dialog {
@@ -743,6 +1190,15 @@
   .statistik .quick-action-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .statistik .task-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .statistik .task-filter-card,
+  .statistik .tasks-workspace {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 780px) {
@@ -767,11 +1223,13 @@
   }
 
   .statistik .overview-main,
-  .statistik .placeholder-main {
+  .statistik .placeholder-main,
+  .statistik .tasks-main {
     padding: 20px;
   }
 
   .statistik .kpi-grid,
+  .statistik .task-kpi-grid,
   .statistik .quick-action-grid,
   .statistik .open-data-stats,
   .statistik .status-layout {
@@ -790,5 +1248,18 @@
 
   .statistik .context-summary {
     min-width: min(100%, 330px);
+  }
+
+  .statistik .task-filter-card {
+    padding: 12px;
+  }
+
+  .statistik .table-footer,
+  .statistik .primary-system-row {
+    align-items: flex-start;
+  }
+
+  .statistik .primary-system-row {
+    grid-template-columns: 44px minmax(0, 1fr);
   }
 }

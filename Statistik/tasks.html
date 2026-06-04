@@ -9,27 +9,263 @@ module: true
 
 <div class="statistik light-shell" data-page="tasks">
   <header class="app-header">
-    <a class="brand" href="/Statistik/"><span class="brand-mark" aria-hidden="true"></span><span><strong>SaTourN</strong><small>Datenqualitaets-Monitor</small></span></a>
-    <div class="work-context-bar"><span>Arbeitskontext:</span><button id="work-context-summary" class="context-summary" type="button">Sachsen - Alle Orte - Alle Datentypen</button><button id="work-context-edit" class="context-edit" type="button">Aendern</button></div>
-    <div class="header-status"><span id="last-updated">Keine Datenanfrage auf dieser Seite</span></div>
+    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitaets-Monitor">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <strong>SaTourN</strong>
+        <small>Datenqualitaets-Monitor</small>
+      </span>
+    </a>
+
+    <div class="work-context-bar">
+      <span>Arbeitskontext:</span>
+      <button id="work-context-summary" class="context-summary" type="button" aria-haspopup="dialog">
+        Sachsen - Alle Orte - Alle Datentypen
+      </button>
+      <button id="work-context-edit" class="context-edit" type="button">Aendern</button>
+    </div>
+
+    <div class="header-status">
+      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren">R</button>
+      <span id="last-updated">Letzte Aktualisierung: noch nicht geladen</span>
+    </div>
   </header>
+
   <div class="app-layout">
     <nav class="app-sidebar" aria-label="Datenqualitaetsmonitor Navigation">
-      <a class="nav-link" href="/Statistik/"><span aria-hidden="true">01</span>Uebersicht</a>
-      <a class="nav-link active" href="/Statistik/tasks.html" aria-current="page"><span aria-hidden="true">02</span>Pflegeaufgaben</a>
-      <a class="nav-link" href="/Statistik/records.html"><span aria-hidden="true">03</span>Datensaetze</a>
-      <a class="nav-link" href="/Statistik/stats.html"><span aria-hidden="true">04</span>Statistik</a>
-      <div class="sidebar-bottom"><button class="nav-utility" type="button" disabled>Hilfe</button><button class="nav-utility" type="button" disabled>Menue einklappen</button></div>
+      <a class="nav-link" href="/Statistik/">
+        <span aria-hidden="true">01</span>
+        Uebersicht
+      </a>
+      <a class="nav-link active" href="/Statistik/tasks.html" aria-current="page">
+        <span aria-hidden="true">02</span>
+        Pflegeaufgaben
+      </a>
+      <a class="nav-link" href="/Statistik/records.html">
+        <span aria-hidden="true">03</span>
+        Datensaetze
+      </a>
+      <a class="nav-link" href="/Statistik/stats.html">
+        <span aria-hidden="true">04</span>
+        Statistik
+      </a>
+
+      <div class="sidebar-bottom">
+        <button class="nav-utility" type="button" disabled>Hilfe</button>
+        <button class="nav-utility" type="button" disabled>Menue einklappen</button>
+      </div>
     </nav>
-    <main class="placeholder-main">
-      <section class="placeholder-card">
-        <p class="eyebrow">Pflegeaufgaben</p>
-        <h1>Pflegeaufgaben</h1>
-        <p>Diese Seite wird im naechsten Schritt aufgebaut. Sie zeigt kuenftig priorisierte Pflegeaufgaben und fuehrt zu konkreten Datensatzlisten.</p>
+
+    <main class="tasks-main" aria-labelledby="tasks-title">
+      <section class="overview-hero">
+        <h1 id="tasks-title">Datenpflegeaufgaben</h1>
+        <p>Uebersicht der offenen Pflegeaufgaben nach Prioritaet und Auswirkung.</p>
+      </section>
+
+      <section class="task-kpi-grid" aria-label="Pflegeaufgaben Kennzahlen">
+        <article class="task-kpi-card">
+          <span class="task-kpi-icon critical" aria-hidden="true">!</span>
+          <div>
+            <span>Offene Aufgaben</span>
+            <strong id="task-kpi-open">-</strong>
+            <small>Offene Pflegeaufgaben</small>
+          </div>
+        </article>
+        <article class="task-kpi-card">
+          <span class="task-kpi-icon critical" aria-hidden="true">H</span>
+          <div>
+            <span>Hohe Prioritaet</span>
+            <strong id="task-kpi-high">-</strong>
+            <small id="task-kpi-high-detail">-</small>
+          </div>
+        </article>
+        <article class="task-kpi-card">
+          <span class="task-kpi-icon review" aria-hidden="true">D</span>
+          <div>
+            <span>Betroffene Datensaetze</span>
+            <strong id="task-kpi-affected">-</strong>
+            <small>Treffer in Pflegeaufgaben</small>
+          </div>
+        </article>
+        <article class="task-kpi-card">
+          <span class="task-kpi-icon good" aria-hidden="true">O</span>
+          <div>
+            <span>Open-Data-Relevanz</span>
+            <strong id="task-kpi-open-data">-</strong>
+            <small>Der betroffenen Treffer</small>
+          </div>
+        </article>
+        <article class="task-kpi-card wide">
+          <span class="task-kpi-icon blue" aria-hidden="true">P</span>
+          <div>
+            <span>Potenzial</span>
+            <strong id="task-kpi-potential">-</strong>
+            <small>Durch Pflege erreichbar</small>
+          </div>
+        </article>
+      </section>
+
+      <section class="task-filter-card" aria-label="Pflegeaufgaben filtern">
+        <label class="task-search">
+          <span class="sr-only">Suche in Aufgaben</span>
+          <input id="task-search-input" type="search" placeholder="Suchen in Aufgaben ...">
+        </label>
+        <label>
+          <span class="sr-only">Prioritaet</span>
+          <select id="task-priority-filter">
+            <option value="">Prioritaet: Alle</option>
+            <option value="hoch">Prioritaet: Hoch</option>
+            <option value="mittel">Prioritaet: Mittel</option>
+            <option value="niedrig">Prioritaet: Niedrig</option>
+          </select>
+        </label>
+        <label>
+          <span class="sr-only">Datentyp</span>
+          <select id="task-type-filter">
+            <option value="">Datentyp: Alle</option>
+          </select>
+        </label>
+        <label>
+          <span class="sr-only">Pruefbarkeit</span>
+          <select id="task-check-filter">
+            <option value="">Pruefbarkeit: Alle</option>
+            <option value="auto">Pruefbarkeit: Automatisch</option>
+            <option value="manual">Pruefbarkeit: Manuell</option>
+          </select>
+        </label>
+        <label>
+          <span class="sr-only">Auswirkung</span>
+          <select id="task-impact-filter">
+            <option value="">Auswirkung: Alle</option>
+            <option value="sehr_hoch">Auswirkung: Sehr hoch</option>
+            <option value="hoch">Auswirkung: Hoch</option>
+            <option value="mittel">Auswirkung: Mittel</option>
+            <option value="niedrig">Auswirkung: Niedrig</option>
+          </select>
+        </label>
+        <button id="task-reset-filters" class="plain-button" type="button">Filter zuruecksetzen</button>
+      </section>
+
+      <div id="tasks-message" class="overview-message" hidden></div>
+
+      <section class="tasks-workspace">
+        <article class="panel-card tasks-table-card">
+          <header class="panel-head">
+            <h2 id="task-list-title">Alle Pflegeaufgaben</h2>
+          </header>
+          <div class="tasks-table-wrap">
+            <table class="tasks-table">
+              <thead>
+                <tr>
+                  <th>Pflegeaufgabe</th>
+                  <th>Betroffene Datensaetze</th>
+                  <th>Prioritaet</th>
+                  <th>Betroffene Typen</th>
+                  <th>Pruefbarkeit</th>
+                  <th>Auswirkung</th>
+                  <th><span class="sr-only">Aktion</span></th>
+                </tr>
+              </thead>
+              <tbody id="tasks-table-body" aria-live="polite">
+                <tr><td colspan="7" class="table-empty">Pflegeaufgaben werden geladen ...</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <footer class="table-footer">
+            <span id="task-table-count">-</span>
+            <div class="pager" aria-label="Pflegeaufgaben Seiten">
+              <button id="task-prev-page" class="icon-button" type="button" aria-label="Vorherige Seite">&lt;</button>
+              <span id="task-page-status">1</span>
+              <button id="task-next-page" class="icon-button" type="button" aria-label="Naechste Seite">&gt;</button>
+            </div>
+          </footer>
+        </article>
+
+        <aside class="task-side-column">
+          <article class="panel-card task-detail-card">
+            <header class="panel-head">
+              <h2>Aufgabe im Detail</h2>
+            </header>
+            <div id="task-detail-content" class="task-detail-content">
+              <p class="empty-note">Waehle eine Pflegeaufgabe aus der Liste.</p>
+            </div>
+          </article>
+
+          <article id="primary-system-card" class="panel-card primary-system-card" hidden>
+            <header class="panel-head">
+              <h2>Datenpflege in anderen Systemen</h2>
+            </header>
+            <div id="primary-system-list" class="primary-system-list"></div>
+          </article>
+
+          <article class="panel-card task-hint-card">
+            <strong>Hinweis</strong>
+            <p id="task-data-note">Die Anzahl betroffener Datensaetze basiert auf den aktuellen Filtern und einer Stichprobe.</p>
+          </article>
+        </aside>
+      </section>
+
+      <section id="task-records-section" class="panel-card task-records-section" hidden>
+        <header class="panel-head">
+          <div>
+            <h2 id="task-records-title">Datensaetze</h2>
+            <p id="task-records-note" class="data-note"></p>
+          </div>
+          <button id="task-records-export" class="context-edit" type="button" disabled>CSV exportieren</button>
+        </header>
+        <div class="tasks-table-wrap">
+          <table class="records-table">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Typ</th>
+                <th>Ort / Gebiet</th>
+                <th>Problem</th>
+                <th>Naechster Schritt</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody id="task-records-body">
+              <tr><td colspan="6" class="table-empty">Noch keine Datensaetze geladen.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel-card task-type-legend" aria-label="Datentypen">
+        <strong>Datentypen</strong>
+        <span><i class="type-dot poi"></i>POI</span>
+        <span><i class="type-dot hotel"></i>Hotel</span>
+        <span><i class="type-dot gastro"></i>Gastro</span>
+        <span><i class="type-dot tour"></i>Tour</span>
+        <span><i class="type-dot event"></i>Event</span>
+        <span><i class="type-dot package"></i>Package</span>
       </section>
     </main>
   </div>
+
   <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
-    <form method="dialog" id="work-context-form"><header><h2 id="context-dialog-title">Arbeitskontext aendern</h2><button class="icon-button" value="cancel" type="submit" aria-label="Schliessen">x</button></header><label>Gebiet<select id="context-area"></select></label><label>Ort<input id="context-city" type="text" placeholder="Alle Orte"></label><label>Datentyp<select id="context-type"></select></label><footer><button value="cancel" type="submit">Abbrechen</button><button class="primary" value="default" type="submit">Uebernehmen</button></footer></form>
+    <form method="dialog" id="work-context-form">
+      <header>
+        <h2 id="context-dialog-title">Arbeitskontext aendern</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schliessen">x</button>
+      </header>
+      <label>
+        Gebiet
+        <select id="context-area"></select>
+      </label>
+      <label>
+        Ort
+        <input id="context-city" type="text" placeholder="Alle Orte">
+      </label>
+      <label>
+        Datentyp
+        <select id="context-type"></select>
+      </label>
+      <footer>
+        <button value="cancel" type="submit">Abbrechen</button>
+        <button class="primary" value="default" type="submit">Uebernehmen</button>
+      </footer>
+    </form>
   </dialog>
 </div>

@@ -140,3 +140,11 @@ Stand: 2026-06-04
 - Die Startseite verwendet fuer Summen `/api/search` mit `limit=1` und fuer
   Qualitaets-KPIs begrenzte Stichproben; `/api/quality/scan` bleibt fuer
   spaetere konkrete Pflegeaufgaben reserviert.
+- Die Pflegeaufgaben-Seite darf beim Laden begrenzte Samples pro Typ abrufen,
+  aber keine Vollscans starten.
+- Aufgaben entstehen aus `qualityCriteria` und `issueSummary`; statische
+  Beispielaufgaben und fiktive Workflowdaten bleiben ausgeschlossen.
+- Server-Scans werden erst nach Auswahl einer konkreten Aufgabe und eines
+  konkreten Datentyps gestartet.
+- Primaersystem-Hinweise werden nur angezeigt, wenn sie aus echten Itemdaten
+  oder einer belastbaren Typregel eine konkrete Aktion ermoeglichen.

@@ -162,5 +162,10 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
   `Startseite.png`/`Startseite.md` wurden in `Statistik/index.html`,
   `Statistik/scripts.js`, `Statistik/style.css` und die vorbereiteten
   Zielseiten `tasks.html`, `records.html`, `stats.html` uebernommen.
+- Der zweite Mockup-Umbau ist umgesetzt:
+  `Pflegeaufgaben.png` und
+  `Datenqualitaetsmonitor_Pflegeaufgaben_Seite.md` wurden in eine echte
+  Pflegeaufgaben-Seite mit Sample-Aggregationen, Detailkarte,
+  Scan-on-demand-Datensatzliste und kontextuellem CSV-Export uebernommen.
 - Offene Punkte aus der Abschnittsarbeit stehen in
   `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`.
