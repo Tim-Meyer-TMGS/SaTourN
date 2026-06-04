@@ -11,7 +11,7 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
-const exampleDir = path.join(repoRoot, 'docs', 'Codex', 'examples');
+const exampleDir = path.join(repoRoot, 'testdata', 'quality-examples');
 const outputJson = process.argv.includes('--json');
 
 const examples = [

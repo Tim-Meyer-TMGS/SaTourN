@@ -1,22 +1,29 @@
 # Codex-Dokumentation
 
-Diese Ordnerstruktur ist fuer die weitere Arbeit am SaTourN-Datenqualitaets-Monitor aufgeraeumt.
+Diese Ebene ist der kurze Arbeitskontext fuer die weitere Statistik- und
+Datenqualitaetsmonitor-Entwicklung. Lade nicht automatisch Archivdateien oder
+Rohdaten.
 
-## Zuerst lesen
+## Standard-Kontext
 
-- `Datenqualitaetsmonitor_Aktueller_Projektstand.md`
-- `Datenqualitaetsmonitor_Offene_TODOs.md`
-- `Datenqualitaetsmonitor_Verifizierte_Annahmen.md`
-- `SaTourN_Codex_Prompt_Datenqualitaetsmonitor.md`
+1. `Datenqualitaetsmonitor_Aktueller_Projektstand.md`
+2. `Datenqualitaetsmonitor_Offene_TODOs.md`
 
-## Architektur- und Entscheidungsdokumente
+Diese beiden Dateien reichen fuer normale Weiterarbeit am Dashboard.
 
-- `Datenqualitaetsmonitor_Datenbasis_und_Limits.md`
-- `Datenqualitaetsmonitor_Python_Entscheidung.md`
-- `Zielbild.md`
-- `zielbild.png`
-- `examples/`
+## Bei Bedarf lesen
 
-## Archiv
+- `Datenqualitaetsmonitor_Entscheidungen.md`: Kriterien, API-Scan, Limits,
+  Python-Entscheidung, KI/n8n-Regeln.
+- `Beispieldaten.md`: Index der grossen Fixtures und Diagnosebefehle.
+- `Zielbild.md` und `zielbild.png`: visuelle Orientierung, nicht pixelgenaue
+  Vorgabe.
 
-Historische Zwischenstaende liegen in `Archiv/`. Diese Dateien sind nuetzlich fuer Rueckfragen, muessen aber fuer neue Codex-Kontexte normalerweise nicht mehr geladen werden.
+## Nicht im Standard-Kontext laden
+
+- `../../testdata/quality-examples/`: grosse reale Beispiel-JSONs.
+- `../../_archive/codex-docs/2026-06-04/`: alte Prompts und historische
+  Abschnittsstaende.
+
+Diese Dateien bleiben als Referenz erhalten, sind aber fuer neue Codex-Kontexte
+normalerweise Kontextballast.

@@ -34,6 +34,8 @@ const MAX_SCAN_PAGE_SIZE = 200;
 const DEFAULT_MAX_PAGES = 5;
 const MAX_SCAN_PAGES = 20;
 const DEFAULT_SCAN_TIMEOUT_MS = 8000;
+const ET4_PAGES_BASE_URL = 'https://pages.et4.de/de/statistik_sachsen/wlan/detail';
+const VERIFIED_ET4_PAGE_TYPES = new Set(['POI']);
 
 function clampInteger(value, fallback, min, max) {
   const numberValue = Number.parseInt(Array.isArray(value) ? value[0] : value, 10);
@@ -85,6 +87,22 @@ function countCheckableMedia(rawItem) {
   return getMediaObjects(rawItem).filter(isCheckableMediaObject).length;
 }
 
+function getGlobalId(rawItem) {
+  return firstText(rawItem, ['global_id', 'globalId', 'globalID']);
+}
+
+function normalizeEt4PageType(type) {
+  const normalized = String(type || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
+  if (normalized === 'poi' || normalized === 'pointofinterest') return 'POI';
+  return String(type || '').trim();
+}
+
+function buildEt4PagesUrl(type, globalId) {
+  const pageType = normalizeEt4PageType(type);
+  if (!pageType || !globalId || !VERIFIED_ET4_PAGE_TYPES.has(pageType)) return null;
+  return `${ET4_PAGES_BASE_URL}/${encodeURIComponent(pageType)}/${encodeURIComponent(globalId)}/x`;
+}
+
 function reduceItemForResponse(item, criterion) {
   const raw = item.raw || item;
   const category = firstListText(getCategoryValues(raw))
@@ -94,11 +112,14 @@ function reduceItemForResponse(item, criterion) {
   const license = getAttributeValue(raw, 'license')
     || firstText(item, ['license', 'attribute_license', 'raw.license', 'raw.attribute_license']);
   const mediaCount = countCheckableMedia(raw);
+  const type = item.type || null;
+  const globalId = getGlobalId(raw);
 
   return {
     id: extractId(raw) || item.id || null,
+    globalId,
     title: firstText(item, ['title', 'Title', 'name', 'Name', 'headline', 'presentation.title', 'raw.title', 'raw.name', 'raw.presentation.title']) || 'Ohne Titel',
-    type: item.type || null,
+    type,
     category,
     region,
     city: firstText(item, ['city', 'place', 'town', 'municipality', 'address.city', 'raw.city', 'raw.place']),
@@ -114,6 +135,7 @@ function reduceItemForResponse(item, criterion) {
       priority: criterion.priority,
       recommendation: criterion.recommendation
     } : null,
+    pageUrl: buildEt4PagesUrl(type, globalId),
     sourceUrl: firstText(item, ['sourceUrl', 'url', 'link', 'website', 'homepage', 'presentation.url', 'raw.url', 'raw.link', 'raw.presentation.url'])
   };
 }

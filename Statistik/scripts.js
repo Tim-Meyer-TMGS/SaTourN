@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     authHeaderValue: 'satourn',
     maxItemsForContext: 50,
     timeoutMs: 30000,
-    mockMode: true,
+    mockMode: false,
     ...(window.SATOURN_AI_CHAT_CONFIG || {})
   };
 
@@ -36,6 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const typesList = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
+  const ET4_PAGES_BASE_URL = 'https://pages.et4.de/de/statistik_sachsen/wlan/detail';
+  const VERIFIED_ET4_PAGE_TYPES = new Set(['POI']);
 
   const elements = {
     typeContainer: document.getElementById('type-dropdown-container'),
@@ -250,6 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function setActivePanel(panelId) {
     if (!panelId) return;
     if (panelId === 'ai') {
+      state.activePanel = 'ai';
+      updateViewNavigation();
       openAiChatPanel();
       return;
     }
@@ -544,6 +548,17 @@ document.addEventListener('DOMContentLoaded', () => {
     ]));
   }
 
+  function getGlobalId(rawItem) {
+    return normalizeString(firstValue(rawItem, ['global_id', 'globalId', 'globalID']));
+  }
+
+  function buildEt4PagesUrl({ type, globalId } = {}) {
+    const normalizedType = normalizeType(type);
+    const normalizedGlobalId = normalizeString(globalId);
+    if (!normalizedGlobalId || !VERIFIED_ET4_PAGE_TYPES.has(normalizedType)) return null;
+    return `${ET4_PAGES_BASE_URL}/${encodeURIComponent(normalizedType)}/${encodeURIComponent(normalizedGlobalId)}/x`;
+  }
+
   function normalizeErrors(rawItem, context) {
     return [
       ...safeArray(firstValue(rawItem, ['errors', 'error', 'validationErrors'])),
@@ -558,9 +573,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const errors = normalizeErrors(raw, context);
     const category = firstNormalizedValue(qualityHelpers.getCategoryValues(raw)) || normalizeContextValue(context.category);
     const region = firstNormalizedValue(qualityHelpers.getAreaValues(raw)) || normalizeContextValue(context.region);
+    const globalId = getGlobalId(raw);
 
     return {
       id: normalizeString(extractId(raw)) || normalizeString(firstValue(raw, ['global_id', 'globalId', 'id', 'Id', 'ID'])) || null,
+      globalId,
       title: normalizeString(firstValue(raw, [
         'title',
         'Title',
@@ -590,6 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
       openingHoursAvailable: qualityHelpers.hasOpeningHours(raw),
       bookingLinkAvailable: qualityHelpers.hasBookingLink(raw),
       updatedAt: normalizeString(firstValue(raw, ['updatedAt', 'modifiedAt', 'lastModified', 'changed', 'dateModified'])),
+      pageUrl: buildEt4PagesUrl({ type, globalId }),
       sourceUrl: normalizeSourceUrl(raw),
       raw
     };
@@ -1883,6 +1901,8 @@ document.addEventListener('DOMContentLoaded', () => {
       license: item?.license || '',
       missingCriteria,
       recommendations: safeArray(item?.recommendations).slice(0, 5),
+      globalId: item?.globalId || '',
+      pageUrl: item?.pageUrl || '',
       sourceUrl: item?.sourceUrl || ''
     };
   }
@@ -2019,11 +2039,32 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'Die KI analysiert die aktuell gefilterte Dashboard-Ansicht.';
   }
 
+  function getAiTransportMode() {
+    const webhookUrl = normalizeString(AI_CHAT_CONFIG.webhookUrl);
+    const mockActive = !AI_CHAT_CONFIG.enabled || AI_CHAT_CONFIG.mockMode === true || !webhookUrl;
+    return {
+      mockActive,
+      label: mockActive ? 'Modus: Mock' : 'Modus: Webhook',
+      reason: !AI_CHAT_CONFIG.enabled
+        ? 'KI deaktiviert'
+        : AI_CHAT_CONFIG.mockMode === true
+          ? 'Mock explizit aktiviert'
+          : webhookUrl
+            ? 'n8n-Webhook aktiv'
+            : 'keine Webhook-URL'
+    };
+  }
+
+  function updateAiStatus(message = '') {
+    const mode = getAiTransportMode();
+    elements.aiChatStatus.textContent = message || `${mode.label} (${mode.reason})`;
+  }
+
   function setAiLoading(isLoading) {
     state.aiChat.isLoading = isLoading;
     elements.aiChatSendButton.disabled = isLoading;
     elements.aiChatInput.disabled = isLoading;
-    elements.aiChatStatus.textContent = isLoading ? 'KI-Anfrage laeuft...' : '';
+    updateAiStatus(isLoading ? `${getAiTransportMode().label}: KI-Anfrage laeuft...` : '');
   }
 
   function addAiMessage(role, text, extra = {}) {
@@ -2087,9 +2128,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openAiChatPanel() {
     state.aiChat.open = true;
+    state.activePanel = 'ai';
     elements.aiChatPanel.hidden = false;
     elements.aiChatOpenButton.setAttribute('aria-expanded', 'true');
+    updateViewNavigation();
     updateAiContextNote();
+    updateAiStatus();
     renderAiMessages();
     elements.aiChatInput.focus();
   }
@@ -2134,7 +2178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function askN8nAiWebhook(userMessage, context) {
     const webhookUrl = normalizeString(AI_CHAT_CONFIG.webhookUrl);
-    const useMock = !AI_CHAT_CONFIG.enabled || AI_CHAT_CONFIG.mockMode || !webhookUrl;
+    const useMock = getAiTransportMode().mockActive;
     if (useMock) return buildMockAiResponse(userMessage, context);
 
     const controller = new AbortController();
@@ -2162,7 +2206,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       const text = await response.text();
-      if (!response.ok) throw new Error('Der KI-Dienst ist aktuell nicht erreichbar.');
+      if (!response.ok) {
+        const detail = text ? ` Antwort: ${text.slice(0, 180)}` : '';
+        throw new Error(`Der KI-Dienst ist aktuell nicht erreichbar. HTTP ${response.status}.${detail}`);
+      }
       if (!text) return { answer: 'Die Anfrage konnte nicht verarbeitet werden.', suggestions: [], warnings: [] };
 
       try {
@@ -2172,6 +2219,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       if (error?.name === 'AbortError') throw new Error('Zeitueberschreitung bei der KI-Anfrage.');
+      if (error instanceof TypeError) throw new Error('Der KI-Dienst konnte nicht erreicht werden. Bitte n8n-CORS, Netzwerk und Webhook-URL pruefen.');
       throw new Error(error?.message || 'Der KI-Dienst ist aktuell nicht erreichbar.');
     } finally {
       window.clearTimeout(timeout);
@@ -2208,7 +2256,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function issueSourceCell(cell, item) {
-    const url = normalizeString(item?.sourceUrl);
+    const pageUrl = normalizeString(item?.pageUrl);
+    const sourceUrl = normalizeString(item?.sourceUrl);
+    const url = pageUrl || sourceUrl;
     if (!url) {
       cell.textContent = '-';
       return;
@@ -2216,7 +2266,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const link = document.createElement('a');
     link.href = url;
-    link.textContent = 'Link';
+    link.textContent = pageUrl ? 'ET4 Pages' : 'Quelle';
+    link.title = pageUrl ? 'Verifizierter ET4-Pages-Link' : 'Fallback-Quelle, kein verifizierter ET4-Pages-Link';
     link.className = 'issue-link';
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
@@ -2269,6 +2320,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     section.appendChild(grid);
     return grid;
+  }
+
+  function appendDetailLink(section, label, url, note = '') {
+    const normalizedUrl = normalizeString(url);
+    if (!normalizedUrl) return;
+    const wrapper = document.createElement('p');
+    wrapper.className = 'item-detail-link';
+    const link = document.createElement('a');
+    link.href = normalizedUrl;
+    link.textContent = label;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    wrapper.appendChild(link);
+    if (note) {
+      const noteEl = document.createElement('span');
+      noteEl.textContent = ` ${note}`;
+      wrapper.appendChild(noteEl);
+    }
+    section.appendChild(wrapper);
   }
 
   function readFieldCandidates(item, field) {
@@ -2414,6 +2484,7 @@ document.addEventListener('DOMContentLoaded', () => {
     appendDetailGrid(appendDetailSection('Stammdaten'), [
       ['Titel', item.title],
       ['ID', item.id],
+      ['Global-ID', item.globalId],
       ['Typ', item.type],
       ['Gebiet', item.region],
       ['Ort', item.city],
@@ -2422,9 +2493,13 @@ document.addEventListener('DOMContentLoaded', () => {
       ['Lizenz', item.license],
       ['Qualitaets-Score', Number.isFinite(item.qualityScore) ? formatNumber(item.qualityScore) : '-'],
       ['Qualitaetsstatus', item.qualityStatus],
-      ['Letzte Aktualisierung', item.updatedAt],
-      ['URL / Link', item.sourceUrl]
+      ['Letzte Aktualisierung', item.updatedAt]
     ]);
+
+    const linkSection = appendDetailSection('Links');
+    appendDetailLink(linkSection, 'ET4 Pages oeffnen', item.pageUrl, '(verifiziertes POI-Mapping)');
+    appendDetailLink(linkSection, 'Fallback-Quelle oeffnen', item.sourceUrl, item.pageUrl ? '(zusaetzliche Quelle)' : '(kein verifizierter ET4-Pages-Link fuer diesen Typ)');
+    if (!item.pageUrl && !item.sourceUrl) appendDetailGrid(linkSection, [['Linkstatus', 'Kein Link verfuegbar']]);
 
     const missingSection = appendDetailSection('Fehlende Kriterien');
     appendCriterionList(
@@ -2889,7 +2964,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'Fehlende Felder',
         'Empfohlene Aktion',
         'Letzte Aktualisierung',
+        'Global-ID',
         'URL',
+        'Linktyp',
         'Quelle / Datensatztyp'
       ],
       ...safeArray(items).map((item) => [
@@ -2910,7 +2987,9 @@ document.addEventListener('DOMContentLoaded', () => {
         safeArray(criterion?.fields).join(', '),
         issueRecommendation(item, criterion),
         item?.updatedAt || '',
-        item?.sourceUrl || '',
+        item?.globalId || '',
+        item?.pageUrl || item?.sourceUrl || '',
+        item?.pageUrl ? 'ET4 Pages' : item?.sourceUrl ? 'Fallback-Quelle' : '',
         item?.type || ''
       ])
     ];
@@ -3162,6 +3241,7 @@ document.addEventListener('DOMContentLoaded', () => {
   syncActiveFilters();
   updateViewNavigation();
   updateAiContextNote();
+  updateAiStatus();
   renderAiMessages();
   loadTypes();
   loadCategorySelect(null);

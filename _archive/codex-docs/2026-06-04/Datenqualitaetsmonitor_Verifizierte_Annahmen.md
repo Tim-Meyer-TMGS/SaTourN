@@ -207,7 +207,40 @@ Noch nicht umgesetzt:
 - Ein separater Einstellungs-/Diagnosebereich ist noch nicht angelegt.
 - KI-Kontext wird weiterhin beim Oeffnen/Aktualisieren aus dem aktuellen Dashboard-State gebaut; ein separater Server-Kontextpfad fuer grosse Datenmengen bleibt offen.
 
-## Neuer Teilschritt G - Diagnose und Tests
+## Neuer Teilschritt G - ET4-Pages-Links und KI-Grundkonfiguration
+
+Status: umgesetzt am 2026-06-04 in `Statistik/scripts.js`,
+`routes/quality.js`, `Statistik/index.html` und `Statistik/style.css`.
+
+Verifizierte Linkregel:
+
+- POI-Pages-Link besteht aus Typ und `global_id`.
+- Muster: `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/{global_id}/x`.
+- Beispiel: `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/p_100114874/x`.
+
+Umsetzung:
+
+- `globalId` wird aus `global_id`, `globalId` oder `globalID` gelesen.
+- `pageUrl` wird nur fuer verifizierte Typen gebaut.
+- Aktuell verifizierter Typ: `POI`.
+- Nicht verifizierte Typen erhalten keinen automatisch geratenen ET4-Pages-Link.
+- `sourceUrl` bleibt als Fallback-Quelle erhalten.
+- Fehlerlisten, Detailansicht, KI-Kontext und Fehlerlisten-CSV bevorzugen `pageUrl`.
+- `/api/quality/scan` liefert ebenfalls `globalId` und `pageUrl`.
+
+KI-Konfiguration:
+
+- Der harte Mock-Default wurde entfernt.
+- Bei gesetzter Webhook-URL, `enabled === true` und `mockMode !== true` wird der n8n-Webhook aufgerufen.
+- Mock bleibt Fallback bei fehlender Webhook-URL, deaktivierter KI oder explizit gesetztem `mockMode: true`.
+- Das KI-Panel zeigt den aktiven Modus und gibt HTTP-/Timeout-/Netzwerkfehler lesbarer aus.
+
+Offen:
+
+- ET4-Pages-Pfade fuer Hotel, Gastro, Tour, Event und Package verifizieren.
+- n8n-CORS, Authentifizierung und produktive Secret-/Webhook-Konfiguration klaeren.
+
+## Neuer Teilschritt H - Diagnose und Tests
 
 Zu ergaenzen:
 

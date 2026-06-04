@@ -80,6 +80,29 @@
   display: none !important;
 }
 
+.statistik .view-panel-head {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .045);
+}
+
+.statistik .view-panel-head h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.statistik .view-panel-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .statistik .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -926,6 +949,18 @@
 .statistik .item-detail-value {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.statistik .item-detail-link {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.statistik .item-detail-link a {
+  color: var(--accentA);
+  font-weight: 700;
 }
 
 .statistik .criterion-list {
