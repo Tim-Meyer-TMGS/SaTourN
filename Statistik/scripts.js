@@ -351,6 +351,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderOverviewEmpty() {
+    ['kpi-quality-score', 'kpi-total', 'kpi-good', 'kpi-review', 'kpi-critical', 'kpi-open-data'].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node) node.textContent = '-';
+    });
     if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">Fuer diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
     if (els.qualityDataNote) els.qualityDataNote.textContent = 'Keine auswertbaren Qualitaetsdaten geladen.';
   }
