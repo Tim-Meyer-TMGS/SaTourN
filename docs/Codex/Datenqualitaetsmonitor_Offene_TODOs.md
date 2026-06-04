@@ -773,12 +773,21 @@ Eine Abschnittsumsetzung ist erst fertig, wenn:
 
 ## Umbau Statistik: offene Folgepunkte nach Logo/Pflegesystem/Count-Pfad
 
-- Startseite und Pflegeaufgaben-Uebersicht von Stichprobenzaehlern auf
-  `/api/quality/count` umstellen, wo Kriterium und Typ verifiziert per
-  API-Pushdown zaehlbar sind.
 - Fuer nicht verifizierte Kriterien im UI klar zwischen vollstaendiger
   API-Zahl, budgetiertem Server-Scan und Browser-Stichprobe unterscheiden.
 - `/api/quality/count` mit echten Render-Daten pro Region, Typ und Kriterium
   pruefen.
 - Optional einen Batch-Endpunkt fuer mehrere Count-Jobs ergaenzen, falls die UI
   sonst zu viele Einzelrequests ausloest.
+
+## Umbau Statistik: offene Folgepunkte nach Wegfall Browser-Stichproben
+
+- `/api/quality/scan` fuer grosse Fehlerlisten paginierbar in der UI machen,
+  damit mehr als die aktuell geladenen Proxy-Maximalergebnisse bearbeitbar
+  sind.
+- Fuer sehr grosse Exporte einen Batch-/Job-Endpunkt pruefen, damit CSV-Dateien
+  nicht an Browser- oder Request-Limits haengen.
+- Qualitaetsstatus-Gesamtzahlen nur dann wieder anzeigen, wenn dafuer ein
+  fachlich belastbarer vollstaendiger Bewertungsjob existiert.
+- `image_author_missing` weiter fachlich pruefen, da es nicht per
+  Destination.One-Query verifiziert ist.

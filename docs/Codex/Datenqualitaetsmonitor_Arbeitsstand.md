@@ -1343,3 +1343,42 @@ Pruefung:
 - PowerShell-Auswertung der lokalen Fixtures bestaetigt vorhandene
   `feratel`- und `outdooractive`-Faelle.
 - `git diff --check` ohne Fehler; nur Windows-CRLF-Hinweise.
+
+## Umsetzung: Weg von Browser-Stichproben
+
+Status: umgesetzt am 2026-06-04, technische Abschlusspruefung lokal erfolgt.
+
+Umgesetzte Anpassungen:
+
+- Startseite und Pflegeaufgaben laden keine Browser-Stichproben mehr fuer
+  Qualitaetszahlen.
+- Pflegeaufgaben werden aus `/api/quality/count` aufgebaut, sofern
+  Kriterium/Typ per API-Pushdown verifiziert sind.
+- Die wichtigsten Pflegeaufgaben auf der Startseite verwenden dieselbe
+  Count-Summary wie die Pflegeaufgaben-Seite.
+- Qualitaetsstatus und Qualitaets-Score werden ohne vollstaendige
+  Einzelbewertung nicht mehr als absolute Werte geschaetzt.
+- Die Datensatz-Hauptseite laedt initial keine Browser-Stichprobe mehr.
+- Konkrete Fehlerlisten werden ueber `/api/quality/scan` geladen, mit den
+  maximal vorgesehenen Request-Budgets des Proxys.
+- Schnellfilter wie `Ohne Lizenz` laden nun echte Fehlerlisten statt lokal auf
+  einer Stichprobe zu filtern.
+- Die UI-Texte unterscheiden jetzt zwischen API-Count, API-/Server-Scan und
+  nicht berechenbaren Gesamtstatuswerten.
+
+Bewusste Einschraenkungen:
+
+- `image_author_missing` ist weiterhin kein verifizierter API-Pushdown und
+  bleibt ein Server-Scan-Thema.
+- `/api/quality/scan` liefert echte Datensaetze, bleibt aber budgetiert. Fuer
+  vollstaendige Exporte sehr grosser Fehlerlisten ist spaeter Pagination oder
+  ein Job-/Batch-Endpunkt sinnvoll.
+- Schnelle Gesamtzahlen fuer Qualitaetsstatus `gut`, `pruefen`, `kritisch`
+  sind ohne vollstaendige Einzelbewertung nicht belastbar und bleiben daher
+  leer statt geschaetzt.
+
+Pruefung:
+
+- `rg` bestaetigt: `loadQualitySampleRows` wird nicht mehr verwendet und ist
+  aus `Statistik/scripts.js` entfernt.
+- `git diff --check` ohne Fehler; nur Windows-CRLF-Hinweise.

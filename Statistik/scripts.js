@@ -1,5 +1,5 @@
 import { downloadText, extractId, extractItems, extractTotal, fetchJson } from '../lib/browser.js';
-import { evaluateAllItems, evaluateQualityForItem, getQualityAggregations, qualityCriteria, qualityHelpers } from './quality.js';
+import { evaluateAllItems, evaluateQualityForItem, getQualityAggregations, getQualityScanConfig, qualityCriteria, qualityHelpers } from './quality.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.querySelector('.statistik[data-page]');
@@ -11,14 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
       : 'https://satourn.onrender.com/api/search');
   const QUALITY_SCAN_API_BASE = window.SATOURN_QUALITY_SCAN_API_BASE
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/scan');
+  const QUALITY_COUNT_API_BASE = window.SATOURN_QUALITY_COUNT_API_BASE
+    || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/count');
 
   const TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
   const WORK_CONTEXT_KEY = 'satournWorkContext';
   const RECORD_VIEW_STATE_KEY = 'satournRecordViewState';
   const RECORD_LIST_STATE_KEY = 'satournRecordListState';
   const KPI_HISTORY_KEY = 'satournOverviewKpis';
-  const QUALITY_ITEMS_PER_QUERY = Math.max(0, Math.min(50, Number(window.SATOURN_STATISTIK_QUALITY_ITEMS_PER_QUERY || 25)));
-  const QUALITY_ITEM_MAX_ITEMS = Math.max(0, Math.min(5000, Number(window.SATOURN_STATISTIK_QUALITY_ITEM_MAX_ITEMS || 2000)));
   const AREAS = [
     ['Sachsen', ''],
     ['Leipzig', 'Leipzig'],
@@ -179,10 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
     normalizedItems: [],
     qualityAggregations: getQualityAggregations([]),
     qualityDataMeta: {
-      mode: 'sample',
+      mode: 'api_counts',
       collectedItems: 0,
       estimatedTotalItems: 0,
-      truncated: false
+      truncated: false,
+      unsupportedCriteria: [],
+      failedCounts: 0
     },
     lastKpis: null,
     taskItems: [],
@@ -201,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
     recordRowsPerPage: 25,
     recordSearchTimer: null,
     recordDataMeta: {
-      mode: 'sample',
+      mode: 'empty',
       collectedItems: 0,
       estimatedTotalItems: 0,
       truncated: false
@@ -293,6 +295,10 @@ document.addEventListener('DOMContentLoaded', () => {
     [els.recordTypeFilter, els.recordCategoryFilter, els.recordStatusFilter, els.recordIssueFilter].forEach((node) => {
       node?.addEventListener('change', () => {
         state.recordPage = 1;
+        if ((node === els.recordIssueFilter || node === els.recordTypeFilter) && els.recordIssueFilter?.value) {
+          void loadRecordsData();
+          return;
+        }
         applyRecordFilters();
       });
     });
@@ -500,12 +506,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const rows = await loadStatisticRows();
-      const qualityItems = await loadQualitySampleRows();
-      const evaluated = evaluateAllItems(qualityItems);
+      const issueSummary = await loadQualityCountSummary();
       state.latestRows = rows;
-      state.normalizedItems = evaluated;
-      state.qualityAggregations = getQualityAggregations(evaluated);
-      renderOverview(rows, evaluated);
+      state.normalizedItems = [];
+      state.qualityAggregations = buildAggregationsFromIssueSummary(issueSummary);
+      renderOverview(rows, []);
       els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
     } catch (error) {
       console.error('Startseite konnte nicht geladen werden.', error);
@@ -744,33 +749,84 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadText('satourn_open_data_statistik.csv', text, 'text/csv;charset=utf-8');
   }
 
-  async function loadQualitySampleRows() {
+  function buildQualityCountUrl(criterionId, type, query) {
+    const params = new URLSearchParams();
+    params.set('criterionId', criterionId);
+    params.set('type', type);
+    if (query) params.set('query', query);
+    return `${QUALITY_COUNT_API_BASE}?${params.toString()}`;
+  }
+
+  async function loadQualityCountSummary() {
     const query = buildQuery(state.context);
     const targetTypes = state.context.type ? [state.context.type] : TYPES;
+    const activeCriteria = qualityCriteria.filter((criterion) => isActiveCriterion(criterion.id));
+    const issueMap = new Map();
+    const unsupported = [];
+    let failedCounts = 0;
+
+    const jobs = activeCriteria.flatMap((criterion) => (
+      targetTypes
+        .filter((type) => !criterion.types?.length || criterion.types.includes(type))
+        .map((type) => ({ criterion, type, scanConfig: getQualityScanConfig(criterion, type) }))
+    ));
+
+    await Promise.all(jobs.map(async ({ criterion, type, scanConfig }) => {
+      if (scanConfig.method !== 'api_pushdown' || !scanConfig.verified || !scanConfig.missingQuery) {
+        unsupported.push({ criterionId: criterion.id, type, method: scanConfig.method });
+        return;
+      }
+
+      try {
+        const payload = await fetchJson(buildQualityCountUrl(criterion.id, type, query));
+        const count = Number(payload?.count || 0);
+        if (!issueMap.has(criterion.id)) {
+          issueMap.set(criterion.id, {
+            criterionId: criterion.id,
+            label: criterion.label,
+            affectedCount: 0,
+            affectedTypes: [],
+            typeCounts: {},
+            priority: criterion.priority,
+            autoCheck: criterion.autoCheck !== false,
+            recommendation: criterion.recommendation,
+            countMode: 'api_count'
+          });
+        }
+        const issue = issueMap.get(criterion.id);
+        issue.affectedCount += count;
+        issue.typeCounts[type] = count;
+        if (count > 0 && !issue.affectedTypes.includes(type)) issue.affectedTypes.push(type);
+      } catch (error) {
+        failedCounts += 1;
+        console.warn('Qualitäts-Count fehlgeschlagen.', criterion.id, type, error);
+      }
+    }));
+
+    const issues = Array.from(issueMap.values()).map((issue) => ({
+      ...issue,
+      affectedTypes: issue.affectedTypes.sort((a, b) => a.localeCompare(b, 'de'))
+    }));
+
     state.qualityDataMeta = {
-      mode: 'sample',
+      mode: 'api_counts',
       collectedItems: 0,
-      estimatedTotalItems: 0,
-      truncated: false
+      estimatedTotalItems: issues.reduce((sum, issue) => sum + issue.affectedCount, 0),
+      truncated: false,
+      unsupportedCriteria: unsupported,
+      failedCounts
     };
 
-    const batches = [];
-    for (const type of targetTypes) {
-      if (state.qualityDataMeta.collectedItems >= QUALITY_ITEM_MAX_ITEMS) {
-        state.qualityDataMeta.truncated = true;
-        break;
-      }
-      const payload = await fetchJson(buildUrl(type, query, { limit: QUALITY_ITEMS_PER_QUERY }));
-      const total = Number(extractTotal(payload) || 0);
-      const items = extractItems(payload).slice(0, QUALITY_ITEMS_PER_QUERY);
-      state.qualityDataMeta.estimatedTotalItems += total;
-      state.qualityDataMeta.collectedItems += items.length;
-      if (total > items.length || state.qualityDataMeta.collectedItems >= QUALITY_ITEM_MAX_ITEMS) {
-        state.qualityDataMeta.truncated = true;
-      }
-      batches.push(...items.map((raw) => normalizeItem(raw, type)));
-    }
-    return batches.slice(0, QUALITY_ITEM_MAX_ITEMS);
+    return issues;
+  }
+
+  function buildAggregationsFromIssueSummary(issueSummary) {
+    return {
+      averageQualityScore: null,
+      qualityStatusCounts: {},
+      openDataCapableCount: 0,
+      issueSummary
+    };
   }
 
   async function loadTasksData() {
@@ -781,10 +837,9 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTaskRecords();
 
     try {
-      const qualityItems = await loadQualitySampleRows();
-      const evaluated = evaluateAllItems(qualityItems);
-      state.taskItems = evaluated;
-      state.taskRows = buildTaskRows(getQualityAggregations(evaluated).issueSummary || []);
+      const issueSummary = await loadQualityCountSummary();
+      state.taskItems = [];
+      state.taskRows = buildTaskRows(issueSummary);
       state.selectedTask = state.taskRows[0] || null;
       state.selectedTaskType = '';
       state.taskPage = 1;
@@ -882,9 +937,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.taskKpiPotential) els.taskKpiPotential.textContent = potential;
     if (els.taskListTitle) els.taskListTitle.textContent = `Alle Pflegeaufgaben (${formatNumber(totalTasks)})`;
     if (els.taskDataNote) {
-      els.taskDataNote.textContent = state.qualityDataMeta.truncated
-        ? 'Die Anzahl betroffener Datensätze basiert auf den aktuellen Filtern und einer begrenzten Stichprobe.'
-        : 'Die Anzahl betroffener Datensätze basiert auf den aktuell geladenen Qualitätsdaten.';
+      const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
+      const failedText = state.qualityDataMeta.failedCounts ? ` ${formatNumber(state.qualityDataMeta.failedCounts)} Count-Abfragen konnten nicht geladen werden.` : '';
+      els.taskDataNote.textContent = unsupportedCount
+        ? `Die Anzahl betroffener Datensätze basiert auf verifizierten API-Counts. ${formatNumber(unsupportedCount)} Kriterium-Typ-Kombinationen benötigen weiterhin einen Server-Scan.${failedText}`
+        : `Die Anzahl betroffener Datensätze basiert auf verifizierten API-Counts.${failedText}`;
     }
   }
 
@@ -967,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <dt>Prüfbarkeit</dt>
         <dd>${task.autoCheck === false ? 'Manuell zu prüfen' : 'Automatisch prüfbar'}</dd>
         <dt>Datenbasis</dt>
-        <dd>${state.qualityDataMeta.truncated ? 'Begrenzte Stichprobe' : 'Geladene Qualitätsdaten'}</dd>
+        <dd>${task.countMode === 'api_count' ? 'Verifizierter API-Count' : 'Server-Scan erforderlich'}</dd>
       </dl>
       ${typeChoice}
       <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswählen und Datensätze anzeigen' : 'Datensätze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
@@ -1027,9 +1084,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams();
       params.set('criterionId', task.criterionId);
       params.set('type', type);
-      params.set('limit', '25');
-      params.set('scanPageSize', '50');
-      params.set('maxPages', '4');
+      params.set('limit', '200');
+      params.set('scanPageSize', '200');
+      params.set('maxPages', '20');
       const query = buildQuery(state.context);
       if (query) params.set('query', query);
 
@@ -1136,12 +1193,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const usesCriterionView = state.pendingRecordView?.criterionId && state.pendingRecordView?.type;
+      const selectedIssue = els.recordIssueFilter?.value || '';
+      const selectedType = els.recordTypeFilter?.value || state.context.type || '';
       const evaluated = usesCriterionView
         ? await loadRecordRowsForView(state.pendingRecordView)
-        : evaluateAllItems(await loadQualitySampleRows());
+        : selectedIssue
+          ? await loadRecordRowsForIssueSelection(selectedIssue, selectedType)
+          : [];
       state.recordItems = evaluated;
       state.recordRows = evaluated.map(buildRecordViewModel);
-      if (!usesCriterionView) state.recordDataMeta = { ...state.qualityDataMeta };
+      if (!usesCriterionView && !selectedIssue) {
+        state.recordDataMeta = {
+          mode: 'empty',
+          collectedItems: 0,
+          estimatedTotalItems: 0,
+          truncated: false
+        };
+      }
       state.recordPage = 1;
       fillRecordDynamicFilters();
       applyPendingRecordView();
@@ -1154,13 +1222,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function loadRecordRowsForIssueSelection(criterionId, selectedType = '') {
+    const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
+    if (!criterion) return [];
+    const targetTypes = selectedType
+      ? [selectedType]
+      : TYPES.filter((type) => !criterion.types?.length || criterion.types.includes(type));
+    const payloads = await Promise.all(targetTypes.map((type) => loadRecordRowsForView({
+      criterionId,
+      type,
+      label: criterion.label
+    }).catch((error) => {
+      console.warn('Fehlerliste konnte nicht geladen werden.', criterionId, type, error);
+      return [];
+    })));
+    state.recordDataMeta = {
+      mode: 'criterion',
+      collectedItems: payloads.flat().length,
+      estimatedTotalItems: payloads.flat().length,
+      truncated: false
+    };
+    return payloads.flat();
+  }
+
   async function loadRecordRowsForView(view) {
     const params = new URLSearchParams();
     params.set('criterionId', view.criterionId);
     params.set('type', view.type);
-    params.set('limit', '100');
-    params.set('scanPageSize', '50');
-    params.set('maxPages', '6');
+    params.set('limit', '200');
+    params.set('scanPageSize', '200');
+    params.set('maxPages', '20');
     const query = buildQuery(state.context);
     if (query) params.set('query', query);
 
@@ -1361,12 +1452,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const end = Math.min(rows.length, start + visibleRows.length);
-    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} Stichprobentreffern` : `${formatNumber(rows.length)} Datensätzen`;
+    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladenen Treffern` : `${formatNumber(rows.length)} Datensätzen`;
     if (els.recordPageRange) {
       els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 Datensätze';
     }
     if (els.recordResultSummary) {
-      els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} Stichprobentreffer` : `${formatNumber(rows.length)} Datensätze`}`;
+      els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladene Treffer` : `${formatNumber(rows.length)} Datensätze`}`;
     }
     if (els.recordPageStatus) els.recordPageStatus.textContent = `${state.recordPage} / ${totalPages}`;
     if (els.recordPrevPage) els.recordPrevPage.disabled = state.recordPage <= 1;
@@ -1451,6 +1542,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderRecordQuickCounts() {
+    if (state.recordDataMeta.mode === 'empty') {
+      [els.quickCountCritical, els.quickCountLicense, els.quickCountDescription, els.quickCountImage, els.quickCountOpenings].forEach((node) => {
+        if (node) node.textContent = '-';
+      });
+      return;
+    }
     const rows = state.recordRows;
     setText(els.quickCountCritical, rows.filter((row) => row.qualityStatus === 'kritisch').length);
     setText(els.quickCountLicense, rows.filter((row) => row.missingCriteria.includes('license_missing')).length);
@@ -1460,6 +1557,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderRecordStatusLegend() {
+    if (state.recordDataMeta.mode === 'empty') {
+      [els.legendGood, els.legendReview, els.legendCritical, els.legendUnknown].forEach((node) => {
+        if (node) node.textContent = '-';
+      });
+      return;
+    }
     const rows = state.filteredRecordRows;
     setText(els.legendGood, rows.filter((row) => row.qualityStatus === 'gut').length);
     setText(els.legendReview, rows.filter((row) => row.qualityStatus === 'pruefen').length);
@@ -1469,6 +1572,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderRecordDataNote() {
     if (!els.recordDataNote) return;
+    if (state.recordDataMeta.mode === 'empty') {
+      els.recordDataNote.textContent = 'Es wird keine Browser-Stichprobe geladen. Wähle ein konkretes Problem oder öffne eine Pflegeaufgabe, um echte Datensatzlisten per API zu laden.';
+      return;
+    }
     if (state.recordDataMeta.mode === 'criterion') {
       els.recordDataNote.textContent = state.recordDataMeta.truncated
         ? 'Diese Liste basiert auf einem begrenzten Qualitäts-Scan für die ausgewählte Pflegeaufgabe.'
@@ -1476,7 +1583,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     els.recordDataNote.textContent = state.recordDataMeta.truncated
-      ? 'Diese Liste basiert auf einer begrenzten Stichprobe. Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.'
+      ? 'Diese Liste basiert auf einem begrenzten API-/Server-Scan. Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.'
       : 'Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.';
   }
 
@@ -1498,10 +1605,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function applyQuickRecordFilter(value) {
-    resetRecordFilters();
+    if (els.recordSearchInput) els.recordSearchInput.value = '';
+    if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
+    if (els.recordStatusFilter) els.recordStatusFilter.value = '';
+    if (els.recordIssueFilter) els.recordIssueFilter.value = '';
+    state.pendingRecordView = null;
+    clearRecordViewState();
     if (value === 'critical' && els.recordStatusFilter) els.recordStatusFilter.value = 'kritisch';
     if (value !== 'critical' && els.recordIssueFilter) els.recordIssueFilter.value = value;
     state.recordPage = 1;
+    if (value !== 'critical') {
+      void loadRecordsData();
+      return;
+    }
     applyRecordFilters();
   }
 
@@ -1581,7 +1697,7 @@ document.addEventListener('DOMContentLoaded', () => {
         row.id,
         row.globalId,
         row.updatedAt,
-        state.recordDataMeta.truncated ? 'Stichprobe' : 'geladene Daten'
+        state.recordDataMeta.truncated ? 'begrenzter API-/Server-Scan' : 'geladene Daten'
       ])
     ];
     const text = rows.map((row) => row.map(csvValue).join(';')).join('\n');
@@ -2212,6 +2328,17 @@ document.addEventListener('DOMContentLoaded', () => {
     els.kpiOpenData.textContent = formatPercent(summary.openDataQuote);
     els.kpiOpenDataDetail.textContent = `${formatNumber(summary.openDataTotal)} von ${formatNumber(summary.statistikTotal)}`;
 
+    if (state.qualityDataMeta.mode === 'api_counts') {
+      els.kpiQualityScore.textContent = '-';
+      els.kpiQualityTrack.style.width = '0%';
+      els.kpiGood.textContent = '-';
+      els.kpiGoodPercent.textContent = 'Nicht berechnet';
+      els.kpiReview.textContent = '-';
+      els.kpiReviewPercent.textContent = 'Nicht berechnet';
+      els.kpiCritical.textContent = '-';
+      els.kpiCriticalPercent.textContent = 'Nicht berechnet';
+    }
+
     renderKpiDeltas(kpis);
     renderTopTasks(aggregations.issueSummary || []);
     renderQualityDistribution(counts, assessedTotal);
@@ -2311,8 +2438,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderDataNote(sampleSize) {
+    if (state.qualityDataMeta.mode === 'api_counts') {
+      const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
+      els.qualityDataNote.textContent = unsupportedCount
+        ? `Pflegeaufgaben basieren auf verifizierten API-Counts. ${formatNumber(unsupportedCount)} Kriterium-Typ-Kombinationen benötigen für Listen einen Server-Scan.`
+        : 'Pflegeaufgaben basieren auf verifizierten API-Counts. Qualitätsstatus und Score werden ohne vollständige Einzelbewertung nicht geschätzt.';
+      return;
+    }
     const note = state.qualityDataMeta.truncated
-      ? `Basierend auf einer begrenzten Stichprobe von ${formatNumber(sampleSize)} Datensätzen.`
+      ? `Basierend auf einem begrenzten API-/Server-Scan mit ${formatNumber(sampleSize)} geladenen Datensätzen.`
       : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensätzen.`;
     els.qualityDataNote.textContent = note;
     if (state.qualityDataMeta.truncated) console.debug('Qualitätsdaten sind begrenzt.', state.qualityDataMeta);
