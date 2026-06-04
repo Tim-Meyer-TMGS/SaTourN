@@ -9,11 +9,11 @@ module: true
 
 <div class="statistik light-shell" data-page="tasks">
   <header class="app-header">
-    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitaets-Monitor">
+    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitäts-Monitor">
       <span class="brand-mark" aria-hidden="true"></span>
       <span>
         <strong>SaTourN</strong>
-        <small>Datenqualitaets-Monitor</small>
+        <small>Datenqualitäts-Monitor</small>
       </span>
     </a>
 
@@ -22,49 +22,49 @@ module: true
       <button id="work-context-summary" class="context-summary" type="button" aria-haspopup="dialog">
         Sachsen - Alle Orte - Alle Datentypen
       </button>
-      <button id="work-context-edit" class="context-edit" type="button">Aendern</button>
+      <button id="work-context-edit" class="context-edit" type="button">Ändern</button>
     </div>
 
     <div class="header-status">
-      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren">R</button>
+      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren"><span class="material-icons" aria-hidden="true">refresh</span></button>
       <span id="last-updated">Letzte Aktualisierung: noch nicht geladen</span>
     </div>
   </header>
 
   <div class="app-layout">
-    <nav class="app-sidebar" aria-label="Datenqualitaetsmonitor Navigation">
+    <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
       <a class="nav-link" href="/Statistik/">
-        <span aria-hidden="true">01</span>
-        Uebersicht
+        <span class="material-icons" aria-hidden="true">home</span>
+        Übersicht
       </a>
       <a class="nav-link active" href="/Statistik/tasks.html" aria-current="page">
-        <span aria-hidden="true">02</span>
+        <span class="material-icons" aria-hidden="true">assignment</span>
         Pflegeaufgaben
       </a>
       <a class="nav-link" href="/Statistik/records.html">
-        <span aria-hidden="true">03</span>
-        Datensaetze
+        <span class="material-icons" aria-hidden="true">storage</span>
+        Datensätze
       </a>
       <a class="nav-link" href="/Statistik/stats.html">
-        <span aria-hidden="true">04</span>
+        <span class="material-icons" aria-hidden="true">bar_chart</span>
         Statistik
       </a>
 
       <div class="sidebar-bottom">
         <button class="nav-utility" type="button" disabled>Hilfe</button>
-        <button class="nav-utility" type="button" disabled>Menue einklappen</button>
+        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
       </div>
     </nav>
 
     <main class="tasks-main" aria-labelledby="tasks-title">
       <section class="overview-hero">
         <h1 id="tasks-title">Datenpflegeaufgaben</h1>
-        <p>Uebersicht der offenen Pflegeaufgaben nach Prioritaet und Auswirkung.</p>
+        <p>Übersicht der offenen Pflegeaufgaben nach Priorität und Auswirkung.</p>
       </section>
 
       <section class="task-kpi-grid" aria-label="Pflegeaufgaben Kennzahlen">
         <article class="task-kpi-card">
-          <span class="task-kpi-icon critical" aria-hidden="true">!</span>
+          <span class="task-kpi-icon critical material-icons" aria-hidden="true">flag</span>
           <div>
             <span>Offene Aufgaben</span>
             <strong id="task-kpi-open">-</strong>
@@ -72,23 +72,23 @@ module: true
           </div>
         </article>
         <article class="task-kpi-card">
-          <span class="task-kpi-icon critical" aria-hidden="true">H</span>
+          <span class="task-kpi-icon critical material-icons" aria-hidden="true">priority_high</span>
           <div>
-            <span>Hohe Prioritaet</span>
+            <span>Hohe Priorität</span>
             <strong id="task-kpi-high">-</strong>
             <small id="task-kpi-high-detail">-</small>
           </div>
         </article>
         <article class="task-kpi-card">
-          <span class="task-kpi-icon review" aria-hidden="true">D</span>
+          <span class="task-kpi-icon review material-icons" aria-hidden="true">groups</span>
           <div>
-            <span>Betroffene Datensaetze</span>
+            <span>Betroffene Datensätze</span>
             <strong id="task-kpi-affected">-</strong>
             <small>Treffer in Pflegeaufgaben</small>
           </div>
         </article>
         <article class="task-kpi-card">
-          <span class="task-kpi-icon good" aria-hidden="true">O</span>
+          <span class="task-kpi-icon good material-icons" aria-hidden="true">pie_chart</span>
           <div>
             <span>Open-Data-Relevanz</span>
             <strong id="task-kpi-open-data">-</strong>
@@ -96,7 +96,7 @@ module: true
           </div>
         </article>
         <article class="task-kpi-card wide">
-          <span class="task-kpi-icon blue" aria-hidden="true">P</span>
+          <span class="task-kpi-icon blue material-icons" aria-hidden="true">track_changes</span>
           <div>
             <span>Potenzial</span>
             <strong id="task-kpi-potential">-</strong>
@@ -111,12 +111,12 @@ module: true
           <input id="task-search-input" type="search" placeholder="Suchen in Aufgaben ...">
         </label>
         <label>
-          <span class="sr-only">Prioritaet</span>
+          <span class="sr-only">Priorität</span>
           <select id="task-priority-filter">
-            <option value="">Prioritaet: Alle</option>
-            <option value="hoch">Prioritaet: Hoch</option>
-            <option value="mittel">Prioritaet: Mittel</option>
-            <option value="niedrig">Prioritaet: Niedrig</option>
+            <option value="">Priorität: Alle</option>
+            <option value="hoch">Priorität: Hoch</option>
+            <option value="mittel">Priorität: Mittel</option>
+            <option value="niedrig">Priorität: Niedrig</option>
           </select>
         </label>
         <label>
@@ -126,11 +126,11 @@ module: true
           </select>
         </label>
         <label>
-          <span class="sr-only">Pruefbarkeit</span>
+          <span class="sr-only">Prüfbarkeit</span>
           <select id="task-check-filter">
-            <option value="">Pruefbarkeit: Alle</option>
-            <option value="auto">Pruefbarkeit: Automatisch</option>
-            <option value="manual">Pruefbarkeit: Manuell</option>
+            <option value="">Prüfbarkeit: Alle</option>
+            <option value="auto">Prüfbarkeit: Automatisch</option>
+            <option value="manual">Prüfbarkeit: Manuell</option>
           </select>
         </label>
         <label>
@@ -143,7 +143,7 @@ module: true
             <option value="niedrig">Auswirkung: Niedrig</option>
           </select>
         </label>
-        <button id="task-reset-filters" class="plain-button" type="button">Filter zuruecksetzen</button>
+        <button id="task-reset-filters" class="plain-button" type="button">Filter zurücksetzen</button>
       </section>
 
       <div id="tasks-message" class="overview-message" hidden></div>
@@ -158,10 +158,10 @@ module: true
               <thead>
                 <tr>
                   <th>Pflegeaufgabe</th>
-                  <th>Betroffene Datensaetze</th>
-                  <th>Prioritaet</th>
+                  <th>Betroffene Datensätze</th>
+                  <th>Priorität</th>
                   <th>Betroffene Typen</th>
-                  <th>Pruefbarkeit</th>
+                  <th>Prüfbarkeit</th>
                   <th>Auswirkung</th>
                   <th><span class="sr-only">Aktion</span></th>
                 </tr>
@@ -174,9 +174,9 @@ module: true
           <footer class="table-footer">
             <span id="task-table-count">-</span>
             <div class="pager" aria-label="Pflegeaufgaben Seiten">
-              <button id="task-prev-page" class="icon-button" type="button" aria-label="Vorherige Seite">&lt;</button>
+              <button id="task-prev-page" class="icon-button" type="button" aria-label="Vorherige Seite"><span class="material-icons" aria-hidden="true">chevron_left</span></button>
               <span id="task-page-status">1</span>
-              <button id="task-next-page" class="icon-button" type="button" aria-label="Naechste Seite">&gt;</button>
+              <button id="task-next-page" class="icon-button" type="button" aria-label="Nächste Seite"><span class="material-icons" aria-hidden="true">chevron_right</span></button>
             </div>
           </footer>
         </article>
@@ -187,7 +187,7 @@ module: true
               <h2>Aufgabe im Detail</h2>
             </header>
             <div id="task-detail-content" class="task-detail-content">
-              <p class="empty-note">Waehle eine Pflegeaufgabe aus der Liste.</p>
+              <p class="empty-note">Wähle eine Pflegeaufgabe aus der Liste.</p>
             </div>
           </article>
 
@@ -200,7 +200,7 @@ module: true
 
           <article class="panel-card task-hint-card">
             <strong>Hinweis</strong>
-            <p id="task-data-note">Die Anzahl betroffener Datensaetze basiert auf den aktuellen Filtern und einer Stichprobe.</p>
+            <p id="task-data-note">Die Anzahl betroffener Datensätze basiert auf den aktuellen Filtern und einer Stichprobe.</p>
           </article>
         </aside>
       </section>
@@ -208,7 +208,7 @@ module: true
       <section id="task-records-section" class="panel-card task-records-section" hidden>
         <header class="panel-head">
           <div>
-            <h2 id="task-records-title">Datensaetze</h2>
+            <h2 id="task-records-title">Datensätze</h2>
             <p id="task-records-note" class="data-note"></p>
           </div>
           <button id="task-records-export" class="context-edit" type="button" disabled>CSV exportieren</button>
@@ -221,12 +221,12 @@ module: true
                 <th>Typ</th>
                 <th>Ort / Gebiet</th>
                 <th>Problem</th>
-                <th>Naechster Schritt</th>
+                <th>Nächster Schritt</th>
                 <th>Aktion</th>
               </tr>
             </thead>
             <tbody id="task-records-body">
-              <tr><td colspan="6" class="table-empty">Noch keine Datensaetze geladen.</td></tr>
+              <tr><td colspan="6" class="table-empty">Noch keine Datensätze geladen.</td></tr>
             </tbody>
           </table>
         </div>
@@ -247,8 +247,8 @@ module: true
   <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
     <form method="dialog" id="work-context-form">
       <header>
-        <h2 id="context-dialog-title">Arbeitskontext aendern</h2>
-        <button class="icon-button" value="cancel" type="submit" aria-label="Schliessen">x</button>
+        <h2 id="context-dialog-title">Arbeitskontext ändern</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
       </header>
       <label>
         Gebiet
@@ -264,7 +264,7 @@ module: true
       </label>
       <footer>
         <button value="cancel" type="submit">Abbrechen</button>
-        <button class="primary" value="default" type="submit">Uebernehmen</button>
+        <button class="primary" value="default" type="submit">Übernehmen</button>
       </footer>
     </form>
   </dialog>

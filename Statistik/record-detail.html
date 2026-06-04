@@ -1,0 +1,143 @@
+﻿---
+layout: default
+title: Datensatz-Detail
+permalink: /Statistik/record-detail.html
+css: /Statistik/style.css
+js: /Statistik/main.js
+module: true
+---
+
+<div class="statistik light-shell" data-page="record-detail">
+  <header class="app-header">
+    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitäts-Monitor">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <strong>SaTourN</strong>
+        <small>Datenqualitäts-Monitor</small>
+      </span>
+    </a>
+
+    <div class="work-context-bar">
+      <span>Arbeitskontext:</span>
+      <button id="work-context-summary" class="context-summary" type="button" aria-haspopup="dialog">
+        Sachsen - Alle Orte - Alle Datentypen
+      </button>
+      <button id="work-context-edit" class="context-edit" type="button">Ändern</button>
+    </div>
+
+    <div class="header-status">
+      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren"><span class="material-icons" aria-hidden="true">refresh</span></button>
+      <span id="last-updated">Letzte Aktualisierung: noch nicht geladen</span>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
+      <a class="nav-link" href="/Statistik/"><span class="material-icons" aria-hidden="true">home</span>Übersicht</a>
+      <a class="nav-link" href="/Statistik/tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
+      <a class="nav-link active" href="/Statistik/records.html" aria-current="page"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
+      <a class="nav-link" href="/Statistik/stats.html"><span class="material-icons" aria-hidden="true">bar_chart</span>Statistik</a>
+      <div class="sidebar-bottom">
+        <button class="nav-utility" type="button" disabled>Hilfe &amp; Dokumentation</button>
+        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
+      </div>
+    </nav>
+
+    <main class="record-detail-main" aria-labelledby="record-detail-title">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/Statistik/records.html">Datensätze</a>
+        <span class="material-icons" aria-hidden="true">chevron_right</span>
+        <span>Datensatz-Detail</span>
+      </nav>
+
+      <section class="detail-action-bar">
+        <a class="context-edit icon-text-button" href="/Statistik/records.html"><span class="material-icons" aria-hidden="true">arrow_back</span>Zurück zur Liste</a>
+        <div>
+          <button class="context-edit icon-text-button" type="button" disabled><span class="material-icons" aria-hidden="true">arrow_back</span>Vorheriger</button>
+          <button class="context-edit icon-text-button" type="button" disabled>Nächster<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
+          <a id="detail-et4-link" class="context-edit" href="#" target="_blank" rel="noopener" hidden>Öffnen auf et4 pages</a>
+          <button id="detail-copy-link" class="context-edit icon-text-button" type="button"><span class="material-icons" aria-hidden="true">link</span>Link kopieren</button>
+        </div>
+      </section>
+
+      <div id="record-detail-message" class="overview-message" hidden></div>
+
+      <section id="detail-head-card" class="panel-card detail-head-card" aria-live="polite">
+        <div class="table-empty">Datensatz wird geladen ...</div>
+      </section>
+
+      <section id="detail-content" class="detail-grid" hidden>
+        <div class="detail-left-column">
+          <article class="panel-card">
+            <header class="panel-head"><h2>Wichtigste Baustellen</h2></header>
+            <div id="detail-issues-list" class="detail-issues-list"></div>
+          </article>
+
+          <article class="panel-card">
+            <header class="panel-head"><h2>Nutzbarkeit</h2></header>
+            <div id="detail-usability" class="usability-grid"></div>
+          </article>
+
+          <article class="panel-card">
+            <header class="panel-head"><h2>Kategorien &amp; Gebiet</h2></header>
+            <dl id="detail-taxonomy" class="detail-kv-list"></dl>
+          </article>
+        </div>
+
+        <div class="detail-center-column">
+          <article class="panel-card">
+            <header class="panel-head"><h2>Beschreibung</h2></header>
+            <div id="detail-description" class="detail-text"></div>
+          </article>
+
+          <article class="panel-card">
+            <header class="panel-head"><h2>Medien</h2></header>
+            <div id="detail-media" class="detail-media-grid"></div>
+            <p id="detail-media-note" class="data-note"></p>
+          </article>
+
+          <article class="panel-card">
+            <header class="panel-head"><h2>Öffnungszeiten</h2></header>
+            <div id="detail-openings" class="detail-text"></div>
+          </article>
+
+          <article class="panel-card">
+            <header class="panel-head"><h2>ÖPNV-Anreise</h2></header>
+            <div id="detail-transport" class="detail-text"></div>
+          </article>
+        </div>
+
+        <aside class="detail-right-column">
+          <article class="panel-card">
+            <header class="panel-head"><h2>Detail-Informationen</h2></header>
+            <dl id="detail-info" class="detail-kv-list"></dl>
+          </article>
+        </aside>
+      </section>
+
+      <section id="detail-criteria-card" class="panel-card detail-criteria-card" hidden>
+        <header class="panel-head">
+          <h2>Gesamte Qualitätsbewertung</h2>
+        </header>
+        <div id="detail-criteria-list" class="detail-criteria-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
+    <form method="dialog" id="work-context-form">
+      <header>
+        <h2 id="context-dialog-title">Arbeitskontext ändern</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
+      </header>
+      <label>Gebiet<select id="context-area"></select></label>
+      <label>Ort<input id="context-city" type="text" placeholder="Alle Orte"></label>
+      <label>Datentyp<select id="context-type"></select></label>
+      <footer>
+        <button value="cancel" type="submit">Abbrechen</button>
+        <button class="primary" value="default" type="submit">Übernehmen</button>
+      </footer>
+    </form>
+  </dialog>
+</div>
+

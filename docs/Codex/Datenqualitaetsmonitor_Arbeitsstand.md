@@ -1254,3 +1254,52 @@ Pruefung:
 
 - `git diff --check` ohne Fehler.
 - Keine Detailseiten-Umsetzung in diesem Schritt.
+
+## Umsetzung: Umbau Statistik - Datensatz-Detailseite
+
+Status: umgesetzt am 2026-06-04, technische Abschlusspruefung lokal erfolgt.
+
+Gepruefte Quellen:
+
+- `docs/Codex/Umbau_Statistik/Detailansicht datensatz.png`
+- `docs/Codex/Umbau_Statistik/Datenqualitaetsmonitor_Datensatz_Detailseite.md`
+
+Umgesetzte Anpassungen:
+
+- `Statistik/record-detail.html` wurde als eigene statische Detailseite
+  angelegt.
+- Die Hauptnavigation markiert weiterhin `Datensaetze` als aktiven Bereich.
+- Die Detailseite liest `type`, `id` und `global_id` aus der URL und laedt nur
+  den konkreten Datensatz gezielt nach.
+- Es werden keine Vollabfragen und keine Qualitaets-Server-Scans beim Oeffnen
+  der Detailseite gestartet.
+- Die Qualitaetsbewertung nutzt `evaluateQualityForItem()` und die bestehenden
+  `qualityCriteria`.
+- Die Anzeige ist ueber ein Detail-ViewModel aufgebaut: Identitaet,
+  Qualitaet, Nutzbarkeit, Texte, Medien, Oeffnungszeiten, OePNV, Detailinfos
+  und Kriterienliste.
+- Beschreibungstexte aus HTML werden als bereinigter Plaintext angezeigt.
+- Mediengalerie nutzt nur pruefbare Bilder aus `media_objects`; Bildrechte,
+  fehlende Urheberangaben und fehlende Alt-Texte werden kompakt
+  zusammengefasst.
+- ET4-Pages-Link wird nur fuer verifizierte POI-Logik mit `global_id`
+  erzeugt.
+- Outdooractive- und Google-Places-IDs werden als IDs angezeigt, aber ohne
+  geratenen Link.
+- Vollstaendige Rohdaten werden nicht als UI-Viewer angezeigt.
+- Datensatzlisten aus Pflegeaufgaben koennen nun ebenfalls zur Detailseite
+  fuehren.
+
+Bewusste Einschraenkungen:
+
+- Vorheriger/Naechster bleibt deaktiviert, bis spaeter ein leichter
+  Listen-Kontext ohne grosse Rohdatenspeicherung definiert ist.
+- Aktionen-Menue ist noch nicht ausgebaut; Link kopieren und ID-Kopieren sind
+  vorhanden.
+- Browser-Sichtpruefung gegen das Mockup konnte in dieser Umgebung weiterhin
+  nicht automatisiert werden.
+
+Pruefung:
+
+- `git diff --check` ohne Fehler.
+- Keine Mockdaten oder erfundenen Detailwerte in der Detailseite.

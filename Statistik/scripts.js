@@ -1,5 +1,5 @@
 import { downloadText, extractId, extractItems, extractTotal, fetchJson } from '../lib/browser.js';
-import { evaluateAllItems, getQualityAggregations, qualityCriteria, qualityHelpers } from './quality.js';
+import { evaluateAllItems, evaluateQualityForItem, getQualityAggregations, qualityCriteria, qualityHelpers } from './quality.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.querySelector('.statistik[data-page]');
@@ -125,7 +125,23 @@ document.addEventListener('DOMContentLoaded', () => {
     legendGood: document.getElementById('legend-good'),
     legendReview: document.getElementById('legend-review'),
     legendCritical: document.getElementById('legend-critical'),
-    legendUnknown: document.getElementById('legend-unknown')
+    legendUnknown: document.getElementById('legend-unknown'),
+    detailEt4Link: document.getElementById('detail-et4-link'),
+    detailCopyLink: document.getElementById('detail-copy-link'),
+    recordDetailMessage: document.getElementById('record-detail-message'),
+    detailHeadCard: document.getElementById('detail-head-card'),
+    detailContent: document.getElementById('detail-content'),
+    detailIssuesList: document.getElementById('detail-issues-list'),
+    detailUsability: document.getElementById('detail-usability'),
+    detailTaxonomy: document.getElementById('detail-taxonomy'),
+    detailDescription: document.getElementById('detail-description'),
+    detailMedia: document.getElementById('detail-media'),
+    detailMediaNote: document.getElementById('detail-media-note'),
+    detailOpenings: document.getElementById('detail-openings'),
+    detailTransport: document.getElementById('detail-transport'),
+    detailInfo: document.getElementById('detail-info'),
+    detailCriteriaCard: document.getElementById('detail-criteria-card'),
+    detailCriteriaList: document.getElementById('detail-criteria-list')
   };
 
   let state = {
@@ -160,13 +176,16 @@ document.addEventListener('DOMContentLoaded', () => {
       collectedItems: 0,
       estimatedTotalItems: 0,
       truncated: false
-    }
+    },
+    recordDetailItem: null,
+    recordDetailViewModel: null
   };
 
   initSharedShell();
   if (page === 'overview') initOverview();
   if (page === 'tasks') initTasks();
   if (page === 'records') initRecords();
+  if (page === 'record-detail') initRecordDetail();
 
   function initSharedShell() {
     fillContextControls();
@@ -181,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderOverviewLoading();
     els.refreshButton?.addEventListener('click', () => loadOverviewData());
     els.quickExport?.addEventListener('click', exportOverviewCsv);
-    els.quickAi?.addEventListener('click', () => showMessage('Die KI-Analyse wird als dezente Aktion in einem spaeteren Schritt angebunden.'));
+    els.quickAi?.addEventListener('click', () => showMessage('Die KI-Analyse wird als dezente Aktion in einem späteren Schritt angebunden.'));
     void loadOverviewData();
   }
 
@@ -252,6 +271,12 @@ document.addEventListener('DOMContentLoaded', () => {
     void loadRecordsData();
   }
 
+  function initRecordDetail() {
+    els.refreshButton?.addEventListener('click', () => loadRecordDetail());
+    els.detailCopyLink?.addEventListener('click', () => copyText(location.href));
+    void loadRecordDetail();
+  }
+
   function loadWorkContext() {
     try {
       const parsed = JSON.parse(localStorage.getItem(WORK_CONTEXT_KEY) || '{}');
@@ -297,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
       els.contextSummary.textContent = `${areaLabel} - ${cityLabel} - ${typeLabel}`;
     }
     if (els.overviewSubtitle) {
-      els.overviewSubtitle.textContent = `Hier ist die aktuelle Lage fuer ${areaLabel}.`;
+      els.overviewSubtitle.textContent = `Hier ist die aktuelle Lage für ${areaLabel}.`;
     }
   }
 
@@ -326,6 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (page === 'overview') void loadOverviewData();
     if (page === 'tasks') void loadTasksData();
     if (page === 'records') void loadRecordsData();
+    if (page === 'record-detail') void loadRecordDetail();
   }
 
   function buildQuery({ area, city }) {
@@ -364,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
       els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
     } catch (error) {
       console.error('Startseite konnte nicht geladen werden.', error);
-      showMessage('Die Daten konnten nicht geladen werden. Bitte spaeter erneut versuchen.');
+      showMessage('Die Daten konnten nicht geladen werden. Bitte später erneut versuchen.');
       renderOverviewEmpty();
     }
   }
@@ -454,7 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
           impact,
           description: taskDescription(issue.criterionId),
           problem: taskProblem(issue.criterionId),
-          recommendation: criterion?.recommendation || issue.recommendation || 'Datensatz pruefen und fehlende Angaben ergaenzen.'
+          recommendation: criterion?.recommendation || issue.recommendation || 'Datensatz prüfen und fehlende Angaben ergänzen.'
         };
       })
       .sort((a, b) => (
@@ -524,8 +550,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.taskListTitle) els.taskListTitle.textContent = `Alle Pflegeaufgaben (${formatNumber(totalTasks)})`;
     if (els.taskDataNote) {
       els.taskDataNote.textContent = state.qualityDataMeta.truncated
-        ? 'Die Anzahl betroffener Datensaetze basiert auf den aktuellen Filtern und einer begrenzten Stichprobe.'
-        : 'Die Anzahl betroffener Datensaetze basiert auf den aktuell geladenen Qualitaetsdaten.';
+        ? 'Die Anzahl betroffener Datensätze basiert auf den aktuellen Filtern und einer begrenzten Stichprobe.'
+        : 'Die Anzahl betroffener Datensätze basiert auf den aktuell geladenen Qualitätsdaten.';
     }
   }
 
@@ -537,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const visibleRows = rows.slice(start, start + state.taskRowsPerPage);
 
     if (!visibleRows.length) {
-      els.taskTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Fuer diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
+      els.taskTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Für diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
     } else {
       els.taskTableBody.innerHTML = visibleRows.map((task) => `
         <tr>
@@ -552,7 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${renderTypeChips(task.affectedTypes)}</td>
           <td><span class="status-badge good">${task.autoCheck === false ? 'Manuell' : 'Automatisch'}</span></td>
           <td><span class="status-badge ${impactBadgeClass(task.impact)}">${impactLabel(task.impact)}</span></td>
-          <td><button class="row-arrow" type="button" data-task-id="${escapeHtml(task.criterionId)}" aria-label="Aufgabe anzeigen">&gt;</button></td>
+          <td><button class="row-arrow" type="button" data-task-id="${escapeHtml(task.criterionId)}" aria-label="Aufgabe anzeigen"><span class="material-icons" aria-hidden="true">chevron_right</span></button></td>
         </tr>
       `).join('');
     }
@@ -584,13 +610,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const task = state.selectedTask;
     hidePrimarySystems();
     if (!task) {
-      if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Waehle eine Pflegeaufgabe aus der Liste.</p>';
+      if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle eine Pflegeaufgabe aus der Liste.</p>';
       return;
     }
 
     const needsTypeChoice = task.affectedTypes.length > 1 && !state.selectedTaskType;
     const typeChoice = task.affectedTypes.length > 1
-      ? `<label class="detail-type-select">Datentyp fuer Datensatzliste<select id="task-detail-type">${task.affectedTypes.map((type) => `<option value="${escapeHtml(type)}"${type === state.selectedTaskType ? ' selected' : ''}>${escapeHtml(type)}</option>`).join('')}</select></label>`
+      ? `<label class="detail-type-select">Datentyp für Datensatzliste<select id="task-detail-type">${task.affectedTypes.map((type) => `<option value="${escapeHtml(type)}"${type === state.selectedTaskType ? ' selected' : ''}>${escapeHtml(type)}</option>`).join('')}</select></label>`
       : '';
     const selectedType = state.selectedTaskType || task.affectedTypes[0] || '';
 
@@ -605,13 +631,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <dd>${escapeHtml(task.recommendation)}</dd>
         <dt>Betroffene Typen</dt>
         <dd>${renderTypeChips(task.affectedTypes)}</dd>
-        <dt>Pruefbarkeit</dt>
-        <dd>${task.autoCheck === false ? 'Manuell zu pruefen' : 'Automatisch pruefbar'}</dd>
+        <dt>Prüfbarkeit</dt>
+        <dd>${task.autoCheck === false ? 'Manuell zu prüfen' : 'Automatisch prüfbar'}</dd>
         <dt>Datenbasis</dt>
-        <dd>${state.qualityDataMeta.truncated ? 'Begrenzte Stichprobe' : 'Geladene Qualitaetsdaten'}</dd>
+        <dd>${state.qualityDataMeta.truncated ? 'Begrenzte Stichprobe' : 'Geladene Qualitätsdaten'}</dd>
       </dl>
       ${typeChoice}
-      <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswaehlen und Datensaetze anzeigen' : 'Datensaetze anzeigen'}<span aria-hidden="true">&gt;</span></button>
+      <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswählen und Datensätze anzeigen' : 'Datensätze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
     `;
 
     const typeSelect = document.getElementById('task-detail-type');
@@ -633,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const task = state.selectedTask;
     const type = state.selectedTaskType || task?.affectedTypes?.[0] || '';
     if (!task || !type) {
-      showTaskMessage('Bitte waehle zuerst eine konkrete Aufgabe und einen Datentyp.');
+      showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
       return;
     }
 
@@ -641,8 +667,8 @@ document.addEventListener('DOMContentLoaded', () => {
     els.taskRecordsSection.hidden = false;
     els.taskRecordsExport.disabled = true;
     els.taskRecordsTitle.textContent = `${task.label} - ${type}`;
-    els.taskRecordsNote.textContent = 'Datensaetze werden geladen ...';
-    els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Datensaetze werden geladen ...</td></tr>';
+    els.taskRecordsNote.textContent = 'Datensätze werden geladen ...';
+    els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Datensätze werden geladen ...</td></tr>';
 
     try {
       const params = new URLSearchParams();
@@ -661,9 +687,9 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTaskRecords(task, type, rows, payload);
       renderPrimarySystemsForRecords(rows);
     } catch (error) {
-      console.error('Datensaetze zur Pflegeaufgabe konnten nicht geladen werden.', error);
-      els.taskRecordsNote.textContent = 'Die Datensaetze konnten nicht geladen werden.';
-      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Die Datensaetze konnten nicht geladen werden.</td></tr>';
+      console.error('Datensätze zur Pflegeaufgabe konnten nicht geladen werden.', error);
+      els.taskRecordsNote.textContent = 'Die Datensätze konnten nicht geladen werden.';
+      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
     }
   }
 
@@ -671,11 +697,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const page = payload?.page || {};
     const stats = payload?.stats || {};
     const completeText = page.complete ? 'Server-Scan abgeschlossen.' : 'Server-Scan mit begrenztem Budget geladen.';
-    els.taskRecordsNote.textContent = `${completeText} ${formatNumber(rows.length)} Datensaetze angezeigt.`;
+    els.taskRecordsNote.textContent = `${completeText} ${formatNumber(rows.length)} Datensätze angezeigt.`;
     els.taskRecordsExport.disabled = !rows.length;
 
     if (!rows.length) {
-      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Fuer diese Aufgabe wurden keine Datensaetze gefunden.</td></tr>';
+      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Für diese Aufgabe wurden keine Datensätze gefunden.</td></tr>';
       return;
     }
 
@@ -686,14 +712,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${escapeHtml([row.city, row.region].filter(Boolean).join(' / ') || '-')}</td>
         <td>${escapeHtml(task.label)}</td>
         <td>${escapeHtml(task.recommendation)}</td>
-        <td><button class="plain-button" type="button" data-copy-id="${escapeHtml(row.globalId || row.id || '')}">ID kopieren</button></td>
+        <td><span class="row-actions"><button class="plain-button" type="button" data-copy-id="${escapeHtml(row.globalId || row.id || '')}">ID kopieren</button><a class="plain-button" href="${escapeHtml(buildRecordDetailUrl(row))}">Detail öffnen</a></span></td>
       </tr>
     `).join('');
 
     els.taskRecordsBody.querySelectorAll('[data-copy-id]').forEach((button) => {
       button.addEventListener('click', () => copyText(button.dataset.copyId || ''));
     });
-    if (stats.budgetExhausted) console.debug('Qualitaetsscan-Budget ausgeschoepft.', stats);
+    if (stats.budgetExhausted) console.debug('Qualitätsscan-Budget ausgeschoepft.', stats);
   }
 
   function renderTasksLoading() {
@@ -713,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.taskKpiHighDetail) els.taskKpiHighDetail.textContent = '-';
     if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Noch keine Pflegeaufgaben geladen.</td></tr>';
     if (els.taskTableCount) els.taskTableCount.textContent = '0 Aufgaben';
-    if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Waehle einen Arbeitskontext und starte die Abfrage.</p>';
+    if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle einen Arbeitskontext und starte die Abfrage.</p>';
     showTaskMessage(message);
   }
 
@@ -766,8 +792,8 @@ document.addEventListener('DOMContentLoaded', () => {
       applyRecordFilters();
       if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
     } catch (error) {
-      console.error('Datensaetze konnten nicht geladen werden.', error);
-      renderRecordsEmpty('Die Datensaetze konnten nicht geladen werden. Bitte versuche es spaeter erneut.');
+      console.error('Datensätze konnten nicht geladen werden.', error);
+      renderRecordsEmpty('Die Datensätze konnten nicht geladen werden. Bitte versuche es später erneut.');
     }
   }
 
@@ -854,7 +880,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const found = await searchSingleRecordById(query);
       if (!found.length) {
-        showRecordsMessage('Fuer diese ID wurde kein Datensatz gefunden. Bitte pruefe die Eingabe oder suche nach dem Titel.');
+        showRecordsMessage('Für diese ID wurde kein Datensatz gefunden. Bitte prüfe die Eingabe oder suche nach dem Titel.');
         return;
       }
       const evaluated = evaluateAllItems(found.map((raw) => normalizeItem(raw.raw || raw, raw.type)));
@@ -865,7 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
       applyRecordFilters();
     } catch (error) {
       console.error('Gezielte Datensatzsuche fehlgeschlagen.', error);
-      showRecordsMessage('Fuer diese Suche wurde kein Datensatz gefunden.');
+      showRecordsMessage('Für diese Suche wurde kein Datensatz gefunden.');
     } finally {
       if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen';
     }
@@ -912,8 +938,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!visibleRows.length) {
       const emptyText = state.recordRows.length
-        ? 'Fuer diese Filter wurden keine Datensaetze gefunden.'
-        : 'Noch keine Datensaetze geladen. Waehle einen Arbeitskontext oder starte eine Suche.';
+        ? 'Für diese Filter wurden keine Datensätze gefunden.'
+        : 'Noch keine Datensätze geladen. Wähle einen Arbeitskontext oder starte eine Suche.';
       els.recordTableBody.innerHTML = `<tr><td colspan="9" class="table-empty">${emptyText}</td></tr>`;
     } else {
       els.recordTableBody.innerHTML = visibleRows.map((row) => `
@@ -928,8 +954,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${escapeHtml(formatRecordDate(row.updatedAt))}</td>
           <td>
             <span class="row-actions">
-              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Datensatz ansehen">A</a>
-              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail oeffnen">&gt;</a>
+              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Datensatz ansehen"><span class="material-icons" aria-hidden="true">visibility</span></a>
+              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail öffnen"><span class="material-icons" aria-hidden="true">chevron_right</span></a>
             </span>
           </td>
         </tr>
@@ -937,12 +963,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const end = Math.min(rows.length, start + visibleRows.length);
-    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} Stichprobentreffern` : `${formatNumber(rows.length)} Datensaetzen`;
+    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} Stichprobentreffern` : `${formatNumber(rows.length)} Datensätzen`;
     if (els.recordPageRange) {
-      els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 Datensaetze';
+      els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 Datensätze';
     }
     if (els.recordResultSummary) {
-      els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} Stichprobentreffer` : `${formatNumber(rows.length)} Datensaetze`}`;
+      els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} Stichprobentreffer` : `${formatNumber(rows.length)} Datensätze`}`;
     }
     if (els.recordPageStatus) els.recordPageStatus.textContent = `${state.recordPage} / ${totalPages}`;
     if (els.recordPrevPage) els.recordPrevPage.disabled = state.recordPage <= 1;
@@ -965,7 +991,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderRecordStatus(status) {
     const cls = status === 'gut' ? 'good' : status === 'kritisch' ? 'critical' : status === 'pruefen' ? 'review' : 'muted';
-    const label = status === 'nicht berechenbar' ? 'nicht bewertbar' : status;
+    const label = status === 'nicht berechenbar' ? 'nicht bewertbar' : status === 'pruefen' ? 'prüfen' : status;
     return `<span class="record-status"><i class="status-dot ${cls}"></i>${escapeHtml(label || '-')}</span>`;
   }
 
@@ -981,16 +1007,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderRecordsLoading() {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Datensaetze werden geladen ...</td></tr>';
-    if (els.recordResultSummary) els.recordResultSummary.textContent = 'Datensaetze werden geladen ...';
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Datensätze werden geladen ...</td></tr>';
+    if (els.recordResultSummary) els.recordResultSummary.textContent = 'Datensätze werden geladen ...';
     if (els.recordPageRange) els.recordPageRange.textContent = '-';
     if (els.recordExport) els.recordExport.disabled = true;
   }
 
   function renderRecordsEmpty(message) {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Die Datensaetze konnten nicht geladen werden.</td></tr>';
-    if (els.recordResultSummary) els.recordResultSummary.textContent = '0 Datensaetze';
-    if (els.recordPageRange) els.recordPageRange.textContent = '0 Datensaetze';
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
+    if (els.recordResultSummary) els.recordResultSummary.textContent = '0 Datensätze';
+    if (els.recordPageRange) els.recordPageRange.textContent = '0 Datensätze';
     if (els.recordExport) els.recordExport.disabled = true;
     showRecordsMessage(message);
   }
@@ -1015,8 +1041,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderRecordDataNote() {
     if (!els.recordDataNote) return;
     els.recordDataNote.textContent = state.recordDataMeta.truncated
-      ? 'Diese Liste basiert auf einer begrenzten Stichprobe. Die Qualitaetsbewertung basiert auf den aktivierten Kriterien und verfuegbaren Daten.'
-      : 'Die Qualitaetsbewertung basiert auf den aktivierten Kriterien und verfuegbaren Daten.';
+      ? 'Diese Liste basiert auf einer begrenzten Stichprobe. Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.'
+      : 'Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.';
   }
 
   function resetRecordFilters() {
@@ -1099,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function exportRecordListCsv() {
     if (!state.filteredRecordRows.length) return;
     const rows = [
-      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'Qualitaetsstatus', 'Qualitaets-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
+      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'Qualitätsstatus', 'Qualitäts-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
       ...state.filteredRecordRows.map((row) => [
         row.title,
         row.type,
@@ -1128,6 +1154,335 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function setText(node, value) {
     if (node) node.textContent = formatNumber(value);
+  }
+
+  async function loadRecordDetail() {
+    showDetailMessage('');
+    renderDetailLoading();
+    const params = new URLSearchParams(location.search);
+    const type = params.get('type') || state.context.type || '';
+    const id = params.get('id') || '';
+    const globalId = params.get('global_id') || params.get('globalId') || '';
+
+    if (!id && !globalId) {
+      renderDetailEmpty('Noch kein Datensatz ausgewaehlt. Suche in der Datensatzliste nach Titel, ID oder Ort und oeffne einen Eintrag.');
+      return;
+    }
+
+    try {
+      const raw = await fetchRecordDetailItem({ type, id, globalId });
+      if (!raw) {
+        renderDetailEmpty('Für diese ID wurde kein Datensatz gefunden. Bitte prüfe Typ und ID oder kehre zur Datensatzliste zurück.');
+        return;
+      }
+      const normalized = normalizeItem(raw, type || getFirst(raw, ['type', 'typeName']));
+      const evaluated = evaluateQualityForItem(normalized);
+      state.recordDetailItem = evaluated;
+      state.recordDetailViewModel = getRecordDetailViewModel(evaluated);
+      renderRecordDetail(state.recordDetailViewModel);
+      if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date())}`;
+    } catch (error) {
+      console.error('Datensatz-Detail konnte nicht geladen werden.', error);
+      renderDetailEmpty('Der Datensatz konnte nicht geladen werden.');
+    }
+  }
+
+  async function fetchRecordDetailItem({ type, id, globalId }) {
+    const targetTypes = type ? [type] : TYPES;
+    const identifier = cleanQueryValue(globalId || id);
+    const variants = globalId
+      ? [`global_id:"${identifier}"`, identifier]
+      : [`id:"${identifier}"`, identifier];
+
+    for (const targetType of targetTypes) {
+      for (const variant of variants) {
+        const payload = await fetchJson(buildUrl(targetType, variant, { limit: 5 }));
+        const item = extractItems(payload).find((entry) => {
+          const entryId = String(extractId(entry) || '');
+          const entryGlobalId = String(getFirst(entry, ['global_id', 'globalId']) || '');
+          return (id && entryId === String(id)) || (globalId && entryGlobalId === String(globalId)) || entryId === identifier || entryGlobalId === identifier;
+        }) || extractItems(payload)[0];
+        if (item) return item;
+      }
+    }
+    return null;
+  }
+
+  function getRecordDetailViewModel(item) {
+    const raw = item.raw || item;
+    const criteria = qualityCriteria.filter((criterion) => !criterion.types?.length || criterion.types.includes(item.type));
+    const missing = new Set(item.missingCriteria || []);
+    const fulfilled = new Set(item.fulfilledCriteria || []);
+    const manual = new Set(item.manualCriteria || []);
+    const images = getCheckableImages(item);
+    const missingCopyright = qualityHelpers.findMissingCopyrightMedia(raw);
+    const et4Url = buildVerifiedEt4Url(item);
+
+    return {
+      identity: {
+        title: item.title || 'Ohne Titel',
+        type: item.type || '',
+        id: item.id || '',
+        globalId: item.globalId || '',
+        category: item.category || '',
+        city: item.city || '',
+        region: item.region || '',
+        updatedAt: item.updatedAt || getFirst(raw, ['changed', 'updatedAt', 'lastModified'])
+      },
+      quality: {
+        status: item.qualityStatus || 'nicht berechenbar',
+        score: Number.isFinite(item.qualityScore) ? item.qualityScore : null,
+        fulfilledCount: criteria.filter((criterion) => fulfilled.has(criterion.id)).length,
+        missingCount: criteria.filter((criterion) => missing.has(criterion.id)).length,
+        manualCount: criteria.filter((criterion) => manual.has(criterion.id)).length,
+        criteria: criteria.map((criterion) => ({
+          id: criterion.id,
+          label: criterion.label,
+          recommendation: criterion.recommendation,
+          status: missing.has(criterion.id) ? 'fehlt' : fulfilled.has(criterion.id) ? 'erfüllt' : manual.has(criterion.id) ? 'nicht bewertbar' : 'nicht relevant'
+        }))
+      },
+      issues: criteria
+        .filter((criterion) => missing.has(criterion.id))
+        .sort((a, b) => priorityRank(b.priority) - priorityRank(a.priority))
+        .slice(0, 5),
+      usability: getDetailUsability(item, images, missingCopyright),
+      texts: {
+        description: getDisplayDescription(raw),
+        teaser: getTextByRel(raw, 'teaser'),
+        openings: getOpeningHoursSummary(item),
+        directions: getTextByRel(raw, 'directions') || (qualityHelpers.hasPublicTransportFeature(raw) ? 'ÖPNV-Information vorhanden.' : 'Keine ÖPNV-Information vorhanden.'),
+        price: getTextByRel(raw, 'PRICE_INFO')
+      },
+      media: {
+        images,
+        missingCopyrightCount: missingCopyright.length,
+        missingAltCount: images.filter((image) => !textValue(image.alt)).length
+      },
+      details: {
+        license: qualityHelpers.getAttributeValue(raw, 'license') || '',
+        licenseUrl: qualityHelpers.getAttributeValue(raw, 'licenseurl') || '',
+        source: getFirst(raw, ['source', 'provider', 'channel']) || 'Destination.One',
+        web: getFirst(raw, ['web', 'url']) || '',
+        email: getFirst(raw, ['email']) || '',
+        phone: getFirst(raw, ['phone']) || '',
+        outdooractiveId: qualityHelpers.getAttributeValue(raw, 'SYSTEMID_outdooractive') || '',
+        googlePlacesId: qualityHelpers.getAttributeValue(raw, 'SYSTEMID_GOOGLEPLACES') || '',
+        et4Url
+      }
+    };
+  }
+
+  function renderRecordDetail(model) {
+    els.detailHeadCard.innerHTML = `
+      <div class="detail-head-left">
+        <h1 id="record-detail-title">${escapeHtml(model.identity.title)} <span class="type-chip ${model.identity.type.toLowerCase()}">${escapeHtml(model.identity.type || '-')}</span></h1>
+        <p>${escapeHtml([model.identity.city, model.identity.region, model.identity.category].filter(Boolean).join(' - ') || 'Ort und Kategorie nicht angegeben')}</p>
+        <div class="detail-id-row">
+          <button type="button" class="context-edit" data-copy-detail="${escapeHtml(model.identity.id)}">ID: ${escapeHtml(model.identity.id || '-')}</button>
+          <button type="button" class="context-edit" data-copy-detail="${escapeHtml(model.identity.globalId)}">global_id: ${escapeHtml(model.identity.globalId || '-')}</button>
+          <span class="context-edit">Letzte Aktualisierung: ${escapeHtml(formatRecordDate(model.identity.updatedAt))}</span>
+        </div>
+      </div>
+      <div class="detail-quality-summary">
+        <div>${renderRecordStatus(model.quality.status)}<strong>${model.quality.score == null ? '-' : `${formatNumber(model.quality.score)} / 100`}</strong></div>
+        <dl>
+          <dt>Positive Kriterien</dt><dd>${formatNumber(model.quality.fulfilledCount)}</dd>
+          <dt>Fehlende Kriterien</dt><dd>${formatNumber(model.quality.missingCount)}</dd>
+          <dt>Nicht bewertbar</dt><dd>${formatNumber(model.quality.manualCount)}</dd>
+        </dl>
+      </div>
+    `;
+    els.detailHeadCard.querySelectorAll('[data-copy-detail]').forEach((button) => {
+      button.addEventListener('click', () => copyText(button.dataset.copyDetail || ''));
+    });
+
+    els.detailContent.hidden = false;
+    els.detailCriteriaCard.hidden = false;
+    renderDetailIssues(model);
+    renderDetailUsability(model);
+    renderDetailTextCards(model);
+    renderDetailMedia(model);
+    renderDetailInfo(model);
+    renderDetailCriteria(model);
+
+    if (model.details.et4Url && els.detailEt4Link) {
+      els.detailEt4Link.href = model.details.et4Url;
+      els.detailEt4Link.hidden = false;
+    }
+  }
+
+  function renderDetailIssues(model) {
+    if (!model.issues.length) {
+      els.detailIssuesList.innerHTML = '<p class="empty-note">Keine priorisierten Baustellen gefunden.</p>';
+      return;
+    }
+    els.detailIssuesList.innerHTML = model.issues.map((criterion) => `
+      <div class="detail-issue-row">
+        <span class="impact-dot ${criterion.priority === 'hoch' ? 'critical' : 'review'}"></span>
+        <span><strong>${escapeHtml(criterion.label)}</strong><small>${escapeHtml(criterion.recommendation)}</small></span>
+        <span class="status-badge ${criterion.priority === 'hoch' ? 'critical' : 'medium'}">${criterion.priority === 'hoch' ? 'hoch' : 'mittel'}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderDetailUsability(model) {
+    els.detailUsability.innerHTML = model.usability.map((entry) => `
+      <div><span>${escapeHtml(entry.label)}</span><strong class="${entry.ok ? 'ok' : entry.relevant === false ? 'muted' : 'bad'}">${escapeHtml(entry.value)}</strong></div>
+    `).join('');
+    els.detailTaxonomy.innerHTML = renderKvRows([
+      ['Kategorie', model.identity.category || 'Nicht angegeben'],
+      ['Gebiet', model.identity.region || 'Nicht angegeben'],
+      ['Ort', model.identity.city || 'Nicht angegeben']
+    ]);
+  }
+
+  function renderDetailTextCards(model) {
+    els.detailDescription.innerHTML = `<p>${escapeHtml(model.texts.description || 'Keine Beschreibung vorhanden.')}</p>${model.texts.teaser ? `<p class="data-note">${escapeHtml(model.texts.teaser)}</p>` : ''}`;
+    els.detailOpenings.innerHTML = `<p>${escapeHtml(model.texts.openings)}</p>`;
+    els.detailTransport.innerHTML = `<p>${escapeHtml(model.texts.directions)}</p>${model.texts.price ? `<p class="data-note">${escapeHtml(model.texts.price)}</p>` : ''}`;
+  }
+
+  function renderDetailMedia(model) {
+    if (!model.media.images.length) {
+      els.detailMedia.innerHTML = '<p class="empty-note">Keine prüfbaren Bilder vorhanden.</p>';
+      els.detailMediaNote.textContent = '';
+      return;
+    }
+    els.detailMedia.innerHTML = model.media.images.slice(0, 5).map((image) => `
+      <figure>
+        <img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.alt || image.value || '')}" loading="lazy">
+        <figcaption>${escapeHtml(image.value || image.description || 'Bild')}</figcaption>
+      </figure>
+    `).join('');
+    els.detailMediaNote.textContent = `${formatNumber(model.media.images.length)} Bilder vorhanden. ${formatNumber(model.media.missingCopyrightCount)} ohne Urheberangabe. ${formatNumber(model.media.missingAltCount)} ohne Alt-Text.`;
+  }
+
+  function renderDetailInfo(model) {
+    const rows = [
+      ['ID', escapeHtml(model.identity.id || '-')],
+      ['global_id', escapeHtml(model.identity.globalId || '-')],
+      ['Quelle', escapeHtml(model.details.source || '-')],
+      ['ET4 pages', model.details.et4Url ? `<a href="${escapeHtml(model.details.et4Url)}" target="_blank" rel="noopener">Öffnen auf et4 pages</a>` : 'Nicht verfügbar'],
+      ['Web', model.details.web ? `<a href="${escapeHtml(model.details.web)}" target="_blank" rel="noopener">Datensatz öffnen</a>` : 'Nicht angegeben'],
+      ['Lizenz', escapeHtml(model.details.license || 'Lizenz fehlt')],
+      ['Outdooractive-ID', escapeHtml(model.details.outdooractiveId || 'Nicht vorhanden')],
+      ['Google-Places-ID', escapeHtml(model.details.googlePlacesId || 'Nicht vorhanden')]
+    ];
+    els.detailInfo.innerHTML = renderKvRows(rows, true);
+  }
+
+  function renderDetailCriteria(model) {
+    els.detailCriteriaList.innerHTML = model.quality.criteria.map((criterion) => `
+      <span class="criteria-chip ${criterion.status.replaceAll(' ', '-')}">
+        <strong>${escapeHtml(criterion.label)}</strong>
+        <small>${escapeHtml(criterion.status)}</small>
+      </span>
+    `).join('');
+  }
+
+  function renderDetailLoading() {
+    if (els.detailHeadCard) els.detailHeadCard.innerHTML = '<div class="table-empty">Datensatz wird geladen ...</div>';
+    if (els.detailContent) els.detailContent.hidden = true;
+    if (els.detailCriteriaCard) els.detailCriteriaCard.hidden = true;
+    if (els.detailEt4Link) els.detailEt4Link.hidden = true;
+  }
+
+  function renderDetailEmpty(message) {
+    if (els.detailHeadCard) els.detailHeadCard.innerHTML = `<div class="table-empty">${escapeHtml(message)}</div>`;
+    if (els.detailContent) els.detailContent.hidden = true;
+    if (els.detailCriteriaCard) els.detailCriteriaCard.hidden = true;
+    showDetailMessage('');
+  }
+
+  function showDetailMessage(message) {
+    if (!els.recordDetailMessage) return;
+    els.recordDetailMessage.textContent = message || '';
+    els.recordDetailMessage.hidden = !message;
+  }
+
+  function getDetailUsability(item, images, missingCopyright) {
+    const raw = item.raw || item;
+    const licenseOk = qualityHelpers.hasValidDatasetLicense(raw);
+    const hasDescriptionValue = qualityHelpers.hasDetailsText(raw);
+    const hasOpenings = qualityHelpers.hasOpeningHours(raw);
+    const hasTransport = qualityHelpers.hasPublicTransportFeature(raw);
+    const bookingRelevant = ['Hotel', 'Package'].includes(item.type);
+    return [
+      { label: 'Open Data', value: licenseOk ? 'ja' : 'nein', ok: licenseOk },
+      { label: 'Lizenzstatus', value: licenseOk ? 'gültig' : 'Lizenz fehlt', ok: licenseOk },
+      { label: 'Beschreibung', value: hasDescriptionValue ? 'vorhanden' : 'fehlt', ok: hasDescriptionValue },
+      { label: 'Bilder', value: images.length ? 'vorhanden' : 'fehlt', ok: images.length > 0 },
+      { label: 'Bildrechte', value: missingCopyright.length ? `${missingCopyright.length} ohne Urheber` : 'vorhanden', ok: missingCopyright.length === 0 },
+      { label: 'ÖPNV-Info', value: hasTransport ? 'vorhanden' : 'nicht vorhanden', ok: hasTransport },
+      { label: 'Buchungslink', value: bookingRelevant ? qualityHelpers.hasBookingLink(raw) ? 'vorhanden' : 'fehlt' : 'nicht relevant', ok: !bookingRelevant || qualityHelpers.hasBookingLink(raw), relevant: bookingRelevant },
+      { label: 'Öffnungszeiten', value: hasOpenings ? 'vorhanden' : 'fehlt', ok: hasOpenings }
+    ];
+  }
+
+  function getDisplayDescription(raw) {
+    return getTextByRel(raw, 'details') || '';
+  }
+
+  function getTextByRel(raw, rel) {
+    const values = qualityHelpers.getTextsByRel(raw, rel)
+      .map((entry) => htmlToPlainText(textValue(entry.value || entry.text || entry.content || entry)))
+      .filter(Boolean);
+    return values[0] || '';
+  }
+
+  function htmlToPlainText(value) {
+    return String(value || '')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;|&#160;/gi, ' ')
+      .replace(/&amp;/gi, '&')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#039;|&apos;/gi, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function getCheckableImages(item) {
+    const raw = item.raw || item;
+    return qualityHelpers.getMediaObjects(raw)
+      .filter((media) => qualityHelpers.isCheckableMediaObject(media))
+      .sort((a, b) => {
+        const relRank = (rel) => rel === 'default' ? 0 : 1;
+        return relRank(a.rel) - relRank(b.rel) || Number(a.prio || 99) - Number(b.prio || 99);
+      })
+      .map((media) => ({
+        ...media,
+        url: textValue(media.url || media.contentUrl),
+        alt: textValue(media.alt),
+        value: textValue(media.value || media.title),
+        description: textValue(media.description),
+        copyrightText: textValue(media.copyrightText)
+      }))
+      .filter((media) => media.url);
+  }
+
+  function getOpeningHoursSummary(item) {
+    const raw = item.raw || item;
+    if (raw.alwaysOpen === true) return 'Immer geöffnet.';
+    const openingText = getTextByRel(raw, 'openings');
+    if (openingText) return openingText;
+    const intervals = raw.timeIntervals || raw.raw?.timeIntervals || [];
+    if (Array.isArray(intervals) && intervals.length) return 'Öffnungszeiten vorhanden.';
+    return 'Keine Öffnungszeiten angegeben.';
+  }
+
+  function buildVerifiedEt4Url(item) {
+    if (item.type !== 'POI' || !item.globalId) return '';
+    return `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/${encodeURIComponent(item.globalId)}/x`;
+  }
+
+  function renderKvRows(rows, allowHtml = false) {
+    return rows.map(([key, value]) => `
+      <dt>${escapeHtml(key)}</dt>
+      <dd>${allowHtml ? value : escapeHtml(value)}</dd>
+    `).join('');
   }
 
   function normalizeItem(raw, fallbackType) {
@@ -1212,7 +1567,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (node) node.textContent = '...';
     });
     if (els.topTasksList) els.topTasksList.innerHTML = '<div class="inline-loading">Pflegeaufgaben werden geladen ...</div>';
-    if (els.qualityDataNote) els.qualityDataNote.textContent = 'Qualitaetsdaten werden geladen ...';
+    if (els.qualityDataNote) els.qualityDataNote.textContent = 'Qualitätsdaten werden geladen ...';
   }
 
   function renderOverviewEmpty() {
@@ -1220,8 +1575,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const node = document.getElementById(id);
       if (node) node.textContent = '-';
     });
-    if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">Fuer diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
-    if (els.qualityDataNote) els.qualityDataNote.textContent = 'Keine auswertbaren Qualitaetsdaten geladen.';
+    if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">Für diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
+    if (els.qualityDataNote) els.qualityDataNote.textContent = 'Keine auswertbaren Qualitätsdaten geladen.';
   }
 
   function computeSummary(rows) {
@@ -1237,7 +1592,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .slice(0, 5);
 
     if (!issues.length) {
-      els.topTasksList.innerHTML = '<div class="empty-note">Fuer die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
+      els.topTasksList.innerHTML = '<div class="empty-note">Für die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
       return;
     }
 
@@ -1250,8 +1605,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="task-icon ${statusClass}" aria-hidden="true">${taskIcon(issue.criterionId)}</span>
         <span class="task-copy"><strong>${escapeHtml(issue.label)}</strong><small>${escapeHtml(taskDescription(issue.criterionId))}</small></span>
         <span class="task-count">${formatNumber(issue.affectedCount)}</span>
-        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'Pruefen'}</span>
-        <span class="task-open" aria-hidden="true">&gt;</span>
+        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'Prüfen'}</span>
+        <span class="task-open material-icons" aria-hidden="true">chevron_right</span>
       `;
       return link;
     }));
@@ -1272,7 +1627,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rows = [
       ['Gut', good, goodPct, 'good'],
-      ['Pruefen', review, reviewPct, 'review'],
+      ['Prüfen', review, reviewPct, 'review'],
       ['Kritisch', critical, criticalPct, 'critical'],
       ['Nicht bewertbar', unknown, percent(unknown, total), 'muted']
     ];
@@ -1298,10 +1653,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderDataNote(sampleSize) {
     const note = state.qualityDataMeta.truncated
-      ? `Basierend auf einer begrenzten Stichprobe von ${formatNumber(sampleSize)} Datensaetzen.`
-      : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensaetzen.`;
+      ? `Basierend auf einer begrenzten Stichprobe von ${formatNumber(sampleSize)} Datensätzen.`
+      : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensätzen.`;
     els.qualityDataNote.textContent = note;
-    if (state.qualityDataMeta.truncated) console.debug('Qualitaetsdaten sind begrenzt.', state.qualityDataMeta);
+    if (state.qualityDataMeta.truncated) console.debug('Qualitätsdaten sind begrenzt.', state.qualityDataMeta);
   }
 
   function renderKpiDeltas(kpis) {
@@ -1311,7 +1666,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch {
       previous = null;
     }
-    renderDelta(els.kpiTotalDelta, previous?.totalRecords, kpis.totalRecords, 'Datensaetze seit dem letzten Besuch');
+    renderDelta(els.kpiTotalDelta, previous?.totalRecords, kpis.totalRecords, 'Datensätze seit dem letzten Besuch');
     renderDelta(els.kpiQualityDelta, previous?.qualityScore, kpis.qualityScore, 'Punkte seit dem letzten Besuch');
   }
 
@@ -1335,7 +1690,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function exportOverviewCsv() {
     if (!state.latestRows.length) {
-      showMessage('Fuer diese Ansicht liegen noch keine exportierbaren Daten vor.');
+      showMessage('Für diese Ansicht liegen noch keine exportierbaren Daten vor.');
       return;
     }
     const rows = [
@@ -1348,7 +1703,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ])
     ];
     const text = rows.map((row) => row.map(csvValue).join(';')).join('\n');
-    downloadText('satourn_startseite_uebersicht.csv', text, 'text/csv;charset=utf-8');
+    downloadText('satourn_startseite_übersicht.csv', text, 'text/csv;charset=utf-8');
   }
 
   function csvValue(value) {
@@ -1386,7 +1741,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function priorityLabel(priority) {
     if (priority === 'hoch') return 'Kritisch';
-    if (priority === 'mittel') return 'Pruefen';
+    if (priority === 'mittel') return 'Prüfen';
     return 'Niedrig';
   }
 
@@ -1420,24 +1775,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function taskProblem(id) {
     const problems = {
-      license_missing: 'Fuer diese Datensaetze ist keine gueltige Lizenzangabe hinterlegt.',
+      license_missing: 'Für diese Datensätze ist keine gültige Lizenzangabe hinterlegt.',
       image_author_missing: 'Bildmaterial ist vorhanden, aber der Urheberhinweis fehlt.',
-      description_missing: 'Fuer diese Datensaetze fehlt eine belastbare Beschreibung mit Details.',
-      opening_hours_missing: 'Es sind keine Oeffnungszeiten oder vergleichbare Zeitinformationen hinterlegt.',
-      public_transport_missing: 'Informationen zur Anreise mit dem OePNV fehlen.',
+      description_missing: 'Für diese Datensätze fehlt eine belastbare Beschreibung mit Details.',
+      opening_hours_missing: 'Es sind keine Öffnungszeiten oder vergleichbare Zeitinformationen hinterlegt.',
+      public_transport_missing: 'Informationen zur Anreise mit dem ÖPNV fehlen.',
       booking_link_missing: 'Es ist kein Buchungs-, Reservierungs- oder Ticketlink hinterlegt.',
-      image_missing: 'Fuer diese Datensaetze ist kein pruefbares Bildmaterial vorhanden.'
+      image_missing: 'Für diese Datensätze ist kein prüfbares Bildmaterial vorhanden.'
     };
-    return problems[id] || 'Fuer diese Datensaetze fehlt eine fuer die Datenpflege relevante Angabe.';
+    return problems[id] || 'Für diese Datensätze fehlt eine für die Datenpflege relevante Angabe.';
   }
 
   function taskImpactText(id) {
     const impacts = {
-      license_missing: 'Ohne Lizenz sind Daten nicht Open-Data-faehig und nur eingeschraenkt weiterverwendbar.',
-      image_author_missing: 'Ohne Urheberangabe ist die Weitergabe von Bildmaterial rechtlich eingeschraenkt.',
+      license_missing: 'Ohne Lizenz sind Daten nicht Open-Data-fähig und nur eingeschränkt weiterverwendbar.',
+      image_author_missing: 'Ohne Urheberangabe ist die Weitergabe von Bildmaterial rechtlich eingeschränkt.',
       description_missing: 'Fehlende Beschreibungen reduzieren Auffindbarkeit, Verstaendlichkeit und Nutzbarkeit.',
-      opening_hours_missing: 'Fehlende Oeffnungszeiten erschweren Planung und Ausspielung in Portalen.',
-      public_transport_missing: 'Fehlende OePNV-Hinweise schwächen nachhaltige Anreiseinformationen.',
+      opening_hours_missing: 'Fehlende Öffnungszeiten erschweren Planung und Ausspielung in Portalen.',
+      public_transport_missing: 'Fehlende ÖPNV-Hinweise schwächen nachhaltige Anreiseinformationen.',
       booking_link_missing: 'Ohne Buchungslink koennen Nutzer Angebote schwerer direkt abschliessen.',
       image_missing: 'Ohne Bilder wirken Eintraege weniger attraktiv und sind in vielen Kanaelen schwaecher.'
     };
@@ -1483,7 +1838,7 @@ document.addEventListener('DOMContentLoaded', () => {
       systems.push({
         short: 'OA',
         name: 'outdooractive',
-        note: 'Tour-Datensaetze mit vorhandener Source-ID. Kein Link, solange die URL-Struktur nicht verifiziert ist.',
+        note: 'Tour-Datensätze mit vorhandener Source-ID. Kein Link, solange die URL-Struktur nicht verifiziert ist.',
         action: 'copy-source-id',
         actionLabel: 'ID kopieren'
       });
@@ -1525,7 +1880,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : state.taskItems.filter((item) => item.missingCriteria?.includes(state.selectedTask.criterionId));
     if (!rowsToExport.length) return;
     const rows = [
-      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Problem', 'Naechster Schritt', 'ID', 'global_id', 'source_id'],
+      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Problem', 'Nächster Schritt', 'ID', 'global_id', 'source_id'],
       ...rowsToExport.map((row) => [
         row.title,
         row.type,
@@ -1552,24 +1907,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function taskIcon(id) {
-    if (id === 'license_missing') return 'L';
-    if (id === 'image_author_missing' || id === 'image_missing') return 'B';
-    if (id === 'opening_hours_missing') return 'Z';
-    if (id === 'public_transport_missing') return 'O';
-    return '!';
+    if (id === 'license_missing') return 'description';
+    if (id === 'image_author_missing' || id === 'image_missing') return 'image';
+    if (id === 'opening_hours_missing') return 'schedule';
+    if (id === 'public_transport_missing') return 'directions_transit';
+    if (id === 'booking_link_missing') return 'link';
+    return 'warning';
   }
 
   function taskDescription(id) {
     const descriptions = {
-      license_missing: 'Datensaetze ohne Lizenzangabe',
+      license_missing: 'Datensätze ohne Lizenzangabe',
       image_author_missing: 'Bilder ohne Urheberangabe',
       description_missing: 'Keine Beschreibung oder Details',
-      opening_hours_missing: 'Keine Oeffnungszeiten hinterlegt',
-      public_transport_missing: 'Keine OePNV-Information vorhanden',
+      opening_hours_missing: 'Keine Öffnungszeiten hinterlegt',
+      public_transport_missing: 'Keine ÖPNV-Information vorhanden',
       booking_link_missing: 'Kein Buchungs- oder Reservierungslink',
       image_missing: 'Kein Bildmaterial vorhanden'
     };
-    return descriptions[id] || 'Ergaenzung empfohlen';
+    return descriptions[id] || 'Ergänzung empfohlen';
   }
 
   function priorityRank(priority) {

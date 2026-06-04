@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Datensaetze
+title: Datensätze
 permalink: /Statistik/records.html
 css: /Statistik/style.css
 js: /Statistik/main.js
@@ -9,11 +9,11 @@ module: true
 
 <div class="statistik light-shell" data-page="records">
   <header class="app-header">
-    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitaets-Monitor">
+    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitäts-Monitor">
       <span class="brand-mark" aria-hidden="true"></span>
       <span>
         <strong>SaTourN</strong>
-        <small>Datenqualitaets-Monitor</small>
+        <small>Datenqualitäts-Monitor</small>
       </span>
     </a>
 
@@ -22,54 +22,54 @@ module: true
       <button id="work-context-summary" class="context-summary" type="button" aria-haspopup="dialog">
         Sachsen - Alle Orte - Alle Datentypen
       </button>
-      <button id="work-context-edit" class="context-edit" type="button">Aendern</button>
+      <button id="work-context-edit" class="context-edit" type="button">Ändern</button>
     </div>
 
     <div class="header-status">
-      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren">R</button>
+      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren"><span class="material-icons" aria-hidden="true">refresh</span></button>
       <span id="last-updated">Letzte Aktualisierung: noch nicht geladen</span>
     </div>
   </header>
 
   <div class="app-layout">
-    <nav class="app-sidebar" aria-label="Datenqualitaetsmonitor Navigation">
+    <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
       <a class="nav-link" href="/Statistik/">
-        <span aria-hidden="true">01</span>
-        Uebersicht
+        <span class="material-icons" aria-hidden="true">home</span>
+        Übersicht
       </a>
       <a class="nav-link" href="/Statistik/tasks.html">
-        <span aria-hidden="true">02</span>
+        <span class="material-icons" aria-hidden="true">assignment</span>
         Pflegeaufgaben
       </a>
       <a class="nav-link active" href="/Statistik/records.html" aria-current="page">
-        <span aria-hidden="true">03</span>
-        Datensaetze
+        <span class="material-icons" aria-hidden="true">storage</span>
+        Datensätze
       </a>
       <a class="nav-link" href="/Statistik/stats.html">
-        <span aria-hidden="true">04</span>
+        <span class="material-icons" aria-hidden="true">bar_chart</span>
         Statistik
       </a>
 
       <div class="sidebar-bottom">
         <button class="nav-utility" type="button" disabled>Hilfe &amp; Dokumentation</button>
-        <button class="nav-utility" type="button" disabled>Menue einklappen</button>
+        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
       </div>
     </nav>
 
     <main class="records-main" aria-labelledby="records-title">
       <section class="overview-hero">
-        <h1 id="records-title">Datensaetze</h1>
-        <p>Suche und pruefe einzelne Datensaetze oder arbeite gefilterte Listen ab.</p>
+        <h1 id="records-title">Datensätze</h1>
+        <p>Suche und prüfe einzelne Datensätze oder arbeite gefilterte Listen ab.</p>
       </section>
 
-      <section class="record-filter-card" aria-label="Datensaetze suchen und filtern">
+      <section class="record-filter-card" aria-label="Datensätze suchen und filtern">
         <div class="record-search-block">
           <label class="record-search-field">
             <span class="sr-only">Datensatz suchen</span>
             <input id="record-search-input" type="search" placeholder="Suche nach Titel, ID, global_id, Ort, Kategorie oder Problem ...">
-            <button id="record-search-clear" class="plain-button" type="button" aria-label="Suche leeren">x</button>
+            <button id="record-search-clear" class="plain-button" type="button" aria-label="Suche leeren"><span class="material-icons" aria-hidden="true">close</span></button>
           </label>
-          <button id="record-search-button" class="context-edit" type="button">Suchen</button>
+            <button id="record-search-button" class="context-edit" type="button">Suchen</button>
           <small>Du kannst auch direkt eine ID oder global_id eingeben.</small>
         </div>
 
@@ -86,13 +86,13 @@ module: true
           </select>
         </label>
         <label>
-          <span class="sr-only">Qualitaetsstatus</span>
+          <span class="sr-only">Qualitätsstatus</span>
           <select id="record-status-filter">
-            <option value="">Qualitaetsstatus: Alle</option>
-            <option value="gut">Qualitaetsstatus: gut</option>
-            <option value="pruefen">Qualitaetsstatus: pruefen</option>
-            <option value="kritisch">Qualitaetsstatus: kritisch</option>
-            <option value="nicht berechenbar">Qualitaetsstatus: nicht bewertbar</option>
+            <option value="">Qualitätsstatus: Alle</option>
+            <option value="gut">Qualitätsstatus: gut</option>
+            <option value="pruefen">Qualitätsstatus: prüfen</option>
+            <option value="kritisch">Qualitätsstatus: kritisch</option>
+            <option value="nicht berechenbar">Qualitätsstatus: nicht bewertbar</option>
           </select>
         </label>
         <label>
@@ -101,15 +101,15 @@ module: true
             <option value="">Problem / Kriterium: Alle</option>
           </select>
         </label>
-        <button id="record-reset-filters" class="plain-button" type="button">Filter zuruecksetzen</button>
+        <button id="record-reset-filters" class="plain-button" type="button">Filter zurücksetzen</button>
 
         <div class="quick-filter-row" aria-label="Schnellfilter">
           <strong>Schnellfilter:</strong>
-          <button class="quick-filter-button" type="button" data-record-quick="critical">Nur kritische Datensaetze <span id="quick-count-critical">-</span></button>
+          <button class="quick-filter-button" type="button" data-record-quick="critical">Nur kritische Datensätze <span id="quick-count-critical">-</span></button>
           <button class="quick-filter-button" type="button" data-record-quick="license_missing">Ohne Lizenz <span id="quick-count-license">-</span></button>
           <button class="quick-filter-button" type="button" data-record-quick="description_missing">Ohne Beschreibung <span id="quick-count-description">-</span></button>
           <button class="quick-filter-button" type="button" data-record-quick="image_missing">Ohne Bilder <span id="quick-count-image">-</span></button>
-          <button class="quick-filter-button" type="button" data-record-quick="opening_hours_missing">Ohne Oeffnungszeiten <span id="quick-count-openings">-</span></button>
+          <button class="quick-filter-button" type="button" data-record-quick="opening_hours_missing">Ohne Öffnungszeiten <span id="quick-count-openings">-</span></button>
           <button class="quick-filter-button" type="button" disabled>Mehr Filter</button>
         </div>
       </section>
@@ -117,13 +117,13 @@ module: true
       <div id="records-message" class="overview-message" hidden></div>
 
       <section class="record-result-head">
-        <p id="record-result-summary">Noch keine Datensaetze geladen.</p>
+        <p id="record-result-summary">Noch keine Datensätze geladen.</p>
         <div class="record-actions">
-          <button id="record-export" class="context-edit" type="button" disabled>CSV exportieren</button>
+          <button id="record-export" class="context-edit icon-text-button" type="button" disabled><span class="material-icons" aria-hidden="true">file_download</span>CSV exportieren</button>
           <button class="context-edit" type="button" disabled>Spalten</button>
           <div class="view-toggle" aria-label="Ansicht">
-            <button class="icon-button active" type="button" aria-label="Listenansicht">L</button>
-            <button class="icon-button" type="button" aria-label="Rasteransicht" disabled>G</button>
+            <button class="icon-button active" type="button" aria-label="Listenansicht"><span class="material-icons" aria-hidden="true">view_list</span></button>
+            <button class="icon-button" type="button" aria-label="Rasteransicht" disabled><span class="material-icons" aria-hidden="true">grid_view</span></button>
           </div>
         </div>
       </section>
@@ -137,22 +137,22 @@ module: true
                 <th>Typ</th>
                 <th>Ort / Gebiet</th>
                 <th>Kategorie</th>
-                <th>Qualitaetsstatus</th>
+                <th>Qualitätsstatus</th>
                 <th>Hauptproblem</th>
-                <th>Qualitaets-Score</th>
+                <th>Qualitäts-Score</th>
                 <th>Aktualisiert</th>
                 <th>Aktionen</th>
               </tr>
             </thead>
             <tbody id="records-table-body" aria-live="polite">
-              <tr><td colspan="9" class="table-empty">Datensaetze werden geladen ...</td></tr>
+              <tr><td colspan="9" class="table-empty">Datensätze werden geladen ...</td></tr>
             </tbody>
           </table>
         </div>
         <footer class="table-footer record-table-footer">
           <span id="record-page-range">-</span>
           <label>
-            <span class="sr-only">Datensaetze pro Seite</span>
+            <span class="sr-only">Datensätze pro Seite</span>
             <select id="record-page-size">
               <option value="25">25 pro Seite</option>
               <option value="50">50 pro Seite</option>
@@ -160,30 +160,30 @@ module: true
             </select>
           </label>
           <div class="pager" aria-label="Datensatz Seiten">
-            <button id="record-prev-page" class="icon-button" type="button" aria-label="Vorherige Seite">&lt;</button>
+            <button id="record-prev-page" class="icon-button" type="button" aria-label="Vorherige Seite"><span class="material-icons" aria-hidden="true">chevron_left</span></button>
             <span id="record-page-status">1 / 1</span>
-            <button id="record-next-page" class="icon-button" type="button" aria-label="Naechste Seite">&gt;</button>
+            <button id="record-next-page" class="icon-button" type="button" aria-label="Nächste Seite"><span class="material-icons" aria-hidden="true">chevron_right</span></button>
           </div>
         </footer>
       </section>
 
-      <section class="record-status-legend" aria-label="Qualitaetsstatus">
-        <strong>Qualitaetsstatus:</strong>
+      <section class="record-status-legend" aria-label="Qualitätsstatus">
+        <strong>Qualitätsstatus:</strong>
         <span><i class="status-dot good"></i>gut <small id="legend-good">-</small></span>
-        <span><i class="status-dot review"></i>pruefen <small id="legend-review">-</small></span>
+        <span><i class="status-dot review"></i>prüfen <small id="legend-review">-</small></span>
         <span><i class="status-dot critical"></i>kritisch <small id="legend-critical">-</small></span>
         <span><i class="status-dot muted"></i>nicht bewertbar <small id="legend-unknown">-</small></span>
       </section>
 
-      <p id="record-data-note" class="data-note record-data-note">Die Qualitaetsbewertung basiert auf den aktivierten Kriterien und verfuegbaren Daten.</p>
+      <p id="record-data-note" class="data-note record-data-note">Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.</p>
     </main>
   </div>
 
   <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
     <form method="dialog" id="work-context-form">
       <header>
-        <h2 id="context-dialog-title">Arbeitskontext aendern</h2>
-        <button class="icon-button" value="cancel" type="submit" aria-label="Schliessen">x</button>
+        <h2 id="context-dialog-title">Arbeitskontext ändern</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
       </header>
       <label>
         Gebiet
@@ -199,7 +199,7 @@ module: true
       </label>
       <footer>
         <button value="cancel" type="submit">Abbrechen</button>
-        <button class="primary" value="default" type="submit">Uebernehmen</button>
+        <button class="primary" value="default" type="submit">Übernehmen</button>
       </footer>
     </form>
   </dialog>

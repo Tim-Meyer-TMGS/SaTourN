@@ -9,27 +9,27 @@ module: true
 
 <div class="statistik light-shell" data-page="stats">
   <header class="app-header">
-    <a class="brand" href="/Statistik/"><span class="brand-mark" aria-hidden="true"></span><span><strong>SaTourN</strong><small>Datenqualitaets-Monitor</small></span></a>
-    <div class="work-context-bar"><span>Arbeitskontext:</span><button id="work-context-summary" class="context-summary" type="button">Sachsen - Alle Orte - Alle Datentypen</button><button id="work-context-edit" class="context-edit" type="button">Aendern</button></div>
+    <a class="brand" href="/Statistik/"><span class="brand-mark" aria-hidden="true"></span><span><strong>SaTourN</strong><small>Datenqualitäts-Monitor</small></span></a>
+    <div class="work-context-bar"><span>Arbeitskontext:</span><button id="work-context-summary" class="context-summary" type="button">Sachsen - Alle Orte - Alle Datentypen</button><button id="work-context-edit" class="context-edit" type="button">Ändern</button></div>
     <div class="header-status"><span id="last-updated">Keine Datenanfrage auf dieser Seite</span></div>
   </header>
   <div class="app-layout">
-    <nav class="app-sidebar" aria-label="Datenqualitaetsmonitor Navigation">
-      <a class="nav-link" href="/Statistik/"><span aria-hidden="true">01</span>Uebersicht</a>
-      <a class="nav-link" href="/Statistik/tasks.html"><span aria-hidden="true">02</span>Pflegeaufgaben</a>
-      <a class="nav-link" href="/Statistik/records.html"><span aria-hidden="true">03</span>Datensaetze</a>
-      <a class="nav-link active" href="/Statistik/stats.html" aria-current="page"><span aria-hidden="true">04</span>Statistik</a>
-      <div class="sidebar-bottom"><button class="nav-utility" type="button" disabled>Hilfe</button><button class="nav-utility" type="button" disabled>Menue einklappen</button></div>
+    <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
+      <a class="nav-link" href="/Statistik/"><span class="material-icons" aria-hidden="true">home</span>Übersicht</a>
+      <a class="nav-link" href="/Statistik/tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
+      <a class="nav-link" href="/Statistik/records.html"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
+      <a class="nav-link active" href="/Statistik/stats.html" aria-current="page"><span class="material-icons" aria-hidden="true">bar_chart</span>Statistik</a>
+      <div class="sidebar-bottom"><button class="nav-utility" type="button" disabled>Hilfe</button><button class="nav-utility" type="button" disabled>Menü einklappen</button></div>
     </nav>
     <main class="placeholder-main">
       <section class="placeholder-card">
         <p class="eyebrow">Statistik</p>
         <h1>Statistik</h1>
-        <p>Diese Seite wird im naechsten Schritt aufgebaut. Sie zeigt kuenftig aggregierte Zahlen, Vergleiche, Diagramme und Statistik-Exporte.</p>
+        <p>Diese Seite wird im nächsten Schritt aufgebaut. Sie zeigt künftig aggregierte Zahlen, Vergleiche, Diagramme und Statistik-Exporte.</p>
       </section>
     </main>
   </div>
   <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
-    <form method="dialog" id="work-context-form"><header><h2 id="context-dialog-title">Arbeitskontext aendern</h2><button class="icon-button" value="cancel" type="submit" aria-label="Schliessen">x</button></header><label>Gebiet<select id="context-area"></select></label><label>Ort<input id="context-city" type="text" placeholder="Alle Orte"></label><label>Datentyp<select id="context-type"></select></label><footer><button value="cancel" type="submit">Abbrechen</button><button class="primary" value="default" type="submit">Uebernehmen</button></footer></form>
+    <form method="dialog" id="work-context-form"><header><h2 id="context-dialog-title">Arbeitskontext ändern</h2><button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button></header><label>Gebiet<select id="context-area"></select></label><label>Ort<input id="context-city" type="text" placeholder="Alle Orte"></label><label>Datentyp<select id="context-type"></select></label><footer><button value="cancel" type="submit">Abbrechen</button><button class="primary" value="default" type="submit">Übernehmen</button></footer></form>
   </dialog>
 </div>

@@ -16,14 +16,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
-<body>
-  {% include menu.html %}
+{% assign is_statistik = page.url | default: '' | slice: 0, 11 %}
+<body{% if is_statistik == '/Statistik/' %} class="statistik-page-body"{% endif %}>
+  {% unless is_statistik == '/Statistik/' %}
+    {% include menu.html %}
+  {% endunless %}
 
-  <main class="container">
+  <main class="{% if is_statistik == '/Statistik/' %}statistik-page-root{% else %}container{% endif %}">
     {{ content }}
   </main>
 
-  {% include footer.html %}
+  {% unless is_statistik == '/Statistik/' %}
+    {% include footer.html %}
+  {% endunless %}
 
   {% if page.js %}
     <script{% if page.module %} type="module"{% endif %} src="{{ page.js | relative_url }}"></script>

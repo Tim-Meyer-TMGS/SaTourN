@@ -751,10 +751,22 @@ Eine Abschnittsumsetzung ist erst fertig, wenn:
   `docs/Codex/Umbau_Statistik/Datensatz-Haupseite.png` pruefen.
 - Gezielte ID-Suche mit realen Beispielen testen, insbesondere numerische ID
   und `global_id`.
-- Detailseite `record-detail.html` im naechsten separaten Abschnitt umsetzen.
 - Ruecksprung von Detailseite zur aktuellen Liste spaeter ohne grosse
   Rohdaten-Speicherung vorbereiten.
 - Parameteruebergabe von Pflegeaufgaben zur Datensaetze-Hauptseite spaeter
   verbinden, ohne automatische Vollscans auszulösen.
 - Optionales Spaltenmenue und Rasteransicht erst erweitern, wenn fachlich
   benoetigt.
+
+## Umbau Statistik: offene Folgepunkte nach Datensatz-Detailseite
+
+- Datensatz-Detailseite im Browser mit echten API-Daten gegen
+  `docs/Codex/Umbau_Statistik/Detailansicht datensatz.png` pruefen.
+- Detailseite mit `testdata/quality-examples/poi.json` fachlich gegen
+  Beschreibung, Medien, Bildrechte und Oeffnungszeiten validieren.
+- Vorheriger/Naechster erst umsetzen, wenn ein kleiner Listen-Kontext ohne
+  Rohdaten-Speicherung definiert ist.
+- Optionales Aktionen-Menue fuer ID kopieren, `global_id` kopieren und
+  CSV-Zeile exportieren spaeter ausbauen.
+- Medien-Detailansicht fuer einzelne Bilder spaeter ergaenzen, falls fuer
+  Bildrechte-Pflege benoetigt.

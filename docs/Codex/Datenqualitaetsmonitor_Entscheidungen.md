@@ -156,3 +156,11 @@ Stand: 2026-06-04
   mit Debounce ist fuehrend.
 - Gezielte API-ID-Suche ist nur eine explizite Nutzeraktion und ersetzt keine
   Vollabfrage.
+- Die Datensatz-Detailseite ist eine eigene Route und laedt nur einen
+  konkreten Datensatz anhand von `type`, `id` oder `global_id`.
+- Beim Oeffnen der Detailseite werden keine Vollscans und keine grossen Listen
+  gestartet.
+- Vollstaendige Rohdaten werden nicht als Standard-UI angezeigt; pflegerelevante
+  technische Werte erscheinen als ruhige Detailinformationen.
+- ET4-Pages-Links werden weiterhin nur fuer verifizierte POI-Links mit
+  `global_id` gebaut.

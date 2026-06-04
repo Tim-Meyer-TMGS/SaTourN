@@ -173,5 +173,11 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
   eigenstaendige Datensaetze-Hauptseite mit Suche, Filtern, Schnellfiltern,
   schlanker Tabelle, Pagination und CSV-Export uebernommen. Die Detailseite
   bleibt separat.
+- Der vierte Mockup-Umbau ist umgesetzt:
+  `Detailansicht datensatz.png` und
+  `Datenqualitaetsmonitor_Datensatz_Detailseite.md` wurden in
+  `Statistik/record-detail.html` uebernommen. Die Seite laedt einzelne
+  Datensaetze gezielt, bewertet sie mit `quality.js` und zeigt keine
+  vollstaendige Rohdatenansicht.
 - Offene Punkte aus der Abschnittsarbeit stehen in
   `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`.

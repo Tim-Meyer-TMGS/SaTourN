@@ -1,6 +1,6 @@
 ---
 layout: default
-title: SaTourN Datenqualitaets-Monitor
+title: SaTourN Datenqualitäts-Monitor
 permalink: /Statistik/
 css: /Statistik/style.css
 js: /Statistik/main.js
@@ -9,11 +9,11 @@ module: true
 
 <div class="statistik light-shell" data-page="overview">
   <header class="app-header">
-    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitaets-Monitor">
+    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitäts-Monitor">
       <span class="brand-mark" aria-hidden="true"></span>
       <span>
         <strong>SaTourN</strong>
-        <small>Datenqualitaets-Monitor</small>
+        <small>Datenqualitäts-Monitor</small>
       </span>
     </a>
 
@@ -22,88 +22,88 @@ module: true
       <button id="work-context-summary" class="context-summary" type="button" aria-haspopup="dialog">
         Sachsen - Alle Orte - Alle Datentypen
       </button>
-      <button id="work-context-edit" class="context-edit" type="button">Aendern</button>
+      <button id="work-context-edit" class="context-edit" type="button">Ändern</button>
     </div>
 
     <div class="header-status">
-      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren">R</button>
+      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren"><span class="material-icons" aria-hidden="true">refresh</span></button>
       <span id="last-updated">Letzte Aktualisierung: noch nicht geladen</span>
     </div>
   </header>
 
   <div class="app-layout">
-    <nav class="app-sidebar" aria-label="Datenqualitaetsmonitor Navigation">
+    <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
       <a class="nav-link active" href="/Statistik/" aria-current="page">
-        <span aria-hidden="true">01</span>
-        Uebersicht
+        <span class="material-icons" aria-hidden="true">home</span>
+        Übersicht
       </a>
       <a class="nav-link" href="/Statistik/tasks.html">
-        <span aria-hidden="true">02</span>
+        <span class="material-icons" aria-hidden="true">assignment</span>
         Pflegeaufgaben
       </a>
       <a class="nav-link" href="/Statistik/records.html">
-        <span aria-hidden="true">03</span>
-        Datensaetze
+        <span class="material-icons" aria-hidden="true">storage</span>
+        Datensätze
       </a>
       <a class="nav-link" href="/Statistik/stats.html">
-        <span aria-hidden="true">04</span>
+        <span class="material-icons" aria-hidden="true">bar_chart</span>
         Statistik
       </a>
 
       <div class="sidebar-bottom">
         <button class="nav-utility" type="button" disabled>Hilfe</button>
-        <button class="nav-utility" type="button" disabled>Menue einklappen</button>
+        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
       </div>
     </nav>
 
     <main class="overview-main" aria-labelledby="overview-title">
       <section class="overview-hero">
         <h1 id="overview-title">Guten Morgen!</h1>
-        <p id="overview-subtitle">Hier ist die aktuelle Lage fuer Sachsen.</p>
+        <p id="overview-subtitle">Hier ist die aktuelle Lage für Sachsen.</p>
       </section>
 
       <section class="kpi-grid" aria-label="Kennzahlen">
         <article class="kpi-card">
-          <div class="card-label">Qualitaets-Score <span title="Bewertung auf Basis der geladenen Qualitaetsdaten">Info</span></div>
+          <div class="card-label">Qualitäts-Score <span class="material-icons info-icon" title="Bewertung auf Basis der geladenen Qualitätsdaten" aria-hidden="true">info</span></div>
           <div class="kpi-value"><span id="kpi-quality-score">-</span> <small>/ 100</small></div>
           <div class="score-track"><span id="kpi-quality-track"></span></div>
           <p id="kpi-quality-delta" class="kpi-delta" hidden></p>
-          <p>Gesamtbewertung der Datenqualitaet</p>
+          <p>Gesamtbewertung der Datenqualität</p>
         </article>
 
         <article class="kpi-card">
-          <div class="card-label">Gesamt-Datensaetze <span title="Aggregierte Statistik-Counts">Info</span></div>
+          <div class="card-label">Gesamt-Datensätze <span class="material-icons info-icon" title="Aggregierte Statistik-Counts" aria-hidden="true">info</span></div>
           <div id="kpi-total" class="kpi-value">-</div>
           <p id="kpi-total-delta" class="kpi-delta" hidden></p>
           <p>Aktueller Datenbestand</p>
         </article>
 
         <article class="kpi-card">
-          <div class="card-label">Gute Datensaetze <span title="Bewertete Datensaetze mit Status gut">Info</span></div>
+          <div class="card-label">Gute Datensätze <span class="material-icons info-icon" title="Bewertete Datensätze mit Status gut" aria-hidden="true">info</span></div>
           <div id="kpi-good" class="kpi-value">-</div>
           <strong id="kpi-good-percent">-</strong>
-          <p>Vollstaendig und aktuell</p>
+          <p>Vollständig und aktuell</p>
         </article>
 
         <article class="kpi-card">
-          <div class="card-label">Mit Pflegebedarf <span title="Bewertete Datensaetze mit Status pruefen">Info</span></div>
+          <div class="card-label">Mit Pflegebedarf <span class="material-icons info-icon" title="Bewertete Datensätze mit Status prüfen" aria-hidden="true">info</span></div>
           <div id="kpi-review" class="kpi-value">-</div>
           <strong id="kpi-review-percent">-</strong>
-          <p>Ergaenzungen empfohlen</p>
+          <p>Ergänzungen empfohlen</p>
         </article>
 
         <article class="kpi-card">
-          <div class="card-label">Kritische Datensaetze <span title="Bewertete Datensaetze mit Status kritisch">Info</span></div>
+          <div class="card-label">Kritische Datensätze <span class="material-icons info-icon" title="Bewertete Datensätze mit Status kritisch" aria-hidden="true">info</span></div>
           <div id="kpi-critical" class="kpi-value">-</div>
           <strong id="kpi-critical-percent">-</strong>
           <p>Dringender Handlungsbedarf</p>
         </article>
 
         <article class="kpi-card">
-          <div class="card-label">Open-Data-Quote <span title="Aggregierte Open-Data-Quote">Info</span></div>
+          <div class="card-label">Open-Data-Quote <span class="material-icons info-icon" title="Aggregierte Open-Data-Quote" aria-hidden="true">info</span></div>
           <div id="kpi-open-data" class="kpi-value">-</div>
           <strong id="kpi-open-data-detail">-</strong>
-          <p>Open-Data-faehige Datensaetze</p>
+          <p>Open-Data-fähige Datensätze</p>
         </article>
       </section>
 
@@ -117,19 +117,19 @@ module: true
           <div id="top-tasks-list" class="task-list" aria-live="polite">
             <div class="inline-loading">Pflegeaufgaben werden geladen ...</div>
           </div>
-          <a class="panel-link" href="/Statistik/tasks.html">Alle Pflegeaufgaben ansehen <span aria-hidden="true">&gt;</span></a>
+          <a class="panel-link" href="/Statistik/tasks.html">Alle Pflegeaufgaben ansehen <span class="material-icons" aria-hidden="true">arrow_forward</span></a>
         </article>
 
         <div class="side-panels">
           <article class="panel-card status-card">
             <header class="panel-head">
-              <h2>Qualitaets-Status-Verteilung</h2>
+              <h2>Qualitäts-Status-Verteilung</h2>
             </header>
             <div class="status-layout">
-              <div id="quality-donut" class="donut" aria-label="Qualitaetsstatus-Verteilung"></div>
+              <div id="quality-donut" class="donut" aria-label="Qualitätsstatus-Verteilung"></div>
               <div id="quality-legend" class="legend"></div>
             </div>
-            <p id="quality-data-note" class="data-note">Qualitaetsdaten werden geladen ...</p>
+            <p id="quality-data-note" class="data-note">Qualitätsdaten werden geladen ...</p>
           </article>
 
           <article class="panel-card open-data-card">
@@ -143,12 +143,12 @@ module: true
             </div>
             <div class="open-data-stats">
               <div>
-                <span>Open-Data-faehig</span>
+                <span>Open-Data-fähig</span>
                 <strong id="open-data-capable">-</strong>
                 <small id="open-data-capable-percent">-</small>
               </div>
               <div>
-                <span>Nicht Open-Data-faehig</span>
+                <span>Nicht Open-Data-fähig</span>
                 <strong id="open-data-missing">-</strong>
                 <small id="open-data-missing-percent">-</small>
               </div>
@@ -158,7 +158,7 @@ module: true
                 <small id="open-data-unknown-percent">-</small>
               </div>
             </div>
-            <a class="panel-link align-right" href="/Statistik/stats.html">Mehr zur Open-Data-Quote <span aria-hidden="true">&gt;</span></a>
+            <a class="panel-link align-right" href="/Statistik/stats.html">Mehr zur Open-Data-Quote <span class="material-icons" aria-hidden="true">arrow_forward</span></a>
           </article>
         </div>
       </section>
@@ -167,23 +167,23 @@ module: true
         <h2 id="quick-actions-title">Schnellzugriff</h2>
         <div class="quick-action-grid">
           <a class="quick-action" href="/Statistik/tasks.html">
-            <span class="quick-icon blue" aria-hidden="true">P</span>
+            <span class="quick-icon blue material-icons" aria-hidden="true">assignment</span>
             <span><strong>Pflegeaufgaben</strong><small>Offene Aufgaben ansehen</small></span>
           </a>
           <a class="quick-action" href="/Statistik/records.html">
-            <span class="quick-icon blue" aria-hidden="true">D</span>
-            <span><strong>Datensaetze pruefen</strong><small>Konkrete Datensaetze suchen</small></span>
+            <span class="quick-icon blue material-icons" aria-hidden="true">storage</span>
+            <span><strong>Datensätze prüfen</strong><small>Konkrete Datensätze suchen</small></span>
           </a>
           <a class="quick-action" href="/Statistik/stats.html">
-            <span class="quick-icon green" aria-hidden="true">S</span>
+            <span class="quick-icon green material-icons" aria-hidden="true">bar_chart</span>
             <span><strong>Statistik</strong><small>Zahlen und Entwicklungen</small></span>
           </a>
           <button id="quick-export" class="quick-action" type="button">
-            <span class="quick-icon purple" aria-hidden="true">CSV</span>
+            <span class="quick-icon purple material-icons" aria-hidden="true">file_download</span>
             <span><strong>Ergebnisse exportieren</strong><small>Als CSV herunterladen</small></span>
           </button>
           <button id="quick-ai" class="quick-action" type="button">
-            <span class="quick-icon amber" aria-hidden="true">AI</span>
+            <span class="quick-icon amber material-icons" aria-hidden="true">auto_awesome</span>
             <span><strong>Analyse starten</strong><small>KI-Analyse dieser Ansicht</small></span>
           </button>
         </div>
@@ -194,8 +194,8 @@ module: true
   <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
     <form method="dialog" id="work-context-form">
       <header>
-        <h2 id="context-dialog-title">Arbeitskontext aendern</h2>
-        <button class="icon-button" value="cancel" type="submit" aria-label="Schliessen">x</button>
+        <h2 id="context-dialog-title">Arbeitskontext ändern</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
       </header>
       <label>
         Gebiet
@@ -211,7 +211,7 @@ module: true
       </label>
       <footer>
         <button value="cancel" type="submit">Abbrechen</button>
-        <button class="primary" value="default" type="submit">Uebernehmen</button>
+        <button class="primary" value="default" type="submit">Übernehmen</button>
       </footer>
     </form>
   </dialog>
