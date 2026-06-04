@@ -744,3 +744,17 @@ Eine Abschnittsumsetzung ist erst fertig, wenn:
   Parameteruebergabe von Pflegeaufgaben vorbereiten.
 - Primaersystem-Erkennung mit echten Feldern validieren, insbesondere
   Outdooractive-Source-ID und Feratel-Hotel-Zuordnung.
+
+## Umbau Statistik: offene Folgepunkte nach Datensaetze-Hauptseite
+
+- Datensaetze-Hauptseite im Browser mit echten API-Daten gegen
+  `docs/Codex/Umbau_Statistik/Datensatz-Haupseite.png` pruefen.
+- Gezielte ID-Suche mit realen Beispielen testen, insbesondere numerische ID
+  und `global_id`.
+- Detailseite `record-detail.html` im naechsten separaten Abschnitt umsetzen.
+- Ruecksprung von Detailseite zur aktuellen Liste spaeter ohne grosse
+  Rohdaten-Speicherung vorbereiten.
+- Parameteruebergabe von Pflegeaufgaben zur Datensaetze-Hauptseite spaeter
+  verbinden, ohne automatische Vollscans auszulösen.
+- Optionales Spaltenmenue und Rasteransicht erst erweitern, wenn fachlich
+  benoetigt.

@@ -98,7 +98,34 @@ document.addEventListener('DOMContentLoaded', () => {
     taskRecordsTitle: document.getElementById('task-records-title'),
     taskRecordsNote: document.getElementById('task-records-note'),
     taskRecordsBody: document.getElementById('task-records-body'),
-    taskRecordsExport: document.getElementById('task-records-export')
+    taskRecordsExport: document.getElementById('task-records-export'),
+    recordSearchInput: document.getElementById('record-search-input'),
+    recordSearchClear: document.getElementById('record-search-clear'),
+    recordSearchButton: document.getElementById('record-search-button'),
+    recordTypeFilter: document.getElementById('record-type-filter'),
+    recordCategoryFilter: document.getElementById('record-category-filter'),
+    recordStatusFilter: document.getElementById('record-status-filter'),
+    recordIssueFilter: document.getElementById('record-issue-filter'),
+    recordResetFilters: document.getElementById('record-reset-filters'),
+    recordsMessage: document.getElementById('records-message'),
+    recordResultSummary: document.getElementById('record-result-summary'),
+    recordExport: document.getElementById('record-export'),
+    recordTableBody: document.getElementById('records-table-body'),
+    recordPageRange: document.getElementById('record-page-range'),
+    recordPageSize: document.getElementById('record-page-size'),
+    recordPrevPage: document.getElementById('record-prev-page'),
+    recordNextPage: document.getElementById('record-next-page'),
+    recordPageStatus: document.getElementById('record-page-status'),
+    recordDataNote: document.getElementById('record-data-note'),
+    quickCountCritical: document.getElementById('quick-count-critical'),
+    quickCountLicense: document.getElementById('quick-count-license'),
+    quickCountDescription: document.getElementById('quick-count-description'),
+    quickCountImage: document.getElementById('quick-count-image'),
+    quickCountOpenings: document.getElementById('quick-count-openings'),
+    legendGood: document.getElementById('legend-good'),
+    legendReview: document.getElementById('legend-review'),
+    legendCritical: document.getElementById('legend-critical'),
+    legendUnknown: document.getElementById('legend-unknown')
   };
 
   let state = {
@@ -121,12 +148,25 @@ document.addEventListener('DOMContentLoaded', () => {
     taskPage: 1,
     taskRowsPerPage: 7,
     taskRecordRows: [],
-    taskRecordMeta: null
+    taskRecordMeta: null,
+    recordItems: [],
+    recordRows: [],
+    filteredRecordRows: [],
+    recordPage: 1,
+    recordRowsPerPage: 25,
+    recordSearchTimer: null,
+    recordDataMeta: {
+      mode: 'sample',
+      collectedItems: 0,
+      estimatedTotalItems: 0,
+      truncated: false
+    }
   };
 
   initSharedShell();
   if (page === 'overview') initOverview();
   if (page === 'tasks') initTasks();
+  if (page === 'records') initRecords();
 
   function initSharedShell() {
     fillContextControls();
@@ -164,6 +204,52 @@ document.addEventListener('DOMContentLoaded', () => {
     els.taskNextPage?.addEventListener('click', () => changeTaskPage(1));
     els.taskRecordsExport?.addEventListener('click', exportTaskRecordsCsv);
     void loadTasksData();
+  }
+
+  function initRecords() {
+    fillRecordControls();
+    renderRecordsLoading();
+    els.refreshButton?.addEventListener('click', () => loadRecordsData());
+    els.recordSearchInput?.addEventListener('input', () => {
+      clearTimeout(state.recordSearchTimer);
+      state.recordSearchTimer = setTimeout(() => {
+        state.recordPage = 1;
+        applyRecordFilters();
+      }, 180);
+    });
+    els.recordSearchInput?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        void handleRecordSearchSubmit();
+      }
+    });
+    els.recordSearchButton?.addEventListener('click', () => {
+      void handleRecordSearchSubmit();
+    });
+    els.recordSearchClear?.addEventListener('click', () => {
+      if (els.recordSearchInput) els.recordSearchInput.value = '';
+      state.recordPage = 1;
+      applyRecordFilters();
+    });
+    [els.recordTypeFilter, els.recordCategoryFilter, els.recordStatusFilter, els.recordIssueFilter].forEach((node) => {
+      node?.addEventListener('change', () => {
+        state.recordPage = 1;
+        applyRecordFilters();
+      });
+    });
+    els.recordResetFilters?.addEventListener('click', resetRecordFilters);
+    els.recordPageSize?.addEventListener('change', () => {
+      state.recordRowsPerPage = Number(els.recordPageSize.value || 25);
+      state.recordPage = 1;
+      renderRecordTable();
+    });
+    els.recordPrevPage?.addEventListener('click', () => changeRecordPage(-1));
+    els.recordNextPage?.addEventListener('click', () => changeRecordPage(1));
+    els.recordExport?.addEventListener('click', exportRecordListCsv);
+    document.querySelectorAll('[data-record-quick]').forEach((button) => {
+      button.addEventListener('click', () => applyQuickRecordFilter(button.dataset.recordQuick || ''));
+    });
+    void loadRecordsData();
   }
 
   function loadWorkContext() {
@@ -239,6 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.contextDialog?.close?.();
     if (page === 'overview') void loadOverviewData();
     if (page === 'tasks') void loadTasksData();
+    if (page === 'records') void loadRecordsData();
   }
 
   function buildQuery({ area, city }) {
@@ -661,6 +748,386 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!els.taskMessage) return;
     els.taskMessage.textContent = message || '';
     els.taskMessage.hidden = !message;
+  }
+
+  async function loadRecordsData() {
+    const startedAt = new Date();
+    showRecordsMessage('');
+    renderRecordsLoading();
+
+    try {
+      const qualityItems = await loadQualitySampleRows();
+      const evaluated = evaluateAllItems(qualityItems);
+      state.recordItems = evaluated;
+      state.recordRows = evaluated.map(buildRecordViewModel);
+      state.recordDataMeta = { ...state.qualityDataMeta };
+      state.recordPage = 1;
+      fillRecordDynamicFilters();
+      applyRecordFilters();
+      if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
+    } catch (error) {
+      console.error('Datensaetze konnten nicht geladen werden.', error);
+      renderRecordsEmpty('Die Datensaetze konnten nicht geladen werden. Bitte versuche es spaeter erneut.');
+    }
+  }
+
+  function buildRecordViewModel(item) {
+    const missingCriteria = Array.isArray(item.missingCriteria) ? item.missingCriteria : [];
+    const primaryIssueId = getPrimaryIssueId(item);
+    const primaryCriterion = qualityCriteria.find((criterion) => criterion.id === primaryIssueId);
+    const id = item.id || extractId(item.raw || item);
+    const globalId = item.globalId || getFirst(item, ['global_id', 'globalId', 'raw.global_id', 'raw.globalId']);
+    return {
+      item,
+      id,
+      globalId,
+      title: item.title || 'Ohne Titel',
+      type: item.type || '',
+      thumbnailUrl: getRecordThumbnailUrl(item),
+      city: item.city || '',
+      region: item.region || '',
+      category: item.category || '',
+      qualityStatus: item.qualityStatus || 'nicht berechenbar',
+      qualityScore: Number.isFinite(item.qualityScore) ? item.qualityScore : null,
+      primaryIssueId,
+      primaryIssue: primaryCriterion?.label || '-',
+      recommendation: primaryCriterion?.recommendation || '',
+      missingCriteria,
+      updatedAt: item.updatedAt || '',
+      detailUrl: buildRecordDetailUrl({ id, globalId, type: item.type || '' }),
+      searchText: ''
+    };
+  }
+
+  function fillRecordControls() {
+    if (els.recordTypeFilter && els.recordTypeFilter.options.length <= 1) {
+      TYPES.forEach((type) => els.recordTypeFilter.append(new Option(`Typ: ${type}`, type)));
+    }
+    if (els.recordIssueFilter && els.recordIssueFilter.options.length <= 1) {
+      qualityCriteria
+        .filter((criterion) => isActiveCriterion(criterion.id))
+        .forEach((criterion) => els.recordIssueFilter.append(new Option(`Problem: ${criterion.label}`, criterion.id)));
+    }
+  }
+
+  function fillRecordDynamicFilters() {
+    if (!els.recordCategoryFilter) return;
+    const current = els.recordCategoryFilter.value;
+    const categories = Array.from(new Set(state.recordRows.map((row) => row.category).filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b, 'de'))
+      .slice(0, 80);
+    els.recordCategoryFilter.replaceChildren(new Option('Kategorie: Alle', ''));
+    categories.forEach((category) => els.recordCategoryFilter.append(new Option(`Kategorie: ${category}`, category)));
+    if (categories.includes(current)) els.recordCategoryFilter.value = current;
+  }
+
+  function applyRecordFilters() {
+    const query = (els.recordSearchInput?.value || '').trim();
+    const type = els.recordTypeFilter?.value || '';
+    const category = els.recordCategoryFilter?.value || '';
+    const status = els.recordStatusFilter?.value || '';
+    const issue = els.recordIssueFilter?.value || '';
+
+    state.filteredRecordRows = state.recordRows.filter((row) => {
+      if (query && !itemMatchesRecordSearch(row, query)) return false;
+      if (type && row.type !== type) return false;
+      if (category && row.category !== category) return false;
+      if (status && row.qualityStatus !== status) return false;
+      if (issue && !row.missingCriteria.includes(issue)) return false;
+      return true;
+    });
+
+    renderRecordQuickCounts();
+    renderRecordStatusLegend();
+    renderRecordTable();
+    renderRecordDataNote();
+    showRecordsMessage('');
+  }
+
+  async function handleRecordSearchSubmit() {
+    state.recordPage = 1;
+    applyRecordFilters();
+    const query = (els.recordSearchInput?.value || '').trim();
+    if (!query || state.filteredRecordRows.length || !looksLikeRecordId(query)) return;
+
+    if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen ...';
+    try {
+      const found = await searchSingleRecordById(query);
+      if (!found.length) {
+        showRecordsMessage('Fuer diese ID wurde kein Datensatz gefunden. Bitte pruefe die Eingabe oder suche nach dem Titel.');
+        return;
+      }
+      const evaluated = evaluateAllItems(found.map((raw) => normalizeItem(raw.raw || raw, raw.type)));
+      const merged = mergeRecordItems(state.recordItems, evaluated);
+      state.recordItems = merged;
+      state.recordRows = merged.map(buildRecordViewModel);
+      fillRecordDynamicFilters();
+      applyRecordFilters();
+    } catch (error) {
+      console.error('Gezielte Datensatzsuche fehlgeschlagen.', error);
+      showRecordsMessage('Fuer diese Suche wurde kein Datensatz gefunden.');
+    } finally {
+      if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen';
+    }
+  }
+
+  async function searchSingleRecordById(query) {
+    const targetTypes = state.context.type ? [state.context.type] : TYPES;
+    const contextQuery = buildQuery(state.context);
+    const idQuery = cleanQueryValue(query);
+    const queryVariants = [
+      idQuery,
+      `id:"${idQuery}"`,
+      `global_id:"${idQuery}"`
+    ];
+    const results = [];
+
+    for (const type of targetTypes) {
+      for (const variant of queryVariants) {
+        const combinedQuery = [contextQuery, variant].filter(Boolean).join(' AND ');
+        const payload = await fetchJson(buildUrl(type, combinedQuery, { limit: 10 }));
+        results.push(...extractItems(payload).map((raw) => normalizeItem(raw, type)));
+        if (results.length) break;
+      }
+      if (results.length) break;
+    }
+    return results;
+  }
+
+  function mergeRecordItems(existing, incoming) {
+    const map = new Map();
+    [...existing, ...incoming].forEach((item) => {
+      const key = item.globalId || item.id || `${item.type}:${item.title}`;
+      if (key) map.set(key, item);
+    });
+    return Array.from(map.values());
+  }
+
+  function renderRecordTable() {
+    const rows = state.filteredRecordRows;
+    const totalPages = Math.max(1, Math.ceil(rows.length / state.recordRowsPerPage));
+    state.recordPage = Math.max(1, Math.min(state.recordPage, totalPages));
+    const start = (state.recordPage - 1) * state.recordRowsPerPage;
+    const visibleRows = rows.slice(start, start + state.recordRowsPerPage);
+
+    if (!visibleRows.length) {
+      const emptyText = state.recordRows.length
+        ? 'Fuer diese Filter wurden keine Datensaetze gefunden.'
+        : 'Noch keine Datensaetze geladen. Waehle einen Arbeitskontext oder starte eine Suche.';
+      els.recordTableBody.innerHTML = `<tr><td colspan="9" class="table-empty">${emptyText}</td></tr>`;
+    } else {
+      els.recordTableBody.innerHTML = visibleRows.map((row) => `
+        <tr>
+          <td>${renderRecordTitleCell(row)}</td>
+          <td><span class="type-chip ${row.type.toLowerCase()}">${escapeHtml(row.type || '-')}</span></td>
+          <td>${escapeHtml(row.city || '-')}<small>${escapeHtml(row.region || '')}</small></td>
+          <td>${escapeHtml(row.category || '-')}</td>
+          <td>${renderRecordStatus(row.qualityStatus)}</td>
+          <td>${escapeHtml(row.primaryIssue)}</td>
+          <td>${renderRecordScore(row.qualityScore)}</td>
+          <td>${escapeHtml(formatRecordDate(row.updatedAt))}</td>
+          <td>
+            <span class="row-actions">
+              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Datensatz ansehen">A</a>
+              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail oeffnen">&gt;</a>
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    const end = Math.min(rows.length, start + visibleRows.length);
+    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} Stichprobentreffern` : `${formatNumber(rows.length)} Datensaetzen`;
+    if (els.recordPageRange) {
+      els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 Datensaetze';
+    }
+    if (els.recordResultSummary) {
+      els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} Stichprobentreffer` : `${formatNumber(rows.length)} Datensaetze`}`;
+    }
+    if (els.recordPageStatus) els.recordPageStatus.textContent = `${state.recordPage} / ${totalPages}`;
+    if (els.recordPrevPage) els.recordPrevPage.disabled = state.recordPage <= 1;
+    if (els.recordNextPage) els.recordNextPage.disabled = state.recordPage >= totalPages;
+    if (els.recordExport) els.recordExport.disabled = !rows.length;
+  }
+
+  function renderRecordTitleCell(row) {
+    const image = row.thumbnailUrl
+      ? `<img src="${escapeHtml(row.thumbnailUrl)}" alt="">`
+      : '<span class="record-thumb-placeholder" aria-hidden="true"></span>';
+    const ids = [row.id ? `ID: ${row.id}` : '', row.globalId || ''].filter(Boolean).join(' - ');
+    return `
+      <span class="record-title-cell">
+        <span class="record-thumb">${image}</span>
+        <span><strong>${escapeHtml(row.title)}</strong><small>${escapeHtml(ids)}</small></span>
+      </span>
+    `;
+  }
+
+  function renderRecordStatus(status) {
+    const cls = status === 'gut' ? 'good' : status === 'kritisch' ? 'critical' : status === 'pruefen' ? 'review' : 'muted';
+    const label = status === 'nicht berechenbar' ? 'nicht bewertbar' : status;
+    return `<span class="record-status"><i class="status-dot ${cls}"></i>${escapeHtml(label || '-')}</span>`;
+  }
+
+  function renderRecordScore(score) {
+    if (!Number.isFinite(score)) return '-';
+    const cls = score >= 80 ? 'good' : score >= 60 ? 'review' : 'critical';
+    return `
+      <span class="record-score">
+        <strong>${formatNumber(score)} <small>/ 100</small></strong>
+        <span class="score-mini-track"><i class="${cls}" style="width:${Math.max(0, Math.min(100, score))}%"></i></span>
+      </span>
+    `;
+  }
+
+  function renderRecordsLoading() {
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Datensaetze werden geladen ...</td></tr>';
+    if (els.recordResultSummary) els.recordResultSummary.textContent = 'Datensaetze werden geladen ...';
+    if (els.recordPageRange) els.recordPageRange.textContent = '-';
+    if (els.recordExport) els.recordExport.disabled = true;
+  }
+
+  function renderRecordsEmpty(message) {
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Die Datensaetze konnten nicht geladen werden.</td></tr>';
+    if (els.recordResultSummary) els.recordResultSummary.textContent = '0 Datensaetze';
+    if (els.recordPageRange) els.recordPageRange.textContent = '0 Datensaetze';
+    if (els.recordExport) els.recordExport.disabled = true;
+    showRecordsMessage(message);
+  }
+
+  function renderRecordQuickCounts() {
+    const rows = state.recordRows;
+    setText(els.quickCountCritical, rows.filter((row) => row.qualityStatus === 'kritisch').length);
+    setText(els.quickCountLicense, rows.filter((row) => row.missingCriteria.includes('license_missing')).length);
+    setText(els.quickCountDescription, rows.filter((row) => row.missingCriteria.includes('description_missing')).length);
+    setText(els.quickCountImage, rows.filter((row) => row.missingCriteria.includes('image_missing')).length);
+    setText(els.quickCountOpenings, rows.filter((row) => row.missingCriteria.includes('opening_hours_missing')).length);
+  }
+
+  function renderRecordStatusLegend() {
+    const rows = state.filteredRecordRows;
+    setText(els.legendGood, rows.filter((row) => row.qualityStatus === 'gut').length);
+    setText(els.legendReview, rows.filter((row) => row.qualityStatus === 'pruefen').length);
+    setText(els.legendCritical, rows.filter((row) => row.qualityStatus === 'kritisch').length);
+    setText(els.legendUnknown, rows.filter((row) => row.qualityStatus === 'nicht berechenbar').length);
+  }
+
+  function renderRecordDataNote() {
+    if (!els.recordDataNote) return;
+    els.recordDataNote.textContent = state.recordDataMeta.truncated
+      ? 'Diese Liste basiert auf einer begrenzten Stichprobe. Die Qualitaetsbewertung basiert auf den aktivierten Kriterien und verfuegbaren Daten.'
+      : 'Die Qualitaetsbewertung basiert auf den aktivierten Kriterien und verfuegbaren Daten.';
+  }
+
+  function resetRecordFilters() {
+    if (els.recordSearchInput) els.recordSearchInput.value = '';
+    if (els.recordTypeFilter) els.recordTypeFilter.value = '';
+    if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
+    if (els.recordStatusFilter) els.recordStatusFilter.value = '';
+    if (els.recordIssueFilter) els.recordIssueFilter.value = '';
+    state.recordPage = 1;
+    applyRecordFilters();
+  }
+
+  function applyQuickRecordFilter(value) {
+    resetRecordFilters();
+    if (value === 'critical' && els.recordStatusFilter) els.recordStatusFilter.value = 'kritisch';
+    if (value !== 'critical' && els.recordIssueFilter) els.recordIssueFilter.value = value;
+    state.recordPage = 1;
+    applyRecordFilters();
+  }
+
+  function changeRecordPage(delta) {
+    state.recordPage += delta;
+    renderRecordTable();
+  }
+
+  function itemMatchesRecordSearch(row, query) {
+    const needle = query.toLowerCase();
+    return getRecordSearchText(row).includes(needle);
+  }
+
+  function getRecordSearchText(row) {
+    if (!row.searchText) {
+      const issueLabels = row.missingCriteria
+        .map((id) => qualityCriteria.find((criterion) => criterion.id === id)?.label || id)
+        .join(' ');
+      row.searchText = [
+        row.title,
+        row.id,
+        row.globalId,
+        row.city,
+        row.region,
+        row.category,
+        row.type,
+        row.primaryIssue,
+        issueLabels
+      ].join(' ').toLowerCase();
+    }
+    return row.searchText;
+  }
+
+  function looksLikeRecordId(query) {
+    const value = String(query || '').trim();
+    return /^\d{5,}$/.test(value) || /^[a-z]_\d{4,}$/i.test(value) || /^[a-z]+[-_:]\w{4,}$/i.test(value);
+  }
+
+  function getPrimaryIssueId(item) {
+    const missing = Array.isArray(item.missingCriteria) ? item.missingCriteria : [];
+    return [...missing]
+      .sort((a, b) => {
+        const ca = qualityCriteria.find((criterion) => criterion.id === a);
+        const cb = qualityCriteria.find((criterion) => criterion.id === b);
+        return priorityRank(cb?.priority) - priorityRank(ca?.priority);
+      })[0] || '';
+  }
+
+  function getRecordThumbnailUrl(item) {
+    const media = qualityHelpers.getMediaObjects(item.raw || item)
+      .find((entry) => qualityHelpers.isCheckableMediaObject(entry));
+    return getFirst(media, ['url', 'contentUrl', 'previewUrl', 'thumbnailUrl']) || '';
+  }
+
+  function buildRecordDetailUrl(row) {
+    const params = new URLSearchParams();
+    if (row.type) params.set('type', row.type);
+    if (row.globalId) params.set('global_id', row.globalId);
+    else if (row.id) params.set('id', row.id);
+    return `/Statistik/record-detail.html?${params.toString()}`;
+  }
+
+  function exportRecordListCsv() {
+    if (!state.filteredRecordRows.length) return;
+    const rows = [
+      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'Qualitaetsstatus', 'Qualitaets-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
+      ...state.filteredRecordRows.map((row) => [
+        row.title,
+        row.type,
+        row.city,
+        row.region,
+        row.category,
+        row.qualityStatus,
+        row.qualityScore ?? '',
+        row.primaryIssue,
+        row.missingCriteria.join(', '),
+        row.id,
+        row.globalId,
+        row.updatedAt,
+        state.recordDataMeta.truncated ? 'Stichprobe' : 'geladene Daten'
+      ])
+    ];
+    const text = rows.map((row) => row.map(csvValue).join(';')).join('\n');
+    downloadText('satourn_datensaetze_liste.csv', text, 'text/csv;charset=utf-8');
+  }
+
+  function showRecordsMessage(message) {
+    if (!els.recordsMessage) return;
+    els.recordsMessage.textContent = message || '';
+    els.recordsMessage.hidden = !message;
+  }
+
+  function setText(node, value) {
+    if (node) node.textContent = formatNumber(value);
   }
 
   function normalizeItem(raw, fallbackType) {
@@ -1134,6 +1601,17 @@ document.addEventListener('DOMContentLoaded', () => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
+    });
+  }
+
+  function formatRecordDate(value) {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return String(value).slice(0, 10) || '-';
+    return date.toLocaleDateString('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
     });
   }
 

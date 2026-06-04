@@ -1198,3 +1198,59 @@ Pruefung:
   `Statistik/scripts.js` ohne Treffer.
 - `/api/quality/scan` in `Statistik/scripts.js` nur fuer `loadTaskRecords()`.
 - `git diff --check` ohne Fehler.
+
+## Umsetzung: Umbau Statistik - Datensaetze-Hauptseite
+
+Status: umgesetzt am 2026-06-04, technische Abschlusspruefung lokal erfolgt.
+
+Gepruefte Quellen:
+
+- `docs/Codex/Umbau_Statistik/Datensatz-Haupseite.png`
+- `docs/Codex/Umbau_Statistik/Datenqualitaetsmonitor_Datensaetze_Hauptseiteg.md`
+
+Abgrenzung:
+
+- Die Datensatz-Detailseite wurde bewusst nicht umgesetzt. Sie bleibt der
+  naechste separate Abschnitt.
+
+Umgesetzte Anpassungen:
+
+- `Statistik/records.html` wurde von einem Platzhalter zu einer eigenstaendigen
+  Datensaetze-Hauptseite nach Mockup umgebaut.
+- Die Seite nutzt die gemeinsame helle App-Shell mit aktivem Hauptnavpunkt
+  `Datensaetze`.
+- Ein gemeinsames Suchfeld deckt Titel, ID, `global_id`, Ort, Gebiet,
+  Kategorie, Typ und Problem/Kriterium ab.
+- Suche waehrend der Eingabe filtert lokal mit Debounce und loest keine
+  API-Anfrage pro Tastendruck aus.
+- Explizite Suche per Enter oder Button startet nur dann eine gezielte
+  API-Suche, wenn lokal keine Treffer vorhanden sind und der Suchbegriff wie
+  eine ID oder `global_id` aussieht.
+- Erste Filterebene umfasst Typ, Kategorie, Qualitaetsstatus und
+  Problem/Kriterium; Schnellfilter sind lokal auf der geladenen Datenbasis.
+- Tabelle bleibt schlank: Titel mit kleinem Bild/Platzhalter und IDs unter dem
+  Titel, Typ, Ort/Gebiet, Kategorie, Qualitaetsstatus, Hauptproblem,
+  Qualitaets-Score, Aktualisierung und Aktionen.
+- ViewModels trennen Tabellenanzeige von Rohdaten.
+- Detail-Links zeigen vorbereitet auf `record-detail.html` mit Typ und ID bzw.
+  `global_id`, ohne die Detailseite jetzt zu bauen.
+- Pagination mit 25/50/100 pro Seite ist umgesetzt; `Alle anzeigen` gibt es
+  nicht.
+- CSV-Export bezieht sich auf die aktuell gefilterte Liste und enthaelt
+  zusaetzliche technische Felder fuer Weiterverarbeitung.
+
+Bewusste Einschraenkungen:
+
+- Die Liste basiert beim Laden auf begrenzten Samples pro Typ und wird
+  entsprechend gekennzeichnet.
+- Eine vollstaendige serverseitige Fehlerliste wird auf dieser Hauptseite nicht
+  automatisch geladen.
+- Grid-Ansicht und Spaltensteuerung sind nur als ruhige, deaktivierte
+  Oberflaechenanker vorbereitet.
+- Browser-Sichtpruefung gegen das Mockup konnte in dieser Umgebung weiterhin
+  nicht automatisiert werden.
+
+Pruefung:
+
+- `git diff --check` ohne Fehler.
+- Keine Detailseiten-Umsetzung in diesem Schritt.

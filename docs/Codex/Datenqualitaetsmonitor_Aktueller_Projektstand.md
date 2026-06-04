@@ -167,5 +167,11 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
   `Datenqualitaetsmonitor_Pflegeaufgaben_Seite.md` wurden in eine echte
   Pflegeaufgaben-Seite mit Sample-Aggregationen, Detailkarte,
   Scan-on-demand-Datensatzliste und kontextuellem CSV-Export uebernommen.
+- Der dritte Mockup-Umbau ist umgesetzt:
+  `Datensatz-Haupseite.png` und
+  `Datenqualitaetsmonitor_Datensaetze_Hauptseiteg.md` wurden in die
+  eigenstaendige Datensaetze-Hauptseite mit Suche, Filtern, Schnellfiltern,
+  schlanker Tabelle, Pagination und CSV-Export uebernommen. Die Detailseite
+  bleibt separat.
 - Offene Punkte aus der Abschnittsarbeit stehen in
   `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`.

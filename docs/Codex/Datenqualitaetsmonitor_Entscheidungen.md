@@ -148,3 +148,11 @@ Stand: 2026-06-04
   konkreten Datentyps gestartet.
 - Primaersystem-Hinweise werden nur angezeigt, wenn sie aus echten Itemdaten
   oder einer belastbaren Typregel eine konkrete Aktion ermoeglichen.
+- Die Datensaetze-Hauptseite ist eine eigenstaendige Listen- und Suchseite.
+  Sie oeffnet keine Detailseite automatisch.
+- Die Datensatzsuche nutzt ein gemeinsames Suchfeld. Eine separate sichtbare
+  ID-Suche wird nicht gebaut.
+- API-Anfragen waehrend der Eingabe bleiben ausgeschlossen; lokale Filterung
+  mit Debounce ist fuehrend.
+- Gezielte API-ID-Suche ist nur eine explizite Nutzeraktion und ersetzt keine
+  Vollabfrage.
