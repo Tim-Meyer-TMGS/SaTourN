@@ -36,6 +36,8 @@ const MAX_SCAN_PAGES = 20;
 const DEFAULT_SCAN_TIMEOUT_MS = 8000;
 const ET4_PAGES_BASE_URL = 'https://pages.et4.de/de/statistik_sachsen/wlan/detail';
 const VERIFIED_ET4_PAGE_TYPES = new Set(['POI']);
+const QUALITY_COUNT_CACHE_TTL_MS = 5 * 60 * 1000;
+const qualityCountCache = new Map();
 
 function clampInteger(value, fallback, min, max) {
   const numberValue = Number.parseInt(Array.isArray(value) ? value[0] : value, 10);
@@ -191,6 +193,129 @@ function isCriterionRelevantForType(criterion, type) {
 }
 
 export function registerQualityRoute(app) {
+  app.get('/api/quality/count', async (req, res) => {
+    const {
+      criterionId,
+      type,
+      query = '',
+      timeoutMs
+    } = req.query;
+
+    if (!API_KEY) {
+      return res.status(500).json({ error: 'Server configuration missing: LICENSEKEY' });
+    }
+
+    const criterion = findCriterion(String(criterionId || '').trim());
+    if (!criterion) {
+      return res.status(400).json({ error: 'Unknown or missing criterionId' });
+    }
+
+    const normalizedType = String(type || '').trim();
+    if (!normalizedType) {
+      return res.status(400).json({ error: 'Missing required type. Count one Destination.One type per request.' });
+    }
+
+    if (!isCriterionRelevantForType(criterion, normalizedType)) {
+      return res.json({
+        count: 0,
+        criterion: reduceCriterionForResponse(criterion, normalizedType),
+        diagnostic: {
+          method: 'unsupported',
+          sourceQuery: normalizeQueryParam(query),
+          criterionQuery: null,
+          verified: false,
+          reason: 'criterion_not_relevant_for_type'
+        }
+      });
+    }
+
+    if (criterion.autoCheck === false) {
+      return res.status(400).json({ error: 'Criterion is not automatically checkable' });
+    }
+
+    const qParam = normalizeQueryParam(query);
+    const scanConfig = getQualityScanConfig(criterion, normalizedType);
+    if (scanConfig.method !== 'api_pushdown' || !scanConfig.verified || !scanConfig.missingQuery) {
+      return res.status(400).json({
+        error: 'Criterion/type is not verified for API pushdown counts',
+        criterion: reduceCriterionForResponse(criterion, normalizedType),
+        diagnostic: {
+          method: scanConfig.method,
+          sourceQuery: qParam,
+          criterionQuery: scanConfig.missingQuery,
+          positiveQuery: scanConfig.positiveQuery,
+          verified: scanConfig.verified,
+          verifiedForType: scanConfig.verifiedForType,
+          warnings: scanConfig.warnings,
+          unsupportedQueries: scanConfig.unsupportedQueries
+        }
+      });
+    }
+
+    const effectiveQuery = combineQueries(qParam, scanConfig.missingQuery);
+    const cacheKey = JSON.stringify({ criterionId: criterion.id, type: normalizedType, query: effectiveQuery });
+    const cached = qualityCountCache.get(cacheKey);
+    if (cached && Date.now() - cached.createdAt < QUALITY_COUNT_CACHE_TTL_MS) {
+      return res.json({ ...cached.payload, cached: true });
+    }
+
+    const controller = new AbortController();
+    const countTimeoutMs = clampInteger(timeoutMs, DEFAULT_SCAN_TIMEOUT_MS, 1000, REQUEST_TIMEOUT_MS);
+    const timeout = setTimeout(() => controller.abort(), countTimeoutMs);
+
+    try {
+      const targetUrl = buildSearchUrl({
+        baseUrl: BASE_URL,
+        experience: EXPERIENCE,
+        template: TEMPLATE,
+        type: normalizedType,
+        qParam: effectiveQuery,
+        limit: 1,
+        offset: 0,
+        apiKey: API_KEY
+      });
+      const payload = await fetchJsonPage(targetUrl, controller.signal);
+      const count = extractTotal(payload);
+      const responsePayload = {
+        count: Number.isFinite(count) ? count : 0,
+        criterion: reduceCriterionForResponse(criterion, normalizedType),
+        diagnostic: {
+          method: scanConfig.method,
+          query: effectiveQuery,
+          sourceQuery: qParam,
+          criterionQuery: scanConfig.missingQuery,
+          positiveQuery: scanConfig.positiveQuery,
+          verified: scanConfig.verified,
+          verifiedForType: scanConfig.verifiedForType,
+          warnings: scanConfig.warnings,
+          unsupportedQueries: scanConfig.unsupportedQueries
+        },
+        cached: false
+      };
+      qualityCountCache.set(cacheKey, { createdAt: Date.now(), payload: responsePayload });
+      return res.json(responsePayload);
+    } catch (error) {
+      const isAbort = error && (error.name === 'AbortError' || /aborted|timeout/i.test(String(error)));
+      return res.status(isAbort ? 504 : 500).json({
+        error: isAbort ? 'Quality count timeout' : 'Quality count failed',
+        details: isAbort ? undefined : String(error.message || error).slice(0, 300),
+        diagnostic: {
+          method: scanConfig.method,
+          query: effectiveQuery,
+          sourceQuery: qParam,
+          criterionQuery: scanConfig.missingQuery,
+          positiveQuery: scanConfig.positiveQuery,
+          verified: scanConfig.verified,
+          verifiedForType: scanConfig.verifiedForType,
+          warnings: scanConfig.warnings,
+          unsupportedQueries: scanConfig.unsupportedQueries
+        }
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
+
   app.get('/api/quality/scan', async (req, res) => {
     const {
       criterionId,

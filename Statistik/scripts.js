@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
   const WORK_CONTEXT_KEY = 'satournWorkContext';
+  const RECORD_VIEW_STATE_KEY = 'satournRecordViewState';
+  const RECORD_LIST_STATE_KEY = 'satournRecordListState';
   const KPI_HISTORY_KEY = 'satournOverviewKpis';
   const QUALITY_ITEMS_PER_QUERY = Math.max(0, Math.min(50, Number(window.SATOURN_STATISTIK_QUALITY_ITEMS_PER_QUERY || 25)));
   const QUALITY_ITEM_MAX_ITEMS = Math.max(0, Math.min(5000, Number(window.SATOURN_STATISTIK_QUALITY_ITEM_MAX_ITEMS || 2000)));
@@ -128,6 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
     legendUnknown: document.getElementById('legend-unknown'),
     detailEt4Link: document.getElementById('detail-et4-link'),
     detailCopyLink: document.getElementById('detail-copy-link'),
+    detailCopyId: document.getElementById('detail-copy-id'),
+    detailCopyGlobalId: document.getElementById('detail-copy-global-id'),
+    detailPrevRecord: document.getElementById('detail-prev-record'),
+    detailNextRecord: document.getElementById('detail-next-record'),
+    detailBackLink: document.getElementById('detail-back-link'),
+    detailBreadcrumb: document.getElementById('detail-breadcrumb'),
+    detailContextNote: document.getElementById('detail-context-note'),
     recordDetailMessage: document.getElementById('record-detail-message'),
     detailHeadCard: document.getElementById('detail-head-card'),
     detailContent: document.getElementById('detail-content'),
@@ -139,9 +148,29 @@ document.addEventListener('DOMContentLoaded', () => {
     detailMediaNote: document.getElementById('detail-media-note'),
     detailOpenings: document.getElementById('detail-openings'),
     detailTransport: document.getElementById('detail-transport'),
+    detailPriceCard: document.getElementById('detail-price-card'),
+    detailPrice: document.getElementById('detail-price'),
     detailInfo: document.getElementById('detail-info'),
     detailCriteriaCard: document.getElementById('detail-criteria-card'),
-    detailCriteriaList: document.getElementById('detail-criteria-list')
+    detailCriteriaList: document.getElementById('detail-criteria-list'),
+    statsAreaFilter: document.getElementById('stats-area-filter'),
+    statsCityFilter: document.getElementById('stats-city-filter'),
+    statsTypeFilter: document.getElementById('stats-type-filter'),
+    statsResetFilters: document.getElementById('stats-reset-filters'),
+    statsRefresh: document.getElementById('stats-refresh'),
+    statsExport: document.getElementById('stats-export'),
+    statsMessage: document.getElementById('stats-message'),
+    statsTotalRecords: document.getElementById('stats-total-records'),
+    statsOpenDataRecords: document.getElementById('stats-open-data-records'),
+    statsOpenDataShare: document.getElementById('stats-open-data-share'),
+    statsOpenDataQuote: document.getElementById('stats-open-data-quote'),
+    statsNonOpenDataRecords: document.getElementById('stats-non-open-data-records'),
+    statsNonOpenDataShare: document.getElementById('stats-non-open-data-share'),
+    statsTypeDonut: document.getElementById('stats-type-donut'),
+    statsTypeDonutTotal: document.getElementById('stats-type-donut-total'),
+    statsTypeDistributionBody: document.getElementById('stats-type-distribution-body'),
+    statsQuoteBars: document.getElementById('stats-quote-bars'),
+    statsTypeTableBody: document.getElementById('stats-type-table-body')
   };
 
   let state = {
@@ -177,15 +206,26 @@ document.addEventListener('DOMContentLoaded', () => {
       estimatedTotalItems: 0,
       truncated: false
     },
+    statsRows: [],
+    statsSummary: null,
+    pendingRecordView: null,
     recordDetailItem: null,
     recordDetailViewModel: null
   };
+
+  if (page === 'records') {
+    state.pendingRecordView = loadRecordViewStateFromRoute();
+    if (state.pendingRecordView?.context) {
+      saveWorkContext(state.pendingRecordView.context);
+    }
+  }
 
   initSharedShell();
   if (page === 'overview') initOverview();
   if (page === 'tasks') initTasks();
   if (page === 'records') initRecords();
   if (page === 'record-detail') initRecordDetail();
+  if (page === 'stats') initStats();
 
   function initSharedShell() {
     fillContextControls();
@@ -274,7 +314,29 @@ document.addEventListener('DOMContentLoaded', () => {
   function initRecordDetail() {
     els.refreshButton?.addEventListener('click', () => loadRecordDetail());
     els.detailCopyLink?.addEventListener('click', () => copyText(location.href));
+    els.detailCopyId?.addEventListener('click', () => copyText(state.recordDetailViewModel?.identity.id || ''));
+    els.detailCopyGlobalId?.addEventListener('click', () => copyText(state.recordDetailViewModel?.identity.globalId || ''));
     void loadRecordDetail();
+  }
+
+  function initStats() {
+    fillStatsFilters();
+    renderStatsLoading();
+    els.refreshButton?.addEventListener('click', applyStatsFiltersAndLoad);
+    els.statsRefresh?.addEventListener('click', applyStatsFiltersAndLoad);
+    els.statsExport?.addEventListener('click', exportStatsCsv);
+    els.statsResetFilters?.addEventListener('click', resetStatsFilters);
+    [els.statsAreaFilter, els.statsTypeFilter].forEach((node) => {
+      node?.addEventListener('change', () => {
+        applyStatsFiltersAndLoad();
+      });
+    });
+    els.statsCityFilter?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      applyStatsFiltersAndLoad();
+    });
+    void loadStatsData();
   }
 
   function loadWorkContext() {
@@ -298,6 +360,59 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     localStorage.setItem(WORK_CONTEXT_KEY, JSON.stringify(state.context));
     renderWorkContext();
+  }
+
+  function saveRecordViewState(viewState) {
+    try {
+      sessionStorage.setItem(RECORD_VIEW_STATE_KEY, JSON.stringify({
+        criterionId: viewState.criterionId || '',
+        type: TYPES.includes(viewState.type) ? viewState.type : '',
+        status: viewState.status || '',
+        query: viewState.query || '',
+        label: viewState.label || '',
+        context: {
+          area: viewState.context?.area || '',
+          city: viewState.context?.city || '',
+          type: TYPES.includes(viewState.context?.type) ? viewState.context.type : ''
+        },
+        createdAt: Date.now()
+      }));
+    } catch {
+      // sessionStorage may be unavailable in strict privacy contexts.
+    }
+  }
+
+  function loadRecordViewStateFromRoute() {
+    const params = new URLSearchParams(location.search);
+    const hasRouteState = ['criterionId', 'type', 'status', 'q'].some((key) => params.has(key));
+    if (!hasRouteState) return null;
+
+    let cached = {};
+    try {
+      cached = JSON.parse(sessionStorage.getItem(RECORD_VIEW_STATE_KEY) || '{}');
+    } catch {
+      cached = {};
+    }
+
+    return {
+      criterionId: params.get('criterionId') || cached.criterionId || '',
+      type: params.get('type') || cached.type || '',
+      status: params.get('status') || cached.status || '',
+      query: params.get('q') || cached.query || '',
+      label: cached.label || '',
+      context: cached.context || null
+    };
+  }
+
+  function clearRecordViewState() {
+    try {
+      sessionStorage.removeItem(RECORD_VIEW_STATE_KEY);
+    } catch {
+      // no-op
+    }
+    if (location.search) {
+      history.replaceState(null, '', 'records.html');
+    }
   }
 
   function fillContextControls() {
@@ -352,6 +467,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (page === 'tasks') void loadTasksData();
     if (page === 'records') void loadRecordsData();
     if (page === 'record-detail') void loadRecordDetail();
+    if (page === 'stats') {
+      fillStatsFilters();
+      void loadStatsData();
+    }
   }
 
   function buildQuery({ area, city }) {
@@ -409,6 +528,220 @@ document.addEventListener('DOMContentLoaded', () => {
         openDataCount: Number(extractTotal(openDataPayload) || 0)
       };
     }));
+  }
+
+  function fillStatsFilters() {
+    if (els.statsAreaFilter && !els.statsAreaFilter.options.length) {
+      AREAS.forEach(([label, value]) => els.statsAreaFilter.append(new Option(label, value)));
+    }
+    if (els.statsTypeFilter && !els.statsTypeFilter.options.length) {
+      els.statsTypeFilter.append(new Option('Alle Datentypen', ''));
+      TYPES.forEach((type) => els.statsTypeFilter.append(new Option(type, type)));
+    }
+    if (els.statsAreaFilter) els.statsAreaFilter.value = state.context.area || '';
+    if (els.statsCityFilter) els.statsCityFilter.value = state.context.city || '';
+    if (els.statsTypeFilter) els.statsTypeFilter.value = state.context.type || '';
+  }
+
+  async function loadStatsData() {
+    const startedAt = new Date();
+    showStatsMessage('');
+    renderStatsLoading();
+    setStatsLoadingState(true);
+
+    try {
+      const rows = await loadStatisticRows();
+      state.statsRows = rows.map((row) => ({
+        ...row,
+        nonOpenDataCount: Math.max(0, row.statistikCount - row.openDataCount),
+        openDataQuote: percent(row.openDataCount, row.statistikCount),
+        inventoryShare: 0
+      }));
+      state.statsSummary = computeStatsSummary(state.statsRows);
+      state.statsRows.forEach((row) => {
+        row.inventoryShare = percent(row.statistikCount, state.statsSummary.totalRecords);
+      });
+      renderStats();
+      if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
+    } catch (error) {
+      console.error('Open-Data-Statistik konnte nicht vollständig geladen werden.', error);
+      renderStatsError();
+    } finally {
+      setStatsLoadingState(false);
+    }
+  }
+
+  function computeStatsSummary(rows) {
+    const totalRecords = rows.reduce((sum, row) => sum + row.statistikCount, 0);
+    const openDataRecords = rows.reduce((sum, row) => sum + row.openDataCount, 0);
+    const nonOpenDataRecords = Math.max(0, totalRecords - openDataRecords);
+    return {
+      totalRecords,
+      openDataRecords,
+      nonOpenDataRecords,
+      openDataQuote: percent(openDataRecords, totalRecords)
+    };
+  }
+
+  function renderStats() {
+    const summary = state.statsSummary || computeStatsSummary([]);
+    if (!summary.totalRecords) {
+      renderStatsEmpty('Für diesen Arbeitskontext wurden keine Datensätze gefunden.');
+      return;
+    }
+
+    if (els.statsTotalRecords) els.statsTotalRecords.textContent = formatNumber(summary.totalRecords);
+    if (els.statsOpenDataRecords) els.statsOpenDataRecords.textContent = formatNumber(summary.openDataRecords);
+    if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = `${formatPercent(summary.openDataQuote)} aller Datensätze`;
+    if (els.statsOpenDataQuote) els.statsOpenDataQuote.textContent = formatPercent(summary.openDataQuote);
+    if (els.statsNonOpenDataRecords) els.statsNonOpenDataRecords.textContent = formatNumber(summary.nonOpenDataRecords);
+    if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} aller Datensätze`;
+    if (els.statsExport) els.statsExport.disabled = !state.statsRows.length;
+
+    renderStatsTypeDistribution(summary);
+    renderStatsQuoteBars();
+    renderStatsTypeTable(summary);
+  }
+
+  function renderStatsTypeDistribution(summary) {
+    const palette = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9'];
+    let cursor = 0;
+    const segments = state.statsRows.map((row, index) => {
+      const start = cursor;
+      const end = cursor + row.inventoryShare;
+      cursor = end;
+      return `${palette[index % palette.length]} ${start}% ${end}%`;
+    }).join(', ');
+
+    if (els.statsTypeDonut) {
+      els.statsTypeDonut.style.background = summary.totalRecords
+        ? `conic-gradient(${segments})`
+        : 'conic-gradient(#e2e8f0 0 100%)';
+    }
+    if (els.statsTypeDonutTotal) els.statsTypeDonutTotal.textContent = formatNumber(summary.totalRecords);
+    if (els.statsTypeDistributionBody) {
+      els.statsTypeDistributionBody.innerHTML = state.statsRows.map((row, index) => `
+        <tr>
+          <td><span class="legend-dot" style="background:${palette[index % palette.length]}"></span>${escapeHtml(row.type)}</td>
+          <td>${formatNumber(row.statistikCount)}</td>
+          <td>${formatPercent(row.inventoryShare)}</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  function renderStatsQuoteBars() {
+    if (!els.statsQuoteBars) return;
+    els.statsQuoteBars.innerHTML = state.statsRows.map((row) => `
+      <div class="stats-quote-row">
+        <span>${escapeHtml(row.type)}</span>
+        <div class="stats-quote-track"><i style="width:${Math.max(0, Math.min(100, row.openDataQuote))}%"></i></div>
+        <strong>${formatPercent(row.openDataQuote)}</strong>
+      </div>
+    `).join('');
+  }
+
+  function renderStatsTypeTable(summary) {
+    if (!els.statsTypeTableBody) return;
+    const rows = state.statsRows.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.type)}</td>
+        <td>${formatNumber(row.statistikCount)}</td>
+        <td>${formatNumber(row.openDataCount)}</td>
+        <td><span class="stats-table-quote"><strong>${formatPercent(row.openDataQuote)}</strong><span><i style="width:${Math.max(0, Math.min(100, row.openDataQuote))}%"></i></span></span></td>
+        <td>${formatNumber(row.nonOpenDataCount)}</td>
+      </tr>
+    `).join('');
+    els.statsTypeTableBody.innerHTML = `${rows}
+      <tr class="stats-total-row">
+        <td>Gesamt</td>
+        <td>${formatNumber(summary.totalRecords)}</td>
+        <td>${formatNumber(summary.openDataRecords)}</td>
+        <td><span class="stats-table-quote"><strong>${formatPercent(summary.openDataQuote)}</strong><span><i style="width:${Math.max(0, Math.min(100, summary.openDataQuote))}%"></i></span></span></td>
+        <td>${formatNumber(summary.nonOpenDataRecords)}</td>
+      </tr>`;
+  }
+
+  function renderStatsLoading() {
+    ['stats-total-records', 'stats-open-data-records', 'stats-open-data-quote', 'stats-non-open-data-records'].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node) node.textContent = '...';
+    });
+    if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = '...';
+    if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = '...';
+    if (els.statsTypeDonutTotal) els.statsTypeDonutTotal.textContent = '...';
+    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Statistik wird geladen ...</td></tr>';
+    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="inline-loading">Statistik wird geladen ...</div>';
+    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Statistik wird geladen ...</td></tr>';
+    if (els.statsExport) els.statsExport.disabled = true;
+  }
+
+  function renderStatsEmpty(message) {
+    showStatsMessage(message);
+    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Keine Daten gefunden.</td></tr>';
+    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Keine Daten gefunden.</div>';
+    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Keine Daten gefunden.</td></tr>';
+    if (els.statsExport) els.statsExport.disabled = true;
+  }
+
+  function renderStatsError() {
+    showStatsMessage('Die Statistik konnte nicht vollständig geladen werden. Bitte erneut aktualisieren.');
+    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
+    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Die Statistik konnte nicht vollständig geladen werden.</div>';
+    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
+    if (els.statsExport) els.statsExport.disabled = true;
+  }
+
+  function showStatsMessage(message) {
+    if (!els.statsMessage) return;
+    els.statsMessage.textContent = message || '';
+    els.statsMessage.hidden = !message;
+  }
+
+  function setStatsLoadingState(isLoading) {
+    [els.statsRefresh, els.refreshButton].forEach((button) => {
+      if (!button) return;
+      button.disabled = isLoading;
+    });
+    if (els.statsRefresh) {
+      els.statsRefresh.innerHTML = isLoading
+        ? '<span class="material-icons" aria-hidden="true">hourglass_top</span>Aktualisieren ...'
+        : '<span class="material-icons" aria-hidden="true">refresh</span>Aktualisieren';
+    }
+  }
+
+  function resetStatsFilters() {
+    saveWorkContext({ area: '', city: '', type: '' });
+    fillStatsFilters();
+    void loadStatsData();
+  }
+
+  function applyStatsFiltersAndLoad() {
+    saveWorkContext({
+      area: els.statsAreaFilter?.value || '',
+      city: els.statsCityFilter?.value.trim() || '',
+      type: els.statsTypeFilter?.value || ''
+    });
+    fillStatsFilters();
+    void loadStatsData();
+  }
+
+  function exportStatsCsv() {
+    if (!state.statsRows.length || !state.statsSummary) return;
+    const summary = state.statsSummary;
+    const rows = [
+      ['Datentyp', 'Gesamtzahl', 'Open-Data-fähig', 'Open-Data-Quote', 'Nicht Open-Data-fähig'],
+      ...state.statsRows.map((row) => [
+        row.type,
+        row.statistikCount,
+        row.openDataCount,
+        formatPercent(row.openDataQuote),
+        row.nonOpenDataCount
+      ]),
+      ['Gesamt', summary.totalRecords, summary.openDataRecords, formatPercent(summary.openDataQuote), summary.nonOpenDataRecords]
+    ];
+    const text = rows.map((row) => row.map(csvValue).join(';')).join('\n');
+    downloadText('satourn_open_data_statistik.csv', text, 'text/csv;charset=utf-8');
   }
 
   async function loadQualitySampleRows() {
@@ -649,10 +982,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('task-open-records')?.addEventListener('click', () => {
       const type = typeSelect?.value || selectedType;
       if (type) state.selectedTaskType = type;
-      void loadTaskRecords();
+      openTaskRecordsOnRecordsPage(task, state.selectedTaskType || type);
     });
 
     renderPrimarySystemsForTask(task);
+  }
+
+  function openTaskRecordsOnRecordsPage(task, type) {
+    if (!task || !type) {
+      showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
+      return;
+    }
+
+    saveRecordViewState({
+      criterionId: task.criterionId,
+      type,
+      label: task.label,
+      context: state.context
+    });
+
+    const params = new URLSearchParams();
+    params.set('criterionId', task.criterionId);
+    params.set('type', type);
+    params.set('from', 'tasks');
+    location.href = `records.html?${params.toString()}`;
   }
 
   async function loadTaskRecords() {
@@ -782,19 +1135,45 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRecordsLoading();
 
     try {
-      const qualityItems = await loadQualitySampleRows();
-      const evaluated = evaluateAllItems(qualityItems);
+      const usesCriterionView = state.pendingRecordView?.criterionId && state.pendingRecordView?.type;
+      const evaluated = usesCriterionView
+        ? await loadRecordRowsForView(state.pendingRecordView)
+        : evaluateAllItems(await loadQualitySampleRows());
       state.recordItems = evaluated;
       state.recordRows = evaluated.map(buildRecordViewModel);
-      state.recordDataMeta = { ...state.qualityDataMeta };
+      if (!usesCriterionView) state.recordDataMeta = { ...state.qualityDataMeta };
       state.recordPage = 1;
       fillRecordDynamicFilters();
+      applyPendingRecordView();
       applyRecordFilters();
+      renderPendingRecordViewMessage();
       if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
     } catch (error) {
       console.error('Datensätze konnten nicht geladen werden.', error);
       renderRecordsEmpty('Die Datensätze konnten nicht geladen werden. Bitte versuche es später erneut.');
     }
+  }
+
+  async function loadRecordRowsForView(view) {
+    const params = new URLSearchParams();
+    params.set('criterionId', view.criterionId);
+    params.set('type', view.type);
+    params.set('limit', '100');
+    params.set('scanPageSize', '50');
+    params.set('maxPages', '6');
+    const query = buildQuery(state.context);
+    if (query) params.set('query', query);
+
+    const payload = await fetchJson(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
+    const rows = extractItems(payload).map((item) => normalizeItem(item, view.type));
+    const pageInfo = payload?.page || {};
+    state.recordDataMeta = {
+      mode: 'criterion',
+      collectedItems: rows.length,
+      estimatedTotalItems: Number(extractTotal(payload) || rows.length),
+      truncated: !pageInfo.complete
+    };
+    return evaluateAllItems(rows);
   }
 
   function buildRecordViewModel(item) {
@@ -845,6 +1224,25 @@ document.addEventListener('DOMContentLoaded', () => {
     els.recordCategoryFilter.replaceChildren(new Option('Kategorie: Alle', ''));
     categories.forEach((category) => els.recordCategoryFilter.append(new Option(`Kategorie: ${category}`, category)));
     if (categories.includes(current)) els.recordCategoryFilter.value = current;
+  }
+
+  function applyPendingRecordView() {
+    const view = state.pendingRecordView;
+    if (!view) return;
+    if (els.recordSearchInput && view.query) els.recordSearchInput.value = view.query;
+    if (els.recordTypeFilter && TYPES.includes(view.type)) els.recordTypeFilter.value = view.type;
+    if (els.recordStatusFilter && view.status) els.recordStatusFilter.value = view.status;
+    if (els.recordIssueFilter && view.criterionId) els.recordIssueFilter.value = view.criterionId;
+    state.recordPage = 1;
+  }
+
+  function renderPendingRecordViewMessage() {
+    const view = state.pendingRecordView;
+    if (!view) return;
+    const criterion = qualityCriteria.find((entry) => entry.id === view.criterionId);
+    const label = view.label || criterion?.label || view.criterionId;
+    const typeText = view.type ? ` (${view.type})` : '';
+    showRecordsMessage(label ? `Gefiltert nach Pflegeaufgabe: ${label}${typeText}.` : 'Gefiltert nach Pflegeaufgabe.');
   }
 
   function applyRecordFilters() {
@@ -974,6 +1372,37 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.recordPrevPage) els.recordPrevPage.disabled = state.recordPage <= 1;
     if (els.recordNextPage) els.recordNextPage.disabled = state.recordPage >= totalPages;
     if (els.recordExport) els.recordExport.disabled = !rows.length;
+    saveRecordListState(rows);
+  }
+
+  function saveRecordListState(rows) {
+    try {
+      sessionStorage.setItem(RECORD_LIST_STATE_KEY, JSON.stringify({
+        backUrl: `records.html${location.search || ''}`,
+        createdAt: Date.now(),
+        rows: rows.slice(0, 250).map((row) => ({
+          id: row.id || '',
+          globalId: row.globalId || '',
+          type: row.type || '',
+          title: row.title || '',
+          detailUrl: row.detailUrl || buildRecordDetailUrl(row)
+        }))
+      }));
+    } catch {
+      // sessionStorage may be unavailable or full.
+    }
+  }
+
+  function loadRecordListState() {
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(RECORD_LIST_STATE_KEY) || '{}');
+      return {
+        backUrl: typeof parsed.backUrl === 'string' ? parsed.backUrl : 'records.html',
+        rows: Array.isArray(parsed.rows) ? parsed.rows : []
+      };
+    } catch {
+      return { backUrl: 'records.html', rows: [] };
+    }
   }
 
   function renderRecordTitleCell(row) {
@@ -1040,18 +1469,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderRecordDataNote() {
     if (!els.recordDataNote) return;
+    if (state.recordDataMeta.mode === 'criterion') {
+      els.recordDataNote.textContent = state.recordDataMeta.truncated
+        ? 'Diese Liste basiert auf einem begrenzten Qualitäts-Scan für die ausgewählte Pflegeaufgabe.'
+        : 'Diese Liste basiert auf einem Qualitäts-Scan für die ausgewählte Pflegeaufgabe.';
+      return;
+    }
     els.recordDataNote.textContent = state.recordDataMeta.truncated
       ? 'Diese Liste basiert auf einer begrenzten Stichprobe. Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.'
       : 'Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.';
   }
 
   function resetRecordFilters() {
+    const reloadFullList = state.recordDataMeta.mode === 'criterion';
     if (els.recordSearchInput) els.recordSearchInput.value = '';
     if (els.recordTypeFilter) els.recordTypeFilter.value = '';
     if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
     if (els.recordStatusFilter) els.recordStatusFilter.value = '';
     if (els.recordIssueFilter) els.recordIssueFilter.value = '';
+    state.pendingRecordView = null;
+    clearRecordViewState();
     state.recordPage = 1;
+    if (reloadFullList) {
+      void loadRecordsData();
+      return;
+    }
     applyRecordFilters();
   }
 
@@ -1119,7 +1561,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (row.type) params.set('type', row.type);
     if (row.globalId) params.set('global_id', row.globalId);
     else if (row.id) params.set('id', row.id);
-    return `/Statistik/record-detail.html?${params.toString()}`;
+    return `record-detail.html?${params.toString()}`;
   }
 
   function exportRecordListCsv() {
@@ -1165,7 +1607,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const globalId = params.get('global_id') || params.get('globalId') || '';
 
     if (!id && !globalId) {
-      renderDetailEmpty('Noch kein Datensatz ausgewaehlt. Suche in der Datensatzliste nach Titel, ID oder Ort und oeffne einen Eintrag.');
+      renderDetailEmpty('Noch kein Datensatz ausgewählt. Suche in der Datensatzliste nach Titel, ID oder Ort und öffne einen Eintrag.');
       return;
     }
 
@@ -1217,8 +1659,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const images = getCheckableImages(item);
     const missingCopyright = qualityHelpers.findMissingCopyrightMedia(raw);
     const et4Url = buildVerifiedEt4Url(item);
+    const addresses = getAddressSummary(raw);
+    const externalIds = getExternalSystemIds(raw);
+    const primarySystem = getPrimarySystem(item);
+    const context = getRecordDetailContext();
 
     return {
+      context,
       identity: {
         title: item.title || 'Ohne Titel',
         type: item.type || '',
@@ -1252,7 +1699,10 @@ document.addEventListener('DOMContentLoaded', () => {
         teaser: getTextByRel(raw, 'teaser'),
         openings: getOpeningHoursSummary(item),
         directions: getTextByRel(raw, 'directions') || (qualityHelpers.hasPublicTransportFeature(raw) ? 'ÖPNV-Information vorhanden.' : 'Keine ÖPNV-Information vorhanden.'),
-        price: getTextByRel(raw, 'PRICE_INFO')
+        price: getTextByRel(raw, 'PRICE_INFO'),
+        priceReduced: getTextByRel(raw, 'PRICE_REDUCEDINFO'),
+        seoTitle: getTextByRel(raw, 'WEB_SEO_TITEL'),
+        seoDescription: getTextByRel(raw, 'WEB_SEO_BESCHREIBUNG')
       },
       media: {
         images,
@@ -1263,17 +1713,95 @@ document.addEventListener('DOMContentLoaded', () => {
         license: qualityHelpers.getAttributeValue(raw, 'license') || '',
         licenseUrl: qualityHelpers.getAttributeValue(raw, 'licenseurl') || '',
         source: getFirst(raw, ['source', 'provider', 'channel']) || 'Destination.One',
+        sourceUrl: getFirst(raw, ['source.url', 'raw.source.url']) || '',
         web: getFirst(raw, ['web', 'url']) || '',
         email: getFirst(raw, ['email']) || '',
         phone: getFirst(raw, ['phone']) || '',
-        outdooractiveId: qualityHelpers.getAttributeValue(raw, 'SYSTEMID_outdooractive') || '',
-        googlePlacesId: qualityHelpers.getAttributeValue(raw, 'SYSTEMID_GOOGLEPLACES') || '',
+        street: getFirst(raw, ['street', 'address.street']) || '',
+        zip: getFirst(raw, ['zip', 'address.zip']) || '',
+        coordinates: getCoordinates(raw),
+        addresses,
+        externalIds,
+        primarySystem,
         et4Url
-      }
+      },
+      rawExcerpt: getRawExcerpt(raw)
     };
   }
 
+  function getRecordDetailContext() {
+    let recordView = {};
+    try {
+      recordView = JSON.parse(sessionStorage.getItem(RECORD_VIEW_STATE_KEY) || '{}');
+    } catch {
+      recordView = {};
+    }
+    const criterion = qualityCriteria.find((entry) => entry.id === recordView.criterionId);
+    return {
+      source: recordView.criterionId ? 'task' : 'records',
+      label: recordView.label || criterion?.label || '',
+      criterionId: recordView.criterionId || '',
+      type: recordView.type || ''
+    };
+  }
+
+  function getExternalSystemIds(raw) {
+    return [
+      ['Outdooractive-ID', qualityHelpers.getAttributeValue(raw, 'SYSTEMID_outdooractive')],
+      ['Google-Places-ID', qualityHelpers.getAttributeValue(raw, 'SYSTEMID_GOOGLEPLACES')],
+      ['source_id', getFirst(raw, ['source_id', 'sourceId'])]
+    ].filter(([, value]) => textValue(value));
+  }
+
+  function getAddressSummary(raw) {
+    const addresses = Array.isArray(raw.addresses) ? raw.addresses : [];
+    return ['author', 'organisation', 'copyright', 'contact_person']
+      .map((rel) => {
+        const entry = addresses.find((address) => address?.rel === rel);
+        if (!entry) return null;
+        const contact = [
+          textValue(entry.name),
+          textValue(entry.street),
+          [textValue(entry.zip), textValue(entry.city)].filter(Boolean).join(' '),
+          textValue(entry.web),
+          textValue(entry.email),
+          textValue(entry.phone)
+        ].filter(Boolean).join(' | ');
+        return contact ? [addressRelLabel(rel), contact] : null;
+      })
+      .filter(Boolean);
+  }
+
+  function addressRelLabel(rel) {
+    return {
+      author: 'Autor',
+      organisation: 'Organisation',
+      copyright: 'Copyright',
+      contact_person: 'Kontaktperson'
+    }[rel] || rel;
+  }
+
+  function getCoordinates(raw) {
+    const lat = getFirst(raw, ['geo.main.latitude', 'latitude']);
+    const lon = getFirst(raw, ['geo.main.longitude', 'longitude']);
+    return lat && lon ? `${lat}, ${lon}` : '';
+  }
+
+  function getRawExcerpt(raw) {
+    return [
+      ['created', getFirst(raw, ['created'])],
+      ['changed', getFirst(raw, ['changed'])],
+      ['channel', getFirst(raw, ['channel'])],
+      ['rating eT4', getFirst(raw, ['ratings.0.value'])],
+      ['SEO-Titel', getTextByRel(raw, 'WEB_SEO_TITEL')],
+      ['SEO-Beschreibung', getTextByRel(raw, 'WEB_SEO_BESCHREIBUNG')]
+    ].filter(([, value]) => textValue(value));
+  }
+
   function renderRecordDetail(model) {
+    renderDetailContext(model);
+    renderDetailNavigation(model);
+
     els.detailHeadCard.innerHTML = `
       <div class="detail-head-left">
         <h1 id="record-detail-title">${escapeHtml(model.identity.title)} <span class="type-chip ${model.identity.type.toLowerCase()}">${escapeHtml(model.identity.type || '-')}</span></h1>
@@ -1312,6 +1840,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function renderDetailContext(model) {
+    if (!els.detailBreadcrumb) return;
+    if (model.context.source === 'task' && model.context.label) {
+      els.detailBreadcrumb.innerHTML = `
+        <a href="tasks.html">Pflegeaufgaben</a>
+        <span class="material-icons" aria-hidden="true">chevron_right</span>
+        <a href="records.html">${escapeHtml(model.context.label)}</a>
+        <span class="material-icons" aria-hidden="true">chevron_right</span>
+        <span>Datensatz-Detail</span>
+      `;
+      if (els.detailContextNote) {
+        els.detailContextNote.textContent = `Aus Pflegeaufgabe: ${model.context.label}`;
+        els.detailContextNote.hidden = false;
+      }
+      return;
+    }
+    els.detailBreadcrumb.innerHTML = `
+      <a href="records.html">Datensätze</a>
+      <span class="material-icons" aria-hidden="true">chevron_right</span>
+      <span>Datensatz-Detail</span>
+    `;
+    if (els.detailContextNote) els.detailContextNote.hidden = true;
+  }
+
+  function renderDetailNavigation(model) {
+    const listState = loadRecordListState();
+    const currentKey = model.identity.globalId || model.identity.id;
+    const currentIndex = listState.rows.findIndex((row) => (
+      (model.identity.globalId && row.globalId === model.identity.globalId) ||
+      (model.identity.id && row.id === model.identity.id)
+    ));
+    if (els.detailBackLink) els.detailBackLink.href = listState.backUrl || 'records.html';
+
+    const previous = currentIndex > 0 ? listState.rows[currentIndex - 1] : null;
+    const next = currentIndex >= 0 && currentIndex < listState.rows.length - 1 ? listState.rows[currentIndex + 1] : null;
+    wireDetailNavButton(els.detailPrevRecord, previous, currentKey);
+    wireDetailNavButton(els.detailNextRecord, next, currentKey);
+  }
+
+  function wireDetailNavButton(button, target, currentKey) {
+    if (!button) return;
+    button.disabled = !target || !(target.globalId || target.id) || (target.globalId || target.id) === currentKey;
+    button.onclick = null;
+    if (!button.disabled) {
+      button.onclick = () => {
+        location.href = target.detailUrl || buildRecordDetailUrl(target);
+      };
+    }
+  }
+
   function renderDetailIssues(model) {
     if (!model.issues.length) {
       els.detailIssuesList.innerHTML = '<p class="empty-note">Keine priorisierten Baustellen gefunden.</p>';
@@ -1340,7 +1918,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderDetailTextCards(model) {
     els.detailDescription.innerHTML = `<p>${escapeHtml(model.texts.description || 'Keine Beschreibung vorhanden.')}</p>${model.texts.teaser ? `<p class="data-note">${escapeHtml(model.texts.teaser)}</p>` : ''}`;
     els.detailOpenings.innerHTML = `<p>${escapeHtml(model.texts.openings)}</p>`;
-    els.detailTransport.innerHTML = `<p>${escapeHtml(model.texts.directions)}</p>${model.texts.price ? `<p class="data-note">${escapeHtml(model.texts.price)}</p>` : ''}`;
+    els.detailTransport.innerHTML = `<p>${escapeHtml(model.texts.directions)}</p>`;
+    if (els.detailPriceCard && els.detailPrice) {
+      const prices = [model.texts.price, model.texts.priceReduced].filter(Boolean);
+      els.detailPriceCard.hidden = !prices.length;
+      els.detailPrice.innerHTML = prices.map((price) => `<p>${escapeHtml(price)}</p>`).join('');
+    }
   }
 
   function renderDetailMedia(model) {
@@ -1350,9 +1933,17 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     els.detailMedia.innerHTML = model.media.images.slice(0, 5).map((image) => `
-      <figure>
+      <figure class="detail-media-item">
         <img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.alt || image.value || '')}" loading="lazy">
-        <figcaption>${escapeHtml(image.value || image.description || 'Bild')}</figcaption>
+        <figcaption>
+          <strong>${escapeHtml(image.value || 'Bild')}</strong>
+          <span>${escapeHtml(image.copyrightText || 'Urheber fehlt')}</span>
+          <small>Lizenz: ${escapeHtml(image.license || 'nicht angegeben')}</small>
+          <small>Alt-Text: ${escapeHtml(image.alt || 'fehlt')}</small>
+          <small>Beschreibung: ${escapeHtml(image.description || 'fehlt')}</small>
+          <small>Maße: ${escapeHtml(formatImageSize(image))}</small>
+          <small>rel: ${escapeHtml(image.rel || '-')}</small>
+        </figcaption>
       </figure>
     `).join('');
     els.detailMediaNote.textContent = `${formatNumber(model.media.images.length)} Bilder vorhanden. ${formatNumber(model.media.missingCopyrightCount)} ohne Urheberangabe. ${formatNumber(model.media.missingAltCount)} ohne Alt-Text.`;
@@ -1362,23 +1953,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = [
       ['ID', escapeHtml(model.identity.id || '-')],
       ['global_id', escapeHtml(model.identity.globalId || '-')],
+      ['Pflegesystem', escapeHtml(model.details.primarySystem.name)],
       ['Quelle', escapeHtml(model.details.source || '-')],
       ['ET4 pages', model.details.et4Url ? `<a href="${escapeHtml(model.details.et4Url)}" target="_blank" rel="noopener">Öffnen auf et4 pages</a>` : 'Nicht verfügbar'],
       ['Web', model.details.web ? `<a href="${escapeHtml(model.details.web)}" target="_blank" rel="noopener">Datensatz öffnen</a>` : 'Nicht angegeben'],
+      ['E-Mail', escapeHtml(model.details.email || 'Nicht angegeben')],
+      ['Telefon', escapeHtml(model.details.phone || 'Nicht angegeben')],
+      ['Adresse', escapeHtml([model.details.street, model.details.zip, model.identity.city].filter(Boolean).join(', ') || 'Nicht angegeben')],
+      ['Koordinaten', escapeHtml(model.details.coordinates || 'Nicht angegeben')],
       ['Lizenz', escapeHtml(model.details.license || 'Lizenz fehlt')],
-      ['Outdooractive-ID', escapeHtml(model.details.outdooractiveId || 'Nicht vorhanden')],
-      ['Google-Places-ID', escapeHtml(model.details.googlePlacesId || 'Nicht vorhanden')]
+      ['Lizenz-URL', model.details.licenseUrl ? `<a href="${escapeHtml(model.details.licenseUrl)}" target="_blank" rel="noopener">Lizenz öffnen</a>` : 'Nicht angegeben'],
+      ...model.details.externalIds.map(([label, value]) => [label, `${escapeHtml(value)} <button class="plain-button detail-copy-inline" type="button" data-copy-detail="${escapeHtml(value)}">kopieren</button>`]),
+      ...model.details.addresses.map(([label, value]) => [label, escapeHtml(value)]),
+      ...model.rawExcerpt.map(([label, value]) => [label, escapeHtml(value)])
     ];
     els.detailInfo.innerHTML = renderKvRows(rows, true);
+    els.detailInfo.querySelectorAll('[data-copy-detail]').forEach((button) => {
+      button.addEventListener('click', () => copyText(button.dataset.copyDetail || ''));
+    });
   }
 
   function renderDetailCriteria(model) {
     els.detailCriteriaList.innerHTML = model.quality.criteria.map((criterion) => `
-      <span class="criteria-chip ${criterion.status.replaceAll(' ', '-')}">
+      <span class="criteria-chip ${criterionStatusClass(criterion.status)}">
         <strong>${escapeHtml(criterion.label)}</strong>
         <small>${escapeHtml(criterion.status)}</small>
       </span>
     `).join('');
+  }
+
+  function criterionStatusClass(status) {
+    return {
+      'erfüllt': 'erfuellt',
+      fehlt: 'fehlt',
+      'nicht bewertbar': 'nicht-bewertbar',
+      'nicht relevant': 'nicht-bewertbar'
+    }[status] || 'nicht-bewertbar';
   }
 
   function renderDetailLoading() {
@@ -1426,9 +2036,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getTextByRel(raw, rel) {
     const values = qualityHelpers.getTextsByRel(raw, rel)
+      .sort((a, b) => textTypeRank(a?.type) - textTypeRank(b?.type))
       .map((entry) => htmlToPlainText(textValue(entry.value || entry.text || entry.content || entry)))
       .filter(Boolean);
     return values[0] || '';
+  }
+
+  function textTypeRank(type) {
+    const normalized = String(type || '').toLowerCase();
+    if (normalized === 'text/html') return 0;
+    if (normalized === 'text/plain') return 1;
+    return 2;
   }
 
   function htmlToPlainText(value) {
@@ -1458,9 +2076,18 @@ document.addEventListener('DOMContentLoaded', () => {
         alt: textValue(media.alt),
         value: textValue(media.value || media.title),
         description: textValue(media.description),
-        copyrightText: textValue(media.copyrightText)
+        copyrightText: textValue(media.copyrightText),
+        copyrightEmail: textValue(media.copyrightEmail),
+        copyrightWeb: textValue(media.copyrightWeb),
+        license: textValue(media.license),
+        width: textValue(media.width),
+        height: textValue(media.height)
       }))
       .filter((media) => media.url);
+  }
+
+  function formatImageSize(image) {
+    return image.width && image.height ? `${image.width} x ${image.height}px` : 'nicht angegeben';
   }
 
   function getOpeningHoursSummary(item) {
@@ -1469,8 +2096,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const openingText = getTextByRel(raw, 'openings');
     if (openingText) return openingText;
     const intervals = raw.timeIntervals || raw.raw?.timeIntervals || [];
-    if (Array.isArray(intervals) && intervals.length) return 'Öffnungszeiten vorhanden.';
+    if (Array.isArray(intervals) && intervals.length) return formatTimeIntervals(intervals);
     return 'Keine Öffnungszeiten angegeben.';
+  }
+
+  function formatTimeIntervals(intervals) {
+    const rows = intervals
+      .map((interval) => {
+        const days = formatWeekdays(interval.weekdays);
+        const start = formatIntervalTime(interval.start);
+        const end = formatIntervalTime(interval.end);
+        if (!days && !start && !end) return '';
+        return `${days || 'Zeitraum'}: ${[start, end].filter(Boolean).join(' bis ') || 'Zeit vorhanden'}`;
+      })
+      .filter(Boolean)
+      .slice(0, 7);
+    return rows.length ? rows.join('\n') : 'Öffnungszeiten vorhanden.';
+  }
+
+  function formatWeekdays(days) {
+    const map = {
+      Monday: 'Montag',
+      Tuesday: 'Dienstag',
+      Wednesday: 'Mittwoch',
+      Thursday: 'Donnerstag',
+      Friday: 'Freitag',
+      Saturday: 'Samstag',
+      Sunday: 'Sonntag'
+    };
+    return Array.isArray(days) ? days.map((day) => map[day] || day).join(', ') : '';
+  }
+
+  function formatIntervalTime(value) {
+    const match = String(value || '').match(/T(\d{2}):(\d{2})/);
+    return match ? `${match[1]}:${match[2]}` : '';
   }
 
   function buildVerifiedEt4Url(item) {
@@ -1599,7 +2258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.topTasksList.replaceChildren(...issues.map((issue) => {
       const link = document.createElement('a');
       link.className = 'task-row';
-      link.href = '/Statistik/tasks.html';
+      link.href = 'tasks.html';
       const statusClass = issue.priority === 'hoch' ? 'critical' : 'review';
       link.innerHTML = `
         <span class="task-icon ${statusClass}" aria-hidden="true">${taskIcon(issue.criterionId)}</span>
@@ -1814,15 +2473,16 @@ document.addEventListener('DOMContentLoaded', () => {
     els.primarySystemList.innerHTML = systems.map((system) => `
       <div class="primary-system-row">
         <span class="primary-system-logo">${escapeHtml(system.short)}</span>
-        <span><strong>${escapeHtml(system.name)}</strong><small>${escapeHtml(system.note)}</small></span>
-        <button class="plain-button" type="button" data-system-action="${escapeHtml(system.action)}">${escapeHtml(system.actionLabel)}</button>
+        <span><strong>${escapeHtml(system.name)} (${formatNumber(system.count)})</strong><small>${escapeHtml(system.note)}</small></span>
+        <button class="plain-button" type="button" data-system-action="${escapeHtml(system.action)}" data-system-id="${escapeHtml(system.id)}">${escapeHtml(system.actionLabel)}</button>
       </div>
     `).join('');
     els.primarySystemList.querySelectorAll('[data-system-action]').forEach((button) => {
       button.addEventListener('click', () => {
-        if (button.dataset.systemAction === 'export') exportTaskRecordsCsv();
+        const systemRows = rows.filter((row) => getPrimarySystem(row).id === button.dataset.systemId);
+        if (button.dataset.systemAction === 'export') exportTaskRecordsCsv(systemRows);
         if (button.dataset.systemAction === 'copy-source-id') {
-          const firstSourceId = rows.map(getSourceId).find(Boolean);
+          const firstSourceId = systemRows.map(getSourceId).find(Boolean);
           if (firstSourceId) copyText(firstSourceId);
         }
       });
@@ -1830,29 +2490,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function collectPrimarySystems(rows) {
-    const systems = [];
-    const hasOutdooractive = rows.some((item) => isTourType(item.type) && getSourceId(item));
-    const hasHotel = rows.some((item) => normalizeTypeName(item.type) === 'hotel');
-
-    if (hasOutdooractive) {
-      systems.push({
-        short: 'OA',
-        name: 'outdooractive',
-        note: 'Tour-Datensätze mit vorhandener Source-ID. Kein Link, solange die URL-Struktur nicht verifiziert ist.',
-        action: 'copy-source-id',
-        actionLabel: 'ID kopieren'
-      });
-    }
-    if (hasHotel) {
-      systems.push({
-        short: 'FD',
-        name: 'Feratel Deskline',
-        note: 'Unterkuenfte werden fachlich in Feratel Deskline gepflegt. Im Datenbestand liegt keine verifizierte externe ID vor.',
-        action: 'export',
-        actionLabel: 'Liste exportieren'
-      });
-    }
-    return systems;
+    const map = new Map();
+    rows.map(getPrimarySystem).filter((system) => system.id !== 'satourn').forEach((system) => {
+      if (!map.has(system.id)) map.set(system.id, { ...system, count: 0 });
+      map.get(system.id).count += 1;
+    });
+    return Array.from(map.values());
   }
 
   function hidePrimarySystems() {
@@ -1861,23 +2504,71 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getSourceId(item) {
-    return getFirst(item, ['source_id', 'sourceId', 'raw.source_id', 'raw.sourceId']);
+    const direct = getFirst(item, ['source_id', 'sourceId', 'raw.source_id', 'raw.sourceId']);
+    if (direct) return direct;
+    const sourceKeyword = getKeywordValues(item).find((keyword) => keyword.toLowerCase().startsWith('import_sourceid_'));
+    return sourceKeyword ? sourceKeyword.replace(/^import_sourceid_/i, '') : '';
   }
 
-  function isTourType(type) {
-    const value = normalizeTypeName(type);
-    return value === 'tour';
+  function getPrimarySystem(item) {
+    const keywords = getKeywordValues(item).map((keyword) => keyword.toLowerCase());
+    if (keywords.includes('import_source_feratel') || keywords.includes('hassystemid_feratel')) {
+      return {
+        id: 'feratel',
+        short: 'FD',
+        name: 'feratel',
+        note: 'Datensatz mit import_source_feratel oder HasSystemId_Feratel.',
+        action: 'export',
+        actionLabel: 'Liste exportieren'
+      };
+    }
+    if (keywords.includes('import_source_outdooractive')) {
+      return {
+        id: 'outdooractive',
+        short: 'OA',
+        name: 'outdooractive',
+        note: 'Datensatz mit import_source_outdooractive.',
+        action: 'copy-source-id',
+        actionLabel: 'ID kopieren'
+      };
+    }
+    return {
+      id: 'satourn',
+      short: 'ST',
+      name: 'SaTourN',
+      note: 'Kein externes Importsystem in keywords_old/keywords erkannt.',
+      action: 'export',
+      actionLabel: 'Liste exportieren'
+    };
+  }
+
+  function getKeywordValues(item) {
+    const raw = item?.raw || item || {};
+    return [
+      ...safeKeywordArray(raw.keywords_old),
+      ...safeKeywordArray(raw.keywords),
+      ...safeKeywordArray(item?.keywords_old),
+      ...safeKeywordArray(item?.keywords)
+    ].filter(Boolean);
+  }
+
+  function safeKeywordArray(value) {
+    if (!Array.isArray(value)) return [];
+    return value.map((entry) => textValue(entry));
   }
 
   function normalizeTypeName(type) {
     return String(type || '').trim().toLowerCase();
   }
 
-  function exportTaskRecordsCsv() {
+  function exportTaskRecordsCsv(forcedRows = null) {
     if (!state.selectedTask) return;
-    const rowsToExport = state.taskRecordRows.length
-      ? state.taskRecordRows
-      : state.taskItems.filter((item) => item.missingCriteria?.includes(state.selectedTask.criterionId));
+    const scopedRows = Array.isArray(forcedRows) ? forcedRows : null;
+    const rowsToExport = scopedRows || (
+      state.taskRecordRows.length
+        ? state.taskRecordRows
+        : state.taskItems.filter((item) => item.missingCriteria?.includes(state.selectedTask.criterionId))
+    );
     if (!rowsToExport.length) return;
     const rows = [
       ['Titel', 'Typ', 'Ort', 'Gebiet', 'Problem', 'Nächster Schritt', 'ID', 'global_id', 'source_id'],

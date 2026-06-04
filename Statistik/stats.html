@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Statistik
+title: Open-Data-Statistik
 permalink: /Statistik/stats.html
 css: /Statistik/style.css
 js: /Statistik/main.js
@@ -9,27 +9,175 @@ module: true
 
 <div class="statistik light-shell" data-page="stats">
   <header class="app-header">
-    <a class="brand" href="/Statistik/"><span class="brand-mark" aria-hidden="true"></span><span><strong>SaTourN</strong><small>Datenqualitäts-Monitor</small></span></a>
-    <div class="work-context-bar"><span>Arbeitskontext:</span><button id="work-context-summary" class="context-summary" type="button">Sachsen - Alle Orte - Alle Datentypen</button><button id="work-context-edit" class="context-edit" type="button">Ändern</button></div>
-    <div class="header-status"><span id="last-updated">Keine Datenanfrage auf dieser Seite</span></div>
+    <a class="brand" href="index.html" aria-label="SaTourN Datenqualitäts-Monitor">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <strong>SaTourN</strong>
+        <small>Datenqualitäts-Monitor</small>
+      </span>
+    </a>
+
+    <div class="work-context-bar">
+      <span>Arbeitskontext:</span>
+      <button id="work-context-summary" class="context-summary" type="button" aria-haspopup="dialog">
+        Sachsen - Alle Orte - Alle Datentypen
+      </button>
+      <button id="work-context-edit" class="context-edit" type="button">Ändern</button>
+    </div>
+
+    <div class="header-status">
+      <button id="refresh-button" class="icon-button" type="button" aria-label="Statistik aktualisieren"><span class="material-icons" aria-hidden="true">refresh</span></button>
+      <span id="last-updated">Letzte Aktualisierung: noch nicht geladen</span>
+    </div>
   </header>
+
   <div class="app-layout">
     <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
-      <a class="nav-link" href="/Statistik/"><span class="material-icons" aria-hidden="true">home</span>Übersicht</a>
-      <a class="nav-link" href="/Statistik/tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
-      <a class="nav-link" href="/Statistik/records.html"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
-      <a class="nav-link active" href="/Statistik/stats.html" aria-current="page"><span class="material-icons" aria-hidden="true">bar_chart</span>Statistik</a>
-      <div class="sidebar-bottom"><button class="nav-utility" type="button" disabled>Hilfe</button><button class="nav-utility" type="button" disabled>Menü einklappen</button></div>
+      <a class="nav-link" href="index.html"><span class="material-icons" aria-hidden="true">home</span>Übersicht</a>
+      <a class="nav-link" href="tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
+      <a class="nav-link" href="records.html"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
+      <a class="nav-link active" href="stats.html" aria-current="page"><span class="material-icons" aria-hidden="true">bar_chart</span>Open-Data-Statistik</a>
+      <div class="sidebar-bottom">
+        <button class="nav-utility" type="button" disabled>Hilfe &amp; Dokumentation</button>
+        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
+      </div>
     </nav>
-    <main class="placeholder-main">
-      <section class="placeholder-card">
-        <p class="eyebrow">Statistik</p>
-        <h1>Statistik</h1>
-        <p>Diese Seite wird im nächsten Schritt aufgebaut. Sie zeigt künftig aggregierte Zahlen, Vergleiche, Diagramme und Statistik-Exporte.</p>
+
+    <main class="stats-main" aria-labelledby="stats-title">
+      <section class="overview-hero">
+        <h1 id="stats-title">Open-Data-Statistik</h1>
+        <p>Aggregierte Kennzahlen für Ihren Arbeitskontext.</p>
+      </section>
+
+      <section class="stats-filter-card" aria-label="Open-Data-Statistik filtern">
+        <label>
+          Gebiet
+          <select id="stats-area-filter"></select>
+        </label>
+        <label>
+          Ort
+          <input id="stats-city-filter" type="text" placeholder="Alle Orte">
+        </label>
+        <label>
+          Datentyp
+          <select id="stats-type-filter"></select>
+        </label>
+        <div class="stats-filter-actions">
+          <button id="stats-reset-filters" class="context-edit icon-text-button" type="button"><span class="material-icons" aria-hidden="true">restart_alt</span>Filter zurücksetzen</button>
+          <button id="stats-refresh" class="primary-action" type="button"><span class="material-icons" aria-hidden="true">refresh</span>Aktualisieren</button>
+          <button id="stats-export" class="context-edit icon-text-button" type="button" disabled><span class="material-icons" aria-hidden="true">file_download</span>CSV exportieren</button>
+        </div>
+      </section>
+
+      <div id="stats-message" class="overview-message" hidden></div>
+
+      <section class="stats-kpi-grid" aria-label="Open-Data-Kennzahlen">
+        <article class="stats-kpi-card">
+          <span class="stats-kpi-icon blue material-icons" aria-hidden="true">storage</span>
+          <div>
+            <span>Gesamtzahl Datensätze</span>
+            <strong id="stats-total-records">-</strong>
+            <small>100 % aller Datensätze</small>
+          </div>
+        </article>
+        <article class="stats-kpi-card">
+          <span class="stats-kpi-icon green material-icons" aria-hidden="true">lock_open</span>
+          <div>
+            <span>Open-Data-fähig</span>
+            <strong id="stats-open-data-records">-</strong>
+            <small id="stats-open-data-share">-</small>
+          </div>
+        </article>
+        <article class="stats-kpi-card">
+          <span class="stats-kpi-icon purple material-icons" aria-hidden="true">percent</span>
+          <div>
+            <span>Open-Data-Quote</span>
+            <strong id="stats-open-data-quote">-</strong>
+            <small>Verhältnis Open-Data-fähig</small>
+          </div>
+        </article>
+        <article class="stats-kpi-card">
+          <span class="stats-kpi-icon amber material-icons" aria-hidden="true">pie_chart</span>
+          <div>
+            <span>Nicht Open-Data-fähig</span>
+            <strong id="stats-non-open-data-records">-</strong>
+            <small id="stats-non-open-data-share">-</small>
+          </div>
+        </article>
+      </section>
+
+      <section class="stats-chart-grid">
+        <article class="panel-card stats-chart-card">
+          <header class="panel-head"><h2>Verteilung nach Datentyp (Anzahl)</h2></header>
+          <div class="stats-donut-layout">
+            <div id="stats-type-donut" class="stats-type-donut" aria-label="Verteilung nach Datentyp">
+              <span id="stats-type-donut-total">-</span>
+              <small>Gesamt</small>
+            </div>
+            <div class="stats-chart-table-wrap">
+              <table class="stats-mini-table">
+                <thead>
+                  <tr><th>Datentyp</th><th>Anzahl</th><th>Anteil</th></tr>
+                </thead>
+                <tbody id="stats-type-distribution-body">
+                  <tr><td colspan="3" class="table-empty">Statistik wird geladen ...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel-card stats-chart-card">
+          <header class="panel-head"><h2>Open-Data-Quote nach Datentyp</h2></header>
+          <div id="stats-quote-bars" class="stats-quote-bars" aria-label="Open-Data-Quote nach Datentyp">
+            <div class="inline-loading">Statistik wird geladen ...</div>
+          </div>
+          <div class="stats-axis" aria-hidden="true"><span>0 %</span><span>20 %</span><span>40 %</span><span>60 %</span><span>80 %</span><span>100 %</span></div>
+        </article>
+      </section>
+
+      <section class="panel-card stats-table-card">
+        <header class="panel-head">
+          <h2>Kennzahlen nach Datentyp</h2>
+        </header>
+        <div class="tasks-table-wrap">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th>Datentyp</th>
+                <th>Gesamtzahl</th>
+                <th>Open-Data-fähig</th>
+                <th>Open-Data-Quote</th>
+                <th>Nicht Open-Data-fähig</th>
+              </tr>
+            </thead>
+            <tbody id="stats-type-table-body">
+              <tr><td colspan="5" class="table-empty">Statistik wird geladen ...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="stats-data-note" aria-label="Datenbasis">
+        <span><span class="material-icons" aria-hidden="true">info</span>Die dargestellten Zahlen basieren auf allen verfügbaren Daten in Ihrem Arbeitskontext. Diese Statistik ist vollständig.</span>
+        <strong><span class="material-icons" aria-hidden="true">check_circle</span>Datenbasis: Vollständig</strong>
       </section>
     </main>
   </div>
+
   <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
-    <form method="dialog" id="work-context-form"><header><h2 id="context-dialog-title">Arbeitskontext ändern</h2><button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button></header><label>Gebiet<select id="context-area"></select></label><label>Ort<input id="context-city" type="text" placeholder="Alle Orte"></label><label>Datentyp<select id="context-type"></select></label><footer><button value="cancel" type="submit">Abbrechen</button><button class="primary" value="default" type="submit">Übernehmen</button></footer></form>
+    <form method="dialog" id="work-context-form">
+      <header>
+        <h2 id="context-dialog-title">Arbeitskontext ändern</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
+      </header>
+      <label>Gebiet<select id="context-area"></select></label>
+      <label>Ort<input id="context-city" type="text" placeholder="Alle Orte"></label>
+      <label>Datentyp<select id="context-type"></select></label>
+      <footer>
+        <button value="cancel" type="submit">Abbrechen</button>
+        <button class="primary" value="default" type="submit">Übernehmen</button>
+      </footer>
+    </form>
   </dialog>
 </div>

@@ -1303,3 +1303,43 @@ Pruefung:
 
 - `git diff --check` ohne Fehler.
 - Keine Mockdaten oder erfundenen Detailwerte in der Detailseite.
+
+## Umsetzung: Logo, Pflegesystem und echter Count-Pfad
+
+Status: umgesetzt am 2026-06-04, technische Abschlusspruefung lokal erfolgt.
+
+Umgesetzte Anpassungen:
+
+- Das im Repository vorhandene `SaTourN-RGB.png` ist als Markenlogo in der
+  Statistik-Shell eingebunden.
+- Die Pflegesystem-Erkennung basiert nicht mehr auf Datentyp-Vermutungen,
+  sondern auf `keywords_old` und `keywords`.
+- `import_source_feratel` oder `HasSystemId_Feratel` kennzeichnen `feratel`.
+- `import_source_outdooractive` kennzeichnet `outdooractive`.
+- Ohne externen Import-Hinweis wird der Datensatz als `SaTourN` behandelt.
+- `import_sourceid_*` wird als externe Source-ID aus den Keywords gelesen und
+  fuer CSV-Export sowie Kopieraktionen verwendet.
+- Die Datensatz-Detailseite zeigt das erkannte Pflegesystem in den
+  Detailinformationen.
+- Die Pflegeaufgaben-Karte fuer externe Systeme aggregiert nun nach echtem
+  Pflegesystem und zeigt die Anzahl betroffener Datensaetze.
+- `/api/quality/count` wurde als neuer Render-Proxy-Endpunkt vorbereitet. Er
+  nutzt nur verifizierte API-Pushdown-Kriterien und liefert `overallcount`,
+  ohne Datensatz-Stichproben zu laden.
+- Der Count-Endpunkt cached Ergebnisse fuer kurze Zeit serverseitig, damit
+  wiederholte UI-Abfragen Render und Destination.One weniger belasten.
+
+Bewusste Einschraenkungen:
+
+- Die Startseite und Pflegeaufgaben-Uebersicht verwenden aktuell noch ihre
+  bestehenden Stichprobenpfade; die UI-Umstellung auf `/api/quality/count` ist
+  der naechste Schritt.
+- Nicht verifizierte Kriterien wie `image_author_missing` bleiben serverseitige
+  Scans und duerfen nicht als vollstaendige API-Pushdown-Zahlen angezeigt
+  werden.
+
+Pruefung:
+
+- PowerShell-Auswertung der lokalen Fixtures bestaetigt vorhandene
+  `feratel`- und `outdooractive`-Faelle.
+- `git diff --check` ohne Fehler; nur Windows-CRLF-Hinweise.

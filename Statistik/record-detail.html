@@ -9,7 +9,7 @@ module: true
 
 <div class="statistik light-shell" data-page="record-detail">
   <header class="app-header">
-    <a class="brand" href="/Statistik/" aria-label="SaTourN Datenqualitäts-Monitor">
+    <a class="brand" href="index.html" aria-label="SaTourN Datenqualitäts-Monitor">
       <span class="brand-mark" aria-hidden="true"></span>
       <span>
         <strong>SaTourN</strong>
@@ -33,10 +33,10 @@ module: true
 
   <div class="app-layout">
     <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
-      <a class="nav-link" href="/Statistik/"><span class="material-icons" aria-hidden="true">home</span>Übersicht</a>
-      <a class="nav-link" href="/Statistik/tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
-      <a class="nav-link active" href="/Statistik/records.html" aria-current="page"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
-      <a class="nav-link" href="/Statistik/stats.html"><span class="material-icons" aria-hidden="true">bar_chart</span>Statistik</a>
+      <a class="nav-link" href="index.html"><span class="material-icons" aria-hidden="true">home</span>Übersicht</a>
+      <a class="nav-link" href="tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
+      <a class="nav-link active" href="records.html" aria-current="page"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
+      <a class="nav-link" href="stats.html"><span class="material-icons" aria-hidden="true">bar_chart</span>Open-Data-Statistik</a>
       <div class="sidebar-bottom">
         <button class="nav-utility" type="button" disabled>Hilfe &amp; Dokumentation</button>
         <button class="nav-utility" type="button" disabled>Menü einklappen</button>
@@ -44,19 +44,28 @@ module: true
     </nav>
 
     <main class="record-detail-main" aria-labelledby="record-detail-title">
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="/Statistik/records.html">Datensätze</a>
+      <nav id="detail-breadcrumb" class="breadcrumb" aria-label="Breadcrumb">
+        <a href="records.html">Datensätze</a>
         <span class="material-icons" aria-hidden="true">chevron_right</span>
         <span>Datensatz-Detail</span>
       </nav>
 
+      <div id="detail-context-note" class="detail-context-note" hidden></div>
+
       <section class="detail-action-bar">
-        <a class="context-edit icon-text-button" href="/Statistik/records.html"><span class="material-icons" aria-hidden="true">arrow_back</span>Zurück zur Liste</a>
+        <a id="detail-back-link" class="context-edit icon-text-button" href="records.html"><span class="material-icons" aria-hidden="true">arrow_back</span>Zurück zur Liste</a>
         <div>
-          <button class="context-edit icon-text-button" type="button" disabled><span class="material-icons" aria-hidden="true">arrow_back</span>Vorheriger</button>
-          <button class="context-edit icon-text-button" type="button" disabled>Nächster<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
+          <button id="detail-prev-record" class="context-edit icon-text-button" type="button" disabled><span class="material-icons" aria-hidden="true">arrow_back</span>Vorheriger</button>
+          <button id="detail-next-record" class="context-edit icon-text-button" type="button" disabled>Nächster<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
           <a id="detail-et4-link" class="context-edit" href="#" target="_blank" rel="noopener" hidden>Öffnen auf et4 pages</a>
-          <button id="detail-copy-link" class="context-edit icon-text-button" type="button"><span class="material-icons" aria-hidden="true">link</span>Link kopieren</button>
+          <details id="detail-actions-menu" class="detail-actions-menu">
+            <summary class="context-edit icon-text-button">Aktionen<span class="material-icons" aria-hidden="true">expand_more</span></summary>
+            <div>
+              <button id="detail-copy-id" type="button">ID kopieren</button>
+              <button id="detail-copy-global-id" type="button">global_id kopieren</button>
+              <button id="detail-copy-link" type="button">Link kopieren</button>
+            </div>
+          </details>
         </div>
       </section>
 
@@ -104,6 +113,11 @@ module: true
           <article class="panel-card">
             <header class="panel-head"><h2>ÖPNV-Anreise</h2></header>
             <div id="detail-transport" class="detail-text"></div>
+          </article>
+
+          <article id="detail-price-card" class="panel-card" hidden>
+            <header class="panel-head"><h2>Preisinfo</h2></header>
+            <div id="detail-price" class="detail-text"></div>
           </article>
         </div>
 

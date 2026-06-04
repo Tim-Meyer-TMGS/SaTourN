@@ -770,3 +770,15 @@ Eine Abschnittsumsetzung ist erst fertig, wenn:
   CSV-Zeile exportieren spaeter ausbauen.
 - Medien-Detailansicht fuer einzelne Bilder spaeter ergaenzen, falls fuer
   Bildrechte-Pflege benoetigt.
+
+## Umbau Statistik: offene Folgepunkte nach Logo/Pflegesystem/Count-Pfad
+
+- Startseite und Pflegeaufgaben-Uebersicht von Stichprobenzaehlern auf
+  `/api/quality/count` umstellen, wo Kriterium und Typ verifiziert per
+  API-Pushdown zaehlbar sind.
+- Fuer nicht verifizierte Kriterien im UI klar zwischen vollstaendiger
+  API-Zahl, budgetiertem Server-Scan und Browser-Stichprobe unterscheiden.
+- `/api/quality/count` mit echten Render-Daten pro Region, Typ und Kriterium
+  pruefen.
+- Optional einen Batch-Endpunkt fuer mehrere Count-Jobs ergaenzen, falls die UI
+  sonst zu viele Einzelrequests ausloest.
