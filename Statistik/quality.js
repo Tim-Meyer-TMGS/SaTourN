@@ -481,6 +481,7 @@ export const qualityCriteria = Object.freeze([
       verifiedForTypes: []
     },
     unsupportedQueries: ['media_objects.copyrightText:*', 'copyrightText:*'],
+    note: 'Server-Scan getestet mit POI ueber mehrere Cursor-Seiten. API-Pushdown auf copyrightText/media_objects.copyrightText bleibt nicht verifiziert.',
     recommendation: 'Fotograf oder Urheberhinweis ergaenzen.',
     check: (item) => hasImages(item) && !hasImageAuthor(item)
   },
@@ -530,7 +531,7 @@ export const qualityCriteria = Object.freeze([
         positiveQuery: null,
         missingQuery: null,
         verified: false,
-        note: 'Package-Buchungslink ist fachlich offen und muss gegen API und Beispieldaten verifiziert werden.'
+        note: 'Server-Scan getestet mit Package ueber mehrere Cursor-Seiten. API-Pushdown bleibt nicht verifiziert.'
       }
     },
     recommendation: 'Buchungs-, Reservierungs- oder Ticketlink ergaenzen.',

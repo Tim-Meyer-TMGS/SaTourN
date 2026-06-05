@@ -89,7 +89,47 @@ Stand: 2026-06-04
   fuer fehlende `media_objects[].copyrightText` vorliegt.
 - Der Qualitaets-Score ist Orientierung und Motivation. Pflegeaufgaben und
   Nutzbarkeit haben in Arbeitslisten Vorrang vor der Score-Zahl.
-- Package-Buchungslink bleibt fuer API-Pushdown offen; Hotel ist verifiziert.
+- Package-Buchungslink bleibt nur fuer API-Pushdown offen; der Server-Scan ist
+  verifiziert. Hotel ist per API-Pushdown verifiziert.
+
+## Verifikation Server-Scans
+
+### image_author_missing
+
+API-Pushdown bleibt nicht verifiziert. Die Destination.One-Suche unterstuetzt
+nach aktuellem Test keine belastbare Feldquery auf
+`media_objects.copyrightText` oder `copyrightText`.
+
+Der serverseitige `/api/quality/scan` funktioniert jedoch: Fuer POI wurden
+ueber mehrere Cursor-Seiten echte Treffer mit
+`activeCriterion=image_author_missing` gefunden. Die Pagination ist plausibel,
+da die zweite Cursor-Seite andere Treffer liefert und
+`paginationRepeated=false` zurueckgegeben wurde.
+
+Da die Prueflogik typunabhaengig ueber `media_objects` laeuft, wird der
+erfolgreiche POI-Test als technische Verifikation des Server-Scan-Verfahrens
+fuer POI, Tour, Hotel, Event, Gastro und Package gewertet.
+
+Entscheidung:
+`image_author_missing` bleibt fuer alle Typen `method=server_scan`.
+
+### booking_link_missing / Package
+
+API-Pushdown bleibt nicht verifiziert.
+
+Der serverseitige `/api/quality/scan` funktioniert: Fuer Package wurden ueber
+mindestens zwei Cursor-Seiten echte Treffer mit
+`activeCriterion=booking_link_missing` gefunden. Die Pagination ist plausibel,
+da `cursor=12` andere Treffer liefert und `paginationRepeated=false`
+zurueckgegeben wurde.
+
+Entscheidung:
+`booking_link_missing` bleibt fuer Package `method=server_scan`.
+
+Hotel bleibt separat als `api_pushdown` verifiziert mit:
+
+- `positiveQuery = booking:*`
+- `missingQuery = *:* NOT booking:*`
 
 ## UI und Tabellen
 

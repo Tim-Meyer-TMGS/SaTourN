@@ -280,8 +280,9 @@ Offen fuer spaetere Abschnitte:
   Entscheidungsspalte.
 - Nicht automatisch pruefbare Kriterien separat darstellen, falls spaeter
   `autoCheck: false`-Kriterien ergaenzt werden.
-- Package-Buchungslink gegen API und Beispieldaten pruefen, bevor Pushdown
-  aktiviert wird.
+- Package-Buchungslink ist als Server-Scan verifiziert; API-Pushdown bleibt
+  nicht verifiziert und darf erst nach separater Query-Verifikation aktiviert
+  werden.
 - Hotel `image_missing` und `description_missing` fachlich entscheiden, bevor
   sie fuer Hotel aktiviert werden.
 - Event-Beispieldaten beschaffen, bevor neue Event-spezifische Kriterien
@@ -304,7 +305,8 @@ Offen fuer spaetere Abschnitte:
 - Keine neuen Feldannahmen aus generischen Aliasnamen ableiten.
 - Neue Feldmappings erst mit Fixture, API-Beispiel oder dokumentierter
   Verifikation aufnehmen.
-- Package-Buchungslink-Feldstruktur verifizieren.
+- Package-Buchungslink-Feldstruktur ist fuer Server-Scan verifiziert;
+  API-Pushdown bleibt nicht verifiziert.
 - Event-Fixture beschaffen und reale Felder pruefen.
 - Bei jeder Erweiterung `Statistik/quality.js`, Proxy-Scan und Doku gemeinsam
   aktualisieren.
@@ -676,7 +678,8 @@ Nachweis:
 
 - ET4-Pages-Pfade fuer Hotel, Gastro, Tour, Event und Package verifizieren,
   bevor weitere Typen automatisch verlinkt werden.
-- Package-Buchungslink: Query und Feldstruktur testen.
+- Package-Buchungslink: Server-Scan ist verifiziert; nur eine moegliche
+  API-Pushdown-Query bleibt offen.
 - Hotel `image_missing` und `description_missing` fachlich entscheiden und mit
   `media:*` bzw. `details:*` testen.
 - Event-Beispieldaten nachreichen, bevor Event-spezifische Kriterien entstehen.
@@ -735,9 +738,9 @@ Eine Abschnittsumsetzung ist erst fertig, wenn:
 
 - Pflegeaufgaben-Seite im Browser mit echten API-Daten gegen
   `docs/Codex/Umbau_Statistik/Pflegeaufgaben.png` pruefen.
-- Verhalten von `/api/quality/scan` fuer alle aktiven Kriterien und Typen mit
-  echten Daten validieren, besonders `image_author_missing` und
-  `booking_link_missing`.
+- Verhalten von `/api/quality/scan` fuer weitere grosse Fehlerlisten und
+  Pagination-Szenarien mit echten Daten validieren; `image_author_missing` und
+  `booking_link_missing` sind als Server-Scan getestet.
 - Pagination fuer Datensatzlisten erweitern, falls mehr als die aktuell
   geladenen 25 Treffer pro Aufgabe benoetigt werden.
 - Datensatzliste in `records.html` mit den naechsten Mockups verbinden und
@@ -789,5 +792,5 @@ Eine Abschnittsumsetzung ist erst fertig, wenn:
   nicht an Browser- oder Request-Limits haengen.
 - Qualitaetsstatus-Gesamtzahlen nur dann wieder anzeigen, wenn dafuer ein
   fachlich belastbarer vollstaendiger Bewertungsjob existiert.
-- `image_author_missing` weiter fachlich pruefen, da es nicht per
-  Destination.One-Query verifiziert ist.
+- `image_author_missing` ist als Server-Scan verifiziert; API-Pushdown bleibt
+  mangels belastbarer Destination.One-Query nicht verifiziert.

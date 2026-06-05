@@ -622,7 +622,7 @@ Gepruefter Auftrag:
   `image_missing`, `image_author_missing`, `public_transport_missing`,
   `booking_link_missing`.
 - `booking_link_missing` ist fuer Hotel per API-Pushdown verifiziert; Package
-  bleibt offen und serverseitig zu pruefen.
+  ist als Server-Scan verifiziert, API-Pushdown bleibt nicht verifiziert.
 - Nicht automatisch aktivieren:
   `geo_missing`, `touristtrip_incomplete`, `manual_image_quality`.
 - Score-Logik: 80 bis 100 `gut`, 60 bis 79 `pruefen`, 0 bis 59 `kritisch`,
@@ -643,7 +643,7 @@ Aktueller Nachweis aus dem Code:
 - `getQualityScanConfig()` unterscheidet API-Pushdown, Server-Scan,
   Verifikation und Warnungen.
 - `booking_link_missing` nutzt fuer Hotel `*:* NOT booking:*` als verifizierten
-  Pushdown und laesst Package als Server-Scan offen.
+  Pushdown und laesst Package als verifizierten Server-Scan.
 - `geo_missing`, `touristtrip_incomplete` und `manual_image_quality` sind nicht
   in `qualityCriteria` aktiv.
 
@@ -664,8 +664,9 @@ Konsolidierte Archivinformationen:
   generische Negativqueries bleiben verboten.
 - Aus historischen Projektstaenden: Kriterienkonfiguration ist die zentrale
   Quelle fuer UI, Aggregationen, Fehlerlisten, CSV und Proxy-Scan.
-- Aus fachlich offenen Punkten: Package-Buchungslink, Hotel-Bild/Beschreibung
-  und Event-Beispiele bleiben offen.
+- Aus fachlich offenen Punkten: Hotel-Bild/Beschreibung und Event-Beispiele
+  bleiben offen; Package-Buchungslink ist als Server-Scan verifiziert,
+  API-Pushdown bleibt nicht verifiziert.
 
 Entscheidung fuer die naechsten Abschnitte:
 
@@ -675,7 +676,8 @@ Entscheidung fuer die naechsten Abschnitte:
   Bildqualitaet.
 - Score wird weiter berechnet, aber UI soll Pflegeaufgabe und Nutzbarkeit vor
   Score-Zahl priorisieren.
-- Package-Buchungslink bleibt offenes Fach-/API-Thema.
+- Package-Buchungslink bleibt nur fuer API-Pushdown offen; der Server-Scan ist
+  verifiziert.
 
 ## Punkt 12: Reale Feldmappings
 
@@ -717,8 +719,8 @@ Luecke zum Zielbild:
 
 - Neue Typen oder Kriterien duerfen nicht durch Alias-Fallbacks allein als
   fachlich verifiziert gelten.
-- Package-Buchungslink ist im Mapping noch offen und muss gegen echte API- und
-  Beispieldaten geprueft werden.
+- Package-Buchungslink ist fuer Server-Scan gegen echte API-Daten geprueft;
+  eine belastbare API-Pushdown-Query bleibt nicht verifiziert.
 - Hotel `image_missing` und `description_missing` sind fachlich offen und
   duerfen ohne Entscheidung nicht automatisch aktiv werden.
 - Event-spezifische Kriterien brauchen echte Event-Beispiele.
@@ -1368,8 +1370,8 @@ Umgesetzte Anpassungen:
 
 Bewusste Einschraenkungen:
 
-- `image_author_missing` ist weiterhin kein verifizierter API-Pushdown und
-  bleibt ein Server-Scan-Thema.
+- `image_author_missing` ist als Server-Scan verifiziert; API-Pushdown bleibt
+  nicht verifiziert.
 - `/api/quality/scan` liefert echte Datensaetze, bleibt aber budgetiert. Fuer
   vollstaendige Exporte sehr grosser Fehlerlisten ist spaeter Pagination oder
   ein Job-/Batch-Endpunkt sinnvoll.

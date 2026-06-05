@@ -66,11 +66,12 @@ neue Build-Kette, keine Secrets im Frontend.
 - `license_missing`: POI, Gastro, Tour, Hotel, Package; API-Pushdown verifiziert.
 - `description_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
 - `image_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
-- `image_author_missing`: alle Typen mit pruefbaren Medien; Server-Scan.
+- `image_author_missing`: alle Typen mit pruefbaren Medien; Server-Scan
+  verifiziert, API-Pushdown nicht verifiziert.
 - `public_transport_missing`: POI, Gastro, Tour, Hotel, Event; API-Pushdown
   verifiziert.
-- `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package offen und
-  serverseitig zu pruefen.
+- `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package per
+  Server-Scan verifiziert; API-Pushdown fuer Package nicht verifiziert.
 
 Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
 `manual_image_quality`.
