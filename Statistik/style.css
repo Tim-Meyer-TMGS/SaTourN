@@ -674,6 +674,38 @@ body.statistik-page-body {
   color: var(--muted);
 }
 
+.statistik .inline-loading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.statistik .inline-loading::before,
+.statistik .loading-line::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 2px solid #d0d5dd;
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: satourn-spin .8s linear infinite;
+}
+
+.statistik .loading-line {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes satourn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .statistik .placeholder-main {
   display: grid;
   place-items: start stretch;
@@ -783,7 +815,7 @@ body.statistik-page-body {
 
 .statistik .task-filter-card {
   display: grid;
-  grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, .7fr)) auto;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(3, minmax(150px, .7fr)) auto;
   gap: 14px;
   align-items: center;
   margin-bottom: 8px;
@@ -1155,7 +1187,7 @@ body.statistik-page-body {
 
 .statistik .record-filter-card {
   display: grid;
-  grid-template-columns: minmax(320px, 1.7fr) repeat(4, minmax(140px, .55fr)) auto;
+  grid-template-columns: minmax(320px, 1.7fr) repeat(3, minmax(140px, .55fr)) auto;
   gap: 14px;
   align-items: start;
   margin-bottom: 22px;
@@ -1547,7 +1579,7 @@ body.statistik-page-body {
 
 .statistik .detail-head-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, .42fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   align-items: stretch;
   margin-bottom: 16px;
@@ -1563,7 +1595,7 @@ body.statistik-page-body {
 }
 
 .statistik .detail-head-left p {
-  margin-bottom: 18px;
+  margin-bottom: 0;
   color: #344054;
 }
 
@@ -2161,6 +2193,18 @@ body.statistik-page-body {
   border-radius: 8px;
   background: var(--surface);
   color: var(--text);
+}
+
+.statistik .context-dialog select:focus,
+.statistik .context-dialog input:focus,
+.statistik .context-summary:focus-visible,
+.statistik .context-edit:focus-visible,
+.statistik .icon-button:focus-visible,
+.statistik .plain-button:focus-visible,
+.statistik .primary-action:focus-visible {
+  outline: 0;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(8, 119, 201, .14);
 }
 
 .statistik .context-dialog button {

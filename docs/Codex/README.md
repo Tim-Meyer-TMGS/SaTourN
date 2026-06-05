@@ -1,32 +1,26 @@
 # Codex-Dokumentation
 
-Diese Ebene ist der kurze Arbeitskontext fuer die weitere Statistik- und
-Datenqualitaetsmonitor-Entwicklung. Lade nicht automatisch Archivdateien oder
-Rohdaten.
+Aktiver Kurzkontext fuer die weitere Arbeit am Datenqualitaetsmonitor.
 
 ## Standard-Kontext
 
 1. `Datenqualitaetsmonitor_Aktueller_Projektstand.md`
 2. `Datenqualitaetsmonitor_Offene_TODOs.md`
-3. `Datenqualitaetsmonitor_Arbeitsstand.md`
-4. `../Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md`, wenn am neuen
-   Arbeitsauftrag abschnittsweise gearbeitet wird.
 
-Diese beiden Dateien reichen fuer normale Weiterarbeit am Dashboard.
+## Nur bei Bedarf
 
-## Bei Bedarf lesen
+- `Datenqualitaetsmonitor_Entscheidungen.md`: Architektur-, API-, UI- und
+  Kriterienentscheidungen.
+- `../Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md`: nur lesen, wenn wieder
+  am urspruenglichen Abschnittsauftrag gearbeitet wird.
 
-- `Datenqualitaetsmonitor_Entscheidungen.md`: Kriterien, API-Scan, Limits,
-  Python-Entscheidung, KI/n8n-Regeln.
-- `Beispieldaten.md`: Index der grossen Fixtures und Diagnosebefehle.
-- `Zielbild.md` und `zielbild.png`: visuelle Orientierung, nicht pixelgenaue
-  Vorgabe.
+## Nicht automatisch laden
 
-## Nicht im Standard-Kontext laden
+- `_archive/codex-docs/2026-06-05-cleanup/`: alte Arbeitsstaende,
+  abgeschlossene Mockup-Pakete, Zielbild und Beispieldaten-Index.
+- `testdata/quality-examples/`: grosse reale JSON-Fixtures.
+- `_archive/codex-docs/2026-06-04/`: historische Analysen und alte Prompts.
 
-- `../../testdata/quality-examples/`: grosse reale Beispiel-JSONs.
-- `../../_archive/codex-docs/2026-06-04/`: alte Prompts und historische
-  Abschnittsstaende.
-
-Diese Dateien bleiben als Referenz erhalten, sind aber fuer neue Codex-Kontexte
-normalerweise Kontextballast.
+Regel: Neue Codex-Sitzungen starten mit Projektstand und offenen TODOs. Alte
+Mockups, Protokolle und Rohdaten nur gezielt laden, wenn sie fuer eine konkrete
+Pruefung benoetigt werden.

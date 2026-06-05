@@ -1,824 +1,361 @@
-# Datenqualitaets-Monitor - Aufgabenbeschreibungen
-
-Stand: 2026-06-04
-
-Diese Datei ist die operative Aufgabenliste. Sie integriert die Vorgaben ab
-Punkt 25 aus `../Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md`. Wir arbeiten
-den Arbeitsauftrag danach abschnittsweise durch.
-
-## Arbeitsregel fuer alle Aufgaben
-
-- Keine komplette Neuentwicklung starten.
-- Bestehende Statistikfunktionen erhalten.
-- Keine neue Build-Kette und keine Secrets im Frontend.
-- Jede Aenderung muss API-schonend sein und darf keine unnoetigen Vollabfragen
-  ausloesen.
-- Technische Details gehoeren in die Console, nicht dauerhaft in die UI.
-- Detailinformationen muessen erreichbar bleiben, aber nicht als
-  Standardspalten sichtbar sein.
-- Samples und unvollstaendige Daten immer transparent kennzeichnen.
-
-## Offene TODOs nach Arbeitsauftrag-Abschnitt
-
-### Punkt 1: Technischer Rahmen
-
-Aktuell keine blockierenden Architektur-TODOs.
-
-Offen fuer spaetere Abschnitte:
-
-- Bei jeder groesseren Modularisierung pruefen, ob sie ohne neue Build-Kette und
-  ohne Framework-Einfuehrung bleibt.
-- Wenn echte statische Mehrseitenstruktur entsteht, gemeinsame JS-Helfer nur
-  auslagern, wenn dadurch weniger Dopplung und keine neue Build-Komplexitaet
-  entsteht.
-- Vor jedem neuen API-Pfad pruefen, ob er ueber den bestehenden Node/Express-
-  Proxy laufen muss, damit keine Secrets ins Frontend wandern.
-- Node-/npm-Checks erneut ausfuehren, sobald Node in der Umgebung verfuegbar ist.
-
-### Punkt 2: Produktziel
-
-Aktueller Befund:
-
-- `Statistik/` ist noch eine Single-Page mit acht `activePanel`-Bereichen.
-- Das Ziel ist eine ruhigere, perspektivisch mehrseitige Struktur.
-
-Offen fuer spaetere Abschnitte:
-
-- Zielnavigation auf wenige Hauptbereiche herunterbrechen:
-  Uebersicht, Pflegeaufgaben, Datensaetze, Statistik.
-- Bestehende Bereiche `quality`, `issues`, `types`, `matrix`, `results`, `ai`
-  fachlich auf diese Hauptbereiche verteilen.
-- Keine neuen gleichwertigen Hauptpanels hinzufuegen.
-- Pruefen, welche UI- und Datenladefunktionen spaeter pro statischer HTML-Seite
-  isoliert werden koennen.
-- API-Anfragen pro Zielseite definieren, damit keine Seite unnoetige Scans oder
-  Vollabfragen ausloest.
-- Zielbild als Orientierung nutzen, aber nicht pixelgenau nachbauen.
-
-### Punkt 3: Zentrale Produktperspektive
-
-Aktueller Befund:
-
-- Gebiet, Ort, Typ und Kategorie sind technisch als Filter vorhanden.
-- Die UI startet noch stark als Statistik-/Filteroberflaeche.
-- Pflegeaufgaben sind vorhanden, aber noch nicht die klare taegliche
-  Arbeitsfrage der Oberflaeche.
-
-Offen fuer spaetere Abschnitte:
-
-- Gebiet, Ort und Datentyp als dezenten Arbeitskontext sichtbar machen.
-- Texte und View-Hierarchie auf die Frage ausrichten:
-  `Welche meiner Datensaetze verhindern Nutzung, Open Data oder Ausspielung?`
-- Uebersicht und Pflegeaufgaben so gewichten, dass konkrete Pflegehandlungen vor
-  Gesamtstatistiken kommen.
-- Statistikwerte weiterhin anbieten, aber als Orientierung und nicht als
-  primaeren Arbeitsmodus.
-- Filterlogik nicht neu bauen, sondern vorhandene `activeFilters` als
-  Arbeitskontext weiterverwenden.
-- Bei jeder neuen Ansicht pruefen, ob sie fuer Datenpfleger im aktuellen
-  Gebiet/Ort/Datentyp hilfreich ist.
-
-### Punkt 4: UI-Grundprinzip
-
-Aktueller Befund:
-
-- Die aktuelle Seite hat acht Hauptnavigationspunkte und eine sehr dichte
-  Steuerflaeche.
-- Filter, Sortierung, Qualitaetsfilter, Suche, Status, Loader, Fortschritt und
-  Aktionen liegen im ersten Arbeitsbereich eng beieinander.
-- Detail- und KI-Seitenpanel sind bereits passende Muster fuer Progressive
-  Disclosure.
-
-Offen fuer spaetere Abschnitte:
-
-- UI-Audit konkretisieren: Welche sichtbaren Elemente bleiben im ersten
-  Sichtbereich, welche wandern in Listen-, Detail- oder Kontextbereiche?
-- Hauptnavigation und erste Steuerflaeche so reduzieren, dass Nutzer zuerst
-  Arbeitskontext und naechste Pflegeaufgabe verstehen.
-- KPI-Bloecke pro Ansicht priorisieren; nicht gleichzeitig alle Statistik- und
-  Qualitaetskennzahlen sichtbar machen.
-- Warnfarben und technische Statusmeldungen auf nutzerrelevante Faelle
-  begrenzen.
-- Globale Loader und Fortschrittsanzeigen gegen lokale Lade- und Empty-States
-  pruefen.
-- Rohdaten, Diagnose, Server-Scan-Details und KI-Kontext nur bei Bedarf zeigen
-  oder in die Console bzw. Detailpanels verschieben.
-
-### Punkt 5: Navigation und Mehrseitenstruktur
-
-Aktueller Befund:
-
-- `activePanel` steuert acht gleichrangige Views:
-  `overview`, `stats`, `quality`, `issues`, `types`, `matrix`, `results`, `ai`.
-- Das Zielbild fordert vier Hauptbereiche:
-  Uebersicht, Pflegeaufgaben, Datensaetze, Statistik.
-- KI und Detailansicht sind technisch schon als Seitenpanels vorhanden, aber KI
-  erscheint weiterhin als Hauptnavigation.
-
-Offen fuer spaetere Abschnitte:
-
-- Bestehende Views fachlich auf vier Hauptbereiche mappen:
-  `overview` -> Uebersicht,
-  `quality`/`issues`/`matrix` -> Pflegeaufgaben,
-  `results`/Detailpanel -> Datensaetze,
-  `stats`/`types` -> Statistik oder Pflegeaufgaben je Kontext.
-- KI-Analyse aus der Hauptnavigation nehmen und als dezente Aktion der
-  aktuellen Ansicht behandeln.
-- CSV-Export nur dort sichtbar machen, wo eine Liste oder Statistik tatsaechlich
-  exportierbar ist.
-- Kriterien-Matrix und Datentypvergleich als kontextuelle Einstiege behalten,
-  nicht als gleichwertige Hauptpunkte.
-- Keine neuen `data-view-panel`-Gruppen einfuehren, solange nicht klar ist, wie
-  sie in die Zielseitenstruktur uebergehen.
-- Spaeter pruefen, welche gemeinsamen JS-Helfer fuer `overview.html`,
-  `tasks.html`, `records.html` und `stats.html` ausgelagert werden muessen.
-
-### Punkt 6: Arbeitskontext statt Einstellungsflut
-
-Aktueller Befund:
-
-- Gebiet, Ort und Typ sind bereits technisch vorhanden und werden ueber
-  `activeFilters` synchronisiert.
-- Es gibt noch keine persistente, ruhige Header-Anzeige wie
-  `Arbeitskontext: Dresden Elbland - Alle Datentypen - Aendern`.
-- Lokale Speicherung fuer Arbeitskontext existiert noch nicht.
-
-Offen fuer spaetere Abschnitte:
-
-- Arbeitskontext fachlich auf Gebiet, optional Ort und optional Datentyp
-  begrenzen.
-- Kategorie, Suche, Qualitaetsstatus, Prioritaet, Pruefbarkeit und Kriterium als
-  ansichtsspezifische Listenfilter trennen.
-- Kleines Kontext-Panel oder Modal mit maximal drei Feldern entwerfen.
-- `localStorage` nur fuer kleine Kontextwerte nutzen; keine API-Antworten,
-  Fehlerlisten, Rohdaten, Secrets, KI-Kontexte oder personenbezogene Daten
-  speichern.
-- Beim Kontextwechsel `currentFilters()`, `syncActiveFilters()`,
-  Pflegeaufgaben, Fehlerlisten, Statistik, CSV und KI-Kontext konsistent
-  aktualisieren.
-- Startzustand ohne Kontext ruhig halten und keinen komplexen Setup-Prozess
-  erzwingen.
-
-### Punkt 7: API-schonende Grundregeln
-
-Aktueller Befund:
-
-- `/api/search` liefert bereits `overallcount` und begrenzte Item-Samples.
-- `QUALITY_ITEMS_PER_QUERY`, `QUALITY_ITEM_MAX_ITEMS` und
-  `qualityDataMeta.truncated` begrenzen und kennzeichnen Browser-Samples.
-- `/api/quality/scan` wird bereits fuer eindeutige Typ-/Kriteriumskontexte
-  genutzt.
-
-Offen fuer spaetere Abschnitte:
-
-- Fuer jede Zielseite explizit festlegen, welche API-Anfragen sie ausloesen
-  darf.
-- Uebersicht und Statistik so umbauen, dass sie keine unnoetigen
-  Qualitaets-Scans starten.
-- Fehlerlisten erst nach konkretem Klick auf eine Pflegeaufgabe laden.
-- Export-Hinweise verbessern: klar zwischen Aggregat, Browser-Stichprobe und
-  Server-Scan unterscheiden.
-- UI-Hinweis zu `qualityDataMeta.truncated` auch im CSV-/Fehlerlisten-Kontext
-  sichtbar und ruhig formulieren.
-- Keine generischen Negativqueries einfuehren; neue Pushdowns nur nach
-  Verifikation dokumentieren.
-- Bei Mehrseitenstruktur verhindern, dass gemeinsame Initialisierung alle
-  bisherigen Datenbereiche pauschal laedt.
-
-### Punkt 8: Datenfluss beibehalten und sinnvoll modularisieren
-
-Aktueller Befund:
-
-- Der bestehende Datenfluss ist fachlich korrekt und in `scripts.js` zentral
-  umgesetzt.
-- `currentFilters()`, `prepareRows()`, `runQueue()`,
-  `refreshNormalizedItems()`, `refreshFilteredItems()` und
-  `renderQualitySections()` bilden den Kernablauf.
-- `Statistik/quality.js` ist bereits die zentrale Qualitaetslogik fuer Browser
-  und Proxy.
-
-Offen fuer spaetere Abschnitte:
-
-- Modularisierungsgrenzen definieren: Datenladen, Filter/State,
-  Qualitaetsaggregation, Statistikrendering, Aufgaben-/Listenrendering,
-  Detailpanel, KI-Kontext.
-- Gemeinsame Helfer nur auslagern, wenn dadurch spaetere Seiten weniger
-  Dopplung und keine neue Build-Komplexitaet bekommen.
-- Keine Query-, Normalisierungs- oder Kriterienlogik pro Seite kopieren.
-- `renderQualitySections()` spaeter in ansichtsspezifische Renderpfade
-  aufteilen, damit Zielseiten nur benoetigte Teile aktualisieren.
-- Datenlimit-Informationen (`qualityDataMeta`) durch alle neuen Module
-  durchreichen.
-
-### Punkt 9: Seitenlogik
-
-Aktueller Befund:
-
-- `overview` zeigt derzeit mehrere Informationsarten gleichzeitig:
-  Statistik-KPIs, Qualitaets-KPIs, Pflegebedarfe und Datentypen.
-- Pflegeaufgaben sind als Issue Summary vorhanden, aber noch auf
-  `quality`, `issues` und `matrix` verteilt.
-- Die heutige Fehlerliste ist die naechste Datensatz-Arbeitsliste, aber noch zu
-  breit und technisch.
-- Statistikbereiche basieren bereits auf `latestRows` und `overallcount`.
-
-Offen fuer spaetere Abschnitte:
-
-- Uebersicht auf kompakte Lage, wichtigste Pflegeaufgaben, dezente Open-Data-
-  Kennzahl und klare naechste Aktionen reduzieren.
-- Pflegeaufgaben fachlich benennen und als primaeren Arbeitsbereich
-  strukturieren.
-- Pflegeaufgaben-Uebersicht ohne Datensatzdetails, IDs, URLs, Lizenzwerte,
-  Rohdaten oder Einzel-Scores gestalten.
-- Datensatzliste auf Standardspalten verschlanken:
-  Titel, Typ, Ort/Gebiet, Qualitaetsstatus, wichtigste Baustelle, Nutzbarkeit,
-  Aktion.
-- Detailpanel als Ort fuer ID, `global_id`, Lizenz, Score, Kategorie,
-  Aktualisierung, Link, Rohdaten und vollstaendige Kriterienbewertung nutzen.
-- Statistikseite strikt aggregiert halten und keine Datensatzdetails anzeigen.
-- Matrix und Datentypvergleich als kontextuelle Einstiege in Pflegeaufgaben oder
-  Statistik einordnen.
-
-### Punkt 10: Nutzbarkeit statt nur Vollstaendigkeit
-
-Aktueller Befund:
-
-- `qualityStatus` unterscheidet aktuell `gut`, `pruefen`, `kritisch` und
-  `nicht berechenbar`.
-- Kriterien enthalten bereits `recommendation`-Texte.
-- Eine eigene Nutzbarkeitskennzeichnung mit `nutzbar`,
-  `eingeschraenkt nutzbar`, `nicht nutzbar`, `nicht bewertbar` existiert noch
-  nicht.
-
-Offen fuer spaetere Abschnitte:
-
-- Fachliche Nutzbarkeitslogik entwerfen, ohne sie mit `qualityScore` zu
-  verwechseln.
-- Pflegeaufgaben um kurze praktische Bedeutung ergaenzen, z. B. Open-Data,
-  redaktionelle Nutzbarkeit, rechtliche/redaktionelle Risiken, Planbarkeit,
-  Konversion oder nachhaltige Ausspielung.
-- Datensatzlisten mit einer kompakten Nutzbarkeitsspalte planen.
-- Lizenz/Open-Data/Nutzbarkeit so darstellen, dass keine redundanten Spalten
-  entstehen.
-- Bei Stichproben keine absolute Nutzbarkeitsaussage fuer die Gesamtmenge
-  formulieren.
-
-### Punkt 11: Qualitaetslogik
-
-Aktueller Befund:
-
-- `Statistik/quality.js` enthaelt genau die sieben aktiven Kriterien aus dem
-  Arbeitsauftrag.
-- Score-Schwellen sind umgesetzt:
-  `>= 80` gut, `>= 60` pruefen, darunter kritisch, sonst nicht berechenbar.
-- `geo_missing`, `touristtrip_incomplete` und `manual_image_quality` sind nicht
-  aktiv.
-
-Offen fuer spaetere Abschnitte:
-
-- Score in UI und Tabellen als Orientierung behandeln, nicht als primare
-  Entscheidungsspalte.
-- Nicht automatisch pruefbare Kriterien separat darstellen, falls spaeter
-  `autoCheck: false`-Kriterien ergaenzt werden.
-- Package-Buchungslink ist als Server-Scan verifiziert; API-Pushdown bleibt
-  nicht verifiziert und darf erst nach separater Query-Verifikation aktiviert
-  werden.
-- Hotel `image_missing` und `description_missing` fachlich entscheiden, bevor
-  sie fuer Hotel aktiviert werden.
-- Event-Beispieldaten beschaffen, bevor neue Event-spezifische Kriterien
-  entstehen.
-- Bei neuen Kriterien erst Typen, Felder, Gewicht, Prioritaet,
-  Verifikationsstatus und API-Methode dokumentieren.
-
-### Punkt 12: Reale Feldmappings
-
-Aktueller Befund:
-
-- Reale Feldchecks sind zentral in `Statistik/quality.js` umgesetzt.
-- Die aktiven Kriterien nutzen verifizierte Mappings fuer Lizenz, Details,
-  Openings, Medien, Copyright, OePNV, Booking, Gebiet und Kategorie.
-- Einige Alias-Fallbacks existieren fuer Robustheit, ersetzen aber keine
-  fachliche Verifikation.
-
-Offen fuer spaetere Abschnitte:
-
-- Keine neuen Feldannahmen aus generischen Aliasnamen ableiten.
-- Neue Feldmappings erst mit Fixture, API-Beispiel oder dokumentierter
-  Verifikation aufnehmen.
-- Package-Buchungslink-Feldstruktur ist fuer Server-Scan verifiziert;
-  API-Pushdown bleibt nicht verifiziert.
-- Event-Fixture beschaffen und reale Felder pruefen.
-- Bei jeder Erweiterung `Statistik/quality.js`, Proxy-Scan und Doku gemeinsam
-  aktualisieren.
-- Diagnose-Skript mit passenden Fixtures erweitern, sobald neue Mappings
-  verifiziert werden.
-
-### Punkt 13: Tabellen verschlanken
-
-Aktueller Befund:
-
-- Fehlerliste hat aktuell 15 UI-Spalten und wirkt wie Datenablage.
-- Statistiktabelle ist aggregiert und darf zahlenorientiert bleiben.
-
-Offen fuer spaetere Abschnitte:
-
-- Jede Tabellenansicht mit Zweck und Entscheidung dokumentieren.
-- Fehlerlisten-UI zuerst auf Arbeitsspalten reduzieren.
-- Technische Spalten ins Detailpanel oder CSV verschieben.
-- CSS nach Tabellenverschlankung vereinfachen und mobile Darstellung pruefen.
-
-### Punkt 14: Doppelte Bedeutungen entfernen
-
-Aktueller Befund:
-
-- Fehlerliste zeigt gleichzeitig Kriterium, Open-Data, Lizenz, Score und
-  Qualitaetsstatus.
-- Bei konkreten Aufgaben sind einige dieser Spalten redundant.
-
-Offen fuer spaetere Abschnitte:
-
-- Lizenz/Open-Data/Lizenzstatus/Lizenz-fehlt nicht nebeneinander anzeigen.
-- Pflegeaufgaben-Kontext nutzen, um Problemspalten zu vereinfachen.
-- Allgemeine Datensatzlisten spaeter mit kompakter Nutzbarkeitsspalte planen.
-- Statistikansichten nur aggregiert zu Open-Data-Faehigkeit zeigen.
-
-### Punkt 15: Fehlerlisten verschlanken
-
-Aktueller Befund:
-
-- `renderIssueList()` rendert alle `ISSUE_LIST_COLUMNS`.
-- Detailpanel ist bereits per Zeilenklick erreichbar.
-- Pagination existiert.
-
-Offen fuer spaetere Abschnitte:
-
-- UI-Standardspalten setzen:
-  Titel, Typ, Ort/Gebiet, Problem, Naechster Schritt, Aktion.
-- Kategorie nur anzeigen, wenn sie fuer die Aufgabe relevant ist.
-- ID, letzte Aktualisierung oder Qualitaetsstatus nur optional anzeigen.
-- Score, Lizenzwert, Open-Data-Status, `global_id`, URL, Rohdaten und
-  technische Codes aus der UI-Tabelle entfernen.
-- Tastaturbedienung und Detailpanel-Oeffnung nach Spaltenumbau erhalten.
-
-### Punkt 16: Detailpanel als Entlastung nutzen
-
-Aktueller Befund:
-
-- Detailpanel zeigt bereits Stammdaten, Open-Data, Lizenz, Score, Status, Links,
-  Kriterien, Empfehlungen und Rohdaten.
-
-Offen fuer spaetere Abschnitte:
-
-- Sicherstellen, dass alle aus Tabellen entfernten Informationen im Detailpanel
-  oder CSV erreichbar bleiben.
-- Copy-Aktionen fuer ID, `global_id` und Links pruefen.
-- Rohdaten weiter hinter explizitem `details`-Element halten.
-- Debug-Informationen nicht prominenter machen als Pflegeinformationen.
-
-### Punkt 17: Aktionen statt Spalten
-
-Aktueller Befund:
-
-- Zeilen sind klickbar und oeffnen Details.
-- Link-/URL-Informationen sind noch als Tabellenspalte vorhanden.
-- Copy-Aktionen existieren noch nicht.
-
-Offen fuer spaetere Abschnitte:
-
-- Aktion-Spalte fuer Details/Oeffnen/Kopieren entwerfen.
-- Lange URL-Spalten entfernen.
-- `ID kopieren`, `Link kopieren`, `Oeffnen` nur dort anzeigen, wo ein Wert
-  vorhanden und verifiziert ist.
-- Mehrere Statusspalten durch `Naechster Schritt` ersetzen.
-
-### Punkt 18: Ladezustaende ins UI integrieren
-
-Aktueller Befund:
-
-- Globaler `loading-container` ist dominant.
-- Fehlerliste hat bereits lokalen Ladezustand.
-- Fortschritt zeigt technische Gesamtabfrage.
-
-Offen fuer spaetere Abschnitte:
-
-- Globale Ladeanzeige reduzieren oder nur fuer echte Gesamtladung verwenden.
-- Lokale Ladezustaende fuer Uebersichtskarte, Pflegeaufgabenliste,
-  Fehlerliste und Statistikblock umsetzen.
-- Lade- und Empty-States klar trennen.
-- Keine parallelen Loader fuer denselben Vorgang anzeigen.
-- Ladezustand fachlich benennen, z. B. `Fehlerliste wird geladen ...`.
-
-### Punkt 19: Statusmeldungen aus dem UI reduzieren
-
-Aktueller Befund:
-
-- `serverIssueDiagnosticText()` zeigt technische Scan-Details direkt in der UI.
-- Fehlertexte koennen technische URLs, Status und Content-Previews enthalten.
-- Mehrere erfolgreiche Aktionen setzen sichtbare Status-Pills.
-
-Offen fuer spaetere Abschnitte:
-
-- Technische Details in `console.warn()`, `console.error()` oder
-  `console.debug()` verschieben.
-- UI-Fehlertexte kurz und handlungsorientiert formulieren.
-- Server-Scan-Diagnose in der UI auf Datenquelle, Stichprobe/Vollstaendigkeit
-  und ggf. kurzen Hinweis reduzieren.
-- Erfolgsmeldungen sparsamer einsetzen; aktualisierte Daten koennen als Feedback
-  reichen.
-- Keine HTTP-URL-, Query- oder JSON-Preview-Texte prominent anzeigen.
-
-### Punkt 20: Visuelle Entlastung
-
-Aktueller Befund:
-
-- Tabellen- und Status-CSS ist funktional, aber auf viele Spalten und Labels
-  ausgelegt.
-- Einige Spalten werden per CSS schmal gehalten statt fachlich reduziert.
-
-Offen fuer spaetere Abschnitte:
-
-- Nach Spaltenreduktion Tabellen-CSS vereinfachen.
-- Badges, Statusfarben und Warnfarben reduzieren.
-- Kritische Farbe nur fuer echte kritische Pflegebedarfe nutzen.
-- Lange Texte umbrechen oder ins Detailpanel verschieben.
-- Technische IDs nicht als prominente Hauptinformation zeigen.
-
-### Punkt 21: ET4-Pages-Links
-
-Aktueller Befund:
-
-- POI-Pages-Link ist verifiziert.
-- Detailpanel zeigt ET4-Pages-Link mit POI-Hinweis.
-- Andere Typen sind noch nicht verifiziert.
-
-Offen fuer spaetere Abschnitte:
-
-- Hotel-, Gastro-, Event-, Package- und Tour-Pages-Pfade mit echten
-  `global_id`-Werten verifizieren.
-- Erst danach automatische Links fuer weitere Typen erzeugen.
-- Items ohne `global_id` nie mit geratenem Pages-Link versehen.
-- Links in Tabellen nur als `Oeffnen`/`Link kopieren`-Aktionen zeigen.
-
-### Punkt 22: KI/n8n
-
-Aktueller Befund:
-
-- KI laeuft ueber Seitenpanel und `buildAiContext()`.
-- Kontext wird auf reduzierte Datensaetze begrenzt und enthaelt Datenlimits.
-- KI ist trotzdem noch Hauptnavigationspunkt.
-
-Offen fuer spaetere Abschnitte:
-
-- KI aus der Hauptnavigation nehmen und als dezente Aktion der aktuellen Ansicht
-  behandeln.
-- Sicherstellen, dass keine Rohdaten, Bilddaten, Secrets oder unnoetigen
-  personenbezogenen Daten an n8n gesendet werden.
-- KI-Antworten und UI-Kontext bei Samples deutlich kennzeichnen.
-- n8n produktiv absichern: CORS, Auth, Rate-Limit, Antwortformat.
-- Mock-/Webhook-Status dezent halten und technische Details nicht prominent
-  anzeigen.
-
-### Punkt 23: CSV-Export
-
-Aktueller Befund:
-
-- Statistik-CSV und Fehlerlisten-CSV sind getrennt.
-- Fehlerlisten-CSV enthaelt mehr technische Felder als die UI.
-- Exportkontext unterscheidet noch nicht klar Browser-Sample vs. Server-Scan im
-  CSV-Inhalt.
-
-Offen fuer spaetere Abschnitte:
-
-- UI-Tabelle schlank halten, CSV bewusst erweitert lassen.
-- CSV-Metadaten oder Kopfzeilen fuer Datenquelle/Sample/Server-Scan pruefen.
-- UI-Hinweis vor Export setzen, wenn nur Browser-Samples exportiert werden.
-- Fehlerlisten-CSV perspektivisch an serverseitige Treffer oder Export-Job
-  anbinden.
-- Statistik-Export strikt aggregiert halten.
-
-### Punkt 24: Migration
-
-Aktueller Befund:
-
-- Viele Zielbausteine existieren bereits, aber noch als dichte Single-Page.
-- Eine komplette Neuentwicklung ist nicht erforderlich.
-
-Offen fuer spaetere Abschnitte:
-
-- Umsetzung in kleiner Reihenfolge beibehalten:
-  Audit, Fehlerlisten, Status, Loader, Arbeitskontext, Navigation.
-- Bestehende Statistikfunktionen nach jedem Schritt kurz pruefen.
-- Panel-Komplexitaet erst reduzieren, wenn Zielbereiche funktional vorbereitet
-  sind.
-- Gemeinsame JS-Helfer erst auslagern, wenn Mehrseitenstruktur dadurch wirklich
-  einfacher wird.
-
-### Punkt 25: Konkrete erste Umsetzungsschritte
-
-Aktueller Befund:
-
-- Die operativen Aufgaben 1 bis 6 in dieser Datei decken die geforderte erste
-  Umsetzung ab.
-- Konkrete Code-Einstiege sind bekannt:
-  `ISSUE_LIST_COLUMNS`, `renderIssueList()`, `serverIssueDiagnosticText()`,
-  `loading-container`, `activePanel`, `activeFilters`.
-
-Offen fuer naechste Codearbeit:
-
-- Aufgabe 1 als konkretes UI-Audit abschliessen und Befund dokumentieren.
-- Danach Aufgabe 2 umsetzen: Fehlerlisten-UI-Spalten reduzieren.
-- Danach Aufgabe 3: technische Statusdetails aus der UI entfernen.
-- Danach Aufgabe 4: Loader lokaler integrieren.
-- Danach Aufgabe 5: Arbeitskontext vorbereiten.
-- Danach Aufgabe 6: Navigation beruhigen.
-
-## Aufgabe 1: UI auditieren
-
-Ziel: Vor der Umgestaltung konkret erfassen, wo die aktuelle Statistikseite zu
-laut oder zu technisch ist.
-
-Umfang:
-
-- Tabellen, Statusmeldungen, Loader, Panels und Menueintraege in
-  `Statistik/index.html`, `Statistik/scripts.js` und `Statistik/style.css`
-  pruefen.
-- Doppelte Spalten, technische Spalten, ueberfluessige Statusmeldungen,
-  dominante Ladeelemente und zu viele sichtbare Panels markieren.
-- Ergebnis als kurze Audit-Notiz in dieser Datei oder in der Antwort zum
-  Abschnitt dokumentieren.
-
-Nachweis:
-
-- Liste konkreter UI-Elemente, die verschlankt, verschoben oder behalten werden.
-- Keine produktiven UI-Aenderungen ohne vorherige Audit-Entscheidung.
-
-## Aufgabe 2: Fehlerlisten und Tabellen verschlanken
-
-Ziel: Fehlerlisten werden datensatzbasiert, paginiert und deutlich schlanker.
-
-Standardspalten fuer Fehlerlisten:
+# Datenqualitaets-Monitor - Offene TODOs
+
+Stand: 2026-06-05
+
+Diese Liste enthaelt die naechsten konkreten Schritte. Integriert wurden:
+
+- `C:\Users\meyer\Desktop\Datenqualitaetskriterien.docx`
+- `C:\Users\meyer\Desktop\Offene Themen.docx`
+
+Abgeschlossene Abschnittsprotokolle und alte Mockup-Befehle liegen im Archiv.
+
+## 1. UI bereinigen
+
+Ziel: Die Seiten sollen ruhiger werden und keine technischen Zwischenwerte
+anzeigen, die fuer Datenpflege nicht direkt helfen.
+
+Konkrete Schritte:
+
+- Detailseite entschlacken. Aktuell wirkt sie fachlich und visuell zu beladen.
+  Prioritaet zuerst auf Titel, Typ, Arbeitskontext, wichtigste Probleme,
+  Pflegehinweise und konkrete Aktionen legen.
+- Open-Data-Statistik weiter entschlacken: kein doppelter Arbeitskontext, keine
+  redundante Tabelle, keine Legende im Donut selbst, keine zweite prominente
+  Wiederholung gleicher Kennzahlen.
+- `Menue einklappen` aus allen Sidebar-Bereichen entfernen, solange die
+  Funktion nicht aktiv genutzt wird.
+- Hilfe nicht als deaktivierten Button fuehren. Entweder echte Hilfeseite
+  anlegen oder sichtbare Hilfe-Buttons entfernen.
+- Farbkontrast und Darstellung des Arbeitskontext-Dialogs pruefen:
+  Gebiet, Ort und Datentyp muessen klar lesbar und freundlich wirken.
+- Technische Detailanzeigen in Pflegeaufgaben reduzieren:
+  `Pruefbarkeit`, `Automatisch pruefbar`, `Datenbasis`,
+  `Verifizierter API-Count` und lange Hinweise nicht als prominente
+  Hauptinformationen zeigen.
+- Hinweis wie `Die Anzahl betroffener Datensaetze basiert auf verifizierten
+  API-Counts ...` nur kurz und kontextnah anzeigen; Details in Console oder
+  technische Doku verschieben.
+- Footer-/Infozeile `Die dargestellten Zahlen basieren ... Datenbasis:
+  Vollstaendig` auf der Statistikseite entfernen oder stark kuerzen, wenn die
+  Aussage redundant ist.
+- Qualitaetsstatus `gut`, `pruefen`, `kritisch`, `nicht bewertbar` aus
+  allgemeinen Arbeitslisten entfernen, wo er keine direkte Pflegehandlung
+  ausloest. Stattdessen Problem und naechster Schritt anzeigen.
+
+Arbeitsanweisung fuer Umsetzung:
+
+- Pro Seite zuerst sichtbare UI-Elemente inventarisieren.
+- Alles entfernen oder ausblenden, was keine Entscheidung oder Aktion ausloest.
+- Technische Statusdetails in `console.debug/warn/error` verschieben.
+- Nach jeder UI-Aenderung mit Null-Treffern testen: keine leeren Aufgaben,
+  keine falschen Status, keine ueberfluessigen technischen Hinweise.
+
+## 2. Datensatzsuche verbessern
+
+Ziel: Suche darf nicht nur ueber ID funktionieren. Nutzer muessen Titel, Ort,
+Kategorie, id, und `global_id` finden koennen.
+
+Konkrete Schritte:
+
+- Aktuelle Suche in `records.html` gegen echte Daten pruefen:
+  Titel-Volltext, Ort, Kategorie, ID und `global_id`.
+- Falls nur lokal in geladenen Treffern gesucht wird, explizite serverseitige
+  Suche ueber `/api/search` ergaenzen.
+- Keine Vollabfrage beim Tippen. Suche erst per Button oder Debounce mit
+  kleinem Limit starten.
+- Suchquery so bauen, dass Arbeitskontext erhalten bleibt.
+- Trefferliste nach Suche weiterhin schlank halten; technische Treffergrenzen
+  ruhig ausweisen.
+
+Arbeitsanweisung fuer Umsetzung:
+
+- Zuerst 5 reale Suchbeispiele notieren: Titel, Ort, Kategorie, numerische ID,
+  `global_id`.
+- Danach `searchSingleRecordById()` nicht ersetzen, sondern um eine
+  Volltextsuche ergaenzen.
+- API-Requests in DevTools/Console zaehlen und sicherstellen, dass keine
+  Requests pro Tastendruck entstehen.
+
+## 3. Fachliche Qualitaetskriterien modellieren
+
+Ziel: Die fachlichen Kriterien aus `Datenqualitaetskriterien.docx` werden als
+Qualitaetsmodell vorbereitet. Nicht jedes Kriterium wird sofort automatisch als
+Pflegeaufgabe aktiviert. die bisherigen kriterien sind hier gegenzuprüfen und entsprechend einzuordnen. dabei soll die bisherige logik mit "kritisch" und "kleines Problem" beibehalten werden.
+technische prüfungen nach folgenden dingen müssen nicht integriert werden,  da diese bei fehlen sowieso nicht als datensätze ausgegeben werden:
+titel
+kategorie
+geo-informationen
+Ort
+- Tour-Geometrie bzw. Polyline
+- Tourdaten wie Laenge, Dauer oder vergleichbare Basisdate
+Betriebsart
+- Veranstalter
+- Termine
+
+Entsprechende Beispieldaten sind hinterlegt. Ich prüfe gern nach, ob wir bestimmte punkte gegen die api pushen können statt diese selbst zu berechnen.
+
+### Hotel / Gastgeber
+
+Minimale Anforderungen:
 
 - Titel
-- Typ
-- Ort / Gebiet
-- Problem
-- Naechster Schritt
-- Aktion
-
-In das Detailpanel verschieben:
-
-- ID und `global_id`
-- konkrete Lizenzwerte
-- Open-Data-Detailstatus, wenn redundant
-- Qualitaets-Score
-- Kategorie, wenn sie nicht fuer die Aufgabe relevant ist
-- letzte Aktualisierung
-- Link und Rohdaten
-- vollstaendige Kriterienbewertung
-
-Nachweis:
-
-- Fehlerliste bleibt klickbar und oeffnet konkrete Datensaetze.
-- CSV-Export passt zur verschlankten Ansicht oder exportiert bewusst erweiterte
-  Felder mit klarer Zuordnung.
-
-## Aufgabe 3: Statusmeldungen umbauen
-
-Ziel: UI zeigt nur kurze nutzerrelevante Meldungen; technische Diagnose wandert
-in die Console.
-
-Regeln:
-
-- Technische Fehler: `console.error`.
-- Technische Warnungen: `console.warn`.
-- Debug-Infos: `console.debug`.
-- Erfolgreiche Requests nicht dauerhaft als UI-Meldung anzeigen.
-- UI-Text kurz halten, z. B. `Daten konnten nicht geladen werden.` statt langer
-  API-Diagnose.
-
-Nachweis:
-
-- Technische Scan-/Query-/HTTP-Details sind nicht mehr dominant sichtbar.
-- Nutzbare Hinweise fuer Stichproben, leere Listen und nicht pruefbare Kriterien
-  bleiben sichtbar.
-
-## Aufgabe 4: Loader komponentennah integrieren
-
-Ziel: Globale Ladeanzeigen reduzieren und Loader dort zeigen, wo gerade Daten
-geladen werden.
-
-Zielbereiche:
-
-- Uebersichtskarte
-- Pflegeaufgabenliste
-- Fehlerliste
-- Statistikblock
-
-Regeln:
-
-- Keine grosse, dauerhaft dominante Ladeanimation fuer kleine Teilrequests.
-- Abbrechen/Progress nur dort sichtbar machen, wo es fuer Nutzer relevant ist.
-- Leere Zustaende und Ladezustaende eindeutig trennen.
-
-Nachweis:
-
-- Jede Ansicht zeigt ihren Ladezustand lokal.
-- Keine unnoetigen Layoutspruenge durch Loader.
-
-## Aufgabe 5: Arbeitskontext vorbereiten
-
-Ziel: Nutzer koennen einen einfachen lokalen Arbeitskontext setzen, ohne ein
-grosses Einstellungsmenue bedienen zu muessen.
-
-Minimaler Kontext:
-
-- Gebiet
+- Kategorie
+- Geo-Informationen
 - Ort
-- Datentyp
+- Telefon
+- Strasse
+- Beschreibungstext
+- Teaser-Text
 
-Regeln:
+Gute Qualitaet:
 
-- Kontext dezent im Header anzeigen.
-- Bestehende Filterlogik wiederverwenden.
-- Noch kein grosses Einstellungsmenue bauen.
-- Kontextwechsel darf aktive Listen und KI-Kontext sauber aktualisieren.
+- E-Mail
+- Webseite
+- Merkmale
+- Zahlungsmoeglichkeiten
+- Preisinformation
 
-Nachweis:
+Sehr gute Qualitaet:
 
-- Aktiver Kontext ist sichtbar.
-- Pflegeaufgaben, Datensaetze, Statistik und CSV beziehen sich auf denselben
-  Kontext.
+- Ansprechperson
+- Erreichbarkeit per OePNV
+- Fremdsprachenkenntnisse
+- CC-Lizenz
+- Parkplaetze
 
-## Aufgabe 6: Navigation beruhigen
+### Touren
 
-Ziel: Hauptnavigation in Richtung vier ruhige Bereiche migrieren.
+Basisanforderungen:
 
-Zielbereiche:
+- Tour-Geometrie bzw. Polyline
+- Tourdaten wie Laenge, Dauer oder vergleichbare Basisdaten
 
-- Uebersicht
-- Pflegeaufgaben
-- Datensaetze
-- Statistik
+Minimale Anforderungen:
 
-Kontextuell statt Hauptnavigation:
+- Titel
+- Kategorie
+- Geo-Information
+- Ort
+- Beschreibungstext
+- Teaser-Text
 
-- Kriterien-Matrix
-- Datentyp-Vergleich
-- CSV-Export
-- KI-Analyse
-- Detail- und Rohdatenansicht
+Gute Qualitaet:
 
-Nachweis:
+- Eignung oder Jahreszeit
+- Anreise mit OePNV und Parken
+- Autor oder Organisation
 
-- Hauptnavigation ist reduziert oder klar auf diese Richtung vorbereitet.
-- Bestehende `data-view-panel`-/`activePanel`-Logik wird nicht weiter
-  aufgeblasen, sondern dient nur als Uebergang.
+Sehr gute Qualitaet:
 
-## Aufgabe 7: Offene Fach- und API-Themen
+- Start- und Zielbeschreibungen
+- CC-Lizenz
 
-- ET4-Pages-Pfade fuer Hotel, Gastro, Tour, Event und Package verifizieren,
-  bevor weitere Typen automatisch verlinkt werden.
-- Package-Buchungslink: Server-Scan ist verifiziert; nur eine moegliche
-  API-Pushdown-Query bleibt offen.
-- Hotel `image_missing` und `description_missing` fachlich entscheiden und mit
-  `media:*` bzw. `details:*` testen.
-- Event-Beispieldaten nachreichen, bevor Event-spezifische Kriterien entstehen.
-- n8n-Webhook produktiv absichern: CORS, Auth, Rate-Limit, Antwortformat.
-- Fehlerlisten-CSV perspektivisch an serverseitige Treffer anbinden.
+### POI
 
-## Checks
+Minimale Anforderungen:
 
-Immer:
+- Titel
+- Kategorie
+- Geo-Information
+- Ort
+- Strasse
+- Beschreibungstext
+- Teaser-Text
 
-```bash
-git diff --check
-```
+Gute Qualitaet:
 
-Wenn Node verfuegbar ist:
+- E-Mail
+- Webseite
+- Telefon
+- Oeffnungszeiten
+- Preisinformation
 
-```bash
-npm run check
-npm run diagnose:quality-examples
-```
+Sehr gute Qualitaet:
 
-Wenn Node nicht verfuegbar ist, dokumentieren und JSON-Fixtures alternativ mit
-PowerShell parsebar pruefen.
+- Zahlungsmoeglichkeiten
+- Lizenz
 
-## Abschlusskriterien
+### Gastronomie
 
-Eine Abschnittsumsetzung ist erst fertig, wenn:
+Minimale Anforderungen:
 
-- Dashboard weiterhin ohne Build-Schritt laedt.
-- bestehende Statistikfunktionen erhalten bleiben.
-- UI ruhiger und weniger technisch wirkt.
-- Hauptnavigation reduziert ist oder sichtbar in diese Richtung migriert.
-- Pflegeaufgaben priorisiert und klickbar zu konkreten Datensaetzen fuehren.
-- Fehlerlisten schlanker, paginiert und datensatzbasiert sind.
-- Tabellen keine doppelten Bedeutungen mehr zeigen.
-- technische Statusmeldungen nicht dauerhaft im UI stehen.
-- Ladezustaende dort erscheinen, wo tatsaechlich geladen wird.
-- Detailinformationen weiterhin erreichbar sind.
-- `quality.js` als zentrale Qualitaetslogik wiederverwendet wird.
-- `git diff --check` ohne Fehler laeuft.
+- Titel
+- Betriebsart
+- Geo-Information
+- Ort
+- Telefon
+- Strasse
+- Beschreibungstext
+- Teaser-Text
 
-## Umbau Statistik: offene Folgepunkte nach Startseite
+Gute Qualitaet:
 
-- Startseite im Browser mit echten API-Daten visuell gegen
-  `docs/Codex/Umbau_Statistik/Startseite.png` pruefen.
-- Entscheiden, ob die Qualitaets-KPIs der Startseite dauerhaft als Stichprobe
-  gekennzeichnet bleiben oder spaeter serverseitige Snapshot-Werte bekommen.
-- Mockups fuer Datensatz-Hauptseite, Datensatzliste und Detailansichten
-  nacheinander auf die vorbereiteten Zielseiten migrieren.
-- Schnellzugriff `KI-Analyse` erst nach fachlicher Webhook-/Auth-Klaerung aktiv
-  schalten.
-- Browser-QA und Responsive-Abgleich nachholen, sobald eine lokale Server- oder
-  Preview-Umgebung verfuegbar ist.
+- E-Mail
+- Webseite
+- Oeffnungszeiten
+- Zahlungsmoeglichkeiten
 
-## Umbau Statistik: offene Folgepunkte nach Pflegeaufgaben
+Sehr gute Qualitaet:
 
-- Pflegeaufgaben-Seite im Browser mit echten API-Daten gegen
-  `docs/Codex/Umbau_Statistik/Pflegeaufgaben.png` pruefen.
-- Verhalten von `/api/quality/scan` fuer weitere grosse Fehlerlisten und
-  Pagination-Szenarien mit echten Daten validieren; `image_author_missing` und
-  `booking_link_missing` sind als Server-Scan getestet.
-- Pagination fuer Datensatzlisten erweitern, falls mehr als die aktuell
-  geladenen 25 Treffer pro Aufgabe benoetigt werden.
-- Datensatzliste in `records.html` mit den naechsten Mockups verbinden und
-  Parameteruebergabe von Pflegeaufgaben vorbereiten.
-- Primaersystem-Erkennung mit echten Feldern validieren, insbesondere
-  Outdooractive-Source-ID und Feratel-Hotel-Zuordnung.
+- CC-Lizenz
+- Kuechenart
+- Fremdsprachenkenntnisse
+- Anfahrt
+- Parkplaetze
+- Kueche
 
-## Umbau Statistik: offene Folgepunkte nach Datensaetze-Hauptseite
+### Veranstaltungen
 
-- Datensaetze-Hauptseite im Browser mit echten API-Daten gegen
-  `docs/Codex/Umbau_Statistik/Datensatz-Haupseite.png` pruefen.
-- Gezielte ID-Suche mit realen Beispielen testen, insbesondere numerische ID
-  und `global_id`.
-- Ruecksprung von Detailseite zur aktuellen Liste spaeter ohne grosse
-  Rohdaten-Speicherung vorbereiten.
-- Parameteruebergabe von Pflegeaufgaben zur Datensaetze-Hauptseite spaeter
-  verbinden, ohne automatische Vollscans auszulösen.
-- Optionales Spaltenmenue und Rasteransicht erst erweitern, wenn fachlich
-  benoetigt.
+Minimale Anforderungen:
 
-## Umbau Statistik: offene Folgepunkte nach Datensatz-Detailseite
+- Titel
+- Kategorie
+- Geo-Information
+- Ort
+- Telefon
+- Strasse
+- Beschreibungstext
+- Teaser-Text
+- Veranstalter
+- Termine
 
-- Datensatz-Detailseite im Browser mit echten API-Daten gegen
-  `docs/Codex/Umbau_Statistik/Detailansicht datensatz.png` pruefen.
-- Detailseite mit `testdata/quality-examples/poi.json` fachlich gegen
-  Beschreibung, Medien, Bildrechte und Oeffnungszeiten validieren.
-- Vorheriger/Naechster erst umsetzen, wenn ein kleiner Listen-Kontext ohne
-  Rohdaten-Speicherung definiert ist.
-- Optionales Aktionen-Menue fuer ID kopieren, `global_id` kopieren und
-  CSV-Zeile exportieren spaeter ausbauen.
-- Medien-Detailansicht fuer einzelne Bilder spaeter ergaenzen, falls fuer
-  Bildrechte-Pflege benoetigt.
+Gute Qualitaet:
 
-## Umbau Statistik: offene Folgepunkte nach Logo/Pflegesystem/Count-Pfad
+- E-Mail
+- Webseite
+- Preisinformationen
 
-- Fuer nicht verifizierte Kriterien im UI klar zwischen vollstaendiger
-  API-Zahl, budgetiertem Server-Scan und Browser-Stichprobe unterscheiden.
-- `/api/quality/count` mit echten Render-Daten pro Region, Typ und Kriterium
-  pruefen.
-- Optional einen Batch-Endpunkt fuer mehrere Count-Jobs ergaenzen, falls die UI
-  sonst zu viele Einzelrequests ausloest.
+Sehr gute Qualitaet:
 
-## Umbau Statistik: offene Folgepunkte nach Wegfall Browser-Stichproben
+- Zahlungsmoeglichkeiten
+- CC-Lizenz
+
+Arbeitsanweisung fuer Umsetzung:
+
+- Neues fachliches Kriterienmodell nicht blind in `qualityCriteria`
+  aktivieren.
+- Fuer jedes Kriterium erst festhalten:
+  Datentyp, Qualitaetsstufe, Feldmapping, pruefbare API-Query,
+  Server-Scan-Notwendigkeit, fachliche Empfehlung und UI-Prioritaet.
+- Nur Kriterien mit verifiziertem Feldmapping und belastbarer Abfrage in
+  Pflegeaufgaben aktivieren.
+- Mindestanforderungen hoeher priorisieren als gute oder sehr gute Qualitaet.
+- Open-Data-relevante Kriterien, besonders Lizenz, getrennt von allgemeinen
+  Vollstaendigkeitskriterien ausweisen.
+- Bestehende Kriterien in `Statistik/quality.js` nur erweitern, wenn
+  Frontend, Proxy-Scan, Count-Logik und Doku gemeinsam angepasst werden.
+
+## 4. Feldmappings und API-Queries verifizieren
+
+Ziel: Aus den fachlichen Kriterien werden echte, belastbare technische Regeln. Halte dich dabei an den vorherigen schritt: Nicht alles muss überprüft werden.
+
+Konkrete Schritte:
+
+- Fuer Telefon, Strasse, Teaser, E-Mail, Webseite, Preisinformation,
+  Zahlungsmoeglichkeiten, Parkplaetze, Fremdsprachen, Veranstalter, Termine,
+  Kuechenart, Betriebsart, Autor/Organisation, Start-/Zielbeschreibung und
+  Tourdaten echte Destination.One-Felder ermitteln.
+- Fuer jedes Feld pruefen, ob ein API-Count per Query moeglich ist.
+- Wenn kein API-Pushdown moeglich ist, Server-Scan-Kosten abschaetzen.
+- Event-Beispieldaten beschaffen, bevor Veranstaltungskriterien aktiviert
+  werden.
+- Hotel-`image_missing` und Hotel-`description_missing` fachlich entscheiden
+  und mit echten Daten testen.
+- Package-`booking_link_missing`: Logik kann von Hotel übernommen werden und nach Verifikation aktivieren.
+- ET4-Pages-Pfade fuer Hotel, Gastro, Tour, Event und Package mit echten
+  `global_id`-Werten verifizieren.
+
+Arbeitsanweisung fuer Umsetzung:
+
+- Pro neuem Feld mindestens einen echten positiven und einen echten negativen
+  Datensatz dokumentieren.
+- Keine generischen Alias-Annahmen als verifiziert behandeln.
+- Erst Query in Proxy/API testen, dann UI aktivieren.
+- Count, Liste und Detailbewertung muessen dieselbe fachliche Logik nutzen.
+
+## 5. Sonderfaelle aus Pflegeaufgaben ausschliessen
+
+Ziel: Objekte, die fachlich nicht pflegbar sind, duerfen keine falschen
+Pflegeaufgaben erzeugen.
+
+Konkreter Fall:
+
+- Oeffnungszeiten von beispelsweise Bergen koennen nicht gepflegt werden. Solche Objekte
+  duerfen nicht als `opening_hours_missing`-Pflegeaufgabe erscheinen.
+
+Arbeitsanweisung fuer Umsetzung:
+- Entlang der Category_POI Kategorieliste Kategorien filtern, für die normalerweise keine öffnungszeiten hinterlegt werden können. Die Lise liegt im ordner testdata als treepoi.xml.
+
+- Pruefen, ob sie ueber Kategorie, Keywords, Typ, Source oder ein anderes Feld
+  sicher identifizierbar sind.
+- Danach eine Ausschlussregel im Kriterienmodell ergaenzen, nicht nur im UI
+  ausblenden. Das kann z.b. über eine negierung in der API-Abfrage erfolgen.
+- Count, Fehlerliste und Detailseite muessen denselben Ausschluss verwenden.
+- Falls der API-Count den Ausschluss nicht sauber abbilden kann, das Kriterium
+  fuer diese Kombination als Server-Scan oder nicht vollstaendig kennzeichnen.
+
+## 6. Hilfe, Erklaerungen und Rechtliches
+
+Ziel: Nutzer sollen verstehen, was die Ansichten bedeuten, ohne dass jede Seite
+mit Erklaertext ueberladen wird.
+
+Konkrete Schritte:
+
+- Hilfeseite anlegen oder vorhandenen Hilfe-Einstieg entfernen.
+- Kurze Erklaerung erstellen: Welche Seite ist wofuer gut?
+  Uebersicht, Pflegeaufgaben, Datensaetze, Open-Data-Statistik.
+- Matrixberechnungsgrundlagen dokumentieren, falls Matrix/Statusverteilung
+  wieder sichtbar oder fachlich relevant wird.
+- Cookie-Banner bzw. Datenschutz-Hinweis pruefen, falls Tracking,
+  externe Dienste, n8n/KI oder persistente Cookies eingesetzt werden.
+- wir können consentmanager einsetzen, bitte bereite alles für die integration des codes vor.
+Arbeitsanweisung fuer Umsetzung:
+
+- Hilfetexte kurz und handlungsorientiert halten.
+- Technische API-Details nicht in Nutzerdokumentation ausbreiten.
+- Datenschutz/Cookie-Hinweis erst konkret bauen, wenn klar ist, welche
+  Speicherungen und externen Dienste produktiv aktiv sind.
+
+## 7. API und Performance
+
+Ziel: Die Anwendung bleibt schnell, obwohl Listen und Kriterien fachlich
+vollstaendiger werden.
+
+Konkrete Schritte:
 
 - `/api/quality/scan` fuer grosse Fehlerlisten paginierbar in der UI machen,
-  damit mehr als die aktuell geladenen Proxy-Maximalergebnisse bearbeitbar
-  sind.
-- Fuer sehr grosse Exporte einen Batch-/Job-Endpunkt pruefen, damit CSV-Dateien
-  nicht an Browser- oder Request-Limits haengen.
-- Qualitaetsstatus-Gesamtzahlen fuer ganz Sachsen weiterhin nicht anzeigen,
-  solange kein fachlich belastbarer Gesamt-Scan produktiv genutzt wird.
-- `image_author_missing` ist als Server-Scan verifiziert; API-Pushdown bleibt
-  mangels belastbarer Destination.One-Query nicht verifiziert.
-
-## Umbau Statistik: offene Folgepunkte Live-Proxy ohne Cronjob
-
-- Render-Proxy-Endpunkte mit echten Daten pruefen:
-  `/api/search`, `/api/quality/count` und `/api/quality/scan`.
-- Browser-UI so beobachten, dass Startseite, Pflegeaufgaben, Datensaetze und
-  Open-Data-Statistik ohne Cache-Endpunkte vollstaendig nutzbar bleiben.
-- Timeouts und Scan-Budgets fuer `/api/quality/scan` mit echten
+  falls mehr als die aktuell geladenen Treffer bearbeitet werden muessen.
+- Timeouts und Scan-Budgets fuer regionale Qualitaetsscans mit echten
   Gebietsdaten dimensionieren.
-- Optionalen Cache-/Snapshot-Pfad erst wieder aktivieren, wenn Render Key Value
-  bewusst eingefuehrt wird und `window.SATOURN_USE_QUALITY_CACHE` gesetzt ist.
+- Wirkung des `media:*`-Prefilters fuer `image_author_missing` messen:
+  Quellmenge vorher/nachher, Laufzeit und Trefferquote.
+- Optionalen Batch-Endpunkt fuer mehrere Count-Jobs pruefen, falls
+  Pflegeaufgaben oder Statistik zu viele Einzelrequests ausloesen.
+- Fuer sehr grosse CSV-Exporte spaeter Batch-/Job-Endpunkt pruefen.
 
-## Umbau Statistik: offene Folgepunkte nach Score-Logik Sachsen/Gebiet
+Arbeitsanweisung fuer Umsetzung:
 
-- Startseite mit Arbeitskontext `Sachsen - Alle Orte - Alle Datentypen`
-  pruefen: Score, gute Datensaetze, Pflegebedarf und kritische Datensaetze
-  duerfen nicht als echte Gesamtbewertung erscheinen.
-- Startseite mit einem Gebiet pruefen: Score und Statusverteilung muessen
-  nachgeladen und waehrend des regionalen Scans schrittweise aktualisiert
-  werden.
-- `SATOURN_REGION_QUALITY_MAX_PAGES` mit echten Gebietsdaten dimensionieren,
-  damit der regionale Scan brauchbar bleibt, ohne zu lange zu laufen.
-- UI-Text fuer begrenzte regionale Scans fachlich pruefen: bei Truncation darf
-  der Score nur als Zwischenwert verstanden werden.
-- Optional spaeter kleine Abbruch-/Fortschrittsanzeige fuer den regionalen
-  Qualitaetsscan ergaenzen.
-- Wirkung des `media:*`-Prefilters fuer `image_author_missing` mit echten Daten
-  je Typ messen: Quellmenge vorher/nachher, Laufzeit, Trefferquote.
+- Keine automatische Vollabfrage beim Seitenstart.
+- Grosse Listen nur nach konkreter Nutzeraktion laden.
+- Laufzeit, Trefferzahl, Truncation und Datenbasis pro Scan intern erfassen.
+- UI darf Vollstaendigkeit nur behaupten, wenn der Scan fachlich und technisch
+  vollstaendig war.
+  - Wenn ein Arbeitskontext abgerufen wird, soll im Git ein Snapshot der abgerufenen daten abgespeichert werden. das dient als vorübergehender cache der erweitert werden kann. der soll nach spätestens 2h überschrieben werden - wenn das geht.
+
+## 8. Spaeter / optional
+
+- Cache-/Snapshot-Pfad erst aktivieren, wenn Render Key Value oder eine andere
+  Speicherloesung bewusst eingefuehrt wird.
+- Historie, Trends und Nachtlaeufe erst planen, wenn eine produktive
+  Speicherbasis entschieden ist.
+- Vercel-Migration separat behandeln; aktuell bleibt Render der Proxy.
+- n8n produktiv absichern: CORS, Auth, Rate-Limit, Payload-Limits,
+  Antwortformat.
+
+## Standardchecks
+
+- Immer: `git diff --check`.
+- Wenn Node verfuegbar ist: `npm run check` und
+  `npm run diagnose:quality-examples`.
+- Wenn Node nicht verfuegbar ist, im Arbeitsstand dokumentieren und keine
+  erfolgreiche Node-Pruefung behaupten.

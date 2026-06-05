@@ -37,10 +37,6 @@ module: true
       <a class="nav-link" href="tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
       <a class="nav-link active" href="records.html" aria-current="page"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
       <a class="nav-link" href="stats.html"><span class="material-icons" aria-hidden="true">bar_chart</span>Open-Data-Statistik</a>
-      <div class="sidebar-bottom">
-        <button class="nav-utility" type="button" disabled>Hilfe &amp; Dokumentation</button>
-        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
-      </div>
     </nav>
 
     <main class="record-detail-main" aria-labelledby="record-detail-title">
@@ -72,7 +68,7 @@ module: true
       <div id="record-detail-message" class="overview-message" hidden></div>
 
       <section id="detail-head-card" class="panel-card detail-head-card" aria-live="polite">
-        <div class="table-empty">Datensatz wird geladen ...</div>
+        <div class="table-empty"><span class="loading-line">Datensatz wird geladen ...</span></div>
       </section>
 
       <section id="detail-content" class="detail-grid" hidden>

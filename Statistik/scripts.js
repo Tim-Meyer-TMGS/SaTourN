@@ -1047,7 +1047,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = '...';
     if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = '...';
     if (els.statsTypeDonutTotal) els.statsTypeDonutTotal.textContent = '...';
-    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Statistik wird geladen ...</td></tr>';
+    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty"><span class="loading-line">Statistik wird geladen ...</span></td></tr>';
     if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="inline-loading">Statistik wird geladen ...</div>';
     if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Statistik wird geladen ...</td></tr>';
     if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
@@ -1387,9 +1387,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
       const failedText = state.qualityDataMeta.failedCounts ? ` ${formatNumber(state.qualityDataMeta.failedCounts)} Count-Abfragen konnten nicht geladen werden.` : '';
-      els.taskDataNote.textContent = unsupportedCount
-        ? `Die Anzahl betroffener Datensätze basiert auf verifizierten API-Counts. ${formatNumber(unsupportedCount)} Kriterium-Typ-Kombinationen benötigen weiterhin einen Server-Scan.${failedText}`
-        : `Die Anzahl betroffener Datensätze basiert auf verifizierten API-Counts.${failedText}`;
+      els.taskDataNote.textContent = unsupportedCount || failedText
+        ? `Einzelne Aufgaben werden bei Bedarf live nachgeladen.${failedText}`
+        : 'Pflegeaufgaben sind geladen.';
     }
   }
 
@@ -1401,7 +1401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const visibleRows = rows.slice(start, start + state.taskRowsPerPage);
 
     if (!visibleRows.length) {
-      els.taskTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Für diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
+      els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">Für diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
     } else {
       els.taskTableBody.innerHTML = visibleRows.map((task) => `
         <tr>
@@ -1414,7 +1414,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${formatNumber(task.affectedCount)}</td>
           <td><span class="status-badge ${task.priority === 'hoch' ? 'critical' : 'review'}">${priorityLabel(task.priority)}</span></td>
           <td>${renderTypeChips(task.affectedTypes)}</td>
-          <td><span class="status-badge good">${task.autoCheck === false ? 'Manuell' : 'Automatisch'}</span></td>
           <td><span class="status-badge ${impactBadgeClass(task.impact)}">${impactLabel(task.impact)}</span></td>
           <td><button class="row-arrow" type="button" data-task-id="${escapeHtml(task.criterionId)}" aria-label="Aufgabe anzeigen"><span class="material-icons" aria-hidden="true">chevron_right</span></button></td>
         </tr>
@@ -1469,10 +1468,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <dd>${escapeHtml(task.recommendation)}</dd>
         <dt>Betroffene Typen</dt>
         <dd>${renderTypeChips(task.affectedTypes)}</dd>
-        <dt>Prüfbarkeit</dt>
-        <dd>${task.autoCheck === false ? 'Manuell zu prüfen' : 'Automatisch prüfbar'}</dd>
-        <dt>Datenbasis</dt>
-        <dd>${task.countMode === 'snapshot_scan' ? 'Gecachter Nachtlauf' : task.countMode === 'api_count' ? 'Verifizierter API-Count' : 'Server-Scan erforderlich'}</dd>
       </dl>
       ${typeChoice}
       <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswählen und Datensätze anzeigen' : 'Datensätze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
@@ -1526,7 +1521,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.taskRecordsExport.disabled = true;
     els.taskRecordsTitle.textContent = `${task.label} - ${type}`;
     els.taskRecordsNote.textContent = 'Datensätze werden geladen ...';
-    els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Datensätze werden geladen ...</td></tr>';
+    els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>';
 
     try {
       const params = new URLSearchParams();
@@ -1559,7 +1554,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTaskRecords(task, type, rows, payload) {
     const page = payload?.page || {};
     const stats = payload?.stats || {};
-    const completeText = page.complete ? 'Server-Scan abgeschlossen.' : 'Server-Scan mit begrenztem Budget geladen.';
+    const completeText = page.complete ? 'Liste geladen.' : 'Liste geladen, weitere Treffer können später nachgeladen werden.';
     els.taskRecordsNote.textContent = `${completeText} ${formatNumber(rows.length)} Datensätze angezeigt.`;
     els.taskRecordsExport.disabled = !rows.length;
 
@@ -1590,7 +1585,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (node) node.textContent = '...';
     });
     if (els.taskKpiHighDetail) els.taskKpiHighDetail.textContent = '...';
-    if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Pflegeaufgaben werden geladen ...</td></tr>';
+    if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty"><span class="loading-line">Pflegeaufgaben werden geladen ...</span></td></tr>';
     if (els.taskTableCount) els.taskTableCount.textContent = '-';
     if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Pflegeaufgaben werden geladen ...</p>';
   }
@@ -1600,7 +1595,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (node) node.textContent = '-';
     });
     if (els.taskKpiHighDetail) els.taskKpiHighDetail.textContent = '-';
-    if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Noch keine Pflegeaufgaben geladen.</td></tr>';
+    if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">Noch keine Pflegeaufgaben geladen.</td></tr>';
     if (els.taskTableCount) els.taskTableCount.textContent = '0 Aufgaben';
     if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle einen Arbeitskontext und starte die Abfrage.</p>';
     showTaskMessage(message);
@@ -1888,7 +1883,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const emptyText = state.recordRows.length
         ? 'Für diese Filter wurden keine Datensätze gefunden.'
         : 'Noch keine Datensätze geladen. Wähle einen Arbeitskontext oder starte eine Suche.';
-      els.recordTableBody.innerHTML = `<tr><td colspan="9" class="table-empty">${emptyText}</td></tr>`;
+      els.recordTableBody.innerHTML = `<tr><td colspan="7" class="table-empty">${emptyText}</td></tr>`;
     } else {
       els.recordTableBody.innerHTML = visibleRows.map((row) => `
         <tr>
@@ -1896,9 +1891,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td><span class="type-chip ${row.type.toLowerCase()}">${escapeHtml(row.type || '-')}</span></td>
           <td>${escapeHtml(row.city || '-')}<small>${escapeHtml(row.region || '')}</small></td>
           <td>${escapeHtml(row.category || '-')}</td>
-          <td>${renderRecordStatus(row.qualityStatus)}</td>
           <td>${escapeHtml(row.primaryIssue)}</td>
-          <td>${renderRecordScore(row.qualityScore)}</td>
           <td>${escapeHtml(formatRecordDate(row.updatedAt))}</td>
           <td>
             <span class="row-actions">
@@ -1986,14 +1979,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderRecordsLoading() {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Datensätze werden geladen ...</td></tr>';
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>';
     if (els.recordResultSummary) els.recordResultSummary.textContent = 'Datensätze werden geladen ...';
     if (els.recordPageRange) els.recordPageRange.textContent = '-';
     if (els.recordExport) els.recordExport.disabled = true;
   }
 
   function renderRecordsEmpty(message) {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="9" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
     if (els.recordResultSummary) els.recordResultSummary.textContent = '0 Datensätze';
     if (els.recordPageRange) els.recordPageRange.textContent = '0 Datensätze';
     if (els.recordExport) els.recordExport.disabled = true;
@@ -2402,19 +2395,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="detail-head-left">
         <h1 id="record-detail-title">${escapeHtml(model.identity.title)} <span class="type-chip ${model.identity.type.toLowerCase()}">${escapeHtml(model.identity.type || '-')}</span></h1>
         <p>${escapeHtml([model.identity.city, model.identity.region, model.identity.category].filter(Boolean).join(' - ') || 'Ort und Kategorie nicht angegeben')}</p>
-        <div class="detail-id-row">
-          <button type="button" class="context-edit" data-copy-detail="${escapeHtml(model.identity.id)}">ID: ${escapeHtml(model.identity.id || '-')}</button>
-          <button type="button" class="context-edit" data-copy-detail="${escapeHtml(model.identity.globalId)}">global_id: ${escapeHtml(model.identity.globalId || '-')}</button>
-          <span class="context-edit">Letzte Aktualisierung: ${escapeHtml(formatRecordDate(model.identity.updatedAt))}</span>
-        </div>
-      </div>
-      <div class="detail-quality-summary">
-        <div>${renderRecordStatus(model.quality.status)}<strong>${model.quality.score == null ? '-' : `${formatNumber(model.quality.score)} / 100`}</strong></div>
-        <dl>
-          <dt>Positive Kriterien</dt><dd>${formatNumber(model.quality.fulfilledCount)}</dd>
-          <dt>Fehlende Kriterien</dt><dd>${formatNumber(model.quality.missingCount)}</dd>
-          <dt>Nicht bewertbar</dt><dd>${formatNumber(model.quality.manualCount)}</dd>
-        </dl>
       </div>
     `;
     els.detailHeadCard.querySelectorAll('[data-copy-detail]').forEach((button) => {
@@ -2422,13 +2402,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     els.detailContent.hidden = false;
-    els.detailCriteriaCard.hidden = false;
+    els.detailCriteriaCard.hidden = true;
     renderDetailIssues(model);
     renderDetailUsability(model);
     renderDetailTextCards(model);
     renderDetailMedia(model);
     renderDetailInfo(model);
-    renderDetailCriteria(model);
 
     if (model.details.et4Url && els.detailEt4Link) {
       els.detailEt4Link.href = model.details.et4Url;
@@ -2535,10 +2514,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <strong>${escapeHtml(image.value || 'Bild')}</strong>
           <span>${escapeHtml(image.copyrightText || 'Urheber fehlt')}</span>
           <small>Lizenz: ${escapeHtml(image.license || 'nicht angegeben')}</small>
-          <small>Alt-Text: ${escapeHtml(image.alt || 'fehlt')}</small>
-          <small>Beschreibung: ${escapeHtml(image.description || 'fehlt')}</small>
-          <small>Maße: ${escapeHtml(formatImageSize(image))}</small>
-          <small>rel: ${escapeHtml(image.rel || '-')}</small>
         </figcaption>
       </figure>
     `).join('');
@@ -2550,18 +2525,13 @@ document.addEventListener('DOMContentLoaded', () => {
       ['ID', escapeHtml(model.identity.id || '-')],
       ['global_id', escapeHtml(model.identity.globalId || '-')],
       ['Pflegesystem', escapeHtml(model.details.primarySystem.name)],
-      ['Quelle', escapeHtml(model.details.source || '-')],
       ['ET4 pages', model.details.et4Url ? `<a href="${escapeHtml(model.details.et4Url)}" target="_blank" rel="noopener">Öffnen auf et4 pages</a>` : 'Nicht verfügbar'],
       ['Web', model.details.web ? `<a href="${escapeHtml(model.details.web)}" target="_blank" rel="noopener">Datensatz öffnen</a>` : 'Nicht angegeben'],
       ['E-Mail', escapeHtml(model.details.email || 'Nicht angegeben')],
       ['Telefon', escapeHtml(model.details.phone || 'Nicht angegeben')],
       ['Adresse', escapeHtml([model.details.street, model.details.zip, model.identity.city].filter(Boolean).join(', ') || 'Nicht angegeben')],
-      ['Koordinaten', escapeHtml(model.details.coordinates || 'Nicht angegeben')],
       ['Lizenz', escapeHtml(model.details.license || 'Lizenz fehlt')],
-      ['Lizenz-URL', model.details.licenseUrl ? `<a href="${escapeHtml(model.details.licenseUrl)}" target="_blank" rel="noopener">Lizenz öffnen</a>` : 'Nicht angegeben'],
-      ...model.details.externalIds.map(([label, value]) => [label, `${escapeHtml(value)} <button class="plain-button detail-copy-inline" type="button" data-copy-detail="${escapeHtml(value)}">kopieren</button>`]),
-      ...model.details.addresses.map(([label, value]) => [label, escapeHtml(value)]),
-      ...model.rawExcerpt.map(([label, value]) => [label, escapeHtml(value)])
+      ['Letzte Aktualisierung', escapeHtml(formatRecordDate(model.identity.updatedAt))]
     ];
     els.detailInfo.innerHTML = renderKvRows(rows, true);
     els.detailInfo.querySelectorAll('[data-copy-detail]').forEach((button) => {
@@ -2588,7 +2558,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderDetailLoading() {
-    if (els.detailHeadCard) els.detailHeadCard.innerHTML = '<div class="table-empty">Datensatz wird geladen ...</div>';
+    if (els.detailHeadCard) els.detailHeadCard.innerHTML = '<div class="table-empty"><span class="loading-line">Datensatz wird geladen ...</span></div>';
     if (els.detailContent) els.detailContent.hidden = true;
     if (els.detailCriteriaCard) els.detailCriteriaCard.hidden = true;
     if (els.detailEt4Link) els.detailEt4Link.hidden = true;
@@ -2935,10 +2905,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderDataNote(sampleSize) {
     if (state.qualityDataMeta.mode === 'sachsen_total') {
-      const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
-      els.qualityDataNote.textContent = unsupportedCount
-        ? `Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Pflegeaufgaben laden asynchron ueber API-Counts; ${formatNumber(unsupportedCount)} Kriterium-Typ-Kombinationen brauchen konkrete Server-Scans.`
-        : 'Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Waehle ein Gebiet oder einen Ort, um die Qualitaetsbewertung live zu berechnen.';
+      els.qualityDataNote.textContent = 'Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Pflegeaufgaben laden im Hintergrund.';
       return;
     }
     if (state.qualityDataMeta.mode === 'regional_scan') {
@@ -2947,25 +2914,22 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `Regionale Qualitaetsbewertung laeuft asynchron. ${formatNumber(sampleSize)} Datensaetze sind bereits bewertet.`
         : `Regionale Qualitaetsbewertung abgeschlossen: ${formatNumber(sampleSize)} Datensaetze bewertet.`;
       els.qualityDataNote.textContent = state.qualityDataMeta.truncated
-        ? `${base} Der Scan wurde begrenzt; Score und Status sind Zwischenwerte.`
+        ? `${base} Weitere Treffer koennen spaeter nachgeladen werden.`
         : base;
       return;
     }
     if (state.qualityDataMeta.mode === 'snapshot') {
       els.qualityDataNote.textContent = state.qualityDataMeta.truncated
-        ? 'Qualitaetsdaten stammen aus dem gecachten Nachtlauf. Der Lauf war begrenzt; Statuswerte sind entsprechend zu pruefen.'
-        : 'Qualitaetsdaten stammen aus dem gecachten Nachtlauf und wurden vollstaendig serverseitig bewertet.';
+        ? 'Qualitaetsdaten wurden aus dem vorbereiteten Cache geladen.'
+        : 'Qualitaetsdaten wurden aus dem vorbereiteten Cache geladen.';
       return;
     }
     if (state.qualityDataMeta.mode === 'api_counts') {
-      const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
-      els.qualityDataNote.textContent = unsupportedCount
-        ? `Pflegeaufgaben basieren auf verifizierten API-Counts. ${formatNumber(unsupportedCount)} Kriterium-Typ-Kombinationen benötigen für Listen einen Server-Scan.`
-        : 'Pflegeaufgaben basieren auf verifizierten API-Counts. Qualitätsstatus und Score werden ohne vollständige Einzelbewertung nicht geschätzt.';
+      els.qualityDataNote.textContent = 'Pflegeaufgaben werden im aktuellen Arbeitskontext geladen.';
       return;
     }
     const note = state.qualityDataMeta.truncated
-      ? `Basierend auf einem begrenzten API-/Server-Scan mit ${formatNumber(sampleSize)} geladenen Datensätzen.`
+      ? `Regionale Bewertung geladen. Weitere Treffer koennen spaeter nachgeladen werden.`
       : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensätzen.`;
     els.qualityDataNote.textContent = note;
     if (state.qualityDataMeta.truncated) console.debug('Qualitätsdaten sind begrenzt.', state.qualityDataMeta);
