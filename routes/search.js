@@ -12,10 +12,9 @@ import {
   computeFinalLimit,
   isCitiesRequest,
   normalizeOffsetParam,
-  normalizeQueryParam
+  normalizeQueryParam,
+  OPEN_DATA_LICENSE_QUERY
 } from '../lib/search-utils.js';
-
-const OPEN_DATA_LICENSE_QUERY = '(attribute_license:CC0 OR attribute_license:CC-BY OR attribute_license:CC-BY-SA)';
 
 export function registerSearchRoute(app, cache) {
   app.get('/api/search', async (req, res) => {

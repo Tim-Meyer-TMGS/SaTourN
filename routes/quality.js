@@ -16,6 +16,12 @@ import {
   normalizeQueryParam
 } from '../lib/search-utils.js';
 import {
+  normalizeQualityContext,
+  qualityCountKey,
+  qualityListKey,
+  qualitySnapshotKey
+} from '../lib/quality-cache.js';
+import {
   evaluateQualityForItem,
   getAreaValues,
   getAttributeValue,
@@ -36,7 +42,7 @@ const MAX_SCAN_PAGES = 20;
 const DEFAULT_SCAN_TIMEOUT_MS = 8000;
 const ET4_PAGES_BASE_URL = 'https://pages.et4.de/de/statistik_sachsen/wlan/detail';
 const VERIFIED_ET4_PAGE_TYPES = new Set(['POI']);
-const QUALITY_COUNT_CACHE_TTL_MS = 5 * 60 * 1000;
+const QUALITY_COUNT_CACHE_TTL_MS = Number(process.env.QUALITY_COUNT_CACHE_TTL_MS) || 5 * 60 * 1000;
 const qualityCountCache = new Map();
 
 function clampInteger(value, fallback, min, max) {
@@ -93,6 +99,18 @@ function getGlobalId(rawItem) {
   return firstText(rawItem, ['global_id', 'globalId', 'globalID']);
 }
 
+function textList(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) => firstText({ value: entry }, ['value'])).filter(Boolean);
+}
+
+function getKeywordValues(rawItem) {
+  return [
+    ...textList(rawItem?.keywords_old),
+    ...textList(rawItem?.keywords)
+  ];
+}
+
 function normalizeEt4PageType(type) {
   const normalized = String(type || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
   if (normalized === 'poi' || normalized === 'pointofinterest') return 'POI';
@@ -131,6 +149,7 @@ function reduceItemForResponse(item, criterion) {
     qualityStatus: item.qualityStatus,
     missingCriteria: item.missingCriteria || [],
     recommendations: item.recommendations || [],
+    keywords_old: getKeywordValues(raw),
     activeCriterion: criterion ? {
       id: criterion.id,
       label: criterion.label,
@@ -192,7 +211,135 @@ function isCriterionRelevantForType(criterion, type) {
   return getCriteriaForType(type).some((item) => item.id === criterion.id);
 }
 
-export function registerQualityRoute(app) {
+function filterSnapshotByType(snapshot, type) {
+  const normalizedType = String(type || '').trim();
+  if (!snapshot || !normalizedType) return snapshot;
+
+  const rows = (snapshot.rows || []).filter((row) => row.type === normalizedType);
+  const typeSummary = (snapshot.aggregations?.typeSummary || []).filter((row) => row.type === normalizedType);
+  const selectedTypeSummary = typeSummary[0] || null;
+  const issueSummary = (snapshot.aggregations?.issueSummary || [])
+    .map((issue) => {
+      const count = Number(issue.typeCounts?.[normalizedType] || 0);
+      return {
+        ...issue,
+        affectedCount: count,
+        affectedTypes: count > 0 ? [normalizedType] : [],
+        typeCounts: count > 0 ? { [normalizedType]: count } : {}
+      };
+    })
+    .filter((issue) => issue.affectedCount > 0);
+
+  return {
+    ...snapshot,
+    rows,
+    aggregations: {
+      ...snapshot.aggregations,
+      averageQualityScore: selectedTypeSummary?.averageQualityScore ?? null,
+      qualityStatusCounts: selectedTypeSummary?.qualityStatusCounts || {},
+      issueSummary,
+      typeSummary
+    },
+    qualityDataMeta: {
+      ...snapshot.qualityDataMeta,
+      filteredType: normalizedType
+    }
+  };
+}
+
+async function readJsonCache(store, key) {
+  if (!store) return null;
+  try {
+    return await store.getJson(key);
+  } catch (error) {
+    console.warn('Quality cache read failed.', error.message || error);
+    return null;
+  }
+}
+
+async function writeJsonCache(store, key, value, options = {}) {
+  if (!store) return false;
+  try {
+    await store.setJson(key, value, options);
+    return true;
+  } catch (error) {
+    console.warn('Quality cache write failed.', error.message || error);
+    return false;
+  }
+}
+
+export function registerQualityRoute(app, { keyValueStore = null } = {}) {
+  app.get('/api/quality/snapshot', async (req, res) => {
+    const context = normalizeQualityContext({
+      query: req.query.query || '',
+      type: req.query.type || ''
+    });
+    const exactKey = qualitySnapshotKey(context);
+    let snapshot = await readJsonCache(keyValueStore, exactKey);
+
+    if (!snapshot && context.type) {
+      const fallbackContext = normalizeQualityContext({ query: context.query, type: '' });
+      const fallback = await readJsonCache(keyValueStore, qualitySnapshotKey(fallbackContext));
+      snapshot = filterSnapshotByType(fallback, context.type);
+    }
+
+    if (!snapshot) {
+      return res.status(404).json({
+        error: 'Quality snapshot not found',
+        cache: {
+          mode: keyValueStore?.mode || 'none',
+          key: exactKey
+        }
+      });
+    }
+
+    return res.json({
+      ...snapshot,
+      cached: true,
+      cache: {
+        mode: keyValueStore?.mode || 'none',
+        key: exactKey
+      }
+    });
+  });
+
+  app.get('/api/quality/list', async (req, res) => {
+    const criterion = findCriterion(String(req.query.criterionId || '').trim());
+    const type = String(req.query.type || '').trim();
+
+    if (!criterion) {
+      return res.status(400).json({ error: 'Unknown or missing criterionId' });
+    }
+    if (!type) {
+      return res.status(400).json({ error: 'Missing required type' });
+    }
+
+    const key = qualityListKey({
+      criterionId: criterion.id,
+      type,
+      query: req.query.query || ''
+    });
+    const payload = await readJsonCache(keyValueStore, key);
+    if (!payload) {
+      return res.status(404).json({
+        error: 'Quality list cache not found',
+        cache: {
+          mode: keyValueStore?.mode || 'none',
+          key
+        }
+      });
+    }
+
+    return res.json({
+      ...payload,
+      cached: true,
+      cache: {
+        mode: keyValueStore?.mode || 'none',
+        key
+      }
+    });
+  });
+
   app.get('/api/quality/count', async (req, res) => {
     const {
       criterionId,
@@ -254,6 +401,18 @@ export function registerQualityRoute(app) {
 
     const effectiveQuery = combineQueries(qParam, scanConfig.missingQuery);
     const cacheKey = JSON.stringify({ criterionId: criterion.id, type: normalizedType, query: effectiveQuery });
+    const kvCacheKey = qualityCountKey({ criterionId: criterion.id, type: normalizedType, query: effectiveQuery });
+    const kvCached = await readJsonCache(keyValueStore, kvCacheKey);
+    if (kvCached) {
+      return res.json({
+        ...kvCached,
+        cached: true,
+        cache: {
+          mode: keyValueStore?.mode || 'none',
+          key: kvCacheKey
+        }
+      });
+    }
     const cached = qualityCountCache.get(cacheKey);
     if (cached && Date.now() - cached.createdAt < QUALITY_COUNT_CACHE_TTL_MS) {
       return res.json({ ...cached.payload, cached: true });
@@ -293,6 +452,7 @@ export function registerQualityRoute(app) {
         cached: false
       };
       qualityCountCache.set(cacheKey, { createdAt: Date.now(), payload: responsePayload });
+      await writeJsonCache(keyValueStore, kvCacheKey, responsePayload, { ttlMs: QUALITY_COUNT_CACHE_TTL_MS });
       return res.json(responsePayload);
     } catch (error) {
       const isAbort = error && (error.name === 'AbortError' || /aborted|timeout/i.test(String(error)));

@@ -1384,3 +1384,54 @@ Pruefung:
 - `rg` bestaetigt: `loadQualitySampleRows` wird nicht mehr verwendet und ist
   aus `Statistik/scripts.js` entfernt.
 - `git diff --check` ohne Fehler; nur Windows-CRLF-Hinweise.
+
+## Umsetzung: Render Key Value und Nacht-Snapshot
+
+Status: umgesetzt am 2026-06-05, lokale Syntaxpruefung mangels Node nicht
+ausfuehrbar.
+
+Umgesetzte Anpassungen:
+
+- `lib/kv-store.js` stellt einen Redis-/Render-Key-Value-Adapter mit
+  Memory-Fallback bereit.
+- `index.js` erzeugt den Key-Value-Store und reicht ihn an
+  `routes/quality.js` weiter.
+- `/api/quality/snapshot` liest aggregierte Nachtlauf-Snapshots aus dem Cache.
+- `/api/quality/list` liest vorgefilterte, reduzierte Fehlerlisten aus dem
+  Cache.
+- `/api/quality/count` nutzt zusaetzlich den gemeinsamen Key-Value-Cache und
+  faellt weiter auf den bestehenden In-Memory-Cache zurueck.
+- `scripts/run-quality-snapshot.mjs` scannt Datensaetze serverseitig,
+  bewertet sie mit `Statistik/quality.js`, speichert reduzierte Snapshots und
+  Fehlerlisten in Key Value und legt keine Rohdatenlisten im Frontend ab.
+- Startseite, Pflegeaufgaben, Datensaetze und Open-Data-Statistik fragen
+  zuerst den Cache ab und nutzen bei Cache-Miss weiterhin die Live-Endpunkte.
+
+Bewusste Einschraenkungen:
+
+- Standardmaessig wird nur der Kontext `Sachsen` ohne Ort/Typ vorab
+  gecached. Weitere Regionen koennen ueber `QUALITY_SNAPSHOT_CONTEXTS`
+  konfiguriert werden.
+- Fehlerlisten werden reduziert und pro Kriterium/Typ durch
+  `QUALITY_SNAPSHOT_LIST_LIMIT` begrenzt. Counts bleiben aus dem Scan, die
+  gespeicherte Liste kann bei sehr grossen Treffermengen begrenzt sein.
+- Exakte 22:00-Uhr-Ausfuehrung in Berliner Zeit braucht bei Render wegen UTC-
+  Cron entweder saisonale Anpassung oder bewusst gesetzten UTC-Zeitpunkt.
+
+Render-Betrieb:
+
+- Render Key Value anlegen und `REDIS_URL` im Webservice und Cron Job setzen.
+- Der Snapshot-Job bricht ohne `REDIS_URL` ab; lokale Trockenlaeufe koennen nur
+  explizit mit `QUALITY_SNAPSHOT_ALLOW_MEMORY=1` den Memory-Fallback nutzen.
+- Cron Job Command: `npm run quality:snapshot`.
+- Sinnvolle Startwerte:
+  `QUALITY_SNAPSHOT_PAGE_SIZE=200`,
+  `QUALITY_SNAPSHOT_MAX_PAGES_PER_TYPE=250`,
+  `QUALITY_SNAPSHOT_LIST_LIMIT=2000`,
+  `QUALITY_SNAPSHOT_TTL_HOURS=48`.
+
+Pruefung:
+
+- `git diff --check` ausfuehren.
+- `npm run check` und `npm run quality:snapshot` koennen lokal erst ausgefuehrt
+  werden, wenn Node/npm in der Umgebung verfuegbar ist.

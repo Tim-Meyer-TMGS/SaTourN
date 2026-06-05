@@ -65,6 +65,13 @@ Stand: 2026-06-04
   und Sample-/Scan-Kontext klar machen.
 - Punkte 24 und 25 legen die Migration fest: kleine pruefbare Schritte, zuerst
   UI-Audit, Fehlerlisten, Statusmeldungen, Loader, Arbeitskontext, Navigation.
+- Render Key Value ist die bevorzugte Speicherloesung fuer schnelle
+  Qualitaets-Snapshots und vorgefilterte Fehlerlisten. Der Webservice und der
+  Cron Job teilen sich `REDIS_URL`.
+- Persistente Render Disks werden fuer diesen Use Case nicht genutzt, weil der
+  Cron Job den Snapshot mit dem Webservice teilen muss.
+- Postgres bleibt optional fuer spaetere Historie, Trends und Berichte, ist aber
+  fuer den schnellen aktuellen Cache nicht erforderlich.
 
 ## Datenbasis und Limits
 
@@ -178,10 +185,10 @@ Hotel bleibt separat als `api_pushdown` verifiziert mit:
 - Nur `Statistik/index.html` laedt Uebersichtsdaten. Platzhalterseiten
   initialisieren ausschliesslich Header, Navigation und Arbeitskontext.
 - Die Startseite verwendet fuer Summen `/api/search` mit `limit=1` und fuer
-  Qualitaets-KPIs begrenzte Stichproben; `/api/quality/scan` bleibt fuer
-  spaetere konkrete Pflegeaufgaben reserviert.
-- Die Pflegeaufgaben-Seite darf beim Laden begrenzte Samples pro Typ abrufen,
-  aber keine Vollscans starten.
+  Qualitaetswerte zuerst den gecachten Nacht-Snapshot; bei Cache-Miss bleiben
+  API-Counts der Fallback.
+- Die Pflegeaufgaben-Seite darf beim Laden den gecachten Nacht-Snapshot oder
+  verifizierte API-Counts nutzen, aber keine Browser-Stichproben starten.
 - Aufgaben entstehen aus `qualityCriteria` und `issueSummary`; statische
   Beispielaufgaben und fiktive Workflowdaten bleiben ausgeschlossen.
 - Server-Scans werden erst nach Auswahl einer konkreten Aufgabe und eines

@@ -19,8 +19,10 @@ neue Build-Kette, keine Secrets im Frontend.
   auf Aggregatzeilen/`overallcount` basiert.
 - Qualitaets-KPIs, Problemcluster, Matrix, Datentypen, Fehlerlisten, Detailpanel,
   KI-Kontext und Fehlerlisten-CSV basieren auf normalisierten Items.
-- Browser sammelt nur begrenzte Item-Samples; vollstaendige Fehlerlisten koennen
-  bei eindeutigem Typ und Kriterium ueber `/api/quality/scan` nachgeladen werden.
+- Startseite, Pflegeaufgaben und Datensaetze laden keine Browser-Stichproben
+  mehr fuer Qualitaetszahlen. Aggregierte Zahlen kommen aus Counts oder aus dem
+  gecachten Nacht-Snapshot; konkrete Fehlerlisten kommen aus
+  `/api/quality/list` oder als Live-Fallback aus `/api/quality/scan`.
 - POI-ET4-Pages-Link ist verifiziert:
   `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/{global_id}/x`.
   Andere Typen duerfen erst nach Verifikation automatisch verlinkt werden.
@@ -78,17 +80,17 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
 
 ## Datenfluss
 
-1. Nutzer setzt Filter; `currentFilters()` synchronisiert `activeFilters`.
-2. Statistik-Requests liefern Counts und begrenzte Item-Samples.
-3. `refreshNormalizedItems()` normalisiert und bewertet Items.
-4. `refreshFilteredItems()` baut Basislisten und `qualityAggregations`.
-5. `renderAll()` rendert Statistik- und Qualitaetsbereiche.
-6. Klick auf Pflegebedarf, Datentyp oder Matrixzeile setzt `activeIssue` und
-   oeffnet den Arbeitsbereich `issues`.
-7. Bei eindeutigem Typ/Kriterium nutzt die Fehlerliste `/api/quality/scan`;
-   sonst bleibt die Browser-Stichprobe aktiv.
-8. CSV exportiert entweder Statistik-Aggregate oder die aktive Fehlerliste.
-9. Detailpanel und KI-Kontext nutzen reduzierte, gefilterte Daten.
+1. Nutzer setzt Arbeitskontext; `localStorage` haelt Gebiet, Ort und Datentyp.
+2. Startseite, Pflegeaufgaben und Statistik fragen zuerst
+   `/api/quality/snapshot`.
+3. Bei Cache-Miss liefern `/api/search` und `/api/quality/count` weiterhin
+   Live-Aggregate ohne Browser-Stichprobe.
+4. Konkrete Fehlerlisten werden ueber `/api/quality/list` gelesen und fallen
+   bei Cache-Miss auf `/api/quality/scan` zurueck.
+5. Die Datensatz-Detailseite laedt nur den konkreten Datensatz nach und bewertet
+   ihn mit `Statistik/quality.js`.
+6. CSV exportiert entweder Statistik-Aggregate oder die aktuell geladene,
+   reduzierte Fehlerliste.
 
 ## Zielseitenlogik
 
@@ -180,5 +182,11 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
   `Statistik/record-detail.html` uebernommen. Die Seite laedt einzelne
   Datensaetze gezielt, bewertet sie mit `quality.js` und zeigt keine
   vollstaendige Rohdatenansicht.
+- Der Render-Cache-Pfad ist vorbereitet:
+  `lib/kv-store.js` bindet Render Key Value/Redis an, `scripts/run-quality-
+  snapshot.mjs` erzeugt Nacht-Snapshots, und `routes/quality.js` stellt
+  `/api/quality/snapshot` sowie `/api/quality/list` bereit. Die UI nutzt
+  diese Cache-Endpunkte zuerst und faellt bei Cache-Miss auf Live-Counts bzw.
+  `/api/quality/scan` zurueck.
 - Offene Punkte aus der Abschnittsarbeit stehen in
   `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`.

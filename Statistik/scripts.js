@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/scan');
   const QUALITY_COUNT_API_BASE = window.SATOURN_QUALITY_COUNT_API_BASE
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/count');
+  const QUALITY_SNAPSHOT_API_BASE = window.SATOURN_QUALITY_SNAPSHOT_API_BASE
+    || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/snapshot');
+  const QUALITY_LIST_API_BASE = window.SATOURN_QUALITY_LIST_API_BASE
+    || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/list');
 
   const TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
   const WORK_CONTEXT_KEY = 'satournWorkContext';
@@ -176,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let state = {
     context: loadWorkContext(),
     latestRows: [],
+    qualitySnapshot: null,
     normalizedItems: [],
     qualityAggregations: getQualityAggregations([]),
     qualityDataMeta: {
@@ -499,12 +504,67 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${API_BASE}?${params.toString()}`;
   }
 
+  async function fetchJsonOptional(url) {
+    const response = await fetch(url, { cache: 'no-store' });
+    const text = await response.text();
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${text}`);
+    return JSON.parse(text.trim());
+  }
+
+  function buildQualitySnapshotUrl() {
+    const params = new URLSearchParams();
+    const query = buildQuery(state.context);
+    if (query) params.set('query', query);
+    if (state.context.type) params.set('type', state.context.type);
+    return `${QUALITY_SNAPSHOT_API_BASE}?${params.toString()}`;
+  }
+
+  async function loadCachedQualitySnapshot() {
+    state.qualitySnapshot = null;
+    let snapshot = null;
+    try {
+      snapshot = await fetchJsonOptional(buildQualitySnapshotUrl());
+    } catch (error) {
+      console.warn('Qualitaets-Snapshot konnte nicht aus dem Cache geladen werden.', error);
+      return null;
+    }
+    if (!snapshot?.rows?.length) return null;
+    state.qualitySnapshot = snapshot;
+    state.latestRows = snapshot.rows.map(normalizeStatisticRow);
+    state.qualityAggregations = snapshot.aggregations || buildAggregationsFromIssueSummary([]);
+    state.qualityDataMeta = snapshot.qualityDataMeta || {
+      mode: 'snapshot',
+      collectedItems: 0,
+      estimatedTotalItems: 0,
+      truncated: false,
+      unsupportedCriteria: [],
+      failedCounts: 0
+    };
+    return snapshot;
+  }
+
+  function normalizeStatisticRow(row) {
+    return {
+      type: row.type,
+      statistikCount: Number(row.statistikCount || 0),
+      openDataCount: Number(row.openDataCount || 0)
+    };
+  }
+
   async function loadOverviewData() {
     const startedAt = new Date();
     showMessage('');
     renderOverviewLoading();
 
     try {
+      const snapshot = await loadCachedQualitySnapshot();
+      if (snapshot) {
+        renderOverview(state.latestRows, []);
+        if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date(snapshot.generatedAt || startedAt))}`;
+        return;
+      }
+
       const rows = await loadStatisticRows();
       const issueSummary = await loadQualityCountSummary();
       state.latestRows = rows;
@@ -555,7 +615,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setStatsLoadingState(true);
 
     try {
-      const rows = await loadStatisticRows();
+      const snapshot = await loadCachedQualitySnapshot();
+      const rows = snapshot
+        ? state.latestRows
+        : await loadStatisticRows();
       state.statsRows = rows.map((row) => ({
         ...row,
         nonOpenDataCount: Math.max(0, row.statistikCount - row.openDataCount),
@@ -567,7 +630,9 @@ document.addEventListener('DOMContentLoaded', () => {
         row.inventoryShare = percent(row.statistikCount, state.statsSummary.totalRecords);
       });
       renderStats();
-      if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
+      if (els.lastUpdated) {
+        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date(snapshot?.generatedAt || startedAt))}`;
+      }
     } catch (error) {
       console.error('Open-Data-Statistik konnte nicht vollständig geladen werden.', error);
       renderStatsError();
@@ -757,6 +822,23 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${QUALITY_COUNT_API_BASE}?${params.toString()}`;
   }
 
+  function buildQualityListUrl({ criterionId, type, query }) {
+    const params = new URLSearchParams();
+    params.set('criterionId', criterionId);
+    params.set('type', type);
+    if (query) params.set('query', query);
+    return `${QUALITY_LIST_API_BASE}?${params.toString()}`;
+  }
+
+  async function loadCachedQualityList({ criterionId, type, query }) {
+    try {
+      return await fetchJsonOptional(buildQualityListUrl({ criterionId, type, query }));
+    } catch (error) {
+      console.warn('Qualitaetsliste konnte nicht aus dem Cache geladen werden.', error);
+      return null;
+    }
+  }
+
   async function loadQualityCountSummary() {
     const query = buildQuery(state.context);
     const targetTypes = state.context.type ? [state.context.type] : TYPES;
@@ -837,7 +919,8 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTaskRecords();
 
     try {
-      const issueSummary = await loadQualityCountSummary();
+      const snapshot = await loadCachedQualitySnapshot();
+      const issueSummary = snapshot?.aggregations?.issueSummary || await loadQualityCountSummary();
       state.taskItems = [];
       state.taskRows = buildTaskRows(issueSummary);
       state.selectedTask = state.taskRows[0] || null;
@@ -845,7 +928,9 @@ document.addEventListener('DOMContentLoaded', () => {
       state.taskPage = 1;
       applyTaskFilters();
       renderTaskDetail();
-      if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
+      if (els.lastUpdated) {
+        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date(snapshot?.generatedAt || startedAt))}`;
+      }
     } catch (error) {
       console.error('Pflegeaufgaben konnten nicht geladen werden.', error);
       renderTasksEmpty('Die Pflegeaufgaben konnten nicht geladen werden.');
@@ -937,6 +1022,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.taskKpiPotential) els.taskKpiPotential.textContent = potential;
     if (els.taskListTitle) els.taskListTitle.textContent = `Alle Pflegeaufgaben (${formatNumber(totalTasks)})`;
     if (els.taskDataNote) {
+      if (state.qualityDataMeta.mode === 'snapshot') {
+        els.taskDataNote.textContent = state.qualityDataMeta.truncated
+          ? 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf. Der Lauf war begrenzt; einzelne Listen koennen weiter live nachgeladen werden.'
+          : 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf und basieren auf vollstaendig gescannten Datensaetzen.';
+        return;
+      }
       const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
       const failedText = state.qualityDataMeta.failedCounts ? ` ${formatNumber(state.qualityDataMeta.failedCounts)} Count-Abfragen konnten nicht geladen werden.` : '';
       els.taskDataNote.textContent = unsupportedCount
@@ -1024,7 +1115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <dt>Prüfbarkeit</dt>
         <dd>${task.autoCheck === false ? 'Manuell zu prüfen' : 'Automatisch prüfbar'}</dd>
         <dt>Datenbasis</dt>
-        <dd>${task.countMode === 'api_count' ? 'Verifizierter API-Count' : 'Server-Scan erforderlich'}</dd>
+        <dd>${task.countMode === 'snapshot_scan' ? 'Gecachter Nachtlauf' : task.countMode === 'api_count' ? 'Verifizierter API-Count' : 'Server-Scan erforderlich'}</dd>
       </dl>
       ${typeChoice}
       <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswählen und Datensätze anzeigen' : 'Datensätze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
@@ -1090,7 +1181,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const query = buildQuery(state.context);
       if (query) params.set('query', query);
 
-      const payload = await fetchJson(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
+      const cachedPayload = await loadCachedQualityList({
+        criterionId: task.criterionId,
+        type,
+        query
+      });
+      const payload = cachedPayload || await fetchJson(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
       const rows = extractItems(payload).map((item) => normalizeItem(item, type));
       state.taskRecordRows = rows;
       state.taskRecordMeta = payload;
@@ -1246,22 +1342,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadRecordRowsForView(view) {
+    const query = buildQuery(state.context);
     const params = new URLSearchParams();
     params.set('criterionId', view.criterionId);
     params.set('type', view.type);
     params.set('limit', '200');
     params.set('scanPageSize', '200');
     params.set('maxPages', '20');
-    const query = buildQuery(state.context);
     if (query) params.set('query', query);
 
-    const payload = await fetchJson(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
+    const cachedPayload = await loadCachedQualityList({
+      criterionId: view.criterionId,
+      type: view.type,
+      query
+    });
+    const payload = cachedPayload || await fetchJson(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
     const rows = extractItems(payload).map((item) => normalizeItem(item, view.type));
     const pageInfo = payload?.page || {};
+    const stats = payload?.stats || {};
     state.recordDataMeta = {
-      mode: 'criterion',
+      mode: cachedPayload ? 'snapshot_list' : 'criterion',
       collectedItems: rows.length,
-      estimatedTotalItems: Number(extractTotal(payload) || rows.length),
+      estimatedTotalItems: Number(stats.totalMatchedItems || stats.overallcount || extractTotal(payload) || rows.length),
       truncated: !pageInfo.complete
     };
     return evaluateAllItems(rows);
@@ -1580,6 +1682,12 @@ document.addEventListener('DOMContentLoaded', () => {
       els.recordDataNote.textContent = state.recordDataMeta.truncated
         ? 'Diese Liste basiert auf einem begrenzten Qualitäts-Scan für die ausgewählte Pflegeaufgabe.'
         : 'Diese Liste basiert auf einem Qualitäts-Scan für die ausgewählte Pflegeaufgabe.';
+      return;
+    }
+    if (state.recordDataMeta.mode === 'snapshot_list') {
+      els.recordDataNote.textContent = state.recordDataMeta.truncated
+        ? 'Diese Liste stammt aus dem gecachten Nachtlauf und ist auf die gespeicherten Treffer begrenzt.'
+        : 'Diese Liste stammt aus dem gecachten Nachtlauf.';
       return;
     }
     els.recordDataNote.textContent = state.recordDataMeta.truncated
@@ -2453,6 +2561,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderDataNote(sampleSize) {
+    if (state.qualityDataMeta.mode === 'snapshot') {
+      els.qualityDataNote.textContent = state.qualityDataMeta.truncated
+        ? 'Qualitaetsdaten stammen aus dem gecachten Nachtlauf. Der Lauf war begrenzt; Statuswerte sind entsprechend zu pruefen.'
+        : 'Qualitaetsdaten stammen aus dem gecachten Nachtlauf und wurden vollstaendig serverseitig bewertet.';
+      return;
+    }
     if (state.qualityDataMeta.mode === 'api_counts') {
       const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
       els.qualityDataNote.textContent = unsupportedCount
