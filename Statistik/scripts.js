@@ -1748,8 +1748,14 @@ document.addEventListener('DOMContentLoaded', () => {
   async function fetchRecordDetailItem({ type, id, globalId }) {
     const targetTypes = type ? [type] : TYPES;
     const identifier = cleanQueryValue(globalId || id);
+    const derivedId = getIdFromGlobalId(globalId);
     const variants = globalId
-      ? [`global_id:"${identifier}"`, identifier]
+      ? uniqueValues([
+        `global_id:"${identifier}"`,
+        identifier,
+        derivedId ? `id:"${derivedId}"` : '',
+        derivedId
+      ])
       : [`id:"${identifier}"`, identifier];
 
     for (const targetType of targetTypes) {
@@ -1764,6 +1770,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     return null;
+  }
+
+  function getIdFromGlobalId(globalId) {
+    const match = String(globalId || '').trim().match(/^[a-z]+_(\d+)$/i);
+    return match ? match[1] : '';
+  }
+
+  function uniqueValues(values) {
+    return Array.from(new Set(values.filter(Boolean)));
   }
 
   function getRecordDetailViewModel(item) {
