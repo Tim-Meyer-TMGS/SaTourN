@@ -52,6 +52,10 @@ Stand: 2026-06-05
 
 ## Kriterien und Queries
 
+- Alte und neue Qualitaets- und Pruefkriterien gelten gemeinsam fachlich.
+  Technische Status wie `active`, `needs_verification`, `source_guarded` oder
+  `manual_review` entscheiden nur ueber die aktuelle automatische
+  Pruefbarkeit, nicht ueber fachliche Gueltigkeit.
 - API-Pushdown nur fuer dokumentiert verifizierte Typ-/Kriterium-Kombinationen.
 - Nicht verifizierte Kombis laufen ueber Server-Scan mit
   `Statistik/quality.js`.

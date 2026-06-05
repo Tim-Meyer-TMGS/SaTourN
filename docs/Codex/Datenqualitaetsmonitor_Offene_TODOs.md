@@ -55,36 +55,33 @@ Arbeitsanweisung fuer Umsetzung:
 Ziel: Suche darf nicht nur ueber ID funktionieren. Nutzer muessen Titel, Ort,
 Kategorie, id, und `global_id` finden koennen.
 
-Status: Umgesetzt am 2026-06-05, Browser-QA mit echten Beispielen noch offen.
+Konkrete Schritte:
 
-Umgesetzt:
+- Aktuelle Suche in `records.html` gegen echte Daten pruefen:
+  Titel-Volltext, Ort, Kategorie, ID und `global_id`.
+- Falls nur lokal in geladenen Treffern gesucht wird, explizite serverseitige
+  Suche ueber `/api/search` ergaenzen.
+- Keine Vollabfrage beim Tippen. Suche erst per Button oder Debounce mit
+  kleinem Limit starten.
+- Suchquery so bauen, dass Arbeitskontext erhalten bleibt.
+- Trefferliste nach Suche weiterhin schlank halten; technische Treffergrenzen
+  ruhig ausweisen.
 
-- Render-Proxy hat einen neuen Endpunkt `/api/autocomplete` fuer die
-  Destination.One-Autovervollstaendigung.
-- Suchfeld in `records.html` zeigt nach kurzer Eingabepause Vorschlaege an.
-- Die eigentliche Datensatzsuche startet weiterhin nur bewusst per Button,
-  Enter oder Auswahl eines Vorschlags.
-- Lokale Suche bleibt erhalten. Wenn lokal kein Treffer vorhanden ist, wird
-  eine serverseitige Volltextsuche ueber `/api/search` gestartet.
-- `searchSingleRecordById()` bleibt erhalten und wurde fuer `globalid`
-  erweitert.
-- Arbeitskontext wird bei der serverseitigen Suche weiterhin mitgegeben.
+Arbeitsanweisung fuer Umsetzung:
 
-Offene Nacharbeit:
-
-- Browser-QA mit 5 realen Beispielen durchfuehren: Titel, Ort, Kategorie,
-  numerische ID, `global_id`.
-- In DevTools pruefen, dass beim Tippen nur Autocomplete-Requests entstehen
-  und keine Volltextsuche pro Tastendruck.
-- Antwortformat der Destination.One-Autovervollstaendigung mit echten Daten
-  pruefen; falls Counts oder Felder anders benannt sind, Normalisierung
-  nachziehen.
+- Zuerst 5 reale Suchbeispiele notieren: Titel, Ort, Kategorie, numerische ID,
+  `global_id`.
+- Danach `searchSingleRecordById()` nicht ersetzen, sondern um eine
+  Volltextsuche ergaenzen.
+- API-Requests in DevTools/Console zaehlen und sicherstellen, dass keine
+  Requests pro Tastendruck entstehen.
 
 ## 3. Fachliche Qualitaetskriterien modellieren
 
 Ziel: Die fachlichen Kriterien aus `Datenqualitaetskriterien.docx` werden als
 Qualitaetsmodell vorbereitet. Nicht jedes Kriterium wird sofort automatisch als
-Pflegeaufgabe aktiviert. die bisherigen kriterien sind hier gegenzuprüfen und entsprechend einzuordnen. dabei soll die bisherige logik mit "kritisch" und "kleines Problem" beibehalten werden.
+Pflegeaufgabe aktiviert. die bisherigen kriterien sind hier gegenzuprüfen und entsprechend einzuordnen. dabei soll die bisherige logik mit "kritisch" und "kleines Problem" beibehalten werden. Integriere das auch in einer dargestellten matrix in der Hilfe-Seite. User müssen sich informieren können, welche kriterien wichtig sind.
+Beisieldaten für die identifizierung sind hinterlegt.
 technische prüfungen nach folgenden dingen müssen nicht integriert werden,  da diese bei fehlen sowieso nicht als datensätze ausgegeben werden:
 titel
 kategorie
@@ -248,6 +245,20 @@ Arbeitsanweisung fuer Umsetzung:
   Vollstaendigkeitskriterien ausweisen.
 - Bestehende Kriterien in `Statistik/quality.js` nur erweitern, wenn
   Frontend, Proxy-Scan, Count-Logik und Doku gemeinsam angepasst werden.
+
+Aktueller Umsetzungsstand:
+
+- `domainQualityModel` ist die gemeinsame fachliche Quelle fuer alte und neue
+  Qualitaets- und Pruefkriterien.
+- Alle Modellkriterien gelten fachlich. Technische Status wie `active`,
+  `needs_verification`, `source_guarded` oder `manual_review` beschreiben nur
+  die aktuelle automatische Pruefbarkeit.
+- Alte nicht-automatische Kriterien wie `geo_missing`,
+  `touristtrip_incomplete` und `manual_image_quality` sind ebenfalls im
+  Fachmodell enthalten.
+- Aktive Altkriterien sind ueber `domainCriterionIds` den fachlichen
+  Modellpunkten zugeordnet.
+- Schritt 4 klaert die technische Aktivierung der neuen Kriterien.
 
 ## 4. Feldmappings und API-Queries verifizieren
 

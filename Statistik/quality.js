@@ -392,6 +392,779 @@ export function isTouristTripReady(item = {}) {
   );
 }
 
+export const domainQualityModel = Object.freeze({
+  applicability: 'all_criteria_apply',
+  technicalStatusNote: 'Alle Kriterien in diesem Modell gelten fachlich. Der Status beschreibt nur, ob die technische Pruefung bereits belastbar angebunden ist.',
+  statusDefinitions: Object.freeze({
+    active: 'Fachlich gueltig und technisch in Count, Liste oder Detailbewertung angebunden.',
+    needs_verification: 'Fachlich gueltig; Feldmapping und API-/Server-Pruefung muessen noch verifiziert werden.',
+    source_guarded: 'Fachlich gueltig; fehlende Basisdaten werden bereits quellseitig vor der normalen Pflegeaufgabe abgefangen.',
+    manual_review: 'Fachlich gueltig; nur manuell oder redaktionell bewertbar.'
+  }),
+  sourceGuaranteedFields: Object.freeze([
+    {
+      id: 'title',
+      label: 'Titel',
+      types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
+      reason: 'Wird von Destination.One fuer ausgegebene Datensaetze vorausgesetzt.'
+    },
+    {
+      id: 'category',
+      label: 'Kategorie / Betriebsart',
+      types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
+      reason: 'Wird fachlich als Basisfeld gefuehrt, aber nicht als Pflegeaufgabe aktiviert.'
+    },
+    {
+      id: 'geo',
+      label: 'Geo-Informationen',
+      types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
+      reason: 'Fehlende Geo-Informationen werden nicht als normale Datensaetze ausgegeben.'
+    },
+    {
+      id: 'city',
+      label: 'Ort',
+      types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
+      reason: 'Fehlender Ort wird nicht als eigene Pflegeaufgabe modelliert.'
+    },
+    {
+      id: 'tour_geometry',
+      label: 'Tour-Geometrie / Tourdaten',
+      types: ['Tour'],
+      reason: 'Fehlende Tour-Basisdaten werden nicht als Datensatz im Monitor bewertet.'
+    },
+    {
+      id: 'event_schedule',
+      label: 'Veranstalter / Termine',
+      types: ['Event'],
+      reason: 'Fehlende Veranstaltungsbasisdaten werden nicht als Datensatz im Monitor bewertet.'
+    }
+  ]),
+  criteria: Object.freeze([
+    {
+      id: 'geo_missing',
+      label: 'Geo-Information fehlt',
+      types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
+      level: 'minimum',
+      fieldCandidates: ['geo', 'coordinates', 'location'],
+      status: 'source_guarded',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Geo-Information pruefen, falls der Datensatz ausserhalb der normalen Datenbasis auftaucht.'
+    },
+    {
+      id: 'touristtrip_incomplete',
+      label: 'Tour-Basisdaten unvollstaendig',
+      types: ['Tour'],
+      level: 'minimum',
+      fieldCandidates: ['touristType', 'touristTripType', 'distance', 'length', 'duration', 'itinerary', 'route', 'stages', 'waypoints'],
+      status: 'source_guarded',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Tour-Geometrie und Tour-Basisdaten pruefen, falls der Datensatz ausserhalb der normalen Datenbasis auftaucht.'
+    },
+    {
+      id: 'manual_image_quality',
+      label: 'Bildqualitaet redaktionell pruefen',
+      types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event', 'Package'],
+      level: 'very_good',
+      fieldCandidates: ['media_objects'],
+      status: 'manual_review',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Bildqualitaet, Motiv, Ausschnitt und redaktionelle Eignung manuell pruefen.'
+    },
+    {
+      id: 'hotel_phone',
+      label: 'Telefon',
+      types: ['Hotel'],
+      level: 'minimum',
+      fieldCandidates: ['phone', 'phone2', 'addresses.phone'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Telefonnummer ergaenzen.'
+    },
+    {
+      id: 'hotel_street',
+      label: 'Strasse',
+      types: ['Hotel'],
+      level: 'minimum',
+      fieldCandidates: ['street', 'address.street', 'addresses.street'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Strasse oder Anschrift ergaenzen.'
+    },
+    {
+      id: 'hotel_details',
+      label: 'Beschreibungstext',
+      types: ['Hotel'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=details]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Beschreibungstext ergaenzen.'
+    },
+    {
+      id: 'hotel_teaser',
+      label: 'Teaser-Text',
+      types: ['Hotel'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=teaser]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Teaser-Text ergaenzen.'
+    },
+    {
+      id: 'hotel_email',
+      label: 'E-Mail',
+      types: ['Hotel'],
+      level: 'good',
+      fieldCandidates: ['email', 'emailRequest', 'addresses.email'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'E-Mail-Adresse ergaenzen.'
+    },
+    {
+      id: 'hotel_website',
+      label: 'Webseite',
+      types: ['Hotel'],
+      level: 'good',
+      fieldCandidates: ['web', 'website', 'url', 'addresses.web'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Webseite ergaenzen.'
+    },
+    {
+      id: 'hotel_features',
+      label: 'Merkmale',
+      types: ['Hotel'],
+      level: 'good',
+      fieldCandidates: ['features', 'features_old'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Merkmale pruefen und ergaenzen.'
+    },
+    {
+      id: 'hotel_payment',
+      label: 'Zahlungsmoeglichkeiten',
+      types: ['Hotel'],
+      level: 'good',
+      fieldCandidates: ['paymentMethods', 'payment_old', 'features'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Zahlungsmoeglichkeiten ergaenzen.'
+    },
+    {
+      id: 'hotel_price',
+      label: 'Preisinformation',
+      types: ['Hotel'],
+      level: 'good',
+      fieldCandidates: ['prices', 'price', 'numbers', 'attributes'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Preisinformation ergaenzen.'
+    },
+    {
+      id: 'hotel_contact_person',
+      label: 'Ansprechperson',
+      types: ['Hotel'],
+      level: 'very_good',
+      fieldCandidates: ['addresses[rel=contact_person]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Ansprechperson ergaenzen.'
+    },
+    {
+      id: 'hotel_public_transport',
+      label: 'Erreichbarkeit per OePNV',
+      types: ['Hotel'],
+      level: 'very_good',
+      fieldCandidates: ['features', 'features_old', 'texts[rel=directions]', 'texts[rel=station]'],
+      status: 'active',
+      activeCriterionId: 'public_transport_missing',
+      uiPriority: 'mittel',
+      recommendation: 'OePNV-Anreiseinformationen ergaenzen.'
+    },
+    {
+      id: 'hotel_languages',
+      label: 'Fremdsprachenkenntnisse',
+      types: ['Hotel'],
+      level: 'very_good',
+      fieldCandidates: ['features', 'features_old', 'attributes'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Fremdsprachenkenntnisse ergaenzen.'
+    },
+    {
+      id: 'hotel_license',
+      label: 'CC-Lizenz',
+      types: ['Hotel'],
+      level: 'very_good',
+      fieldCandidates: ['attributes[key=license]'],
+      status: 'active',
+      activeCriterionId: 'license_missing',
+      uiPriority: 'hoch',
+      openDataRelevant: true,
+      recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.'
+    },
+    {
+      id: 'hotel_parking',
+      label: 'Parkplaetze',
+      types: ['Hotel'],
+      level: 'very_good',
+      fieldCandidates: ['features', 'features_old', 'numbers'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Parkplatzinformationen ergaenzen.'
+    },
+    {
+      id: 'hotel_booking_link',
+      label: 'Buchungslink',
+      types: ['Hotel'],
+      level: 'minimum',
+      fieldCandidates: ['media_objects[rel=booking].url'],
+      status: 'active',
+      activeCriterionId: 'booking_link_missing',
+      uiPriority: 'hoch',
+      recommendation: 'Buchungs-, Reservierungs- oder Ticketlink ergaenzen.'
+    },
+    {
+      id: 'tour_details',
+      label: 'Beschreibungstext',
+      types: ['Tour'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=details]'],
+      status: 'active',
+      activeCriterionId: 'description_missing',
+      uiPriority: 'hoch',
+      recommendation: 'Beschreibungstext ergaenzen.'
+    },
+    {
+      id: 'tour_teaser',
+      label: 'Teaser-Text',
+      types: ['Tour'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=teaser]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Teaser-Text ergaenzen.'
+    },
+    {
+      id: 'tour_season',
+      label: 'Eignung oder Jahreszeit',
+      types: ['Tour'],
+      level: 'good',
+      fieldCandidates: ['seasons', 'features', 'features_old'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Eignung oder Jahreszeit ergaenzen.'
+    },
+    {
+      id: 'tour_arrival_public_transport',
+      label: 'Anreise mit OePNV',
+      types: ['Tour'],
+      level: 'good',
+      fieldCandidates: ['features', 'features_old', 'texts[rel=directions]', 'texts[rel=station]'],
+      status: 'active',
+      activeCriterionId: 'public_transport_missing',
+      uiPriority: 'mittel',
+      recommendation: 'OePNV-Anreiseinformationen ergaenzen.'
+    },
+    {
+      id: 'tour_parking',
+      label: 'Parken',
+      types: ['Tour'],
+      level: 'good',
+      fieldCandidates: ['features', 'features_old', 'texts[rel=directions]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Parkinformationen ergaenzen.'
+    },
+    {
+      id: 'tour_author',
+      label: 'Autor oder Organisation',
+      types: ['Tour'],
+      level: 'good',
+      fieldCandidates: ['author', 'addresses[rel=author]', 'addresses[rel=organisation]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Autor oder Organisation ergaenzen.'
+    },
+    {
+      id: 'tour_start_target',
+      label: 'Start- und Zielbeschreibungen',
+      types: ['Tour'],
+      level: 'very_good',
+      fieldCandidates: ['texts[rel=start]', 'texts[rel=target]', 'texts[rel=directions]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Start- und Zielbeschreibung ergaenzen.'
+    },
+    {
+      id: 'tour_license',
+      label: 'CC-Lizenz',
+      types: ['Tour'],
+      level: 'very_good',
+      fieldCandidates: ['attributes[key=license]'],
+      status: 'active',
+      activeCriterionId: 'license_missing',
+      uiPriority: 'hoch',
+      openDataRelevant: true,
+      recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.'
+    },
+    {
+      id: 'poi_street',
+      label: 'Strasse',
+      types: ['POI'],
+      level: 'minimum',
+      fieldCandidates: ['street', 'address.street', 'addresses.street'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Strasse oder Anschrift ergaenzen.'
+    },
+    {
+      id: 'poi_details',
+      label: 'Beschreibungstext',
+      types: ['POI'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=details]'],
+      status: 'active',
+      activeCriterionId: 'description_missing',
+      uiPriority: 'hoch',
+      recommendation: 'Beschreibungstext ergaenzen.'
+    },
+    {
+      id: 'poi_teaser',
+      label: 'Teaser-Text',
+      types: ['POI'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=teaser]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Teaser-Text ergaenzen.'
+    },
+    {
+      id: 'poi_email',
+      label: 'E-Mail',
+      types: ['POI'],
+      level: 'good',
+      fieldCandidates: ['email', 'addresses.email'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'E-Mail-Adresse ergaenzen.'
+    },
+    {
+      id: 'poi_website',
+      label: 'Webseite',
+      types: ['POI'],
+      level: 'good',
+      fieldCandidates: ['web', 'website', 'url', 'addresses.web'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Webseite ergaenzen.'
+    },
+    {
+      id: 'poi_phone',
+      label: 'Telefon',
+      types: ['POI'],
+      level: 'good',
+      fieldCandidates: ['phone', 'phone2', 'addresses.phone'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Telefonnummer ergaenzen.'
+    },
+    {
+      id: 'poi_opening_hours',
+      label: 'Oeffnungszeiten',
+      types: ['POI'],
+      level: 'good',
+      fieldCandidates: ['texts[rel=openings]', 'timeIntervals', 'alwaysOpen'],
+      status: 'active',
+      activeCriterionId: 'opening_hours_missing',
+      uiPriority: 'hoch',
+      recommendation: 'Oeffnungszeiten ergaenzen oder aktualisieren.'
+    },
+    {
+      id: 'poi_price',
+      label: 'Preisinformation',
+      types: ['POI'],
+      level: 'good',
+      fieldCandidates: ['prices', 'price', 'numbers', 'attributes'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Preisinformation ergaenzen.'
+    },
+    {
+      id: 'poi_payment',
+      label: 'Zahlungsmoeglichkeiten',
+      types: ['POI'],
+      level: 'very_good',
+      fieldCandidates: ['paymentMethods', 'payment_old', 'features'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Zahlungsmoeglichkeiten ergaenzen.'
+    },
+    {
+      id: 'poi_license',
+      label: 'Lizenz',
+      types: ['POI'],
+      level: 'very_good',
+      fieldCandidates: ['attributes[key=license]'],
+      status: 'active',
+      activeCriterionId: 'license_missing',
+      uiPriority: 'hoch',
+      openDataRelevant: true,
+      recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.'
+    },
+    {
+      id: 'poi_public_transport',
+      label: 'OePNV-Anreise',
+      types: ['POI'],
+      level: 'supporting',
+      fieldCandidates: ['features', 'features_old', 'texts[rel=directions]', 'texts[rel=station]'],
+      status: 'active',
+      activeCriterionId: 'public_transport_missing',
+      uiPriority: 'mittel',
+      recommendation: 'OePNV-Anreiseinformationen ergaenzen.'
+    },
+    {
+      id: 'gastro_phone',
+      label: 'Telefon',
+      types: ['Gastro'],
+      level: 'minimum',
+      fieldCandidates: ['phone', 'phone2', 'addresses.phone'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Telefonnummer ergaenzen.'
+    },
+    {
+      id: 'gastro_street',
+      label: 'Strasse',
+      types: ['Gastro'],
+      level: 'minimum',
+      fieldCandidates: ['street', 'address.street', 'addresses.street'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Strasse oder Anschrift ergaenzen.'
+    },
+    {
+      id: 'gastro_details',
+      label: 'Beschreibungstext',
+      types: ['Gastro'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=details]'],
+      status: 'active',
+      activeCriterionId: 'description_missing',
+      uiPriority: 'hoch',
+      recommendation: 'Beschreibungstext ergaenzen.'
+    },
+    {
+      id: 'gastro_teaser',
+      label: 'Teaser-Text',
+      types: ['Gastro'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=teaser]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Teaser-Text ergaenzen.'
+    },
+    {
+      id: 'gastro_email',
+      label: 'E-Mail',
+      types: ['Gastro'],
+      level: 'good',
+      fieldCandidates: ['email', 'addresses.email'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'E-Mail-Adresse ergaenzen.'
+    },
+    {
+      id: 'gastro_website',
+      label: 'Webseite',
+      types: ['Gastro'],
+      level: 'good',
+      fieldCandidates: ['web', 'website', 'url', 'addresses.web'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Webseite ergaenzen.'
+    },
+    {
+      id: 'gastro_opening_hours',
+      label: 'Oeffnungszeiten',
+      types: ['Gastro'],
+      level: 'good',
+      fieldCandidates: ['texts[rel=openings]', 'timeIntervals', 'alwaysOpen'],
+      status: 'active',
+      activeCriterionId: 'opening_hours_missing',
+      uiPriority: 'hoch',
+      recommendation: 'Oeffnungszeiten ergaenzen oder aktualisieren.'
+    },
+    {
+      id: 'gastro_payment',
+      label: 'Zahlungsmoeglichkeiten',
+      types: ['Gastro'],
+      level: 'good',
+      fieldCandidates: ['paymentMethods', 'payment_old', 'features'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Zahlungsmoeglichkeiten ergaenzen.'
+    },
+    {
+      id: 'gastro_license',
+      label: 'CC-Lizenz',
+      types: ['Gastro'],
+      level: 'very_good',
+      fieldCandidates: ['attributes[key=license]'],
+      status: 'active',
+      activeCriterionId: 'license_missing',
+      uiPriority: 'hoch',
+      openDataRelevant: true,
+      recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.'
+    },
+    {
+      id: 'gastro_cuisine_type',
+      label: 'Kuechenart',
+      types: ['Gastro'],
+      level: 'very_good',
+      fieldCandidates: ['cuisineTypes', 'cuisine_types_old', 'features'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Kuechenart ergaenzen.'
+    },
+    {
+      id: 'gastro_languages',
+      label: 'Fremdsprachenkenntnisse',
+      types: ['Gastro'],
+      level: 'very_good',
+      fieldCandidates: ['features', 'features_old', 'attributes'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Fremdsprachenkenntnisse ergaenzen.'
+    },
+    {
+      id: 'gastro_directions',
+      label: 'Anfahrt',
+      types: ['Gastro'],
+      level: 'very_good',
+      fieldCandidates: ['texts[rel=directions]', 'features', 'features_old'],
+      status: 'active',
+      activeCriterionId: 'public_transport_missing',
+      uiPriority: 'mittel',
+      recommendation: 'Anreiseinformationen ergaenzen.'
+    },
+    {
+      id: 'gastro_parking',
+      label: 'Parkplaetze',
+      types: ['Gastro'],
+      level: 'very_good',
+      fieldCandidates: ['features', 'features_old', 'texts[rel=directions]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Parkplatzinformationen ergaenzen.'
+    },
+    {
+      id: 'gastro_kitchen',
+      label: 'Kueche',
+      types: ['Gastro'],
+      level: 'very_good',
+      fieldCandidates: ['kitchenTimeIntervals', 'features', 'features_old'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Kuecheninformationen ergaenzen.'
+    },
+    {
+      id: 'event_phone',
+      label: 'Telefon',
+      types: ['Event'],
+      level: 'minimum',
+      fieldCandidates: ['phone', 'phone2', 'addresses.phone'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Telefonnummer ergaenzen.'
+    },
+    {
+      id: 'event_street',
+      label: 'Strasse',
+      types: ['Event'],
+      level: 'minimum',
+      fieldCandidates: ['street', 'address.street', 'addresses.street'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Strasse oder Anschrift ergaenzen.'
+    },
+    {
+      id: 'event_details',
+      label: 'Beschreibungstext',
+      types: ['Event'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=details]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Beschreibungstext ergaenzen.'
+    },
+    {
+      id: 'event_teaser',
+      label: 'Teaser-Text',
+      types: ['Event'],
+      level: 'minimum',
+      fieldCandidates: ['texts[rel=teaser]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      recommendation: 'Teaser-Text ergaenzen.'
+    },
+    {
+      id: 'event_email',
+      label: 'E-Mail',
+      types: ['Event'],
+      level: 'good',
+      fieldCandidates: ['email', 'addresses.email'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'E-Mail-Adresse ergaenzen.'
+    },
+    {
+      id: 'event_website',
+      label: 'Webseite',
+      types: ['Event'],
+      level: 'good',
+      fieldCandidates: ['web', 'website', 'url', 'addresses.web'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Webseite ergaenzen.'
+    },
+    {
+      id: 'event_price',
+      label: 'Preisinformationen',
+      types: ['Event'],
+      level: 'good',
+      fieldCandidates: ['prices', 'price', 'numbers', 'attributes'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'mittel',
+      recommendation: 'Preisinformation ergaenzen.'
+    },
+    {
+      id: 'event_payment',
+      label: 'Zahlungsmoeglichkeiten',
+      types: ['Event'],
+      level: 'very_good',
+      fieldCandidates: ['paymentMethods', 'payment_old', 'features'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'niedrig',
+      recommendation: 'Zahlungsmoeglichkeiten ergaenzen.'
+    },
+    {
+      id: 'event_license',
+      label: 'CC-Lizenz',
+      types: ['Event'],
+      level: 'very_good',
+      fieldCandidates: ['attributes[key=license]'],
+      status: 'needs_verification',
+      activeCriterionId: null,
+      uiPriority: 'hoch',
+      openDataRelevant: true,
+      recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.'
+    },
+    {
+      id: 'event_public_transport',
+      label: 'OePNV-Anreise',
+      types: ['Event'],
+      level: 'supporting',
+      fieldCandidates: ['features', 'features_old', 'texts[rel=directions]', 'texts[rel=station]'],
+      status: 'active',
+      activeCriterionId: 'public_transport_missing',
+      uiPriority: 'mittel',
+      recommendation: 'OePNV-Anreiseinformationen ergaenzen.'
+    },
+    {
+      id: 'package_license',
+      label: 'Lizenz',
+      types: ['Package'],
+      level: 'very_good',
+      fieldCandidates: ['attributes[key=license]'],
+      status: 'active',
+      activeCriterionId: 'license_missing',
+      uiPriority: 'hoch',
+      openDataRelevant: true,
+      recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.'
+    },
+    {
+      id: 'package_booking_link',
+      label: 'Buchungslink',
+      types: ['Package'],
+      level: 'minimum',
+      fieldCandidates: ['media_objects[rel=booking].url'],
+      status: 'active',
+      activeCriterionId: 'booking_link_missing',
+      uiPriority: 'hoch',
+      recommendation: 'Buchungs-, Reservierungs- oder Ticketlink ergaenzen.'
+    },
+    {
+      id: 'media_image',
+      label: 'Bildmaterial',
+      types: ['POI', 'Gastro', 'Tour'],
+      level: 'good',
+      fieldCandidates: ['media_objects'],
+      status: 'active',
+      activeCriterionId: 'image_missing',
+      uiPriority: 'mittel',
+      recommendation: 'Bildmaterial ergaenzen.'
+    },
+    {
+      id: 'media_image_author',
+      label: 'Bildurheber',
+      types: ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'],
+      level: 'minimum',
+      fieldCandidates: ['media_objects.copyrightText'],
+      status: 'active',
+      activeCriterionId: 'image_author_missing',
+      uiPriority: 'hoch',
+      openDataRelevant: true,
+      recommendation: 'Fotograf oder Urheberhinweis ergaenzen.'
+    }
+  ])
+});
+
 export const qualityCriteria = Object.freeze([
   {
     id: 'opening_hours_missing',
@@ -400,6 +1173,9 @@ export const qualityCriteria = Object.freeze([
     priority: 'hoch',
     autoCheck: true,
     weight: 10,
+    qualityLevel: 'good',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['poi_opening_hours', 'gastro_opening_hours'],
     fields: ['texts[rel=openings]', 'timeIntervals', 'alwaysOpen'],
     method: 'api_pushdown',
     api: {
@@ -418,6 +1194,10 @@ export const qualityCriteria = Object.freeze([
     priority: 'hoch',
     autoCheck: true,
     weight: 10,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kritisch',
+    openDataRelevant: true,
+    domainCriterionIds: ['hotel_license', 'tour_license', 'poi_license', 'gastro_license', 'package_license'],
     fields: ['attributes[key=license]'],
     method: 'api_pushdown',
     api: {
@@ -436,6 +1216,9 @@ export const qualityCriteria = Object.freeze([
     priority: 'hoch',
     autoCheck: true,
     weight: 8,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['tour_details', 'poi_details', 'gastro_details'],
     fields: ['texts[rel=details]'],
     method: 'api_pushdown',
     api: {
@@ -454,6 +1237,9 @@ export const qualityCriteria = Object.freeze([
     priority: 'mittel',
     autoCheck: true,
     weight: 6,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['media_image'],
     fields: ['media_objects'],
     method: 'api_pushdown',
     api: {
@@ -472,6 +1258,10 @@ export const qualityCriteria = Object.freeze([
     priority: 'hoch',
     autoCheck: true,
     weight: 8,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    openDataRelevant: true,
+    domainCriterionIds: ['media_image_author'],
     fields: ['media_objects.copyrightText'],
     method: 'server_scan',
     api: {
@@ -494,6 +1284,9 @@ export const qualityCriteria = Object.freeze([
     priority: 'mittel',
     autoCheck: true,
     weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_public_transport', 'tour_arrival_public_transport', 'poi_public_transport', 'gastro_directions', 'event_public_transport'],
     fields: ['features', 'features_old'],
     method: 'api_pushdown',
     api: {
@@ -513,6 +1306,9 @@ export const qualityCriteria = Object.freeze([
     priority: 'hoch',
     autoCheck: true,
     weight: 8,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['hotel_booking_link', 'package_booking_link'],
     fields: ['media_objects[rel=booking].url'],
     method: 'server_scan',
     api: {
@@ -549,6 +1345,53 @@ export function getCriteriaForType(type) {
     if (!criterion.types?.length) return true;
     return criterion.types.map(normalizeType).includes(normalizedType);
   });
+}
+
+export function getDomainCriteriaForType(type) {
+  const normalizedType = normalizeType(type);
+  if (!normalizedType) return [];
+
+  return domainQualityModel.criteria.filter((criterion) => (
+    safeArray(criterion.types).map(normalizeType).includes(normalizedType)
+  ));
+}
+
+export function getDomainCriteriaForActiveCriterion(criterionId) {
+  const normalizedCriterionId = normalizeString(criterionId);
+  if (!normalizedCriterionId) return [];
+  return domainQualityModel.criteria.filter((criterion) => criterion.activeCriterionId === normalizedCriterionId);
+}
+
+export function getDomainQualityModelSummary() {
+  const summary = {
+    applicability: domainQualityModel.applicability,
+    technicalStatusNote: domainQualityModel.technicalStatusNote,
+    sourceGuaranteedCount: domainQualityModel.sourceGuaranteedFields.length,
+    totalCriteria: domainQualityModel.criteria.length,
+    applicableCriteria: domainQualityModel.criteria.length,
+    statusCounts: {},
+    typeCounts: {},
+    levelCounts: {},
+    activeCriterionMappings: {}
+  };
+
+  domainQualityModel.criteria.forEach((criterion) => {
+    const status = criterion.status || 'unknown';
+    const level = criterion.level || 'unknown';
+    summary.statusCounts[status] = (summary.statusCounts[status] || 0) + 1;
+    summary.levelCounts[level] = (summary.levelCounts[level] || 0) + 1;
+    safeArray(criterion.types).forEach((type) => {
+      const normalizedType = normalizeType(type) || 'Unbekannt';
+      summary.typeCounts[normalizedType] = (summary.typeCounts[normalizedType] || 0) + 1;
+    });
+    if (criterion.activeCriterionId) {
+      const mapped = summary.activeCriterionMappings[criterion.activeCriterionId] || [];
+      mapped.push(criterion.id);
+      summary.activeCriterionMappings[criterion.activeCriterionId] = mapped;
+    }
+  });
+
+  return summary;
 }
 
 function getCriterionById(criterionId) {
@@ -972,6 +1815,9 @@ export const qualityHelpers = Object.freeze({
   hasBookingLink,
   hasFutureEventDate,
   isTouristTripReady,
+  getDomainCriteriaForType,
+  getDomainCriteriaForActiveCriterion,
+  getDomainQualityModelSummary,
   getCriteriaForType,
   getQualityScanConfig,
   evaluateQualityForItem,

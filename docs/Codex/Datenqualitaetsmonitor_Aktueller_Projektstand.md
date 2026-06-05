@@ -58,6 +58,13 @@ unter `https://tim-meyer-tmgs.github.io/SaTourN/Statistik/...`.
 
 ## Qualitaetskriterien
 
+`Statistik/quality.js` enthaelt neben den aktiven Pruefregeln ein
+fachliches `domainQualityModel`. Alle dort modellierten alten und neuen
+Qualitaets- und Pruefkriterien gelten fachlich. `active` beschreibt nur die
+bereits technisch angebundene Pruefung; `needs_verification` bleibt fachlich
+gueltig, muss aber in Feldmapping/API-Query oder Server-Scan noch verifiziert
+werden.
+
 Aktiv:
 
 - `opening_hours_missing`: POI, Gastro; API-Pushdown verifiziert.
@@ -73,8 +80,11 @@ Aktiv:
 - `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package per
   Server-Scan verifiziert.
 
-Nicht aktiv als automatischer Fehler: `geo_missing`,
-`touristtrip_incomplete`, `manual_image_quality`.
+Fachlich gueltig, aber nicht als automatische Pflegeaufgabe aktiv:
+`geo_missing`, `touristtrip_incomplete`, `manual_image_quality`.
+Diese Kriterien sind im `domainQualityModel` enthalten; `geo_missing` und
+`touristtrip_incomplete` sind quellseitig abgefangene Basisfaelle,
+`manual_image_quality` bleibt redaktionelle Pruefung.
 
 ## Pflegesystem-Erkennung
 
