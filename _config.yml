@@ -1,3 +1,5 @@
 title: SaTourN
 baseurl: "/SaTourN"
 url: "https://tim-meyer-tmgs.github.io"
+exclude:
+  - docs/Codex/Umbau_Statistik/

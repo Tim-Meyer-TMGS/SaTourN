@@ -1,137 +1,218 @@
 ---
 layout: default
-title: SaTourN-Statistik
-permalink: /Statistik/
+title: SaTourN Datenqualitäts-Monitor
+permalink: /Statistik/index.html
 css: /Statistik/style.css
 js: /Statistik/main.js
 module: true
 ---
 
-<div class="statistik">
-  <div class="wrap">
+<div class="statistik light-shell" data-page="overview">
+  <header class="app-header">
+    <a class="brand" href="index.html" aria-label="SaTourN Datenqualitäts-Monitor">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <strong>SaTourN</strong>
+        <small>Datenqualitäts-Monitor</small>
+      </span>
+    </a>
 
-    <section class="card">
-      <div class="hd">
-        <strong>SaTourN-Statistik</strong>
-        <span class="pill ok" id="status-pill">
-          <span class="dot" aria-hidden="true"></span>
-          <span id="status-text">bereit</span>
-        </span>
+    <div class="work-context-bar">
+      <span>Arbeitskontext:</span>
+      <button id="work-context-summary" class="context-summary" type="button" aria-haspopup="dialog">
+        Sachsen - Alle Orte - Alle Datentypen
+      </button>
+      <button id="work-context-edit" class="context-edit" type="button">Ändern</button>
+    </div>
+
+    <div class="header-status">
+      <button id="refresh-button" class="icon-button" type="button" aria-label="Daten aktualisieren"><span class="material-icons" aria-hidden="true">refresh</span></button>
+      <span id="last-updated">Letzte Aktualisierung: noch nicht geladen</span>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
+      <a class="nav-link active" href="index.html" aria-current="page">
+        <span class="material-icons" aria-hidden="true">home</span>
+        Übersicht
+      </a>
+      <a class="nav-link" href="tasks.html">
+        <span class="material-icons" aria-hidden="true">assignment</span>
+        Pflegeaufgaben
+      </a>
+      <a class="nav-link" href="records.html">
+        <span class="material-icons" aria-hidden="true">storage</span>
+        Datensätze
+      </a>
+      <a class="nav-link" href="stats.html">
+        <span class="material-icons" aria-hidden="true">bar_chart</span>
+        Open-Data-Statistik
+      </a>
+
+      <div class="sidebar-bottom">
+        <button class="nav-utility" type="button" disabled>Hilfe</button>
+        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
       </div>
+    </nav>
 
-      <div class="ct">
-        <div class="grid">
-          <div class="field">
-            <label>
-              Gebiet
-              <div class="dropdown-container" id="area-dropdown-container"></div>
-            </label>
+    <main class="overview-main" aria-labelledby="overview-title">
+      <section class="overview-hero">
+        <h1 id="overview-title">Guten Morgen!</h1>
+        <p id="overview-subtitle">Hier ist die aktuelle Lage für Sachsen.</p>
+      </section>
+
+      <section class="kpi-grid" aria-label="Kennzahlen">
+        <article class="kpi-card">
+          <div class="card-label">Qualitäts-Score <span class="material-icons info-icon" title="Bewertung auf Basis der geladenen Qualitätsdaten" aria-hidden="true">info</span></div>
+          <div class="kpi-value"><span id="kpi-quality-score">-</span> <small>/ 100</small></div>
+          <div class="score-track"><span id="kpi-quality-track"></span></div>
+          <p id="kpi-quality-delta" class="kpi-delta" hidden></p>
+          <p>Gesamtbewertung der Datenqualität</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="card-label">Gesamt-Datensätze <span class="material-icons info-icon" title="Aggregierte Statistik-Counts" aria-hidden="true">info</span></div>
+          <div id="kpi-total" class="kpi-value">-</div>
+          <p id="kpi-total-delta" class="kpi-delta" hidden></p>
+          <p>Aktueller Datenbestand</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="card-label">Gute Datensätze <span class="material-icons info-icon" title="Bewertete Datensätze mit Status gut" aria-hidden="true">info</span></div>
+          <div id="kpi-good" class="kpi-value">-</div>
+          <strong id="kpi-good-percent">-</strong>
+          <p>Vollständig und aktuell</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="card-label">Mit Pflegebedarf <span class="material-icons info-icon" title="Bewertete Datensätze mit Status prüfen" aria-hidden="true">info</span></div>
+          <div id="kpi-review" class="kpi-value">-</div>
+          <strong id="kpi-review-percent">-</strong>
+          <p>Ergänzungen empfohlen</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="card-label">Kritische Datensätze <span class="material-icons info-icon" title="Bewertete Datensätze mit Status kritisch" aria-hidden="true">info</span></div>
+          <div id="kpi-critical" class="kpi-value">-</div>
+          <strong id="kpi-critical-percent">-</strong>
+          <p>Dringender Handlungsbedarf</p>
+        </article>
+
+        <article class="kpi-card">
+          <div class="card-label">Open-Data-Quote <span class="material-icons info-icon" title="Aggregierte Open-Data-Quote" aria-hidden="true">info</span></div>
+          <div id="kpi-open-data" class="kpi-value">-</div>
+          <strong id="kpi-open-data-detail">-</strong>
+          <p>Open-Data-fähige Datensätze</p>
+        </article>
+      </section>
+
+      <div id="overview-message" class="overview-message" hidden></div>
+
+      <section class="dashboard-grid">
+        <article class="panel-card tasks-card">
+          <header class="panel-head">
+            <h2>Wichtigste Pflegeaufgaben</h2>
+          </header>
+          <div id="top-tasks-list" class="task-list" aria-live="polite">
+            <div class="inline-loading">Pflegeaufgaben werden geladen ...</div>
           </div>
+          <a class="panel-link" href="tasks.html">Alle Pflegeaufgaben ansehen <span class="material-icons" aria-hidden="true">arrow_forward</span></a>
+        </article>
 
-          <div class="field">
-            <label>
-              Ort
-              <div class="dropdown-container" id="place-dropdown-container"></div>
-            </label>
-          </div>
-
-          <div class="field">
-            <label>
-              Typ
-              <div class="dropdown-container" id="type-dropdown-container"></div>
-            </label>
-          </div>
-
-          <div class="field">
-            <label>
-              Kategorie
-              <div class="dropdown-container" id="category-dropdown-container"></div>
-            </label>
-          </div>
-
-          <div class="field">
-            <label>
-              Sortierung
-              <select id="sort-select">
-                <option value="default">Standard</option>
-                <option value="pct-desc">Open-Data % absteigend</option>
-                <option value="pct-asc">Open-Data % aufsteigend</option>
-                <option value="stat-desc">SaTourN absteigend</option>
-                <option value="open-desc">Open-Data absteigend</option>
-                <option value="errors">Fehler zuerst</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="full checks">
-            <label class="checkline">
-              <input type="checkbox" id="all-areas-checkbox">
-              Alle Gebiete abfragen
-            </label>
-          </div>
-
-          <div class="btn">
-            <button id="search-button" class="primary" type="button">Ergebnisse suchen</button>
-          </div>
-
-          <div class="btn">
-            <button id="cancel-button" type="button" disabled>Abbrechen</button>
-          </div>
-
-          <div class="btn">
-            <button id="export-button" type="button" disabled>CSV Export</button>
-          </div>
-
-          <div class="wide progWrap" aria-live="polite" hidden>
-            <div class="prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div class="bar" id="prog-bar" style="width:0%"></div>
+        <div class="side-panels">
+          <article class="panel-card status-card">
+            <header class="panel-head">
+              <h2>Qualitäts-Status-Verteilung</h2>
+            </header>
+            <div class="status-layout">
+              <div id="quality-donut" class="donut" aria-label="Qualitätsstatus-Verteilung"></div>
+              <div id="quality-legend" class="legend"></div>
             </div>
-            <div class="meta" id="prog-meta">0/0</div>
-          </div>
+            <p id="quality-data-note" class="data-note">Qualitätsdaten werden geladen ...</p>
+          </article>
+
+          <article class="panel-card open-data-card">
+            <header class="panel-head">
+              <h2>Open-Data-Status</h2>
+            </header>
+            <div class="stacked-bar" aria-hidden="true">
+              <span id="open-data-capable-bar" class="bar-good"></span>
+              <span id="open-data-missing-bar" class="bar-review"></span>
+              <span id="open-data-unknown-bar" class="bar-muted"></span>
+            </div>
+            <div class="open-data-stats">
+              <div>
+                <span>Open-Data-fähig</span>
+                <strong id="open-data-capable">-</strong>
+                <small id="open-data-capable-percent">-</small>
+              </div>
+              <div>
+                <span>Nicht Open-Data-fähig</span>
+                <strong id="open-data-missing">-</strong>
+                <small id="open-data-missing-percent">-</small>
+              </div>
+              <div>
+                <span>Nicht bewertbar</span>
+                <strong id="open-data-unknown">-</strong>
+                <small id="open-data-unknown-percent">-</small>
+              </div>
+            </div>
+            <a class="panel-link align-right" href="stats.html">Mehr zur Open-Data-Quote <span class="material-icons" aria-hidden="true">arrow_forward</span></a>
+          </article>
         </div>
+      </section>
 
-        <div id="loading-container" class="loading" hidden>
-          <svg id="coffee-cup" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="76" height="76" aria-hidden="true">
-            <path d="M4 20h48v24a12 12 0 01-12 12H16a12 12 0 01-12-12V20z" fill="#ccc" stroke="#fff" stroke-width="2"></path>
-            <rect id="coffee-fill" x="8" y="32" width="40" height="12" fill="#6f4e37"></rect>
-            <path d="M52 24h4a8 8 0 010 16h-4" fill="none" stroke="#fff" stroke-width="2"></path>
-          </svg>
-          <p class="muted">Abfrage läuft...</p>
+      <section class="quick-actions panel-card" aria-labelledby="quick-actions-title">
+        <h2 id="quick-actions-title">Schnellzugriff</h2>
+        <div class="quick-action-grid">
+          <a class="quick-action" href="tasks.html">
+            <span class="quick-icon blue material-icons" aria-hidden="true">assignment</span>
+            <span><strong>Pflegeaufgaben</strong><small>Offene Aufgaben ansehen</small></span>
+          </a>
+          <a class="quick-action" href="records.html">
+            <span class="quick-icon blue material-icons" aria-hidden="true">storage</span>
+            <span><strong>Datensätze prüfen</strong><small>Konkrete Datensätze suchen</small></span>
+          </a>
+          <a class="quick-action" href="stats.html">
+            <span class="quick-icon green material-icons" aria-hidden="true">bar_chart</span>
+            <span><strong>Open-Data-Statistik</strong><small>Zahlen und Entwicklungen</small></span>
+          </a>
+          <button id="quick-export" class="quick-action" type="button">
+            <span class="quick-icon purple material-icons" aria-hidden="true">file_download</span>
+            <span><strong>Ergebnisse exportieren</strong><small>Als CSV herunterladen</small></span>
+          </button>
+          <button id="quick-ai" class="quick-action" type="button">
+            <span class="quick-icon amber material-icons" aria-hidden="true">auto_awesome</span>
+            <span><strong>Analyse starten</strong><small>KI-Analyse dieser Ansicht</small></span>
+          </button>
         </div>
-
-        <div id="summary" class="summary" hidden>
-          <div class="summary-item">
-            <span>SaTourN</span>
-            <strong id="summary-stat">0</strong>
-          </div>
-          <div class="summary-item">
-            <span>Open-Data</span>
-            <strong id="summary-open">0</strong>
-          </div>
-          <div class="summary-item">
-            <span>Quote</span>
-            <strong id="summary-pct">0%</strong>
-          </div>
-          <div class="summary-item">
-            <span>Fehler</span>
-            <strong id="summary-errors">0</strong>
-          </div>
-        </div>
-
-        <div id="chart-container" class="chart-grid" hidden>
-          <div class="chart-card">
-            <div class="chart-title">Open-Data Anteil</div>
-            <canvas id="ratio-chart" height="230"></canvas>
-          </div>
-          <div class="chart-card">
-            <div class="chart-title">Quote nach Typ</div>
-            <canvas id="type-chart" height="230"></canvas>
-          </div>
-        </div>
-
-        <div class="tableWrap" id="result" hidden></div>
-      </div>
-    </section>
-
+      </section>
+    </main>
   </div>
+
+  <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
+    <form method="dialog" id="work-context-form">
+      <header>
+        <h2 id="context-dialog-title">Arbeitskontext ändern</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
+      </header>
+      <label>
+        Gebiet
+        <select id="context-area"></select>
+      </label>
+      <label>
+        Ort
+        <input id="context-city" type="text" placeholder="Alle Orte">
+      </label>
+      <label>
+        Datentyp
+        <select id="context-type"></select>
+      </label>
+      <footer>
+        <button value="cancel" type="submit">Abbrechen</button>
+        <button class="primary" value="default" type="submit">Übernehmen</button>
+      </footer>
+    </form>
+  </dialog>
 </div>
