@@ -32,6 +32,8 @@ Stand: 2026-06-05
 ## API und Performance
 
 - `/api/search` ist fuer aggregierte Counts und begrenzte Suchlisten.
+- `/api/autocomplete` ist nur fuer leichte Suchvorschlaege im Suchfeld.
+  Volltextsuche wird nicht pro Tastendruck gestartet.
 - `/api/quality/count` ist fuer verifizierte Kriterium-/Typ-Counts.
 - `/api/quality/scan` ist fuer konkrete Fehlerlisten nach Nutzeraktion.
 - Keine automatischen Vollscans beim Seitenstart.

@@ -12,7 +12,8 @@ Build-Kette und keine Secrets im Frontend.
   asynchronen Pflegeaufgaben und Open-Data-Status.
 - `Statistik/tasks.html`: Pflegeaufgaben mit API-Counts und konkreten
   Datensatzlisten nach Nutzeraktion.
-- `Statistik/records.html`: Datensatz-Hauptseite mit Suche, Filtern,
+- `Statistik/records.html`: Datensatz-Hauptseite mit lokaler Suche,
+  Autovervollstaendigung, serverseitiger Volltextsuche, Filtern,
   Schnellfiltern, Liste, Pagination und CSV-Export.
 - `Statistik/record-detail.html`: Datensatz-Detailseite fuer genau einen
   Datensatz per `type`, `id` oder `global_id`.
@@ -26,7 +27,7 @@ unter `https://tim-meyer-tmgs.github.io/SaTourN/Statistik/...`.
 ## Betrieb und Datenfluss
 
 - Aktueller Betrieb: Browser ruft live ueber Render als Proxy ab.
-- Genutzte Endpunkte: `/api/search`, `/api/quality/count`,
+- Genutzte Endpunkte: `/api/search`, `/api/autocomplete`, `/api/quality/count`,
   `/api/quality/scan`.
 - Kein produktiver Cronjob, kein Nacht-Snapshot und kein aktiver Cache.
 - Vorbereitete Cache-Endpunkte (`/api/quality/snapshot`, `/api/quality/list`)

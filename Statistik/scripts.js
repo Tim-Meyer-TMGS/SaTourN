@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/snapshot');
   const QUALITY_LIST_API_BASE = window.SATOURN_QUALITY_LIST_API_BASE
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/list');
+  const AUTOCOMPLETE_API_BASE = window.SATOURN_AUTOCOMPLETE_API_BASE
+    || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/autocomplete');
   const USE_QUALITY_CACHE = window.SATOURN_USE_QUALITY_CACHE === true
     || window.SATOURN_USE_QUALITY_CACHE === '1';
 
@@ -107,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     recordSearchInput: document.getElementById('record-search-input'),
     recordSearchClear: document.getElementById('record-search-clear'),
     recordSearchButton: document.getElementById('record-search-button'),
+    recordAutocompleteList: document.getElementById('record-autocomplete-list'),
     recordTypeFilter: document.getElementById('record-type-filter'),
     recordCategoryFilter: document.getElementById('record-category-filter'),
     recordStatusFilter: document.getElementById('record-status-filter'),
@@ -210,6 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
     recordPage: 1,
     recordRowsPerPage: 25,
     recordSearchTimer: null,
+    recordAutocompleteTimer: null,
+    recordAutocompleteRequestId: 0,
+    recordServerSearchKeys: new Set(),
     recordDataMeta: {
       mode: 'empty',
       collectedItems: 0,
@@ -284,25 +290,36 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRecordsLoading();
     els.refreshButton?.addEventListener('click', () => loadRecordsData());
     els.recordSearchInput?.addEventListener('input', () => {
+      state.recordServerSearchKeys = new Set();
       clearTimeout(state.recordSearchTimer);
       state.recordSearchTimer = setTimeout(() => {
         state.recordPage = 1;
         applyRecordFilters();
       }, 180);
+      queueRecordAutocomplete();
     });
     els.recordSearchInput?.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
+        hideRecordAutocomplete();
         void handleRecordSearchSubmit();
+      } else if (event.key === 'Escape') {
+        hideRecordAutocomplete();
       }
     });
+    els.recordSearchInput?.addEventListener('focus', queueRecordAutocomplete);
     els.recordSearchButton?.addEventListener('click', () => {
+      hideRecordAutocomplete();
       void handleRecordSearchSubmit();
     });
     els.recordSearchClear?.addEventListener('click', () => {
       if (els.recordSearchInput) els.recordSearchInput.value = '';
+      hideRecordAutocomplete();
       state.recordPage = 1;
       applyRecordFilters();
+    });
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest?.('.record-search-block')) hideRecordAutocomplete();
     });
     [els.recordTypeFilter, els.recordCategoryFilter, els.recordStatusFilter, els.recordIssueFilter].forEach((node) => {
       node?.addEventListener('change', () => {
@@ -1636,6 +1653,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadRecordsData() {
     const startedAt = new Date();
+    state.recordServerSearchKeys = new Set();
     showRecordsMessage('');
     renderRecordsLoading();
 
@@ -1798,7 +1816,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const issue = els.recordIssueFilter?.value || '';
 
     state.filteredRecordRows = state.recordRows.filter((row) => {
-      if (query && !itemMatchesRecordSearch(row, query)) return false;
+      if (query && !itemMatchesRecordSearch(row, query) && !state.recordServerSearchKeys.has(getRecordIdentityKey(row))) return false;
       if (type && row.type !== type) return false;
       if (category && row.category !== category) return false;
       if (status && row.qualityStatus !== status) return false;
@@ -1817,23 +1835,42 @@ document.addEventListener('DOMContentLoaded', () => {
     state.recordPage = 1;
     applyRecordFilters();
     const query = (els.recordSearchInput?.value || '').trim();
-    if (!query || state.filteredRecordRows.length || !looksLikeRecordId(query)) return;
+    if (!query || state.filteredRecordRows.length) return;
 
     if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen ...';
+    renderRecordsLoading();
     try {
-      const found = await searchSingleRecordById(query);
+      const searchResult = looksLikeRecordId(query)
+        ? {
+            items: await searchSingleRecordById(query),
+            estimatedTotalItems: 0,
+            truncated: false,
+            mode: 'id_search'
+          }
+        : await searchRecordsByText(query);
+      const found = searchResult.items || [];
       if (!found.length) {
-        showRecordsMessage('Für diese ID wurde kein Datensatz gefunden. Bitte prüfe die Eingabe oder suche nach dem Titel.');
+        applyRecordFilters();
+        showRecordsMessage('Keine Datensätze gefunden.');
         return;
       }
       const evaluated = evaluateAllItems(found.map((raw) => normalizeItem(raw.raw || raw, raw.type)));
       const merged = mergeRecordItems(state.recordItems, evaluated);
       state.recordItems = merged;
       state.recordRows = merged.map(buildRecordViewModel);
+      state.recordServerSearchKeys = new Set(evaluated.map(getRecordIdentityKey).filter(Boolean));
+      state.recordDataMeta = {
+        mode: searchResult.mode || 'search',
+        collectedItems: found.length,
+        estimatedTotalItems: searchResult.estimatedTotalItems || found.length,
+        truncated: Boolean(searchResult.truncated)
+      };
       fillRecordDynamicFilters();
       applyRecordFilters();
+      showRecordsMessage(searchResult.truncated ? 'Suchtreffer geladen. Verfeinere die Suche bei Bedarf.' : '');
     } catch (error) {
-      console.error('Gezielte Datensatzsuche fehlgeschlagen.', error);
+      console.error('Datensatzsuche fehlgeschlagen.', error);
+      applyRecordFilters();
       showRecordsMessage('Für diese Suche wurde kein Datensatz gefunden.');
     } finally {
       if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen';
@@ -1847,7 +1884,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const queryVariants = [
       idQuery,
       `id:"${idQuery}"`,
-      `global_id:"${idQuery}"`
+      `global_id:"${idQuery}"`,
+      `globalid:${idQuery}`
     ];
     const results = [];
 
@@ -1863,13 +1901,159 @@ document.addEventListener('DOMContentLoaded', () => {
     return results;
   }
 
+  async function searchRecordsByText(query) {
+    const termQuery = cleanFullTextQuery(query);
+    if (!termQuery) return { items: [], estimatedTotalItems: 0, truncated: false, mode: 'search' };
+
+    const selectedType = els.recordTypeFilter?.value || state.context.type || '';
+    const targetTypes = selectedType ? [selectedType] : TYPES;
+    const contextQuery = buildQuery(state.context);
+    const combinedQuery = [contextQuery, termQuery].filter(Boolean).join(' AND ');
+    const perTypeLimit = selectedType ? 40 : 15;
+    const payloads = await Promise.all(targetTypes.map(async (type) => {
+      try {
+        const payload = await fetchJson(buildUrl(type, combinedQuery, { limit: perTypeLimit }));
+        return {
+          type,
+          payload,
+          items: extractItems(payload).map((raw) => normalizeItem(raw, type)),
+          total: extractTotal(payload)
+        };
+      } catch (error) {
+        console.warn('Volltextsuche konnte fuer Typ nicht geladen werden.', type, error);
+        return { type, payload: null, items: [], total: 0 };
+      }
+    }));
+    const items = payloads.flatMap((entry) => entry.items);
+    const estimatedTotalItems = payloads.reduce((sum, entry) => sum + Number(entry.total || entry.items.length || 0), 0);
+    const truncated = payloads.some((entry) => Number(entry.total || 0) > entry.items.length);
+    return { items, estimatedTotalItems, truncated, mode: 'search' };
+  }
+
+  function cleanFullTextQuery(query) {
+    return cleanQueryValue(query)
+      .replace(/[\(\)\{\}\[\]]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function queueRecordAutocomplete() {
+    clearTimeout(state.recordAutocompleteTimer);
+    state.recordAutocompleteRequestId += 1;
+    const query = (els.recordSearchInput?.value || '').trim();
+    if (!els.recordAutocompleteList || query.length < 3 || looksLikeRecordId(query)) {
+      hideRecordAutocomplete();
+      return;
+    }
+    state.recordAutocompleteTimer = setTimeout(() => {
+      void loadRecordAutocomplete(query);
+    }, 260);
+  }
+
+  async function loadRecordAutocomplete(query) {
+    const requestId = ++state.recordAutocompleteRequestId;
+    const params = new URLSearchParams({
+      term: query,
+      limit: '8'
+    });
+    const selectedType = els.recordTypeFilter?.value || state.context.type || '';
+    if (selectedType) params.set('type', selectedType);
+
+    try {
+      const payload = await fetchJson(`${AUTOCOMPLETE_API_BASE}?${params.toString()}`);
+      if (requestId !== state.recordAutocompleteRequestId) return;
+      renderRecordAutocomplete(normalizeAutocompleteSuggestions(payload));
+    } catch (error) {
+      console.debug('Autocomplete konnte nicht geladen werden.', error);
+      if (requestId === state.recordAutocompleteRequestId) hideRecordAutocomplete();
+    }
+  }
+
+  function normalizeAutocompleteSuggestions(payload) {
+    const rawSuggestions = Array.isArray(payload)
+      ? payload
+      : payload?.items || payload?.Items || payload?.results || payload?.Results
+        || payload?.suggestions || payload?.Suggestions || payload?.data || payload?.Data || [];
+    const seen = new Set();
+    return rawSuggestions
+      .map((entry) => {
+        if (typeof entry === 'string') {
+          return { label: entry, value: entry, count: null };
+        }
+        const label = textValue(entry?.label)
+          || textValue(entry?.Label)
+          || textValue(entry?.term)
+          || textValue(entry?.Term)
+          || textValue(entry?.value)
+          || textValue(entry?.Value)
+          || textValue(entry?.name)
+          || textValue(entry?.Name)
+          || textValue(entry?.title)
+          || textValue(entry?.Title);
+        const value = textValue(entry?.value)
+          || textValue(entry?.Value)
+          || textValue(entry?.term)
+          || textValue(entry?.Term)
+          || label;
+        const count = Number(entry?.count ?? entry?.Count ?? entry?.documents ?? entry?.Documents ?? NaN);
+        return {
+          label,
+          value,
+          count: Number.isFinite(count) ? count : null
+        };
+      })
+      .filter((entry) => entry.label && entry.value)
+      .filter((entry) => {
+        const key = entry.value.toLocaleLowerCase('de-DE');
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 8);
+  }
+
+  function renderRecordAutocomplete(suggestions) {
+    if (!els.recordAutocompleteList) return;
+    if (!suggestions.length) {
+      hideRecordAutocomplete();
+      return;
+    }
+    els.recordAutocompleteList.innerHTML = suggestions.map((suggestion, index) => `
+      <button type="button" role="option" data-autocomplete-value="${escapeHtml(suggestion.value)}" aria-selected="${index === 0 ? 'true' : 'false'}">
+        <span>${escapeHtml(suggestion.label)}</span>
+        ${suggestion.count == null ? '' : `<small>${formatNumber(suggestion.count)}</small>`}
+      </button>
+    `).join('');
+    els.recordAutocompleteList.hidden = false;
+    els.recordAutocompleteList.querySelectorAll('button[data-autocomplete-value]').forEach((button) => {
+      button.addEventListener('mousedown', (event) => event.preventDefault());
+      button.addEventListener('click', () => {
+        if (els.recordSearchInput) els.recordSearchInput.value = button.dataset.autocompleteValue || button.textContent.trim();
+        hideRecordAutocomplete();
+        void handleRecordSearchSubmit();
+      });
+    });
+  }
+
+  function hideRecordAutocomplete() {
+    clearTimeout(state.recordAutocompleteTimer);
+    state.recordAutocompleteRequestId += 1;
+    if (!els.recordAutocompleteList) return;
+    els.recordAutocompleteList.hidden = true;
+    els.recordAutocompleteList.innerHTML = '';
+  }
+
   function mergeRecordItems(existing, incoming) {
     const map = new Map();
     [...existing, ...incoming].forEach((item) => {
-      const key = item.globalId || item.id || `${item.type}:${item.title}`;
+      const key = getRecordIdentityKey(item);
       if (key) map.set(key, item);
     });
     return Array.from(map.values());
+  }
+
+  function getRecordIdentityKey(record) {
+    return record?.globalId || record?.global_id || record?.id || `${record?.type || ''}:${record?.title || ''}`;
   }
 
   function renderRecordTable() {
@@ -2052,6 +2236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
     if (els.recordStatusFilter) els.recordStatusFilter.value = '';
     if (els.recordIssueFilter) els.recordIssueFilter.value = '';
+    state.recordServerSearchKeys = new Set();
     state.pendingRecordView = null;
     clearRecordViewState();
     state.recordPage = 1;
@@ -2067,6 +2252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
     if (els.recordStatusFilter) els.recordStatusFilter.value = '';
     if (els.recordIssueFilter) els.recordIssueFilter.value = '';
+    state.recordServerSearchKeys = new Set();
     state.pendingRecordView = null;
     clearRecordViewState();
     if (value === 'critical' && els.recordStatusFilter) els.recordStatusFilter.value = 'kritisch';

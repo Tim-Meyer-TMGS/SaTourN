@@ -55,26 +55,30 @@ Arbeitsanweisung fuer Umsetzung:
 Ziel: Suche darf nicht nur ueber ID funktionieren. Nutzer muessen Titel, Ort,
 Kategorie, id, und `global_id` finden koennen.
 
-Konkrete Schritte:
+Status: Umgesetzt am 2026-06-05, Browser-QA mit echten Beispielen noch offen.
 
-- Aktuelle Suche in `records.html` gegen echte Daten pruefen:
-  Titel-Volltext, Ort, Kategorie, ID und `global_id`.
-- Falls nur lokal in geladenen Treffern gesucht wird, explizite serverseitige
-  Suche ueber `/api/search` ergaenzen.
-- Keine Vollabfrage beim Tippen. Suche erst per Button oder Debounce mit
-  kleinem Limit starten.
-- Suchquery so bauen, dass Arbeitskontext erhalten bleibt.
-- Trefferliste nach Suche weiterhin schlank halten; technische Treffergrenzen
-  ruhig ausweisen.
+Umgesetzt:
 
-Arbeitsanweisung fuer Umsetzung:
+- Render-Proxy hat einen neuen Endpunkt `/api/autocomplete` fuer die
+  Destination.One-Autovervollstaendigung.
+- Suchfeld in `records.html` zeigt nach kurzer Eingabepause Vorschlaege an.
+- Die eigentliche Datensatzsuche startet weiterhin nur bewusst per Button,
+  Enter oder Auswahl eines Vorschlags.
+- Lokale Suche bleibt erhalten. Wenn lokal kein Treffer vorhanden ist, wird
+  eine serverseitige Volltextsuche ueber `/api/search` gestartet.
+- `searchSingleRecordById()` bleibt erhalten und wurde fuer `globalid`
+  erweitert.
+- Arbeitskontext wird bei der serverseitigen Suche weiterhin mitgegeben.
 
-- Zuerst 5 reale Suchbeispiele notieren: Titel, Ort, Kategorie, numerische ID,
-  `global_id`.
-- Danach `searchSingleRecordById()` nicht ersetzen, sondern um eine
-  Volltextsuche ergaenzen.
-- API-Requests in DevTools/Console zaehlen und sicherstellen, dass keine
-  Requests pro Tastendruck entstehen.
+Offene Nacharbeit:
+
+- Browser-QA mit 5 realen Beispielen durchfuehren: Titel, Ort, Kategorie,
+  numerische ID, `global_id`.
+- In DevTools pruefen, dass beim Tippen nur Autocomplete-Requests entstehen
+  und keine Volltextsuche pro Tastendruck.
+- Antwortformat der Destination.One-Autovervollstaendigung mit echten Daten
+  pruefen; falls Counts oder Felder anders benannt sind, Normalisierung
+  nachziehen.
 
 ## 3. Fachliche Qualitaetskriterien modellieren
 
