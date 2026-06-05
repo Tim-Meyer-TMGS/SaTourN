@@ -477,6 +477,8 @@ export const qualityCriteria = Object.freeze([
     api: {
       positiveQuery: null,
       missingQuery: null,
+      prefilterQuery: 'media:*',
+      prefilterVerified: true,
       verified: false,
       verifiedForTypes: []
     },
@@ -564,6 +566,7 @@ export function getQualityScanConfig(criterionId, type) {
       method: 'unsupported',
       positiveQuery: null,
       missingQuery: null,
+      prefilterQuery: null,
       verified: false,
       warnings: ['missing_criterion_or_type']
     };
@@ -594,6 +597,8 @@ export function getQualityScanConfig(criterionId, type) {
     method: canUseApiPushdown ? 'api_pushdown' : 'server_scan',
     positiveQuery: canUseApiPushdown ? apiConfig.positiveQuery || null : null,
     missingQuery: canUseApiPushdown ? apiConfig.missingQuery || null : null,
+    prefilterQuery: apiConfig.prefilterQuery || null,
+    prefilterVerified: Boolean(apiConfig.prefilterVerified),
     verified: canUseApiPushdown,
     verifiedForType,
     requestedMethod: method,

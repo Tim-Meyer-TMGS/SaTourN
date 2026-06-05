@@ -1385,10 +1385,10 @@ Pruefung:
   aus `Statistik/scripts.js` entfernt.
 - `git diff --check` ohne Fehler; nur Windows-CRLF-Hinweise.
 
-## Umsetzung: Render Key Value und Nacht-Snapshot
+## Vorbereitung: Render Key Value und Nacht-Snapshot
 
-Status: umgesetzt am 2026-06-05, lokale Syntaxpruefung mangels Node nicht
-ausfuehrbar.
+Status: vorbereitet am 2026-06-05, aktuell nicht im Betrieb. Der derzeitige
+Produktivpfad laedt live aus dem Browser und nutzt Render nur als Proxy.
 
 Umgesetzte Anpassungen:
 
@@ -1396,42 +1396,125 @@ Umgesetzte Anpassungen:
   Memory-Fallback bereit.
 - `index.js` erzeugt den Key-Value-Store und reicht ihn an
   `routes/quality.js` weiter.
-- `/api/quality/snapshot` liest aggregierte Nachtlauf-Snapshots aus dem Cache.
-- `/api/quality/list` liest vorgefilterte, reduzierte Fehlerlisten aus dem
-  Cache.
+- `/api/quality/snapshot` kann aggregierte Snapshots aus dem Cache lesen, wird
+  im Frontend aber ohne explizites Cache-Flag nicht genutzt.
+- `/api/quality/list` kann vorgefilterte, reduzierte Fehlerlisten aus dem Cache
+  lesen, ist aktuell aber ebenfalls inaktiv.
 - `/api/quality/count` nutzt zusaetzlich den gemeinsamen Key-Value-Cache und
   faellt weiter auf den bestehenden In-Memory-Cache zurueck.
 - `scripts/run-quality-snapshot.mjs` scannt Datensaetze serverseitig,
   bewertet sie mit `Statistik/quality.js`, speichert reduzierte Snapshots und
   Fehlerlisten in Key Value und legt keine Rohdatenlisten im Frontend ab.
-- Startseite, Pflegeaufgaben, Datensaetze und Open-Data-Statistik fragen
-  zuerst den Cache ab und nutzen bei Cache-Miss weiterhin die Live-Endpunkte.
+- Startseite, Pflegeaufgaben, Datensaetze und Open-Data-Statistik nutzen
+  aktuell live `/api/search`, `/api/quality/count` und `/api/quality/scan`.
+  Cache-Endpunkte werden nur bei `window.SATOURN_USE_QUALITY_CACHE` abgefragt.
 
-Bewusste Einschraenkungen:
+Bewusste Einschraenkungen des optionalen Pfads:
 
-- Standardmaessig wird nur der Kontext `Sachsen` ohne Ort/Typ vorab
-  gecached. Weitere Regionen koennen ueber `QUALITY_SNAPSHOT_CONTEXTS`
-  konfiguriert werden.
+- Wenn der Pfad spaeter aktiviert wird, wird standardmaessig nur der Kontext
+  `Sachsen` ohne Ort/Typ vorab gecached. Weitere Regionen koennen ueber
+  `QUALITY_SNAPSHOT_CONTEXTS` konfiguriert werden.
 - Fehlerlisten werden reduziert und pro Kriterium/Typ durch
   `QUALITY_SNAPSHOT_LIST_LIMIT` begrenzt. Counts bleiben aus dem Scan, die
   gespeicherte Liste kann bei sehr grossen Treffermengen begrenzt sein.
-- Exakte 22:00-Uhr-Ausfuehrung in Berliner Zeit braucht bei Render wegen UTC-
-  Cron entweder saisonale Anpassung oder bewusst gesetzten UTC-Zeitpunkt.
+Optionaler spaeterer Render-Betrieb:
 
-Render-Betrieb:
-
-- Render Key Value anlegen und `REDIS_URL` im Webservice und Cron Job setzen.
-- Der Snapshot-Job bricht ohne `REDIS_URL` ab; lokale Trockenlaeufe koennen nur
-  explizit mit `QUALITY_SNAPSHOT_ALLOW_MEMORY=1` den Memory-Fallback nutzen.
-- Cron Job Command: `npm run quality:snapshot`.
-- Sinnvolle Startwerte:
-  `QUALITY_SNAPSHOT_PAGE_SIZE=200`,
-  `QUALITY_SNAPSHOT_MAX_PAGES_PER_TYPE=250`,
-  `QUALITY_SNAPSHOT_LIST_LIMIT=2000`,
-  `QUALITY_SNAPSHOT_TTL_HOURS=48`.
+- Der Pfad wird aktuell nicht genutzt. Bei Wiederaufnahme muessen Render Key
+  Value, `REDIS_URL`, Laufzeit, Scan-Budgets und Aktivierung per
+  `window.SATOURN_USE_QUALITY_CACHE` neu fachlich entschieden werden.
+- Bis dahin bleiben Browser-Live-Ladung und Render-Proxy der verbindliche
+  Produktivpfad.
 
 Pruefung:
 
 - `git diff --check` ausfuehren.
-- `npm run check` und `npm run quality:snapshot` koennen lokal erst ausgefuehrt
-  werden, wenn Node/npm in der Umgebung verfuegbar ist.
+- `npm run check` kann lokal erst ausgefuehrt werden, wenn Node/npm in der
+  Umgebung verfuegbar ist.
+
+## Umsetzung: Score-Logik Sachsen/Gebiet und asynchrone Darstellung
+
+Status: umgesetzt am 2026-06-05, lokale Syntaxpruefung mangels Node nicht
+ausfuehrbar.
+
+Umgesetzte Anpassungen:
+
+- Fuer ganz Sachsen wird auf der Startseite kein Qualitaets-Score und keine
+  Statusverteilung als echte Bewertung angezeigt.
+- Wird ein Gebiet oder Ort gewaehlt, startet die Startseite einen asynchronen
+  regionalen Qualitaetsscan ueber den bestehenden Proxy.
+- Der regionale Scan laedt Datensaetze pro Typ seitenweise, bewertet sie im
+  Browser mit `Statistik/quality.js` und aktualisiert Score, Statusverteilung
+  und Pflegeaufgaben nach jeder geladenen Seite.
+- Statistik-Counts auf Startseite und Open-Data-Statistik werden typweise
+  inkrementell gerendert; fertige Typen werden sofort angezeigt.
+- Pflegeaufgaben laden verifizierte Count-Kombinationen inkrementell und zeigen
+  laufend neue Aufgaben, statt auf alle Count-Abfragen zu warten.
+- Cache-Zugriffe sind im Frontend nun opt-in ueber
+  `window.SATOURN_USE_QUALITY_CACHE`; ohne Flag wird live geladen und kein
+  Cache-Endpunkt abgefragt.
+
+Bewusste Einschraenkungen:
+
+- Der regionale Live-Scan ist ueber `SATOURN_REGION_QUALITY_PAGE_SIZE` und
+  `SATOURN_REGION_QUALITY_MAX_PAGES` begrenzt. Bei grossen Gebieten koennen
+  Score und Status Zwischenwerte bleiben.
+- Ganz Sachsen bleibt ohne fachlich belastbaren Gesamt-Scan nicht scorefaehig.
+
+Pruefung:
+
+- `git diff --check` ohne Fehler; nur Windows-CRLF-Hinweis.
+- Node/npm sind lokal weiterhin nicht verfuegbar, daher kein `npm run check`.
+
+## Umsetzung: API-Last bei Bildurheber-Scans reduzieren
+
+Status: umgesetzt am 2026-06-05.
+
+Umgesetzte Anpassungen:
+
+- `image_author_missing` bleibt ein Server-Scan, weil fehlendes
+  `media_objects[].copyrightText` nicht als belastbarer API-Pushdown
+  verifiziert ist.
+- Der Live-Endpunkt `/api/quality/scan` kombiniert den Arbeitskontext fuer
+  dieses Kriterium nun mit `media:*`.
+- Dadurch werden Datensaetze ohne Bilder bereits upstream ausgeschlossen; die
+  eigentliche Fehlerpruefung laeuft weiterhin in `Statistik/quality.js`.
+- Diagnose- und Criterion-Antworten geben `prefilterQuery` aus, damit der
+  verwendete Kandidatenfilter nachvollziehbar ist.
+
+Grenze:
+
+- Der Prefilter gilt fuer konkrete Fehlerlisten/Live-Scans. Fuer Score-Scans
+  duerfen Datensaetze ohne Bilder nicht ausgeblendet werden, weil sonst
+  `image_missing` und Statuswerte verzerrt waeren.
+
+## Umsetzung: UI-Korrektur Pflegeaufgaben und Open-Data-Status
+
+Status: umgesetzt am 2026-06-05.
+
+Umgesetzte Anpassungen:
+
+- Die Startseite zeigt unter `Wichtigste Pflegeaufgaben` nur noch Aufgaben mit
+  `affectedCount > 0`.
+- Pflegekriterien ohne fehlerhafte Datensaetze verschwinden aus der Liste,
+  statt als Aufgabe mit `0` angezeigt zu werden.
+- Der Open-Data-Status ist auf zwei Zustaende reduziert:
+  Open-Data-faehig und nicht Open-Data-faehig.
+- Die Kategorie `Nicht bewertbar` wurde aus dem Open-Data-Status entfernt.
+- In der Qualitaetsstatus-Legende wird `Nicht bewertbar` nur noch angezeigt,
+  wenn es tatsaechlich betroffene Datensaetze gibt.
+
+## Umsetzung: Open-Data-Statistik UI verschlanken
+
+Status: umgesetzt am 2026-06-05.
+
+Umgesetzte Anpassungen:
+
+- Die doppelte Statistik-Filterkarte ist ausgeblendet; Gebiet, Ort und Datentyp
+  werden ausschliesslich ueber den globalen Arbeitskontext gesteuert.
+- Der Header-Refresh laedt die Statistik neu, ohne den Arbeitskontext aus der
+  ausgeblendeten Filterkarte zu ueberschreiben.
+- Das Diagramm `Verteilung nach Datentyp` zeigt keine Innenbeschriftung mehr;
+  die Zahlen stehen nur in der Tabelle daneben.
+- Die redundante Tabelle `Kennzahlen nach Datentyp` ist ausgeblendet.
+- Stattdessen fuehrt eine Karte `Lizenzen pflegen` zur passenden
+  Pflegeaufgabe `license_missing`.

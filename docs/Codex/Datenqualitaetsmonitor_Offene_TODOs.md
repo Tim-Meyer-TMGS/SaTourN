@@ -790,27 +790,35 @@ Eine Abschnittsumsetzung ist erst fertig, wenn:
   sind.
 - Fuer sehr grosse Exporte einen Batch-/Job-Endpunkt pruefen, damit CSV-Dateien
   nicht an Browser- oder Request-Limits haengen.
-- Qualitaetsstatus-Gesamtzahlen nach dem ersten vollstaendigen Nacht-Snapshot
-  fachlich pruefen und nur bei `complete=true` als belastbar behandeln.
+- Qualitaetsstatus-Gesamtzahlen fuer ganz Sachsen weiterhin nicht anzeigen,
+  solange kein fachlich belastbarer Gesamt-Scan produktiv genutzt wird.
 - `image_author_missing` ist als Server-Scan verifiziert; API-Pushdown bleibt
   mangels belastbarer Destination.One-Query nicht verifiziert.
 
-## Umbau Statistik: offene Folgepunkte nach Render Key Value und Nacht-Snapshot
+## Umbau Statistik: offene Folgepunkte Live-Proxy ohne Cronjob
 
-- Render Key Value in Render anlegen und `REDIS_URL` sowohl im Webservice als
-  auch im Cron Job setzen.
-- Sicherstellen, dass der Cron Job nicht ohne `REDIS_URL` laeuft; Memory-
-  Fallback ist nur fuer lokale Trockenlaeufe mit
-  `QUALITY_SNAPSHOT_ALLOW_MEMORY=1` gedacht.
-- Render Cron Job mit Command `npm run quality:snapshot` anlegen.
-- Cron-Zeit festlegen: im Sommer fuer 22:00 Berlin `0 20 * * *` UTC, im Winter
-  `0 21 * * *` UTC oder saisonal anpassen.
-- Ersten Nachtlauf pruefen: Laufzeit, gescannte Datensaetze, `complete`,
-  begrenzte Listen und Fehlermeldungen in den Render Logs kontrollieren.
-- `QUALITY_SNAPSHOT_CONTEXTS` festlegen, wenn neben Sachsen gesonderte
-  Regionen/Orte/Typen vorab gecached werden sollen.
-- `QUALITY_SNAPSHOT_LIST_LIMIT` fachlich dimensionieren: genug Treffer fuer die
-  Arbeit, aber keine unnoetig grossen Rohlisten im Cache.
-- Nach erfolgreichem Cron-Lauf im Browser pruefen, ob Startseite,
-  Pflegeaufgaben, Datensaetze und Open-Data-Statistik Cache-Hinweise anzeigen
-  und bei Cache-Miss weiter live funktionieren.
+- Render-Proxy-Endpunkte mit echten Daten pruefen:
+  `/api/search`, `/api/quality/count` und `/api/quality/scan`.
+- Browser-UI so beobachten, dass Startseite, Pflegeaufgaben, Datensaetze und
+  Open-Data-Statistik ohne Cache-Endpunkte vollstaendig nutzbar bleiben.
+- Timeouts und Scan-Budgets fuer `/api/quality/scan` mit echten
+  Gebietsdaten dimensionieren.
+- Optionalen Cache-/Snapshot-Pfad erst wieder aktivieren, wenn Render Key Value
+  bewusst eingefuehrt wird und `window.SATOURN_USE_QUALITY_CACHE` gesetzt ist.
+
+## Umbau Statistik: offene Folgepunkte nach Score-Logik Sachsen/Gebiet
+
+- Startseite mit Arbeitskontext `Sachsen - Alle Orte - Alle Datentypen`
+  pruefen: Score, gute Datensaetze, Pflegebedarf und kritische Datensaetze
+  duerfen nicht als echte Gesamtbewertung erscheinen.
+- Startseite mit einem Gebiet pruefen: Score und Statusverteilung muessen
+  nachgeladen und waehrend des regionalen Scans schrittweise aktualisiert
+  werden.
+- `SATOURN_REGION_QUALITY_MAX_PAGES` mit echten Gebietsdaten dimensionieren,
+  damit der regionale Scan brauchbar bleibt, ohne zu lange zu laufen.
+- UI-Text fuer begrenzte regionale Scans fachlich pruefen: bei Truncation darf
+  der Score nur als Zwischenwert verstanden werden.
+- Optional spaeter kleine Abbruch-/Fortschrittsanzeige fuer den regionalen
+  Qualitaetsscan ergaenzen.
+- Wirkung des `media:*`-Prefilters fuer `image_author_missing` mit echten Daten
+  je Typ messen: Quellmenge vorher/nachher, Laufzeit, Trefferquote.

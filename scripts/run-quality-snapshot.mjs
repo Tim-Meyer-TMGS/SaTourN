@@ -230,6 +230,7 @@ function criterionForResponse(criterion, type) {
     verified: scanConfig.verified,
     missingQuery: scanConfig.missingQuery || null,
     positiveQuery: scanConfig.positiveQuery || null,
+    prefilterQuery: scanConfig.prefilterQuery || null,
     unsupportedQueries: criterion.unsupportedQueries || []
   };
 }

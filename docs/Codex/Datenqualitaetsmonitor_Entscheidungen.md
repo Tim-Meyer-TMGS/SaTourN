@@ -65,13 +65,20 @@ Stand: 2026-06-04
   und Sample-/Scan-Kontext klar machen.
 - Punkte 24 und 25 legen die Migration fest: kleine pruefbare Schritte, zuerst
   UI-Audit, Fehlerlisten, Statusmeldungen, Loader, Arbeitskontext, Navigation.
-- Render Key Value ist die bevorzugte Speicherloesung fuer schnelle
-  Qualitaets-Snapshots und vorgefilterte Fehlerlisten. Der Webservice und der
-  Cron Job teilen sich `REDIS_URL`.
-- Persistente Render Disks werden fuer diesen Use Case nicht genutzt, weil der
-  Cron Job den Snapshot mit dem Webservice teilen muss.
-- Postgres bleibt optional fuer spaetere Historie, Trends und Berichte, ist aber
-  fuer den schnellen aktuellen Cache nicht erforderlich.
+- Aktueller Betrieb: kein Cronjob, kein produktiver Nacht-Snapshot. Das
+  Frontend laedt live aus dem Browser und Render dient als Proxy fuer die
+  Destination.One/eT4-API.
+- Render Key Value bleibt nur ein vorbereiteter optionaler Zukunftspfad fuer
+  schnelle Qualitaets-Snapshots und vorgefilterte Fehlerlisten. Cache-Endpunkte
+  werden im Frontend nur genutzt, wenn `window.SATOURN_USE_QUALITY_CACHE` aktiv
+  gesetzt ist.
+- Ganz Sachsen bekommt keinen Qualitaets-Score aus Browser- oder Live-Counts.
+  Score und Statusverteilung werden nur fuer Gebiet/Ort per regionalem
+  asynchronem Datensatzscan berechnet.
+- Persistente Render Disks werden fuer den aktuellen Live-Proxy-Betrieb nicht
+  genutzt.
+- Postgres bleibt optional fuer spaetere Historie, Trends und Berichte, ist
+  aber fuer den aktuellen Live-Proxy-Betrieb nicht erforderlich.
 
 ## Datenbasis und Limits
 
@@ -93,7 +100,9 @@ Stand: 2026-06-04
 - Negative Queries duerfen nicht generisch erzeugt werden; Beispiel:
   Hotel-Buchungslink nutzt `*:* NOT booking:*`, nicht `*:* -booking:*`.
 - `image_author_missing` bleibt Server-Scan, weil kein verifizierter API-Pushdown
-  fuer fehlende `media_objects[].copyrightText` vorliegt.
+  fuer fehlende `media_objects[].copyrightText` vorliegt. Der Server-Scan darf
+  aber den verifizierten Kandidatenfilter `media:*` nutzen, damit Datensaetze
+  ohne Bilder gar nicht erst geladen und bewertet werden.
 - Der Qualitaets-Score ist Orientierung und Motivation. Pflegeaufgaben und
   Nutzbarkeit haben in Arbeitslisten Vorrang vor der Score-Zahl.
 - Package-Buchungslink bleibt nur fuer API-Pushdown offen; der Server-Scan ist
@@ -118,7 +127,9 @@ erfolgreiche POI-Test als technische Verifikation des Server-Scan-Verfahrens
 fuer POI, Tour, Hotel, Event, Gastro und Package gewertet.
 
 Entscheidung:
-`image_author_missing` bleibt fuer alle Typen `method=server_scan`.
+`image_author_missing` bleibt fuer alle Typen `method=server_scan`. Live-Scans
+nutzen `media:*` nur als Kandidaten-Prefilter; die eigentliche Entscheidung
+bleibt die JS-Prueflogik auf pruefbaren Medien ohne `copyrightText`.
 
 ### booking_link_missing / Package
 
@@ -184,11 +195,11 @@ Hotel bleibt separat als `api_pushdown` verifiziert mit:
   bleiben bis zu ihren eigenen Mockups aber bewusst API-freie Platzhalter.
 - Nur `Statistik/index.html` laedt Uebersichtsdaten. Platzhalterseiten
   initialisieren ausschliesslich Header, Navigation und Arbeitskontext.
-- Die Startseite verwendet fuer Summen `/api/search` mit `limit=1` und fuer
-  Qualitaetswerte zuerst den gecachten Nacht-Snapshot; bei Cache-Miss bleiben
-  API-Counts der Fallback.
-- Die Pflegeaufgaben-Seite darf beim Laden den gecachten Nacht-Snapshot oder
-  verifizierte API-Counts nutzen, aber keine Browser-Stichproben starten.
+- Die Startseite verwendet fuer Summen `/api/search` mit `limit=1`. Ganz
+  Sachsen zeigt keinen Score; Gebiet/Ort berechnet Qualitaetswerte live per
+  regionalem Scan.
+- Die Pflegeaufgaben-Seite nutzt verifizierte API-Counts und konkrete
+  `/api/quality/scan`-Listen, aber keine Browser-Stichproben fuer ganz Sachsen.
 - Aufgaben entstehen aus `qualityCriteria` und `issueSummary`; statische
   Beispielaufgaben und fiktive Workflowdaten bleiben ausgeschlossen.
 - Server-Scans werden erst nach Auswahl einer konkreten Aufgabe und eines

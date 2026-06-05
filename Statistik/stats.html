@@ -49,7 +49,7 @@ module: true
         <p>Aggregierte Kennzahlen für Ihren Arbeitskontext.</p>
       </section>
 
-      <section class="stats-filter-card" aria-label="Open-Data-Statistik filtern">
+      <section class="stats-filter-card" aria-label="Open-Data-Statistik filtern" hidden>
         <label>
           Gebiet
           <select id="stats-area-filter"></select>
@@ -110,10 +110,7 @@ module: true
         <article class="panel-card stats-chart-card">
           <header class="panel-head"><h2>Verteilung nach Datentyp (Anzahl)</h2></header>
           <div class="stats-donut-layout">
-            <div id="stats-type-donut" class="stats-type-donut" aria-label="Verteilung nach Datentyp">
-              <span id="stats-type-donut-total">-</span>
-              <small>Gesamt</small>
-            </div>
+            <div id="stats-type-donut" class="stats-type-donut" aria-label="Verteilung nach Datentyp"></div>
             <div class="stats-chart-table-wrap">
               <table class="stats-mini-table">
                 <thead>
@@ -136,7 +133,21 @@ module: true
         </article>
       </section>
 
-      <section class="panel-card stats-table-card">
+      <section id="stats-license-task-card" class="panel-card stats-task-card" hidden>
+        <span class="stats-task-icon material-icons" aria-hidden="true">assignment</span>
+        <div>
+          <h2>Lizenzen pflegen</h2>
+          <p class="stats-task-copy">Datens&auml;tze ohne g&uuml;ltige Open-Data-Lizenz direkt in den Pflegeaufgaben bearbeiten.</p>
+          <p>DatensÃ¤tze ohne gÃ¼ltige Open-Data-Lizenz direkt in den Pflegeaufgaben bearbeiten.</p>
+        </div>
+        <div class="stats-task-metric">
+          <strong id="stats-license-task-count">-</strong>
+          <small id="stats-license-task-share">-</small>
+        </div>
+        <a class="primary-action stats-task-link" href="tasks.html?task=license_missing">Pflegeaufgabe &ouml;ffnen<span class="material-icons" aria-hidden="true">arrow_forward</span></a>
+      </section>
+
+      <section class="panel-card stats-table-card" hidden>
         <header class="panel-head">
           <h2>Kennzahlen nach Datentyp</h2>
         </header>

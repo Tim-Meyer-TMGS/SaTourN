@@ -586,13 +586,9 @@ body.statistik-page-body {
   background: var(--amber);
 }
 
-.statistik .bar-muted {
-  background: #98a2b3;
-}
-
 .statistik .open-data-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
   margin-bottom: 10px;
 }
@@ -2025,6 +2021,61 @@ body.statistik-page-body {
   margin-bottom: 14px;
 }
 
+.statistik .stats-task-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 14px;
+  padding: 18px;
+}
+
+.statistik .stats-task-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 27px;
+}
+
+.statistik .stats-task-card h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.statistik .stats-task-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.statistik .stats-task-card p:not(.stats-task-copy),
+.statistik .stats-task-card > a.primary-action:not(.stats-task-link) {
+  display: none;
+}
+
+.statistik .stats-task-metric {
+  min-width: 120px;
+  text-align: right;
+}
+
+.statistik .stats-task-metric strong,
+.statistik .stats-task-metric small {
+  display: block;
+}
+
+.statistik .stats-task-metric strong {
+  font-size: 26px;
+  line-height: 1.05;
+}
+
+.statistik .stats-task-metric small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
 .statistik .stats-table-quote {
   display: grid;
   grid-template-columns: 72px minmax(120px, 180px);
@@ -2164,6 +2215,7 @@ body.statistik-page-body {
   .statistik .detail-head-card,
   .statistik .detail-grid,
   .statistik .stats-filter-card,
+  .statistik .stats-task-card,
   .statistik .stats-chart-grid {
     grid-template-columns: 1fr;
   }
@@ -2230,6 +2282,14 @@ body.statistik-page-body {
   .statistik .status-badge {
     grid-column: 2;
     justify-self: start;
+  }
+
+  .statistik .stats-task-card {
+    align-items: flex-start;
+  }
+
+  .statistik .stats-task-metric {
+    text-align: left;
   }
 
   .statistik .context-summary {

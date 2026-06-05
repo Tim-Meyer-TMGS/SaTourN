@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/snapshot');
   const QUALITY_LIST_API_BASE = window.SATOURN_QUALITY_LIST_API_BASE
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/list');
+  const USE_QUALITY_CACHE = window.SATOURN_USE_QUALITY_CACHE === true
+    || window.SATOURN_USE_QUALITY_CACHE === '1';
 
   const TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
   const WORK_CONTEXT_KEY = 'satournWorkContext';
@@ -68,13 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
     qualityDataNote: document.getElementById('quality-data-note'),
     openDataCapableBar: document.getElementById('open-data-capable-bar'),
     openDataMissingBar: document.getElementById('open-data-missing-bar'),
-    openDataUnknownBar: document.getElementById('open-data-unknown-bar'),
     openDataCapable: document.getElementById('open-data-capable'),
     openDataCapablePercent: document.getElementById('open-data-capable-percent'),
     openDataMissing: document.getElementById('open-data-missing'),
     openDataMissingPercent: document.getElementById('open-data-missing-percent'),
-    openDataUnknown: document.getElementById('open-data-unknown'),
-    openDataUnknownPercent: document.getElementById('open-data-unknown-percent'),
     quickExport: document.getElementById('quick-export'),
     quickAi: document.getElementById('quick-ai'),
     taskKpiOpen: document.getElementById('task-kpi-open'),
@@ -174,7 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
     statsTypeDonutTotal: document.getElementById('stats-type-donut-total'),
     statsTypeDistributionBody: document.getElementById('stats-type-distribution-body'),
     statsQuoteBars: document.getElementById('stats-quote-bars'),
-    statsTypeTableBody: document.getElementById('stats-type-table-body')
+    statsTypeTableBody: document.getElementById('stats-type-table-body'),
+    statsLicenseTaskCard: document.getElementById('stats-license-task-card'),
+    statsLicenseTaskCount: document.getElementById('stats-license-task-count'),
+    statsLicenseTaskShare: document.getElementById('stats-license-task-share')
   };
 
   let state = {
@@ -197,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     filteredTaskRows: [],
     selectedTask: null,
     selectedTaskType: '',
+    pendingTaskId: '',
     taskPage: 1,
     taskRowsPerPage: 7,
     taskRecordRows: [],
@@ -217,7 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
     statsSummary: null,
     pendingRecordView: null,
     recordDetailItem: null,
-    recordDetailViewModel: null
+    recordDetailViewModel: null,
+    overviewLoadId: 0,
+    taskLoadId: 0
   };
 
   if (page === 'records') {
@@ -245,13 +250,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initOverview() {
     renderOverviewLoading();
-    els.refreshButton?.addEventListener('click', () => loadOverviewData());
+    els.refreshButton?.addEventListener('click', () => loadOverviewDataAsync());
     els.quickExport?.addEventListener('click', exportOverviewCsv);
     els.quickAi?.addEventListener('click', () => showMessage('Die KI-Analyse wird als dezente Aktion in einem späteren Schritt angebunden.'));
-    void loadOverviewData();
+    void loadOverviewDataAsync();
   }
 
   function initTasks() {
+    const params = new URLSearchParams(location.search);
+    state.pendingTaskId = params.get('task') || params.get('criterionId') || '';
     fillTaskTypeFilter();
     renderTasksLoading();
     els.refreshButton?.addEventListener('click', () => loadTasksData());
@@ -333,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function initStats() {
     fillStatsFilters();
     renderStatsLoading();
-    els.refreshButton?.addEventListener('click', applyStatsFiltersAndLoad);
+    els.refreshButton?.addEventListener('click', () => loadStatsDataAsync());
     els.statsRefresh?.addEventListener('click', applyStatsFiltersAndLoad);
     els.statsExport?.addEventListener('click', exportStatsCsv);
     els.statsResetFilters?.addEventListener('click', resetStatsFilters);
@@ -347,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
       event.preventDefault();
       applyStatsFiltersAndLoad();
     });
-    void loadStatsData();
+    void loadStatsDataAsync();
   }
 
   function loadWorkContext() {
@@ -474,13 +481,13 @@ document.addEventListener('DOMContentLoaded', () => {
       type: els.contextType?.value || ''
     });
     els.contextDialog?.close?.();
-    if (page === 'overview') void loadOverviewData();
+    if (page === 'overview') void loadOverviewDataAsync();
     if (page === 'tasks') void loadTasksData();
     if (page === 'records') void loadRecordsData();
     if (page === 'record-detail') void loadRecordDetail();
     if (page === 'stats') {
       fillStatsFilters();
-      void loadStatsData();
+      void loadStatsDataAsync();
     }
   }
 
@@ -501,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
     params.set('limit', String(options.limit ?? 1));
     if (query) params.set('query', query);
     if (options.isOpenData) params.set('isOpenData', 'true');
+    if (Number.isFinite(options.offset) && options.offset > 0) params.set('offset', String(options.offset));
     return `${API_BASE}?${params.toString()}`;
   }
 
@@ -521,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadCachedQualitySnapshot() {
+    if (!USE_QUALITY_CACHE) return null;
     state.qualitySnapshot = null;
     let snapshot = null;
     try {
@@ -552,6 +561,52 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  function canCalculateQualityForContext(context = state.context) {
+    return Boolean(context.area || context.city);
+  }
+
+  function sortStatisticRows(rows) {
+    return [...rows].sort((a, b) => TYPES.indexOf(a.type) - TYPES.indexOf(b.type));
+  }
+
+  function upsertStatisticRow(row) {
+    const existingIndex = state.latestRows.findIndex((entry) => entry.type === row.type);
+    if (existingIndex >= 0) {
+      state.latestRows.splice(existingIndex, 1, row);
+    } else {
+      state.latestRows.push(row);
+    }
+    state.latestRows = sortStatisticRows(state.latestRows);
+  }
+
+  function renderOverviewCurrent(options = {}) {
+    renderOverview(state.latestRows, state.normalizedItems, options);
+  }
+
+  function resetOverviewQualityState() {
+    state.normalizedItems = [];
+    state.qualityAggregations = buildAggregationsFromIssueSummary([]);
+    state.qualityDataMeta = canCalculateQualityForContext()
+      ? {
+        mode: 'regional_scan',
+        collectedItems: 0,
+        estimatedTotalItems: 0,
+        truncated: false,
+        unsupportedCriteria: [],
+        failedCounts: 0,
+        pendingTypes: state.context.type ? 1 : TYPES.length,
+        completedTypes: 0
+      }
+      : {
+        mode: 'sachsen_total',
+        collectedItems: 0,
+        estimatedTotalItems: 0,
+        truncated: false,
+        unsupportedCriteria: [],
+        failedCounts: 0
+      };
+  }
+
   async function loadOverviewData() {
     const startedAt = new Date();
     showMessage('');
@@ -579,6 +634,112 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function loadOverviewDataAsync() {
+    const startedAt = new Date();
+    const loadId = ++state.overviewLoadId;
+    showMessage('');
+    renderOverviewLoading();
+    state.latestRows = [];
+    resetOverviewQualityState();
+    renderOverviewCurrent({ saveHistory: false });
+
+    const isStale = () => loadId !== state.overviewLoadId;
+    const statisticPromise = loadStatisticRowsIncremental((row) => {
+      if (isStale()) return;
+      upsertStatisticRow(row);
+      renderOverviewCurrent({ saveHistory: false });
+    });
+
+    const qualityPromise = canCalculateQualityForContext()
+      ? loadRegionalQualityEvaluation({
+        isStale,
+        onUpdate: () => renderOverviewCurrent({ saveHistory: false })
+      })
+      : loadQualityCountSummary({
+        onUpdate: (issueSummary, meta) => {
+          if (isStale()) return;
+          state.qualityAggregations = buildAggregationsFromIssueSummary(issueSummary);
+          state.qualityDataMeta = {
+            ...meta,
+            mode: 'sachsen_total'
+          };
+          renderOverviewCurrent({ saveHistory: false });
+        }
+      });
+
+    try {
+      const [statisticResult, qualityResult] = await Promise.allSettled([statisticPromise, qualityPromise]);
+      if (isStale()) return;
+
+      if (statisticResult.status === 'fulfilled') {
+        state.latestRows = statisticResult.value;
+      } else {
+        console.error('Statistik-Counts konnten nicht geladen werden.', statisticResult.reason);
+      }
+
+      if (qualityResult.status === 'fulfilled') {
+        if (canCalculateQualityForContext()) {
+          state.normalizedItems = qualityResult.value.items;
+          state.qualityAggregations = qualityResult.value.aggregations;
+          state.qualityDataMeta = qualityResult.value.meta;
+        } else {
+          state.qualityAggregations = buildAggregationsFromIssueSummary(qualityResult.value);
+          state.qualityDataMeta = {
+            ...state.qualityDataMeta,
+            mode: 'sachsen_total'
+          };
+        }
+      } else {
+        console.error('Qualitaetsdaten konnten nicht geladen werden.', qualityResult.reason);
+      }
+
+      renderOverviewCurrent({ saveHistory: true });
+      if (els.lastUpdated) {
+        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
+      }
+
+      if (statisticResult.status === 'rejected' && qualityResult.status === 'rejected') {
+        throw statisticResult.reason || qualityResult.reason;
+      }
+    } catch (error) {
+      console.error('Startseite konnte nicht geladen werden.', error);
+      showMessage('Die Daten konnten nicht geladen werden. Bitte spaeter erneut versuchen.');
+      renderOverviewEmpty();
+    }
+  }
+
+  async function loadStatisticRowsIncremental(onRow = null) {
+    const query = buildQuery(state.context);
+    const targetTypes = state.context.type ? [state.context.type] : TYPES;
+    const rows = [];
+
+    const results = await Promise.all(targetTypes.map(async (type) => {
+      try {
+        const [totalPayload, openDataPayload] = await Promise.all([
+          fetchJson(buildUrl(type, query, { limit: 1 })),
+          fetchJson(buildUrl(type, query, { limit: 1, isOpenData: true }))
+        ]);
+        const row = {
+          type,
+          statistikCount: Number(extractTotal(totalPayload) || 0),
+          openDataCount: Number(extractTotal(openDataPayload) || 0)
+        };
+        rows.push(row);
+        onRow?.(row, sortStatisticRows(rows));
+        return row;
+      } catch (error) {
+        console.warn('Statistik-Count fehlgeschlagen.', type, error);
+        return null;
+      }
+    }));
+
+    const finalRows = sortStatisticRows(results.filter(Boolean));
+    if (!finalRows.length && targetTypes.length) {
+      throw new Error('No statistic rows loaded');
+    }
+    return finalRows;
+  }
+
   async function loadStatisticRows() {
     const query = buildQuery(state.context);
     const targetTypes = state.context.type ? [state.context.type] : TYPES;
@@ -593,6 +754,104 @@ document.addEventListener('DOMContentLoaded', () => {
         openDataCount: Number(extractTotal(openDataPayload) || 0)
       };
     }));
+  }
+
+  function getRegionalScanPageSize() {
+    const value = Number(window.SATOURN_REGION_QUALITY_PAGE_SIZE || 200);
+    return Number.isFinite(value) ? Math.max(1, Math.min(200, value)) : 200;
+  }
+
+  function getRegionalScanMaxPages() {
+    const value = Number(window.SATOURN_REGION_QUALITY_MAX_PAGES || 50);
+    return Number.isFinite(value) ? Math.max(1, Math.min(250, value)) : 50;
+  }
+
+  function getQualityScanMeta(shared) {
+    const estimatedTotalItems = Object.values(shared.estimatedByType)
+      .filter(Number.isFinite)
+      .reduce((sum, value) => sum + value, 0);
+    return {
+      mode: 'regional_scan',
+      collectedItems: shared.items.length,
+      estimatedTotalItems,
+      truncated: shared.truncated,
+      unsupportedCriteria: [],
+      failedCounts: shared.failedTypes,
+      pendingTypes: Math.max(0, shared.totalTypes - shared.completedTypes),
+      completedTypes: shared.completedTypes
+    };
+  }
+
+  function emitRegionalQualityUpdate(shared, onUpdate) {
+    state.normalizedItems = [...shared.items];
+    state.qualityAggregations = getQualityAggregations(state.normalizedItems);
+    state.qualityDataMeta = getQualityScanMeta(shared);
+    onUpdate?.(state.qualityAggregations, state.qualityDataMeta, state.normalizedItems);
+  }
+
+  async function loadRegionalQualityEvaluation({ isStale = () => false, onUpdate = null } = {}) {
+    const query = buildQuery(state.context);
+    const targetTypes = state.context.type ? [state.context.type] : TYPES;
+    const pageSize = getRegionalScanPageSize();
+    const maxPages = getRegionalScanMaxPages();
+    const shared = {
+      items: [],
+      estimatedByType: {},
+      completedTypes: 0,
+      failedTypes: 0,
+      totalTypes: targetTypes.length,
+      truncated: false
+    };
+
+    emitRegionalQualityUpdate(shared, onUpdate);
+
+    await Promise.all(targetTypes.map(async (type) => {
+      const seenIds = new Set();
+      let offset = 0;
+      let pages = 0;
+      let complete = false;
+
+      try {
+        while (!isStale() && pages < maxPages) {
+          const payload = await fetchJson(buildUrl(type, query, { limit: pageSize, offset }));
+          const pageItems = extractItems(payload);
+          const pageTotal = extractTotal(payload);
+          if (Number.isFinite(pageTotal)) shared.estimatedByType[type] = pageTotal;
+          pages += 1;
+
+          const normalized = pageItems
+            .filter((rawItem) => {
+              const itemId = extractId(rawItem) || `${type}:${offset}:${seenIds.size}`;
+              if (seenIds.has(itemId)) return false;
+              seenIds.add(itemId);
+              return true;
+            })
+            .map((rawItem) => normalizeItem(rawItem, type));
+          const evaluated = evaluateAllItems(normalized);
+          shared.items.push(...evaluated);
+          emitRegionalQualityUpdate(shared, onUpdate);
+
+          offset += pageItems.length;
+          if (!pageItems.length || pageItems.length < pageSize || (Number.isFinite(pageTotal) && offset >= pageTotal)) {
+            complete = true;
+            break;
+          }
+        }
+      } catch (error) {
+        shared.failedTypes += 1;
+        console.warn('Regionaler Qualitaetsscan fehlgeschlagen.', type, error);
+      } finally {
+        if (!complete && !isStale()) shared.truncated = true;
+        shared.completedTypes += 1;
+        emitRegionalQualityUpdate(shared, onUpdate);
+      }
+    }));
+
+    return {
+      items: [...shared.items],
+      aggregations: getQualityAggregations(shared.items),
+      meta: getQualityScanMeta(shared)
+    };
   }
 
   function fillStatsFilters() {
@@ -641,6 +900,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  async function loadStatsDataAsync() {
+    const startedAt = new Date();
+    showStatsMessage('');
+    renderStatsLoading();
+    setStatsLoadingState(true);
+
+    const applyStatsRows = (rows) => {
+      state.statsRows = rows.map((row) => ({
+        ...row,
+        nonOpenDataCount: Math.max(0, row.statistikCount - row.openDataCount),
+        openDataQuote: percent(row.openDataCount, row.statistikCount),
+        inventoryShare: 0
+      }));
+      state.statsSummary = computeStatsSummary(state.statsRows);
+      state.statsRows.forEach((row) => {
+        row.inventoryShare = percent(row.statistikCount, state.statsSummary.totalRecords);
+      });
+      renderStats();
+    };
+
+    try {
+      const rows = await loadStatisticRowsIncremental((row, partialRows) => {
+        applyStatsRows(partialRows);
+      });
+      applyStatsRows(rows);
+      if (els.lastUpdated) {
+        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
+      }
+    } catch (error) {
+      console.error('Open-Data-Statistik konnte nicht geladen werden.', error);
+      renderStatsError();
+    } finally {
+      setStatsLoadingState(false);
+    }
+  }
+
   function computeStatsSummary(rows) {
     const totalRecords = rows.reduce((sum, row) => sum + row.statistikCount, 0);
     const openDataRecords = rows.reduce((sum, row) => sum + row.openDataCount, 0);
@@ -670,7 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderStatsTypeDistribution(summary);
     renderStatsQuoteBars();
-    renderStatsTypeTable(summary);
+    renderStatsLicenseTask(summary);
   }
 
   function renderStatsTypeDistribution(summary) {
@@ -711,6 +1006,18 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
+  function renderStatsLicenseTask(summary) {
+    const hasLicenseTask = summary.nonOpenDataRecords > 0;
+    if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = !hasLicenseTask;
+    if (!hasLicenseTask) return;
+    if (els.statsLicenseTaskCount) {
+      els.statsLicenseTaskCount.textContent = formatNumber(summary.nonOpenDataRecords);
+    }
+    if (els.statsLicenseTaskShare) {
+      els.statsLicenseTaskShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} nicht Open-Data-f\u00e4hig`;
+    }
+  }
+
   function renderStatsTypeTable(summary) {
     if (!els.statsTypeTableBody) return;
     const rows = state.statsRows.map((row) => `
@@ -743,6 +1050,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Statistik wird geladen ...</td></tr>';
     if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="inline-loading">Statistik wird geladen ...</div>';
     if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Statistik wird geladen ...</td></tr>';
+    if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
+    if (els.statsLicenseTaskCount) els.statsLicenseTaskCount.textContent = '...';
+    if (els.statsLicenseTaskShare) els.statsLicenseTaskShare.textContent = '...';
     if (els.statsExport) els.statsExport.disabled = true;
   }
 
@@ -751,6 +1061,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Keine Daten gefunden.</td></tr>';
     if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Keine Daten gefunden.</div>';
     if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Keine Daten gefunden.</td></tr>';
+    if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
+    if (els.statsLicenseTaskCount) els.statsLicenseTaskCount.textContent = '-';
+    if (els.statsLicenseTaskShare) els.statsLicenseTaskShare.textContent = 'Keine Datens\u00e4tze';
     if (els.statsExport) els.statsExport.disabled = true;
   }
 
@@ -759,6 +1072,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
     if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Die Statistik konnte nicht vollständig geladen werden.</div>';
     if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
+    if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
+    if (els.statsLicenseTaskCount) els.statsLicenseTaskCount.textContent = '-';
+    if (els.statsLicenseTaskShare) els.statsLicenseTaskShare.textContent = 'Nicht geladen';
     if (els.statsExport) els.statsExport.disabled = true;
   }
 
@@ -783,7 +1099,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetStatsFilters() {
     saveWorkContext({ area: '', city: '', type: '' });
     fillStatsFilters();
-    void loadStatsData();
+    void loadStatsDataAsync();
   }
 
   function applyStatsFiltersAndLoad() {
@@ -793,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
       type: els.statsTypeFilter?.value || ''
     });
     fillStatsFilters();
-    void loadStatsData();
+    void loadStatsDataAsync();
   }
 
   function exportStatsCsv() {
@@ -831,6 +1147,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadCachedQualityList({ criterionId, type, query }) {
+    if (!USE_QUALITY_CACHE) return null;
     try {
       return await fetchJsonOptional(buildQualityListUrl({ criterionId, type, query }));
     } catch (error) {
@@ -839,13 +1156,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  async function loadQualityCountSummary() {
+  async function loadQualityCountSummary({ onUpdate = null } = {}) {
     const query = buildQuery(state.context);
     const targetTypes = state.context.type ? [state.context.type] : TYPES;
     const activeCriteria = qualityCriteria.filter((criterion) => isActiveCriterion(criterion.id));
     const issueMap = new Map();
     const unsupported = [];
     let failedCounts = 0;
+
+    const buildIssues = () => Array.from(issueMap.values()).map((issue) => ({
+      ...issue,
+      affectedTypes: issue.affectedTypes.sort((a, b) => a.localeCompare(b, 'de'))
+    }));
+
+    const emit = () => {
+      const issues = buildIssues();
+      const meta = {
+        mode: 'api_counts',
+        collectedItems: 0,
+        estimatedTotalItems: issues.reduce((sum, issue) => sum + issue.affectedCount, 0),
+        truncated: false,
+        unsupportedCriteria: unsupported,
+        failedCounts
+      };
+      state.qualityDataMeta = meta;
+      onUpdate?.(issues, meta);
+      return issues;
+    };
 
     const jobs = activeCriteria.flatMap((criterion) => (
       targetTypes
@@ -856,6 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     await Promise.all(jobs.map(async ({ criterion, type, scanConfig }) => {
       if (scanConfig.method !== 'api_pushdown' || !scanConfig.verified || !scanConfig.missingQuery) {
         unsupported.push({ criterionId: criterion.id, type, method: scanConfig.method });
+        emit();
         return;
       }
 
@@ -879,8 +1217,10 @@ document.addEventListener('DOMContentLoaded', () => {
         issue.affectedCount += count;
         issue.typeCounts[type] = count;
         if (count > 0 && !issue.affectedTypes.includes(type)) issue.affectedTypes.push(type);
+        emit();
       } catch (error) {
         failedCounts += 1;
+        emit();
         console.warn('Qualitäts-Count fehlgeschlagen.', criterion.id, type, error);
       }
     }));
@@ -913,23 +1253,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadTasksData() {
     const startedAt = new Date();
+    const loadId = ++state.taskLoadId;
     showTaskMessage('');
     renderTasksLoading();
     hidePrimarySystems();
     clearTaskRecords();
 
-    try {
-      const snapshot = await loadCachedQualitySnapshot();
-      const issueSummary = snapshot?.aggregations?.issueSummary || await loadQualityCountSummary();
+    const applyIssueSummary = (issueSummary) => {
+      if (loadId !== state.taskLoadId) return;
+      const selectedId = state.selectedTask?.criterionId || state.pendingTaskId || '';
       state.taskItems = [];
       state.taskRows = buildTaskRows(issueSummary);
-      state.selectedTask = state.taskRows[0] || null;
-      state.selectedTaskType = '';
+      state.selectedTask = state.taskRows.find((task) => task.criterionId === selectedId)
+        || state.taskRows[0]
+        || null;
+      if (state.selectedTask?.criterionId === state.pendingTaskId) state.pendingTaskId = '';
+      state.selectedTaskType = state.selectedTask?.affectedTypes?.includes(state.selectedTaskType)
+        ? state.selectedTaskType
+        : '';
+      state.taskPage = Math.min(state.taskPage || 1, Math.max(1, Math.ceil(state.taskRows.length / state.taskRowsPerPage)));
+      applyTaskFilters();
+      renderTaskDetail();
+    };
+
+    try {
+      const issueSummary = await loadQualityCountSummary({
+        onUpdate: (partialIssueSummary) => applyIssueSummary(partialIssueSummary)
+      });
+      if (loadId !== state.taskLoadId) return;
+      applyIssueSummary(issueSummary);
       state.taskPage = 1;
       applyTaskFilters();
       renderTaskDetail();
       if (els.lastUpdated) {
-        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date(snapshot?.generatedAt || startedAt))}`;
+        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
       }
     } catch (error) {
       console.error('Pflegeaufgaben konnten nicht geladen werden.', error);
@@ -2422,13 +2779,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return String(value).replace(/\s+/g, ' ').trim();
   }
 
-  function renderOverview(rows, items) {
+  function renderOverview(rows, items, options = {}) {
     const summary = computeSummary(rows);
     const aggregations = state.qualityAggregations;
     const counts = aggregations.qualityStatusCounts || {};
     const assessedTotal = sumStatusCounts(counts);
-    const openDataUnknown = 0;
-    const notOpenData = Math.max(0, summary.statistikTotal - summary.openDataTotal - openDataUnknown);
+    const notOpenData = Math.max(0, summary.statistikTotal - summary.openDataTotal);
     const kpis = {
       timestamp: new Date().toISOString(),
       qualityScore: Number.isFinite(aggregations.averageQualityScore) ? aggregations.averageQualityScore : null,
@@ -2451,7 +2807,11 @@ document.addEventListener('DOMContentLoaded', () => {
     els.kpiOpenData.textContent = formatPercent(summary.openDataQuote);
     els.kpiOpenDataDetail.textContent = `${formatNumber(summary.openDataTotal)} von ${formatNumber(summary.statistikTotal)}`;
 
-    if (state.qualityDataMeta.mode === 'api_counts') {
+    if (
+      state.qualityDataMeta.mode === 'api_counts' ||
+      state.qualityDataMeta.mode === 'sachsen_total' ||
+      (state.qualityDataMeta.mode === 'regional_scan' && !state.qualityDataMeta.collectedItems)
+    ) {
       els.kpiQualityScore.textContent = '-';
       els.kpiQualityTrack.style.width = '0%';
       els.kpiGood.textContent = '-';
@@ -2465,9 +2825,9 @@ document.addEventListener('DOMContentLoaded', () => {
     renderKpiDeltas(kpis);
     renderTopTasks(aggregations.issueSummary || []);
     renderQualityDistribution(counts, assessedTotal);
-    renderOpenDataStatus(summary.openDataTotal, notOpenData, openDataUnknown, summary.statistikTotal);
+    renderOpenDataStatus(summary.openDataTotal, notOpenData, summary.statistikTotal);
     renderDataNote(items.length);
-    saveKpiHistory(kpis);
+    if (options.saveHistory !== false) saveKpiHistory(kpis);
   }
 
   function renderOverviewLoading() {
@@ -2497,6 +2857,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderTopTasks(issueSummary) {
     const issues = [...issueSummary]
+      .filter((issue) => Number(issue.affectedCount || 0) > 0)
       .sort((a, b) => priorityRank(b.priority) - priorityRank(a.priority) || b.affectedCount - a.affectedCount)
       .slice(0, 5);
 
@@ -2522,6 +2883,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderQualityDistribution(counts, total) {
+    if (state.qualityDataMeta.mode === 'regional_scan' && !state.qualityDataMeta.collectedItems) {
+      els.qualityDonut.style.background = 'conic-gradient(#e2e8f0 0 100%)';
+      els.qualityLegend.innerHTML = `
+        <div class="legend-row"><span class="legend-dot muted"></span><span>Wird berechnet</span><strong>-</strong></div>
+      `;
+      return;
+    }
+
+    if ((state.qualityDataMeta.mode === 'sachsen_total' || state.qualityDataMeta.mode === 'api_counts') && !total) {
+      els.qualityDonut.style.background = 'conic-gradient(#e2e8f0 0 100%)';
+      els.qualityLegend.innerHTML = `
+        <div class="legend-row"><span class="legend-dot muted"></span><span>Nicht berechnet</span><strong>-</strong></div>
+      `;
+      return;
+    }
+
     const good = counts.gut || 0;
     const review = counts.pruefen || 0;
     const critical = counts.kritisch || 0;
@@ -2537,30 +2914,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const rows = [
       ['Gut', good, goodPct, 'good'],
       ['Prüfen', review, reviewPct, 'review'],
-      ['Kritisch', critical, criticalPct, 'critical'],
-      ['Nicht bewertbar', unknown, percent(unknown, total), 'muted']
+      ['Kritisch', critical, criticalPct, 'critical']
     ];
+    if (unknown > 0) rows.push(['Nicht bewertbar', unknown, percent(unknown, total), 'muted']);
     els.qualityLegend.innerHTML = rows.map(([label, count, pctValue, cls]) => `
       <div class="legend-row"><span class="legend-dot ${cls}"></span><span>${label}</span><strong>${formatPercent(pctValue)} (${formatNumber(count)})</strong></div>
     `).join('');
   }
 
-  function renderOpenDataStatus(capable, missing, unknown, total) {
+  function renderOpenDataStatus(capable, missing, total) {
     const capablePct = percent(capable, total);
     const missingPct = percent(missing, total);
-    const unknownPct = percent(unknown, total);
     els.openDataCapableBar.style.width = `${capablePct}%`;
     els.openDataMissingBar.style.width = `${missingPct}%`;
-    els.openDataUnknownBar.style.width = `${unknownPct}%`;
     els.openDataCapable.textContent = formatNumber(capable);
     els.openDataCapablePercent.textContent = formatPercent(capablePct);
     els.openDataMissing.textContent = formatNumber(missing);
     els.openDataMissingPercent.textContent = formatPercent(missingPct);
-    els.openDataUnknown.textContent = formatNumber(unknown);
-    els.openDataUnknownPercent.textContent = formatPercent(unknownPct);
   }
 
   function renderDataNote(sampleSize) {
+    if (state.qualityDataMeta.mode === 'sachsen_total') {
+      const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
+      els.qualityDataNote.textContent = unsupportedCount
+        ? `Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Pflegeaufgaben laden asynchron ueber API-Counts; ${formatNumber(unsupportedCount)} Kriterium-Typ-Kombinationen brauchen konkrete Server-Scans.`
+        : 'Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Waehle ein Gebiet oder einen Ort, um die Qualitaetsbewertung live zu berechnen.';
+      return;
+    }
+    if (state.qualityDataMeta.mode === 'regional_scan') {
+      const pending = state.qualityDataMeta.pendingTypes || 0;
+      const base = pending
+        ? `Regionale Qualitaetsbewertung laeuft asynchron. ${formatNumber(sampleSize)} Datensaetze sind bereits bewertet.`
+        : `Regionale Qualitaetsbewertung abgeschlossen: ${formatNumber(sampleSize)} Datensaetze bewertet.`;
+      els.qualityDataNote.textContent = state.qualityDataMeta.truncated
+        ? `${base} Der Scan wurde begrenzt; Score und Status sind Zwischenwerte.`
+        : base;
+      return;
+    }
     if (state.qualityDataMeta.mode === 'snapshot') {
       els.qualityDataNote.textContent = state.qualityDataMeta.truncated
         ? 'Qualitaetsdaten stammen aus dem gecachten Nachtlauf. Der Lauf war begrenzt; Statuswerte sind entsprechend zu pruefen.'

@@ -1,6 +1,6 @@
 # Datenqualitaets-Monitor - Aktueller Projektstand
 
-Stand: 2026-06-04
+Stand: 2026-06-05
 
 Diese Datei ist die kompakte Kontextkarte fuer neue Arbeit an
 `Statistik/`. Das Dashboard ist ein statisches GitHub-Pages-Frontend mit
@@ -20,9 +20,11 @@ neue Build-Kette, keine Secrets im Frontend.
 - Qualitaets-KPIs, Problemcluster, Matrix, Datentypen, Fehlerlisten, Detailpanel,
   KI-Kontext und Fehlerlisten-CSV basieren auf normalisierten Items.
 - Startseite, Pflegeaufgaben und Datensaetze laden keine Browser-Stichproben
-  mehr fuer Qualitaetszahlen. Aggregierte Zahlen kommen aus Counts oder aus dem
-  gecachten Nacht-Snapshot; konkrete Fehlerlisten kommen aus
-  `/api/quality/list` oder als Live-Fallback aus `/api/quality/scan`.
+  fuer ganz Sachsen. Aggregierte Zahlen kommen live aus Counts; ein Cache ist
+  optional und nur aktiv, wenn `window.SATOURN_USE_QUALITY_CACHE` gesetzt wird.
+- Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Erst bei Gebiet oder
+  Ort startet die Startseite einen asynchronen regionalen Qualitaetsscan im
+  Browser und berechnet Score/Status aus geladenen Datensaetzen.
 - POI-ET4-Pages-Link ist verifiziert:
   `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/{global_id}/x`.
   Andere Typen duerfen erst nach Verifikation automatisch verlinkt werden.
@@ -69,7 +71,9 @@ neue Build-Kette, keine Secrets im Frontend.
 - `description_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
 - `image_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
 - `image_author_missing`: alle Typen mit pruefbaren Medien; Server-Scan
-  verifiziert, API-Pushdown nicht verifiziert.
+  verifiziert, API-Pushdown nicht verifiziert. Der Live-Scan nutzt `media:*`
+  als Kandidaten-Prefilter, damit Datensaetze ohne Bilder nicht unnoetig
+  gescannt werden.
 - `public_transport_missing`: POI, Gastro, Tour, Hotel, Event; API-Pushdown
   verifiziert.
 - `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package per
@@ -81,15 +85,18 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
 ## Datenfluss
 
 1. Nutzer setzt Arbeitskontext; `localStorage` haelt Gebiet, Ort und Datentyp.
-2. Startseite, Pflegeaufgaben und Statistik fragen zuerst
-   `/api/quality/snapshot`.
-3. Bei Cache-Miss liefern `/api/search` und `/api/quality/count` weiterhin
-   Live-Aggregate ohne Browser-Stichprobe.
-4. Konkrete Fehlerlisten werden ueber `/api/quality/list` gelesen und fallen
-   bei Cache-Miss auf `/api/quality/scan` zurueck.
-5. Die Datensatz-Detailseite laedt nur den konkreten Datensatz nach und bewertet
+2. Startseite und Open-Data-Statistik laden Statistik-Counts typweise
+   inkrementell ueber `/api/search`.
+3. Pflegeaufgaben laden verifizierte Count-Kombinationen inkrementell ueber
+   `/api/quality/count`.
+4. Bei Gebiet oder Ort laedt die Startseite Datensaetze seitenweise ueber den
+   Proxy und bewertet sie mit `Statistik/quality.js`; bei ganz Sachsen bleibt
+   der Score leer.
+5. Konkrete Fehlerlisten fallen ohne Cache direkt auf `/api/quality/scan`
+   zurueck; `/api/quality/list` wird nur bei aktivem Cache-Flag genutzt.
+6. Die Datensatz-Detailseite laedt nur den konkreten Datensatz nach und bewertet
    ihn mit `Statistik/quality.js`.
-6. CSV exportiert entweder Statistik-Aggregate oder die aktuell geladene,
+7. CSV exportiert entweder Statistik-Aggregate oder die aktuell geladene,
    reduzierte Fehlerliste.
 
 ## Zielseitenlogik
@@ -182,11 +189,12 @@ Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
   `Statistik/record-detail.html` uebernommen. Die Seite laedt einzelne
   Datensaetze gezielt, bewertet sie mit `quality.js` und zeigt keine
   vollstaendige Rohdatenansicht.
-- Der Render-Cache-Pfad ist vorbereitet:
-  `lib/kv-store.js` bindet Render Key Value/Redis an, `scripts/run-quality-
-  snapshot.mjs` erzeugt Nacht-Snapshots, und `routes/quality.js` stellt
-  `/api/quality/snapshot` sowie `/api/quality/list` bereit. Die UI nutzt
-  diese Cache-Endpunkte zuerst und faellt bei Cache-Miss auf Live-Counts bzw.
-  `/api/quality/scan` zurueck.
+- Aktueller Betrieb: kein Cronjob und kein produktiver Nacht-Snapshot. Das
+  Frontend laedt live aus dem Browser und nutzt Render als Proxy fuer
+  `/api/search`, `/api/quality/count` und `/api/quality/scan`.
+- Der Render-Cache-Pfad ist nur vorbereitet:
+  `lib/kv-store.js`, `scripts/run-quality-snapshot.mjs`,
+  `/api/quality/snapshot` und `/api/quality/list` bleiben inaktiv, solange
+  `window.SATOURN_USE_QUALITY_CACHE` nicht explizit gesetzt wird.
 - Offene Punkte aus der Abschnittsarbeit stehen in
   `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`.

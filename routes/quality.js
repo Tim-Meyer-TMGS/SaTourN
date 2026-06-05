@@ -174,6 +174,7 @@ function reduceCriterionForResponse(criterion, type = null) {
     verified: scanConfig?.verified ?? false,
     missingQuery: scanConfig?.missingQuery || null,
     positiveQuery: scanConfig?.positiveQuery || null,
+    prefilterQuery: scanConfig?.prefilterQuery || null,
     api: criterion.api || null,
     apiByType: criterion.apiByType || null,
     unsupportedQueries: criterion.unsupportedQueries || []
@@ -391,6 +392,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
           sourceQuery: qParam,
           criterionQuery: scanConfig.missingQuery,
           positiveQuery: scanConfig.positiveQuery,
+          prefilterQuery: scanConfig.prefilterQuery,
           verified: scanConfig.verified,
           verifiedForType: scanConfig.verifiedForType,
           warnings: scanConfig.warnings,
@@ -444,6 +446,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
           sourceQuery: qParam,
           criterionQuery: scanConfig.missingQuery,
           positiveQuery: scanConfig.positiveQuery,
+          prefilterQuery: scanConfig.prefilterQuery,
           verified: scanConfig.verified,
           verifiedForType: scanConfig.verifiedForType,
           warnings: scanConfig.warnings,
@@ -465,6 +468,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
           sourceQuery: qParam,
           criterionQuery: scanConfig.missingQuery,
           positiveQuery: scanConfig.positiveQuery,
+          prefilterQuery: scanConfig.prefilterQuery,
           verified: scanConfig.verified,
           verifiedForType: scanConfig.verifiedForType,
           warnings: scanConfig.warnings,
@@ -530,9 +534,10 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
 
     const qParam = normalizeQueryParam(query);
     const scanConfig = getQualityScanConfig(criterion, normalizedType);
-    const effectiveQuery = scanConfig.method === 'api_pushdown'
-      ? combineQueries(qParam, scanConfig.missingQuery)
-      : qParam;
+    const criterionQuery = scanConfig.method === 'api_pushdown'
+      ? scanConfig.missingQuery
+      : scanConfig.prefilterQuery;
+    const effectiveQuery = combineQueries(qParam, criterionQuery);
     const resultLimit = clampInteger(limit, DEFAULT_RESULT_LIMIT, 1, MAX_RESULT_LIMIT);
     const pageSize = clampInteger(scanPageSize, DEFAULT_SCAN_PAGE_SIZE, 1, MAX_SCAN_PAGE_SIZE);
     const pageBudget = clampInteger(maxPages, DEFAULT_MAX_PAGES, 1, MAX_SCAN_PAGES);
@@ -636,6 +641,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
           sourceQuery: qParam,
           criterionQuery: scanConfig.missingQuery,
           positiveQuery: scanConfig.positiveQuery,
+          prefilterQuery: scanConfig.prefilterQuery,
           verified: scanConfig.verified,
           verifiedForType: scanConfig.verifiedForType,
           warnings: scanConfig.warnings,
@@ -668,6 +674,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
           sourceQuery: qParam,
           criterionQuery: scanConfig?.missingQuery || null,
           positiveQuery: scanConfig?.positiveQuery || null,
+          prefilterQuery: scanConfig?.prefilterQuery || null,
           verified: Boolean(scanConfig?.verified),
           verifiedForType: Boolean(scanConfig?.verifiedForType),
           warnings: scanConfig?.warnings || [],
