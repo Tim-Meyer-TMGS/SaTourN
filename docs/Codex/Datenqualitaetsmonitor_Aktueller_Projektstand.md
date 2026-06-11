@@ -135,6 +135,8 @@ Aktiv:
   Fremdsprachen per API-Pushdown verifiziert.
 - `poi_suitability_missing`: POI; validierte OR-Liste gepruefter
   Eignungsangaben per API-Pushdown verifiziert.
+- `poi_price_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik
+  fuer fachlich nicht erwartbare Preisangaben.
 - `hotel_language_english_missing`: Hotel; validierte OR-Liste gepruefter
   Fremdsprachen per API-Pushdown verifiziert.
 - `hotel_payment_cash_missing`: Hotel; validierte OR-Liste gepruefter
@@ -151,6 +153,10 @@ Aktiv:
   gepruefter Kuechenarten per API-Pushdown verifiziert.
 - `booking_link_missing`: Hotel per `keyword:"Bookable"` API-Pushdown
   verifiziert, Package per Server-Scan verifiziert.
+- `tour_season_missing`: Tour; Server-Scan aktiv auf Basis gepflegter
+  Saisonangaben.
+- `tour_parking_missing`: Tour; Server-Scan aktiv auf Basis gepflegter
+  Parkhinweise in Tourtexten.
 
 Nicht als Pushdown aktiviert:
 

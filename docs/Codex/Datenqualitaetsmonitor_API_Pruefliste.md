@@ -530,3 +530,19 @@ Query-Prefix oder ein sicherer Feldname. Hier zuerst Feldmapping klaeren:
 - Event-Termine und Veranstalter
 - Bildurheber per API-Pushdown
 - Package-Buchungslink per API-Pushdown
+
+## Fachlich bewusst per Server-Scan
+
+Diese Kriterien bleiben derzeit bewusst ohne belastbaren API-Pushdown und
+werden nur im begrenzten Arbeitskontext per Server-Scan bewertet:
+
+- `poi_price_missing`
+  Grund: `prices:*` und verwandte Preisabfragen liefern keine belastbare
+  Komplementaerlogik; textuelle Preisfelder wie `PRICE_INFO` muessen direkt am
+  Datensatz geprueft werden.
+- `tour_season_missing`
+  Grund: Saisonangaben sind in den Datensaetzen strukturiert vorhanden, aber
+  nicht ueber einen sauberen Meta-Query-Pushdown verifizierbar.
+- `tour_parking_missing`
+  Grund: Parkhinweise liegen in der Praxis vor allem in Tourtexten und nicht
+  als belastbarer Pushdown-Wert vor.

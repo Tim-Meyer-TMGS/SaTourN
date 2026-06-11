@@ -39,6 +39,44 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const transientRequestCache = new Map();
   const transientRequestInflight = new Map();
+  const TASK_FAMILY_BY_CRITERION = Object.freeze({
+    hotel_payment_cash_missing: 'payment_options_missing',
+    poi_payment_options_missing: 'payment_options_missing',
+    gastro_payment_options_missing: 'payment_options_missing',
+    hotel_language_english_missing: 'languages_missing',
+    poi_languages_missing: 'languages_missing',
+    gastro_languages_missing: 'languages_missing',
+    hotel_parking_feature_missing: 'parking_missing',
+    tour_parking_missing: 'parking_missing',
+    poi_parking_feature_missing: 'parking_missing',
+    gastro_parking_feature_missing: 'parking_missing'
+  });
+  const TASK_FAMILY_META = Object.freeze({
+    payment_options_missing: {
+      label: 'Zahlungsmoeglichkeiten fehlen',
+      description: 'Keine der geprueften Zahlungsarten vorhanden',
+      problem: 'Fuer diese Datensaetze fehlt mindestens eine gepflegte Zahlungsart.',
+      impactText: 'Fehlende Zahlungsarten erschweren Planung, Vergleich und Erwartungsmanagement.',
+      recommendation: 'Mindestens eine gepruefte Zahlungsart als Merkmal ergaenzen.',
+      iconCriterionId: 'poi_payment_options_missing'
+    },
+    languages_missing: {
+      label: 'Fremdsprachenangaben fehlen',
+      description: 'Keine der geprueften Fremdsprachen vorhanden',
+      problem: 'Fuer diese Datensaetze fehlt mindestens eine gepflegte Fremdsprachenangabe.',
+      impactText: 'Fehlende Sprachangaben schraenken Auffindbarkeit und Nutzbarkeit fuer internationale Gaeste ein.',
+      recommendation: 'Mindestens eine gepruefte Fremdsprache als Merkmal ergaenzen.',
+      iconCriterionId: 'poi_languages_missing'
+    },
+    parking_missing: {
+      label: 'Parkhinweise fehlen',
+      description: 'Keine Parkinformation oder kein gepruefter Parkhinweis vorhanden',
+      problem: 'Fuer diese Datensaetze fehlt eine belastbare Parkinformation oder ein Parkhinweis.',
+      impactText: 'Fehlende Parkhinweise erschweren die Anreiseplanung vor Ort.',
+      recommendation: 'Parkmoeglichkeiten oder gepruefte Parkhinweise ergaenzen.',
+      iconCriterionId: 'tour_parking_missing'
+    }
+  });
   const AREAS = [
     ['Sachsen', ''],
     ['Leipzig', 'Leipzig'],
@@ -63,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     contextType: document.getElementById('context-type'),
     lastUpdated: document.getElementById('last-updated'),
     refreshButton: document.getElementById('refresh-button'),
+    overviewTitle: document.getElementById('overview-title'),
     overviewSubtitle: document.getElementById('overview-subtitle'),
     overviewMessage: document.getElementById('overview-message'),
     kpiQualityScore: document.getElementById('kpi-quality-score'),
@@ -824,9 +863,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.contextSummary) {
       els.contextSummary.textContent = `${areaLabel} - ${cityLabel} - ${typeLabel}`;
     }
-    if (els.overviewSubtitle) {
-      els.overviewSubtitle.textContent = `Hier ist die aktuelle Lage für ${areaLabel}.`;
+    if (els.overviewTitle) {
+      els.overviewTitle.textContent = buildOverviewTitle();
     }
+    if (els.overviewSubtitle) {
+      els.overviewSubtitle.textContent = buildOverviewSubtitle({ areaLabel, cityLabel, typeLabel });
+    }
+  }
+
+  function buildOverviewTitle() {
+    if (state.context.type) return `${state.context.type}-Monitor`;
+    return 'Datenqualitäts-Monitor';
+  }
+
+  function buildOverviewSubtitle({ areaLabel, cityLabel, typeLabel }) {
+    const scope = [];
+    if (areaLabel) scope.push(areaLabel);
+    if (state.context.city) scope.push(cityLabel);
+    const scopeLabel = scope.join(' - ') || 'Sachsen';
+    if (state.context.type) {
+      return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${typeLabel} in ${scopeLabel}.`;
+    }
+    return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${scopeLabel}.`;
   }
 
   function openContextDialog() {
@@ -1637,16 +1695,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const applyIssueSummary = (issueSummary) => {
       if (loadId !== state.taskLoadId) return;
-      const selectedId = state.selectedTask?.criterionId || state.pendingTaskId || '';
+      const selectedId = state.selectedTask?.taskId || state.selectedTask?.criterionId || state.pendingTaskId || '';
       state.taskItems = [];
       state.taskRows = buildTaskRows(issueSummary);
-      state.selectedTask = state.taskRows.find((task) => task.criterionId === selectedId)
+      state.selectedTask = findTaskById(state.taskRows, selectedId)
         || state.taskRows[0]
         || null;
-      if (state.selectedTask?.criterionId === state.pendingTaskId) state.pendingTaskId = '';
-      state.selectedTaskType = state.selectedTask?.affectedTypes?.includes(state.selectedTaskType)
-        ? state.selectedTaskType
-        : '';
+      if (state.selectedTask && taskMatchesIdentifier(state.selectedTask, state.pendingTaskId)) state.pendingTaskId = '';
+      const preferredTaskType = resolveTaskTypeByCriterionId(state.selectedTask, selectedId);
+      state.selectedTaskType = preferredTaskType
+        || (state.selectedTask?.affectedTypes?.includes(state.selectedTaskType) ? state.selectedTaskType : '');
       state.taskPage = Math.min(state.taskPage || 1, Math.max(1, Math.ceil(state.taskRows.length / state.taskRowsPerPage)));
       applyTaskFilters();
       renderTaskDetail();
@@ -1687,22 +1745,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildTaskRows(issueSummary) {
-    return issueSummary
+    return groupIssueSummaryForTasks(issueSummary)
       .filter((issue) => issue.affectedCount > 0 && isActiveCriterion(issue.criterionId))
       .map((issue) => {
         const criterion = qualityCriteria.find((entry) => entry.id === issue.criterionId);
+        const familyMeta = getTaskFamilyMeta(issue);
         const affectedTypes = (issue.affectedTypes || []).filter(Boolean);
         const openDataRelevant = isOpenDataRelevantCriterion(issue.criterionId);
         const impact = computeTaskImpact(issue, openDataRelevant);
         return {
           ...issue,
+          taskId: issue.taskId || issue.criterionId,
           criterion,
           affectedTypes,
           openDataRelevant,
           impact,
-          description: taskDescription(issue.criterionId),
-          problem: taskProblem(issue.criterionId),
-          recommendation: criterion?.recommendation || issue.recommendation || 'Datensatz prüfen und fehlende Angaben ergänzen.'
+          description: familyMeta?.description || taskDescription(issue.criterionId),
+          problem: familyMeta?.problem || taskProblem(issue.criterionId),
+          recommendation: familyMeta?.recommendation || criterion?.recommendation || issue.recommendation || 'Datensatz prüfen und fehlende Angaben ergänzen.',
+          impactText: familyMeta?.impactText || null,
+          iconCriterionId: familyMeta?.iconCriterionId || issue.criterionId
         };
       })
       .sort((a, b) => (
@@ -1711,6 +1773,54 @@ document.addEventListener('DOMContentLoaded', () => {
         b.affectedCount - a.affectedCount ||
         a.label.localeCompare(b.label, 'de')
       ));
+  }
+
+  function groupIssueSummaryForTasks(issueSummary = []) {
+    const groups = new Map();
+
+    issueSummary.forEach((issue) => {
+      if (!issue?.criterionId) return;
+      const taskFamily = getTaskFamilyId(issue.criterionId);
+      const familyMeta = TASK_FAMILY_META[taskFamily];
+      const existing = groups.get(taskFamily) || {
+        taskId: taskFamily,
+        taskFamily,
+        criterionId: issue.criterionId,
+        criterionIds: new Set(),
+        criteriaByType: {},
+        label: familyMeta?.label || issue.label,
+        affectedCount: 0,
+        affectedTypes: new Set(),
+        priority: issue.priority,
+        autoCheck: issue.autoCheck !== false,
+        recommendation: familyMeta?.recommendation || issue.recommendation
+      };
+
+      existing.criterionIds.add(issue.criterionId);
+      existing.affectedCount += Number(issue.affectedCount || 0);
+      existing.autoCheck = existing.autoCheck && issue.autoCheck !== false;
+      if (priorityRank(issue.priority) > priorityRank(existing.priority)) existing.priority = issue.priority;
+      (issue.affectedTypes || []).forEach((type) => {
+        if (!type) return;
+        existing.affectedTypes.add(type);
+        if (!existing.criteriaByType[type]) existing.criteriaByType[type] = issue.criterionId;
+      });
+      groups.set(taskFamily, existing);
+    });
+
+    return Array.from(groups.values()).map((entry) => ({
+      ...entry,
+      criterionIds: Array.from(entry.criterionIds),
+      affectedTypes: Array.from(entry.affectedTypes).sort((a, b) => a.localeCompare(b, 'de'))
+    }));
+  }
+
+  function getTaskFamilyId(criterionId) {
+    return TASK_FAMILY_BY_CRITERION[criterionId] || criterionId;
+  }
+
+  function getTaskFamilyMeta(taskOrIssue) {
+    return TASK_FAMILY_META[taskOrIssue?.taskFamily || getTaskFamilyId(taskOrIssue?.criterionId)];
   }
 
   function isActiveCriterion(criterionId) {
@@ -1745,6 +1855,22 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTaskKpis(state.filteredTaskRows);
     renderTaskTable();
     renderTaskDetail();
+  }
+
+  function findTaskById(tasks, identifier) {
+    return tasks.find((task) => taskMatchesIdentifier(task, identifier)) || null;
+  }
+
+  function taskMatchesIdentifier(task, identifier) {
+    if (!task || !identifier) return false;
+    return task.taskId === identifier
+      || task.criterionId === identifier
+      || task.criterionIds?.includes(identifier);
+  }
+
+  function resolveTaskTypeByCriterionId(task, criterionId) {
+    if (!task || !criterionId || !task.criteriaByType) return '';
+    return Object.entries(task.criteriaByType).find(([, id]) => id === criterionId)?.[0] || '';
   }
 
   function renderTaskKpis(tasks) {
@@ -1791,8 +1917,8 @@ document.addEventListener('DOMContentLoaded', () => {
       els.taskTableBody.innerHTML = visibleRows.map((task) => `
         <tr>
           <td>
-            <button class="task-table-action ${task === state.selectedTask ? 'active' : ''}" type="button" data-task-id="${escapeHtml(task.criterionId)}">
-              <span class="task-icon ${task.priority === 'hoch' ? 'critical' : 'review'}" aria-hidden="true">${taskIcon(task.criterionId)}</span>
+            <button class="task-table-action ${task === state.selectedTask ? 'active' : ''}" type="button" data-task-id="${escapeHtml(task.taskId)}">
+              <span class="task-icon ${task.priority === 'hoch' ? 'critical' : 'review'}" aria-hidden="true">${taskIcon(task.iconCriterionId || task.criterionId)}</span>
               <span><strong>${escapeHtml(task.label)}</strong><small>${escapeHtml(task.description)}</small></span>
             </button>
           </td>
@@ -1800,7 +1926,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td><span class="status-badge ${task.priority === 'hoch' ? 'critical' : 'review'}">${priorityLabel(task.priority)}</span></td>
           <td>${renderTypeChips(task.affectedTypes)}</td>
           <td><span class="status-badge ${impactBadgeClass(task.impact)}">${impactLabel(task.impact)}</span></td>
-          <td><button class="row-arrow" type="button" data-task-id="${escapeHtml(task.criterionId)}" aria-label="Aufgabe anzeigen"><span class="material-icons" aria-hidden="true">chevron_right</span></button></td>
+          <td><button class="row-arrow" type="button" data-task-id="${escapeHtml(task.taskId)}" aria-label="Aufgabe anzeigen"><span class="material-icons" aria-hidden="true">chevron_right</span></button></td>
         </tr>
       `).join('');
     }
@@ -1818,9 +1944,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.taskNextPage) els.taskNextPage.disabled = state.taskPage >= totalPages;
   }
 
-  function selectTask(criterionId) {
-    state.selectedTask = state.filteredTaskRows.find((task) => task.criterionId === criterionId)
-      || state.taskRows.find((task) => task.criterionId === criterionId)
+  function selectTask(taskId) {
+    state.selectedTask = findTaskById(state.filteredTaskRows, taskId)
+      || findTaskById(state.taskRows, taskId)
       || null;
     state.selectedTaskType = '';
     clearTaskRecords();
@@ -1848,7 +1974,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <dt>Problem</dt>
         <dd>${escapeHtml(task.problem)}</dd>
         <dt>Auswirkung</dt>
-        <dd><span class="impact-dot ${impactBadgeClass(task.impact)}"></span>${escapeHtml(impactLabel(task.impact))}. ${escapeHtml(taskImpactText(task.criterionId))}</dd>
+        <dd><span class="impact-dot ${impactBadgeClass(task.impact)}"></span>${escapeHtml(impactLabel(task.impact))}. ${escapeHtml(task.impactText || taskImpactText(task.criterionId))}</dd>
         <dt>Empfohlene Aktion</dt>
         <dd>${escapeHtml(task.recommendation)}</dd>
         <dt>Betroffene Typen</dt>
@@ -1878,19 +2004,30 @@ document.addEventListener('DOMContentLoaded', () => {
       showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
       return;
     }
+    const criterionId = resolveTaskCriterionId(task, type);
+    if (!criterionId) {
+      showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
+      return;
+    }
 
     saveRecordViewState({
-      criterionId: task.criterionId,
+      criterionId,
       type,
       label: task.label,
       context: state.context
     });
 
     const params = new URLSearchParams();
-    params.set('criterionId', task.criterionId);
+    params.set('criterionId', criterionId);
     params.set('type', type);
     params.set('from', 'tasks');
     location.href = `records.html?${params.toString()}`;
+  }
+
+  function resolveTaskCriterionId(task, type = '') {
+    if (!task) return '';
+    if (type && task.criteriaByType?.[type]) return task.criteriaByType[type];
+    return task.criterionId || task.criterionIds?.[0] || '';
   }
 
   function openOverviewIssueOnRecordsPage(issue) {
@@ -1916,8 +2053,13 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadTaskRecords() {
     const task = state.selectedTask;
     const type = state.selectedTaskType || task?.affectedTypes?.[0] || '';
+    const criterionId = resolveTaskCriterionId(task, type);
     if (!task || !type) {
       showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
+      return;
+    }
+    if (!criterionId) {
+      showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
       return;
     }
 
@@ -1930,7 +2072,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       const params = new URLSearchParams();
-      params.set('criterionId', task.criterionId);
+      params.set('criterionId', criterionId);
       params.set('type', type);
       params.set('limit', '200');
       params.set('scanPageSize', '200');
@@ -1939,7 +2081,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (query) params.set('query', query);
 
       const cachedPayload = await loadCachedQualityList({
-        criterionId: task.criterionId,
+        criterionId,
         type,
         query
       });
@@ -3382,7 +3524,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (node) node.textContent = '...';
     });
     if (els.topTasksList) els.topTasksList.innerHTML = '<div class="inline-loading">Pflegeaufgaben werden geladen ...</div>';
-    if (els.qualityDataNote) els.qualityDataNote.textContent = 'Qualitätsdaten werden geladen ...';
+    setQualityDataNoteLoading();
   }
 
   function renderOverviewEmpty() {
@@ -3391,7 +3533,25 @@ document.addEventListener('DOMContentLoaded', () => {
       if (node) node.textContent = '-';
     });
     if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">Für diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
-    if (els.qualityDataNote) els.qualityDataNote.textContent = 'Keine auswertbaren Qualitätsdaten geladen.';
+    setQualityDataNoteText('Keine auswertbaren Qualitätsdaten geladen.');
+  }
+
+  function setQualityDataNoteLoading() {
+    if (!els.qualityDataNote) return;
+    els.qualityDataNote.hidden = false;
+    els.qualityDataNote.innerHTML = '<span class="inline-loading" aria-label="Qualitaetsdaten werden geladen"></span>';
+  }
+
+  function setQualityDataNoteText(text) {
+    if (!els.qualityDataNote) return;
+    els.qualityDataNote.hidden = false;
+    els.qualityDataNote.textContent = text;
+  }
+
+  function hideQualityDataNote() {
+    if (!els.qualityDataNote) return;
+    els.qualityDataNote.hidden = true;
+    els.qualityDataNote.textContent = '';
   }
 
   function computeSummary(rows) {
@@ -3490,33 +3650,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderDataNote(sampleSize) {
     if (state.qualityDataMeta.mode === 'sachsen_total') {
-      els.qualityDataNote.textContent = 'Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Pflegeaufgaben laden im Hintergrund.';
+      setQualityDataNoteText('Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Pflegeaufgaben laden im Hintergrund.');
       return;
     }
     if (state.qualityDataMeta.mode === 'regional_scan') {
       const pending = state.qualityDataMeta.pendingTypes || 0;
-      const base = pending
-        ? `Regionale Qualitaetsbewertung laeuft asynchron. ${formatNumber(sampleSize)} Datensaetze sind bereits bewertet.`
-        : `Regionale Qualitaetsbewertung abgeschlossen: ${formatNumber(sampleSize)} Datensaetze bewertet.`;
-      els.qualityDataNote.textContent = state.qualityDataMeta.truncated
-        ? `${base} Weitere Treffer koennen spaeter nachgeladen werden.`
-        : base;
+      if (pending) {
+        setQualityDataNoteLoading();
+        return;
+      }
+      if (state.qualityDataMeta.truncated) {
+        setQualityDataNoteText('Weitere Treffer koennen spaeter nachgeladen werden.');
+        return;
+      }
+      hideQualityDataNote();
       return;
     }
     if (state.qualityDataMeta.mode === 'snapshot') {
-      els.qualityDataNote.textContent = state.qualityDataMeta.truncated
-        ? 'Qualitaetsdaten wurden aus dem vorbereiteten Cache geladen.'
-        : 'Qualitaetsdaten wurden aus dem vorbereiteten Cache geladen.';
+      hideQualityDataNote();
       return;
     }
     if (state.qualityDataMeta.mode === 'api_counts') {
-      els.qualityDataNote.textContent = 'Pflegeaufgaben werden im aktuellen Arbeitskontext geladen.';
+      setQualityDataNoteLoading();
       return;
     }
     const note = state.qualityDataMeta.truncated
       ? `Regionale Bewertung geladen. Weitere Treffer koennen spaeter nachgeladen werden.`
       : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensätzen.`;
-    els.qualityDataNote.textContent = note;
+    setQualityDataNoteText(note);
     if (state.qualityDataMeta.truncated) console.debug('Qualitätsdaten sind begrenzt.', state.qualityDataMeta);
   }
 
@@ -3640,6 +3801,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'poi_email_missing') return 'Fuer diese POI fehlt eine E-Mail-Adresse.';
     if (id === 'poi_website_missing') return 'Fuer diese POI fehlt eine Webseite.';
     if (id === 'poi_phone_missing') return 'Fuer diese POI fehlt eine Telefonnummer.';
+    if (id === 'poi_price_missing') return 'Fuer diese POI fehlt eine Preis-, Eintritts- oder Kosteninformation.';
+    if (id === 'tour_season_missing') return 'Fuer diese Tour fehlt eine belastbare Saison- oder Eignungsangabe.';
+    if (id === 'tour_parking_missing') return 'Fuer diese Tour fehlt eine belastbare Parkinformation.';
     const problems = {
       license_missing: 'Für diese Datensätze ist keine gültige Lizenzangabe hinterlegt.',
       image_author_missing: 'Bildmaterial ist vorhanden, aber der Urheberhinweis fehlt.',
@@ -3669,6 +3833,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'poi_email_missing') return 'Fehlende E-Mail-Adressen erschweren Rueckfragen und Kontaktaufnahme.';
     if (id === 'poi_website_missing') return 'Fehlende Webseiten schwaechen Weiterleitung zu vertiefenden Informationen.';
     if (id === 'poi_phone_missing') return 'Fehlende Telefonnummern erschweren direkte Rueckfragen und Kontaktaufnahme.';
+    if (id === 'poi_price_missing') return 'Fehlende Preis- oder Eintrittshinweise erschweren Erwartungsmanagement und Besuchsplanung.';
+    if (id === 'tour_season_missing') return 'Fehlende Saisonangaben erschweren Einordnung, Planung und passende Nutzung der Tour.';
+    if (id === 'tour_parking_missing') return 'Fehlende Parkhinweise erschweren die Anreiseplanung fuer Touren mit Startpunkt vor Ort.';
     const impacts = {
       license_missing: 'Ohne Lizenz sind Daten nicht Open-Data-fähig und nur eingeschränkt weiterverwendbar.',
       image_author_missing: 'Ohne Urheberangabe ist die Weitergabe von Bildmaterial rechtlich eingeschränkt.',
@@ -3693,7 +3860,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderPrimarySystemsForTask(task) {
-    const relevantItems = state.taskItems.filter((item) => item.missingCriteria?.includes(task.criterionId));
+    const criterionIds = new Set(task?.criterionIds?.length ? task.criterionIds : [task?.criterionId].filter(Boolean));
+    const relevantItems = state.taskItems.filter((item) => item.missingCriteria?.some((criterionId) => criterionIds.has(criterionId)));
     renderPrimarySystemsForRecords(relevantItems);
   }
 
@@ -3706,7 +3874,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.primarySystemCard.hidden = false;
     els.primarySystemList.innerHTML = systems.map((system) => `
       <div class="primary-system-row">
-        <span class="primary-system-logo">${escapeHtml(system.short)}</span>
+        ${renderPrimarySystemLogo(system)}
         <span><strong>${escapeHtml(system.name)} (${formatNumber(system.count)})</strong><small>${escapeHtml(system.note)}</small></span>
         <button class="plain-button" type="button" data-system-action="${escapeHtml(system.action)}" data-system-id="${escapeHtml(system.id)}">${escapeHtml(system.actionLabel)}</button>
       </div>
@@ -3721,6 +3889,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
+  }
+
+  function renderPrimarySystemLogo(system) {
+    if (system.logoImage) {
+      return `
+        <span class="primary-system-logo primary-system-logo-image">
+          <img src="${escapeHtml(system.logoImage)}" alt="${escapeHtml(system.name)}">
+        </span>
+      `;
+    }
+    return `
+      <span class="primary-system-logo primary-system-logo-${escapeHtml(system.id)}">
+        <span class="primary-system-wordmark">${escapeHtml(system.logoText || system.short)}</span>
+      </span>
+    `;
   }
 
   function collectPrimarySystems(rows) {
@@ -3750,6 +3933,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return {
         id: 'feratel',
         short: 'FD',
+        logoImage: './assets/logos/feratel.png',
         name: 'feratel',
         note: 'Datensatz mit import_source_feratel oder HasSystemId_Feratel.',
         action: 'export',
@@ -3760,6 +3944,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return {
         id: 'outdooractive',
         short: 'OA',
+        logoImage: './assets/logos/outdooractive.png',
         name: 'outdooractive',
         note: 'Datensatz mit import_source_outdooractive.',
         action: 'copy-source-id',
@@ -3769,6 +3954,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return {
       id: 'satourn',
       short: 'ST',
+      logoImage: '../SaTourN-RGB.png',
       name: 'SaTourN',
       note: 'Kein externes Importsystem in keywords_old/keywords erkannt.',
       action: 'export',
@@ -3837,6 +4023,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'poi_email_missing') return 'mail';
     if (id === 'poi_website_missing') return 'language';
     if (id === 'poi_phone_missing') return 'call';
+    if (id === 'poi_price_missing') return 'sell';
     if (id === 'license_missing') return 'description';
     if (id === 'image_author_missing' || id === 'image_missing') return 'image';
     if (id === 'opening_hours_missing') return 'schedule';
@@ -3849,6 +4036,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'hotel_language_english_missing') return 'translate';
     if (id === 'hotel_payment_cash_missing') return 'payments';
     if (id === 'hotel_parking_feature_missing') return 'local_parking';
+    if (id === 'tour_season_missing') return 'event';
+    if (id === 'tour_parking_missing') return 'local_parking';
     if (id === 'gastro_cuisine_category_missing') return 'restaurant_menu';
     return 'warning';
   }
@@ -3859,6 +4048,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'poi_email_missing') return 'Keine E-Mail-Adresse vorhanden';
     if (id === 'poi_website_missing') return 'Keine Webseite vorhanden';
     if (id === 'poi_phone_missing') return 'Keine Telefonnummer vorhanden';
+    if (id === 'poi_price_missing') return 'Keine Preisinformation vorhanden';
+    if (id === 'tour_season_missing') return 'Keine Saisonangabe vorhanden';
+    if (id === 'tour_parking_missing') return 'Keine Parkinformation vorhanden';
     const descriptions = {
       license_missing: 'Datensätze ohne Lizenzangabe',
       image_author_missing: 'Bilder ohne Urheberangabe',

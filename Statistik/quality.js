@@ -269,7 +269,16 @@ export function hasWebsiteInfo(item = {}) {
 }
 
 export function hasPriceInfo(item = {}) {
-  return hasAnyValue(item, ['prices', 'price']);
+  return (
+    hasAnyValue(item, ['prices', 'price']) ||
+    hasTextByRel(item, 'PRICE_INFO') ||
+    hasTextByRel(item, 'PRICE_REDUCEDINFO')
+  );
+}
+
+export function hasSeasonInfo(item = {}) {
+  return safeArray(item.seasons).some((entry) => hasValue(entry?.month) || hasValue(entry?.suitable))
+    || safeArray(item.raw?.seasons).some((entry) => hasValue(entry?.month) || hasValue(entry?.suitable));
 }
 
 export function hasAddressRel(item = {}, relValues = []) {
@@ -399,6 +408,19 @@ export function hasAnyCategory(item = {}, values = []) {
   if (!targets.length) return false;
   const targetSet = new Set(targets);
   return getCategoryValues(item).some((entry) => targetSet.has(normalizeComparable(entry)));
+}
+
+function textRelValues(item = {}, relValues = []) {
+  return safeArray(relValues).flatMap((rel) => (
+    getTextsByRel(item, rel)
+      .map((entry) => normalizeString(entry.value))
+      .filter(Boolean)
+  ));
+}
+
+export function hasTourParkingInfo(item = {}) {
+  if (hasTextByRel(item, 'TourMoreInfos_parking')) return true;
+  return textRelValues(item, ['TourMoreInfos_directions', 'directions']).some((value) => /park/i.test(value));
 }
 
 function escapeMetaQueryValue(value) {
@@ -924,8 +946,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Tour'],
       level: 'good',
       fieldCandidates: ['seasons', 'features', 'features_old'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'tour_season_missing',
       uiPriority: 'mittel',
       recommendation: 'Eignung oder Jahreszeit ergaenzen.'
     },
@@ -946,8 +968,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Tour'],
       level: 'good',
       fieldCandidates: ['features', 'features_old', 'texts[rel=directions]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'tour_parking_missing',
       uiPriority: 'mittel',
       recommendation: 'Parkinformationen ergaenzen.'
     },
@@ -1074,8 +1096,8 @@ export const domainQualityModel = Object.freeze({
       types: ['POI'],
       level: 'good',
       fieldCandidates: ['prices', 'price', 'numbers', 'attributes'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'poi_price_missing',
       uiPriority: 'mittel',
       recommendation: 'Preisinformation ergaenzen.'
     },
@@ -1767,6 +1789,52 @@ export const qualityCriteria = Object.freeze([
     },
     recommendation: 'Mindestens einen geprueften Parkhinweis als Merkmal ergaenzen.',
     check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.hotelParking)
+  },
+  {
+    id: 'tour_season_missing',
+    label: 'Jahreszeitangabe fehlt',
+    types: ['Tour'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['tour_season'],
+    fields: ['seasons'],
+    method: 'server_scan',
+    recommendation: 'Saison- oder Eignungsangaben fuer die Tour ergaenzen.',
+    check: (item) => !hasSeasonInfo(item)
+  },
+  {
+    id: 'tour_parking_missing',
+    label: 'Parkhinweis fehlt',
+    types: ['Tour'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['tour_parking'],
+    fields: ['texts[rel=TourMoreInfos_parking]', 'texts[rel=TourMoreInfos_directions]', 'texts[rel=directions]'],
+    method: 'server_scan',
+    recommendation: 'Parkmoeglichkeiten oder Parkhinweise fuer die Tour ergaenzen.',
+    check: (item) => !hasTourParkingInfo(item)
+  },
+  {
+    id: 'poi_price_missing',
+    label: 'Preisinformation fehlt',
+    types: ['POI'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['poi_price'],
+    fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
+    method: 'server_scan',
+    recommendation: 'Preis, Eintritt oder Kostenhinweis ergaenzen.',
+    excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_price_missing,
+    check: (item) => !hasPriceInfo(item)
   },
   {
     id: 'poi_parking_feature_missing',
@@ -2507,6 +2575,7 @@ export const qualityHelpers = Object.freeze({
   hasEmailInfo,
   hasWebsiteInfo,
   hasPriceInfo,
+  hasSeasonInfo,
   hasAddressRel,
   hasAuthorOrOrganisation,
   getAttributeValue,
@@ -2515,6 +2584,7 @@ export const qualityHelpers = Object.freeze({
   getFeatureValues,
   hasFeature,
   hasAnyFeature,
+  hasTourParkingInfo,
   hasPublicTransportFeature,
   getMediaObjects,
   isCheckableMediaObject,

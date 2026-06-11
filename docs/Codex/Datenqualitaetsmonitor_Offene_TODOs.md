@@ -49,12 +49,13 @@ Offen:
   weitere sinnvolle Feature-OR-Listen ueber Sprache, Zahlungsarten und
   Parkhinweise hinaus verifizieren
 - POI:
-  Barrierefreiheits-OR-Liste und weitere fachlich sinnvolle OR-Listen gegen
-  echte Datensaetze absichern
+  Preisregel und weitere fachlich sinnvolle Kriterien gegen echte
+  Datensaetze absichern, soweit sie nicht bereits per Server-Scan aktiv sind
 - Gastro:
   erweiterte Sprachen-, Zahlungs- und Kuechenangebote-OR-Listen verifizieren
 - Tour:
-  Anreise-/OePNV-/Parken-Merkmale und Saison-/Eignungsregeln pruefen
+  weitere Anreise-/Eignungsregeln ueber OePNV, Parken und Saison hinaus
+  pruefen
 - Event:
   Zahlungsarten, Lizenz und optionale Sprach-/Eignungsregeln pruefen
 - Package:
@@ -217,6 +218,10 @@ Diese Themen bleiben offen oder clientseitig:
   `poi_phone_missing`
 - Hotel-OR-Listen fuer Fremdsprachen, Zahlungsarten und Parkhinweise live
   ueber den Render-Proxy verifiziert und produktiv aktiviert
+- `poi_price_missing` produktiv als Server-Scan mit Kategorien-Ausschluss
+  aktiviert
+- `tour_season_missing` und `tour_parking_missing` produktiv als
+  Server-Scan-Kriterien aktiviert
 - erste zentrale POI-Ausschlusswelle in Score, Fehlerliste, Detailseite und
   Exportlogik verankert
 - Pflegeaufgaben nutzen bei Gebiet oder Ort denselben regionalen
