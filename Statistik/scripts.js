@@ -1,5 +1,5 @@
 import { downloadText, extractId, extractItems, extractTotal, fetchJson } from '../lib/browser.js';
-import { evaluateAllItems, evaluateQualityForItem, getQualityAggregations, getQualityScanConfig, qualityCriteria, qualityHelpers } from './quality.js';
+import { domainQualityModel, evaluateAllItems, evaluateQualityForItem, getDomainQualityModelSummary, getQualityAggregations, getQualityScanConfig, qualityCriteria, qualityHelpers } from './quality.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.querySelector('.statistik[data-page]');
@@ -179,7 +179,10 @@ document.addEventListener('DOMContentLoaded', () => {
     statsTypeTableBody: document.getElementById('stats-type-table-body'),
     statsLicenseTaskCard: document.getElementById('stats-license-task-card'),
     statsLicenseTaskCount: document.getElementById('stats-license-task-count'),
-    statsLicenseTaskShare: document.getElementById('stats-license-task-share')
+    statsLicenseTaskShare: document.getElementById('stats-license-task-share'),
+    helpModelSummary: document.getElementById('help-model-summary'),
+    helpActiveCriteriaBody: document.getElementById('help-active-criteria-body'),
+    helpDomainCriteriaBody: document.getElementById('help-domain-criteria-body')
   };
 
   let state = {
@@ -244,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (page === 'records') initRecords();
   if (page === 'record-detail') initRecordDetail();
   if (page === 'stats') initStats();
+  if (page === 'help') initHelp();
 
   function initSharedShell() {
     fillContextControls();
@@ -372,6 +376,107 @@ document.addEventListener('DOMContentLoaded', () => {
       applyStatsFiltersAndLoad();
     });
     void loadStatsDataAsync();
+  }
+
+  function initHelp() {
+    renderHelpPage();
+  }
+
+  function renderHelpPage() {
+    const summary = getDomainQualityModelSummary();
+    if (els.helpModelSummary) {
+      const activeCount = summary.statusCounts.active || 0;
+      const pendingCount = summary.statusCounts.needs_verification || 0;
+      els.helpModelSummary.textContent = `${formatNumber(qualityCriteria.length)} automatisch geprüfte Kriterien, ${formatNumber(activeCount)} fachliche Kriterien technisch angebunden, ${formatNumber(pendingCount)} fachliche Kriterien in Verifikation.`;
+    }
+    renderHelpActiveCriteria();
+    renderHelpDomainCriteria();
+  }
+
+  function renderHelpActiveCriteria() {
+    if (!els.helpActiveCriteriaBody) return;
+    const rows = [...qualityCriteria].sort((a, b) => (
+      priorityRank(b.priority) - priorityRank(a.priority) ||
+      Number(b.weight || 0) - Number(a.weight || 0) ||
+      a.label.localeCompare(b.label, 'de')
+    ));
+    els.helpActiveCriteriaBody.innerHTML = rows.map((criterion) => `
+      <tr>
+        <td><strong>${escapeHtml(criterion.label)}</strong><small>${escapeHtml(criterion.recommendation || '')}</small></td>
+        <td>${renderHelpTypeChips(criterion.types)}</td>
+        <td><span class="help-weight">${formatNumber(criterion.weight || 0)}</span></td>
+        <td>${renderHelpStatusBadge(criterion.uiSeverity === 'kleines_problem' ? 'Prüfen' : 'Kritisch', criterion.uiSeverity === 'kleines_problem' ? 'review' : 'critical')}</td>
+        <td>${escapeHtml(helpCheckModeLabel(criterion))}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderHelpDomainCriteria() {
+    if (!els.helpDomainCriteriaBody) return;
+    const rows = [...domainQualityModel.criteria].sort((a, b) => (
+      helpTypeSortValue(a) - helpTypeSortValue(b) ||
+      helpLevelRank(a.level) - helpLevelRank(b.level) ||
+      a.label.localeCompare(b.label, 'de')
+    ));
+    els.helpDomainCriteriaBody.innerHTML = rows.map((criterion) => `
+      <tr>
+        <td><strong>${escapeHtml(criterion.label)}</strong><small>${escapeHtml(criterion.id)}</small></td>
+        <td>${renderHelpTypeChips(criterion.types)}</td>
+        <td>${escapeHtml(helpLevelLabel(criterion.level))}</td>
+        <td>${renderHelpTechnicalStatus(criterion.status)}</td>
+        <td>${escapeHtml(criterion.recommendation || '-')}</td>
+      </tr>
+    `).join('');
+  }
+
+  function renderHelpTypeChips(types = []) {
+    return `<span class="help-type-list">${(types || []).map((type) => `<i>${escapeHtml(type)}</i>`).join('')}</span>`;
+  }
+
+  function renderHelpStatusBadge(label, tone) {
+    return `<span class="status-badge ${tone}">${escapeHtml(label)}</span>`;
+  }
+
+  function renderHelpTechnicalStatus(status) {
+    const labels = {
+      active: ['Automatisch geprüft', 'good'],
+      needs_verification: ['Fachlich gültig, Prüfung offen', 'medium'],
+      source_guarded: ['Quellseitig abgesichert', 'review'],
+      manual_review: ['Manuell prüfen', 'muted']
+    };
+    const [label, tone] = labels[status] || ['Nicht eingeordnet', 'muted'];
+    return renderHelpStatusBadge(label, tone);
+  }
+
+  function helpCheckModeLabel(criterion) {
+    if (criterion.apiByType) return 'Gemischt: API-Count und Server-Scan';
+    if (criterion.method === 'api_pushdown') return 'Verifizierter API-Count';
+    if (criterion.api?.prefilterQuery) return 'Server-Scan mit API-Prefilter';
+    return 'Server-Scan';
+  }
+
+  function helpLevelLabel(level) {
+    return {
+      minimum: 'Mindestanforderung',
+      good: 'Gute Qualität',
+      very_good: 'Sehr gute Qualität',
+      supporting: 'Unterstützend'
+    }[level] || 'Nicht eingeordnet';
+  }
+
+  function helpLevelRank(level) {
+    return {
+      minimum: 1,
+      good: 2,
+      very_good: 3,
+      supporting: 4
+    }[level] || 9;
+  }
+
+  function helpTypeSortValue(criterion) {
+    const firstType = (criterion.types || [])[0] || '';
+    const index = TYPES.indexOf(firstType);
+    return index >= 0 ? index : 99;
   }
 
   function loadWorkContext() {

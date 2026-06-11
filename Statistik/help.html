@@ -1,0 +1,170 @@
+---
+layout: default
+title: Hilfe zum Datenqualitäts-Score
+permalink: /Statistik/help.html
+css: /Statistik/style.css
+js: /Statistik/main.js
+module: true
+---
+
+<div class="statistik light-shell" data-page="help">
+  <header class="app-header">
+    <a class="brand" href="index.html" aria-label="SaTourN Datenqualitäts-Monitor">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <strong>SaTourN</strong>
+        <small>Datenqualitäts-Monitor</small>
+      </span>
+    </a>
+
+    <div class="work-context-bar">
+      <span>Arbeitskontext:</span>
+      <button id="work-context-summary" class="context-summary" type="button" aria-haspopup="dialog">
+        Sachsen - Alle Orte - Alle Datentypen
+      </button>
+      <button id="work-context-edit" class="context-edit" type="button">Ändern</button>
+    </div>
+
+    <div class="header-status">
+      <span id="last-updated">Hilfeseite</span>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <nav class="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
+      <a class="nav-link" href="index.html"><span class="material-icons" aria-hidden="true">home</span>Übersicht</a>
+      <a class="nav-link" href="tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
+      <a class="nav-link" href="records.html"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
+      <a class="nav-link" href="stats.html"><span class="material-icons" aria-hidden="true">bar_chart</span>Open-Data-Statistik</a>
+      <a class="nav-link active" href="help.html" aria-current="page"><span class="material-icons" aria-hidden="true">help_outline</span>Hilfe</a>
+    </nav>
+
+    <main class="help-main" aria-labelledby="help-title">
+      <section class="overview-hero help-hero">
+        <h1 id="help-title">Hilfe zum Datenqualitäts-Score</h1>
+        <p>Der Score zeigt, wie gut ein Datensatz die aktuell automatisch prüfbaren Qualitätskriterien erfüllt. Die fachlichen Kriterien gelten gemeinsam; der technische Prüfstatus entscheidet nur, ob ein Kriterium bereits automatisch in Score, Pflegeaufgaben und Detailansicht eingeht.</p>
+      </section>
+
+      <section class="help-score-grid" aria-label="Score-Berechnung">
+        <article class="panel-card help-score-card">
+          <span class="help-score-icon material-icons" aria-hidden="true">calculate</span>
+          <div>
+            <h2>Berechnung</h2>
+            <p><strong>Score = erfülltes Gewicht / prüfbares Gesamtgewicht × 100</strong></p>
+            <p>Nur automatisch prüfbare Kriterien mit Gewicht werden eingerechnet. Fachlich gültige, aber noch nicht verifizierte Kriterien werden sichtbar dokumentiert und später nach Verifikation technisch aktiviert.</p>
+          </div>
+        </article>
+        <article class="panel-card help-score-card">
+          <span class="help-score-icon green material-icons" aria-hidden="true">check_circle</span>
+          <div>
+            <h2>Gut</h2>
+            <p><strong>80 bis 100 Punkte</strong></p>
+            <p>Die wichtigsten prüfbaren Angaben sind vorhanden. Einzelne Ergänzungen können trotzdem sinnvoll sein.</p>
+          </div>
+        </article>
+        <article class="panel-card help-score-card">
+          <span class="help-score-icon amber material-icons" aria-hidden="true">rule</span>
+          <div>
+            <h2>Prüfen</h2>
+            <p><strong>60 bis 79 Punkte</strong></p>
+            <p>Der Datensatz ist grundsätzlich nutzbar, braucht aber erkennbare Pflege oder Ergänzungen.</p>
+          </div>
+        </article>
+        <article class="panel-card help-score-card">
+          <span class="help-score-icon red material-icons" aria-hidden="true">error</span>
+          <div>
+            <h2>Kritisch</h2>
+            <p><strong>0 bis 59 Punkte</strong></p>
+            <p>Mindestens ein wichtiges Kriterium fehlt oder mehrere Kriterien reduzieren die Nutzbarkeit deutlich.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="panel-card help-matrix-card" aria-labelledby="help-active-criteria-title">
+        <header class="panel-head">
+          <div>
+            <h2 id="help-active-criteria-title">Score-Matrix der automatisch geprüften Kriterien</h2>
+            <p id="help-model-summary" class="data-note">Kriterienmodell wird geladen ...</p>
+          </div>
+        </header>
+        <div class="tasks-table-wrap">
+          <table class="help-matrix-table">
+            <thead>
+              <tr>
+                <th>Kriterium</th>
+                <th>Datentypen</th>
+                <th>Gewicht</th>
+                <th>Wirkung</th>
+                <th>Prüfung</th>
+              </tr>
+            </thead>
+            <tbody id="help-active-criteria-body">
+              <tr><td colspan="5" class="table-empty">Kriterien werden geladen ...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="help-explain-grid" aria-label="Einordnung der Kriterien">
+        <article class="panel-card help-info-card">
+          <h2>Warum nicht jedes fachliche Kriterium sofort zählt</h2>
+          <p>Alle fachlichen Kriterien gelten. Ein Kriterium fließt aber erst dann automatisch in den Score ein, wenn Feldmapping, API-Query oder Server-Scan belastbar sind. Dadurch bleibt der Score nachvollziehbar und wird nicht durch ungeprüfte Annahmen verzerrt.</p>
+        </article>
+        <article class="panel-card help-info-card">
+          <h2>Open-Data-Relevanz</h2>
+          <p>Lizenz und Bildurheber sind besonders wichtig, weil sie direkt beeinflussen, ob Datensätze offen weiterverwendet werden können. Diese Kriterien werden in Pflegeaufgaben sichtbar priorisiert.</p>
+        </article>
+      </section>
+
+      <section class="panel-card help-matrix-card" aria-labelledby="help-domain-criteria-title">
+        <header class="panel-head">
+          <div>
+            <h2 id="help-domain-criteria-title">Fachliches Kriterienmodell</h2>
+            <p class="data-note">Diese Matrix zeigt alte und neue Kriterien gemeinsam. Der technische Status beschreibt die automatische Prüfbarkeit, nicht die fachliche Gültigkeit.</p>
+          </div>
+        </header>
+        <div class="tasks-table-wrap">
+          <table class="help-matrix-table">
+            <thead>
+              <tr>
+                <th>Kriterium</th>
+                <th>Datentypen</th>
+                <th>Stufe</th>
+                <th>Technischer Status</th>
+                <th>Empfehlung</th>
+              </tr>
+            </thead>
+            <tbody id="help-domain-criteria-body">
+              <tr><td colspan="5" class="table-empty">Fachmodell wird geladen ...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="work-context-dialog" class="context-dialog" aria-labelledby="context-dialog-title">
+    <form method="dialog" id="work-context-form">
+      <header>
+        <h2 id="context-dialog-title">Arbeitskontext ändern</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
+      </header>
+      <label>
+        Gebiet
+        <select id="context-area"></select>
+      </label>
+      <label>
+        Ort
+        <input id="context-city" type="text" placeholder="Alle Orte">
+      </label>
+      <label>
+        Datentyp
+        <select id="context-type"></select>
+      </label>
+      <footer>
+        <button value="cancel" type="submit">Abbrechen</button>
+        <button class="primary" value="default" type="submit">Übernehmen</button>
+      </footer>
+    </form>
+  </dialog>
+</div>

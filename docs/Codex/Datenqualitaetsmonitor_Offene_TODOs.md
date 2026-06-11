@@ -331,6 +331,15 @@ Arbeitsanweisung fuer Umsetzung:
 - Datenschutz/Cookie-Hinweis erst konkret bauen, wenn klar ist, welche
   Speicherungen und externen Dienste produktiv aktiv sind.
 
+Aktueller Umsetzungsstand:
+
+- `Statistik/help.html` ist angelegt und in der Hauptnavigation verlinkt.
+- Die Hilfeseite erklaert Score-Berechnung, Statusgrenzen, automatisch
+  gepruefte Kriterien und das fachliche Kriterienmodell.
+- Die Kriterienmatrix wird aus `qualityCriteria` und `domainQualityModel`
+  gerendert, damit keine zweite Kriterienliste gepflegt werden muss.
+- Rechtliches, Datenschutz und Consentmanager bleiben offen.
+
 ## 7. API und Performance
 
 Ziel: Die Anwendung bleibt schnell, obwohl Listen und Kriterien fachlich

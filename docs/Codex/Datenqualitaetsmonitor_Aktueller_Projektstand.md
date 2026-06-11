@@ -19,10 +19,14 @@ Build-Kette und keine Secrets im Frontend.
   Datensatz per `type`, `id` oder `global_id`.
 - `Statistik/stats.html`: Open-Data-Statistik mit aggregierten Counts,
   Datentyp-Verteilung und Einstieg zur Pflegeaufgabe `license_missing`.
+- `Statistik/help.html`: Hilfeseite zum Datenqualitaets-Score mit
+  Score-Matrix, automatisch geprueften Kriterien und fachlichem
+  Kriterienmodell.
 
 Alle Statistik-Links bleiben relativ (`index.html`, `tasks.html`,
-`records.html`, `record-detail.html`, `stats.html`) und funktionieren damit
-unter `https://tim-meyer-tmgs.github.io/SaTourN/Statistik/...`.
+`records.html`, `record-detail.html`, `stats.html`, `help.html`) und
+funktionieren damit unter
+`https://tim-meyer-tmgs.github.io/SaTourN/Statistik/...`.
 
 ## Betrieb und Datenfluss
 
@@ -47,7 +51,7 @@ unter `https://tim-meyer-tmgs.github.io/SaTourN/Statistik/...`.
 
 - Frontend: `Statistik/index.html`, `Statistik/tasks.html`,
   `Statistik/records.html`, `Statistik/record-detail.html`,
-  `Statistik/stats.html`.
+  `Statistik/stats.html`, `Statistik/help.html`.
 - Logik: `Statistik/scripts.js`, `Statistik/quality.js`,
   `Statistik/main.js`.
 - Styling: `Statistik/style.css`.

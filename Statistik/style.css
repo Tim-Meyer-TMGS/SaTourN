@@ -622,7 +622,7 @@ body.statistik-page-body {
 
 .statistik .quick-action-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 16px;
   margin-top: 16px;
 }
@@ -938,6 +938,12 @@ body.statistik-page-body {
   border: 1px solid #fedf89;
   color: #b54708;
   background: #fffbeb;
+}
+
+.statistik .status-badge.muted {
+  border: 1px solid #e4e7ec;
+  color: #475467;
+  background: #f8fafc;
 }
 
 .statistik .type-chip-row {
@@ -1865,6 +1871,150 @@ body.statistik-page-body {
   padding: 24px 28px;
 }
 
+.statistik .help-main {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+}
+
+.statistik .help-hero {
+  max-width: 980px;
+}
+
+.statistik .help-score-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.statistik .help-score-card {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 18px;
+}
+
+.statistik .help-score-card h2,
+.statistik .help-info-card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.statistik .help-score-card p,
+.statistik .help-info-card p {
+  margin: 0 0 8px;
+  color: var(--muted);
+}
+
+.statistik .help-score-card p:last-child,
+.statistik .help-info-card p:last-child {
+  margin-bottom: 0;
+}
+
+.statistik .help-score-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 25px;
+}
+
+.statistik .help-score-icon.green {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.statistik .help-score-icon.amber {
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.statistik .help-score-icon.red {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.statistik .help-matrix-card {
+  padding: 18px;
+  margin-bottom: 14px;
+}
+
+.statistik .help-explain-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.statistik .help-info-card {
+  padding: 18px;
+}
+
+.statistik .help-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.statistik .help-matrix-table th {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+  color: #475467;
+  font-size: 12px;
+  text-align: left;
+}
+
+.statistik .help-matrix-table td {
+  padding: 13px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.statistik .help-matrix-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.statistik .help-matrix-table td strong,
+.statistik .help-matrix-table td small {
+  display: block;
+}
+
+.statistik .help-matrix-table td small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.statistik .help-type-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.statistik .help-type-list i {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f2f4f7;
+  color: #344054;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.statistik .help-weight {
+  display: inline-grid;
+  min-width: 38px;
+  height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-weight: 850;
+}
+
 .statistik .stats-filter-card {
   display: grid;
   grid-template-columns: minmax(180px, .8fr) minmax(180px, .8fr) minmax(200px, .9fr) auto;
@@ -2324,6 +2474,10 @@ body.statistik-page-body {
     grid-template-columns: 1fr;
   }
 
+  .statistik .help-score-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .statistik .detail-quality-summary {
     padding-left: 0;
     border-left: 0;
@@ -2358,7 +2512,8 @@ body.statistik-page-body {
   .statistik .tasks-main,
   .statistik .records-main,
   .statistik .record-detail-main,
-  .statistik .stats-main {
+  .statistik .stats-main,
+  .statistik .help-main {
     padding: 20px;
   }
 
@@ -2367,6 +2522,11 @@ body.statistik-page-body {
   .statistik .quick-action-grid,
   .statistik .open-data-stats,
   .statistik .status-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .statistik .help-score-grid,
+  .statistik .help-explain-grid {
     grid-template-columns: 1fr;
   }
 
