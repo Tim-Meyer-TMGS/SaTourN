@@ -438,8 +438,9 @@ const VALIDATED_FEATURE_VALUES = Object.freeze({
   poiPayments: Object.freeze(['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'kontaktlose Zahlung']),
   poiLanguages: Object.freeze(['Englisch', 'Polnisch', 'Tschechisch']),
   poiSuitability: Object.freeze(['Familie', 'f\u00fcr Gruppen', 'Senioren geeignet', 'f\u00fcr Schulklassen', 'f\u00fcr jedes Wetter']),
-  hotelPayments: Object.freeze(['Barzahlung']),
-  hotelLanguages: Object.freeze(['Englisch']),
+  hotelPayments: Object.freeze(['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'PayPal', 'kontaktlose Zahlung']),
+  hotelLanguages: Object.freeze(['Englisch', 'Polnisch', 'Tschechisch', 'Franz\u00f6sisch']),
+  hotelParking: Object.freeze(['Parkpl\u00e4tze', 'Parkgarage / Tiefgarage', '\u00d6ffentliches Parkhaus fu\u00dfl\u00e4ufig', 'Busparkplatz (-pl\u00e4tze)', 'E-Lades\u00e4ulen']),
   gastroParking: Object.freeze(['PKW-Parkplatz am Haus']),
   gastroPayments: Object.freeze(['Barzahlung', 'EC-Karte']),
   gastroLanguages: Object.freeze(['Englisch', 'Polnisch'])
