@@ -387,7 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.helpModelSummary) {
       const activeCount = summary.statusCounts.active || 0;
       const pendingCount = summary.statusCounts.needs_verification || 0;
-      els.helpModelSummary.textContent = `${formatNumber(qualityCriteria.length)} automatisch geprüfte Kriterien, ${formatNumber(activeCount)} fachliche Kriterien technisch angebunden, ${formatNumber(pendingCount)} fachliche Kriterien in Verifikation.`;
+      const apiCandidateCount = summary.apiCandidateCounts?.total || 0;
+      els.helpModelSummary.textContent = `${formatNumber(qualityCriteria.length)} automatisch geprüfte Kriterien, ${formatNumber(activeCount)} fachliche Kriterien technisch angebunden, ${formatNumber(pendingCount)} fachliche Kriterien in Verifikation, ${formatNumber(apiCandidateCount)} API-Kandidaten vorbereitet.`;
     }
     renderHelpActiveCriteria();
     renderHelpDomainCriteria();
@@ -424,6 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${renderHelpTypeChips(criterion.types)}</td>
         <td>${escapeHtml(helpLevelLabel(criterion.level))}</td>
         <td>${renderHelpTechnicalStatus(criterion.status)}</td>
+        <td>${renderHelpApiHint(criterion)}</td>
         <td>${escapeHtml(criterion.recommendation || '-')}</td>
       </tr>
     `).join('');
@@ -453,6 +455,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (criterion.method === 'api_pushdown') return 'Verifizierter API-Count';
     if (criterion.api?.prefilterQuery) return 'Server-Scan mit API-Prefilter';
     return 'Server-Scan';
+  }
+
+  function renderHelpApiHint(criterion) {
+    if (criterion.activeCriterionId) {
+      return `<span class="help-api-note good">Aktiv: ${escapeHtml(criterion.activeCriterionId)}</span>`;
+    }
+
+    if (!criterion.apiCandidate) {
+      return '<span class="help-api-note muted">Kein API-Kandidat</span>';
+    }
+
+    const confidenceLabels = {
+      documented_prefix: 'Dokumentierter Prefix',
+      existing_prefix_needs_type_verification: 'Vorhandener Prefix, Typ-Test offen',
+      partial_documented_prefixes: 'Teilkriterium per API möglich'
+    };
+    const label = confidenceLabels[criterion.apiCandidate.confidence] || 'API-Kandidat';
+    const query = criterion.apiCandidate.missingQuery || criterion.apiCandidate.positiveQuery || '';
+    const note = criterion.apiCandidate.note ? `<small>${escapeHtml(criterion.apiCandidate.note)}</small>` : '';
+    return `<span class="help-api-note">${escapeHtml(label)}${query ? `<code>${escapeHtml(query)}</code>` : ''}${note}</span>`;
   }
 
   function helpLevelLabel(level) {

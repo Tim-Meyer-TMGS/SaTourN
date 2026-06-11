@@ -392,6 +392,25 @@ export function isTouristTripReady(item = {}) {
   );
 }
 
+function apiQueryCandidate({
+  positiveQuery = null,
+  missingQuery = null,
+  prefixes = [],
+  source = 'meta_query_language',
+  confidence = 'needs_verification',
+  note = ''
+} = {}) {
+  return Object.freeze({
+    positiveQuery,
+    missingQuery,
+    prefixes: Object.freeze(safeArray(prefixes)),
+    source,
+    confidence,
+    verified: false,
+    note
+  });
+}
+
 export const domainQualityModel = Object.freeze({
   applicability: 'all_criteria_apply',
   technicalStatusNote: 'Alle Kriterien in diesem Modell gelten fachlich. Der Status beschreibt nur, ob die technische Pruefung bereits belastbar angebunden ist.',
@@ -446,6 +465,13 @@ export const domainQualityModel = Object.freeze({
       types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
       level: 'minimum',
       fieldCandidates: ['geo', 'coordinates', 'location'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'lat:* AND lon:*',
+        missingQuery: 'all:all AND (-lat:* OR -lon:*)',
+        prefixes: ['lat', 'lon'],
+        confidence: 'partial_documented_prefixes',
+        note: 'Prueft nur Koordinatenfelder; ob solche Objekte in der normalen Datenbasis ueberhaupt ausgegeben werden, bleibt quellseitig zu klaeren.'
+      }),
       status: 'source_guarded',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -457,6 +483,13 @@ export const domainQualityModel = Object.freeze({
       types: ['Tour'],
       level: 'minimum',
       fieldCandidates: ['touristType', 'touristTripType', 'distance', 'length', 'duration', 'itinerary', 'route', 'stages', 'waypoints'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'length:[1 TO *] AND duration:[1 TO *]',
+        missingQuery: 'all:all AND (-length:* OR -duration:*)',
+        prefixes: ['length', 'duration'],
+        confidence: 'partial_documented_prefixes',
+        note: 'Prueft nur Laenge und Dauer. Geometrie, Route und weitere Tour-Basisdaten muessen separat verifiziert werden.'
+      }),
       status: 'source_guarded',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -490,6 +523,12 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'minimum',
       fieldCandidates: ['street', 'address.street', 'addresses.street'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'street:*',
+        missingQuery: 'all:all -street:*',
+        prefixes: ['street'],
+        confidence: 'documented_prefix'
+      }),
       status: 'needs_verification',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -501,6 +540,14 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'minimum',
       fieldCandidates: ['texts[rel=details]'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'details:*',
+        missingQuery: 'all:all -details:*',
+        prefixes: ['details'],
+        source: 'existing_quality_query',
+        confidence: 'existing_prefix_needs_type_verification',
+        note: 'details ist fuer POI, Gastro und Tour bereits aktiv; Hotel muss mit echten positiven und negativen Datensaetzen verifiziert werden.'
+      }),
       status: 'needs_verification',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -734,6 +781,12 @@ export const domainQualityModel = Object.freeze({
       types: ['POI'],
       level: 'minimum',
       fieldCandidates: ['street', 'address.street', 'addresses.street'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'street:*',
+        missingQuery: 'all:all -street:*',
+        prefixes: ['street'],
+        confidence: 'documented_prefix'
+      }),
       status: 'needs_verification',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -867,6 +920,12 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'minimum',
       fieldCandidates: ['street', 'address.street', 'addresses.street'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'street:*',
+        missingQuery: 'all:all -street:*',
+        prefixes: ['street'],
+        confidence: 'documented_prefix'
+      }),
       status: 'needs_verification',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -1022,6 +1081,12 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'minimum',
       fieldCandidates: ['street', 'address.street', 'addresses.street'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'street:*',
+        missingQuery: 'all:all -street:*',
+        prefixes: ['street'],
+        confidence: 'documented_prefix'
+      }),
       status: 'needs_verification',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -1033,6 +1098,14 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'minimum',
       fieldCandidates: ['texts[rel=details]'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'details:*',
+        missingQuery: 'all:all -details:*',
+        prefixes: ['details'],
+        source: 'existing_quality_query',
+        confidence: 'existing_prefix_needs_type_verification',
+        note: 'details ist fuer POI, Gastro und Tour bereits aktiv; Event muss mit echten positiven und negativen Datensaetzen verifiziert werden.'
+      }),
       status: 'needs_verification',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -1099,6 +1172,14 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'very_good',
       fieldCandidates: ['attributes[key=license]'],
+      apiCandidate: apiQueryCandidate({
+        positiveQuery: 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
+        missingQuery: 'all:all -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
+        prefixes: ['attribute_license'],
+        source: 'existing_quality_query',
+        confidence: 'existing_prefix_needs_type_verification',
+        note: 'attribute_license ist fuer POI, Gastro, Tour, Hotel und Package bereits aktiv; Event muss mit echten Datensaetzen verifiziert werden.'
+      }),
       status: 'needs_verification',
       activeCriterionId: null,
       uiPriority: 'hoch',
@@ -1362,6 +1443,33 @@ export function getDomainCriteriaForActiveCriterion(criterionId) {
   return domainQualityModel.criteria.filter((criterion) => criterion.activeCriterionId === normalizedCriterionId);
 }
 
+export function getDomainApiCandidatesForType(type) {
+  const normalizedType = normalizeType(type);
+  return domainQualityModel.criteria.filter((criterion) => (
+    criterion.apiCandidate &&
+    (!normalizedType || safeArray(criterion.types).map(normalizeType).includes(normalizedType))
+  ));
+}
+
+export function getDomainCriterionApiCandidate(criterionId, type = null) {
+  const normalizedCriterionId = normalizeString(criterionId);
+  const normalizedType = normalizeType(type);
+  if (!normalizedCriterionId) return null;
+
+  const criterion = domainQualityModel.criteria.find((entry) => entry.id === normalizedCriterionId);
+  if (!criterion?.apiCandidate) return null;
+  if (normalizedType && !safeArray(criterion.types).map(normalizeType).includes(normalizedType)) return null;
+
+  return {
+    criterionId: criterion.id,
+    label: criterion.label,
+    types: safeArray(criterion.types),
+    status: criterion.status,
+    activeCriterionId: criterion.activeCriterionId || null,
+    apiCandidate: criterion.apiCandidate
+  };
+}
+
 export function getDomainQualityModelSummary() {
   const summary = {
     applicability: domainQualityModel.applicability,
@@ -1372,6 +1480,12 @@ export function getDomainQualityModelSummary() {
     statusCounts: {},
     typeCounts: {},
     levelCounts: {},
+    apiCandidateCounts: {
+      total: 0,
+      documentedPrefix: 0,
+      existingPrefixNeedsTypeVerification: 0,
+      partialDocumentedPrefixes: 0
+    },
     activeCriterionMappings: {}
   };
 
@@ -1388,6 +1502,16 @@ export function getDomainQualityModelSummary() {
       const mapped = summary.activeCriterionMappings[criterion.activeCriterionId] || [];
       mapped.push(criterion.id);
       summary.activeCriterionMappings[criterion.activeCriterionId] = mapped;
+    }
+    if (criterion.apiCandidate) {
+      summary.apiCandidateCounts.total += 1;
+      if (criterion.apiCandidate.confidence === 'documented_prefix') {
+        summary.apiCandidateCounts.documentedPrefix += 1;
+      } else if (criterion.apiCandidate.confidence === 'existing_prefix_needs_type_verification') {
+        summary.apiCandidateCounts.existingPrefixNeedsTypeVerification += 1;
+      } else if (criterion.apiCandidate.confidence === 'partial_documented_prefixes') {
+        summary.apiCandidateCounts.partialDocumentedPrefixes += 1;
+      }
     }
   });
 

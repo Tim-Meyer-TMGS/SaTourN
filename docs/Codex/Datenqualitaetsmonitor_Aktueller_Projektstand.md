@@ -69,6 +69,17 @@ bereits technisch angebundene Pruefung; `needs_verification` bleibt fachlich
 gueltig, muss aber in Feldmapping/API-Query oder Server-Scan noch verifiziert
 werden.
 
+Technische API-Vorbereitung:
+
+- Das Fachmodell kann `apiCandidate`-Metadaten enthalten. Diese beschreiben
+  moegliche `q`-Abfragen aus der Meta Query Language, sind aber noch nicht
+  automatisch scorewirksam.
+- Dokumentiert vorbereitete Kandidaten sind unter anderem `street:*`,
+  `lat`/`lon`, `length`/`duration`, `details:*` fuer weitere Typen und
+  `attribute_license` fuer Event.
+- Aktivierung erfolgt erst nach echten positiven und negativen API-Tests pro
+  Datentyp. Count, Liste und Detailseite muessen dieselbe Regel verwenden.
+
 Aktiv:
 
 - `opening_hours_missing`: POI, Gastro; API-Pushdown verifiziert.

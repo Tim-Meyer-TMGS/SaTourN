@@ -2015,6 +2015,38 @@ body.statistik-page-body {
   font-weight: 850;
 }
 
+.statistik .help-api-note {
+  display: grid;
+  gap: 5px;
+  max-width: 340px;
+  color: #344054;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.statistik .help-api-note.good {
+  color: var(--green);
+  font-weight: 800;
+}
+
+.statistik .help-api-note.muted {
+  color: var(--muted);
+}
+
+.statistik .help-api-note code {
+  display: block;
+  max-width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #1d2939;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
 .statistik .stats-filter-card {
   display: grid;
   grid-template-columns: minmax(180px, .8fr) minmax(180px, .8fr) minmax(200px, .9fr) auto;

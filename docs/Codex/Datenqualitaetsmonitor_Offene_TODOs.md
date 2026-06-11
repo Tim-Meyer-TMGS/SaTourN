@@ -288,6 +288,41 @@ Arbeitsanweisung fuer Umsetzung:
 - Erst Query in Proxy/API testen, dann UI aktivieren.
 - Count, Liste und Detailbewertung muessen dieselbe fachliche Logik nutzen.
 
+Aktueller Arbeitsstand:
+
+- Die Meta-Service- und Meta-Query-Anleitungen wurden ausgewertet. Der
+  Search-Service unterstuetzt `q`, `type`, `limit`, `offset`, `request` und
+  Query-Prefixes. Reine Negativabfragen sollen mit `all:all` kombiniert
+  werden.
+- In `Statistik/quality.js` gibt es jetzt `apiCandidate`-Metadaten im
+  `domainQualityModel`. Diese Kandidaten sind technische Vorbereitungen, aber
+  noch keine aktiven Score- oder Pflegeaufgaben-Regeln.
+- Export-Helfer `getDomainApiCandidatesForType()` und
+  `getDomainCriterionApiCandidate()` liefern die Kandidaten fuer gezielte
+  Proxy-Tests.
+- API-Kandidaten aus dokumentierten Prefixes:
+  - `street:*` fuer Strassen-Kriterien bei Hotel, POI, Gastro und Event.
+  - `lat:* AND lon:*` als Teilpruefung fuer Geo-Informationen.
+  - `length` und `duration` als Teilpruefung fuer Tour-Basisdaten.
+- API-Kandidaten aus bereits im Monitor genutzten Prefixes:
+  - `details:*` fuer Hotel- und Event-Beschreibung, Typ-Test noch offen.
+  - `attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)` fuer Event-Lizenz,
+    Typ-Test noch offen.
+- Die Hilfeseite zeigt API-Kandidaten im fachlichen Kriterienmodell an. Aktive
+  Regeln bleiben getrennt davon erkennbar.
+
+Naechste technische Verifikation:
+
+- Fuer jeden `apiCandidate` in echten Daten einmal `positiveQuery` und
+  `missingQuery` ueber den Proxy testen.
+- Konkrete Testanfragen und Nachweisfelder stehen in
+  `docs/Codex/Datenqualitaetsmonitor_API_Pruefliste.md`.
+- Nur wenn Count, Fehlerliste und Detailbewertung denselben fachlichen Befund
+  liefern, darf der Kandidat in `qualityCriteria` aktiviert werden.
+- Kandidaten mit Teilpruefung (`geo_missing`, `touristtrip_incomplete`) nicht
+  direkt als vollstaendige Pflegeaufgabe aktivieren; hier muss zuerst geklaert
+  werden, ob die API alle Pflichtbestandteile abbilden kann.
+
 ## 5. Sonderfaelle aus Pflegeaufgaben ausschliessen
 
 Ziel: Objekte, die fachlich nicht pflegbar sind, duerfen keine falschen
