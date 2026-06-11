@@ -100,6 +100,10 @@ Aktiv:
   Fremdsprachen per API-Pushdown verifiziert.
 - `poi_suitability_missing`: POI; validierte OR-Liste gepruefter
   Eignungsangaben per API-Pushdown verifiziert.
+- `hotel_language_english_missing`: Hotel; Feature `Englisch`
+  per API-Pushdown verifiziert.
+- `hotel_payment_cash_missing`: Hotel; Feature `Barzahlung`
+  per API-Pushdown verifiziert.
 - `gastro_payment_options_missing`: Gastro; validierte OR-Liste gepruefter
   Zahlungsarten per API-Pushdown verifiziert.
 - `gastro_languages_missing`: Gastro; validierte OR-Liste gepruefter
@@ -108,8 +112,8 @@ Aktiv:
   `PKW-Parkplatz am Haus` per API-Pushdown verifiziert.
 - `gastro_cuisine_category_missing`: Gastro; validierte OR-Liste
   gepruefter Kuechenarten per API-Pushdown verifiziert.
-- `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package per
-  Server-Scan verifiziert.
+- `booking_link_missing`: Hotel per `keyword:"Bookable"` API-Pushdown
+  verifiziert, Package per Server-Scan verifiziert.
 
 Nicht als Pushdown aktiviert:
 
@@ -118,6 +122,8 @@ Nicht als Pushdown aktiviert:
   Tour-Start-/Zielbeschreibung.
 - `regionale Kueche` bleibt fuer Gastro bewusst offen, weil die Missing-Query
   nicht komplementaer zur Baseline war.
+- `booking:*` bleibt fuer Hotel bewusst ungenutzt; der Pushdown laeuft ueber
+  `keyword:"Bookable"`.
 
 Fachlich gueltig, aber nicht als automatische Pflegeaufgabe aktiv:
 `geo_missing`, `touristtrip_incomplete`, `manual_image_quality`.

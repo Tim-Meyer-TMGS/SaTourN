@@ -297,6 +297,9 @@ Aktueller Arbeitsstand:
 - Die spaeteren Pushdown-Erkenntnisse sind zusaetzlich in
   `docs/Codex/Datenqualitaetsmonitor_API_Pushdown_Erkenntnisse.md`
   abgelegt.
+- Die nachgeprueften Hotel-/Vermieter-Erkenntnisse sind zusaetzlich in
+  `docs/Codex/Datenqualitaetsmonitor_Hotel_Vermieter_Pushdown.md`
+  abgelegt.
 - In `Statistik/quality.js` gibt es jetzt `apiCandidate`-Metadaten im
   `domainQualityModel`. Diese Kandidaten sind technische Vorbereitungen, aber
   noch keine aktiven Score- oder Pflegeaufgaben-Regeln.
@@ -317,6 +320,9 @@ Aktueller Arbeitsstand:
   Zahlungsarten, Fremdsprachen, Parkmerkmalen, POI-Eignung und
   Gastro-Kuechenarten. Fehlende Werte nutzen serverseitig jetzt `all:all` als
   Missing-Anker.
+- Fuer Hotel sind jetzt die validierten Feature-Regeln `Englisch` und
+  `Barzahlung` aktiv. Die Buchbarkeit fuer Hotel laeuft serverseitig ueber
+  `keyword:"Bookable"` statt ueber `booking:*`.
 
 Naechste technische Verifikation:
 

@@ -377,11 +377,23 @@ function buildMissingPushdownQuery(query) {
   return `all:all -${normalized}`;
 }
 
+export function getKeywordValues(item = {}) {
+  return collectValueList(item, 'keywords', 'keywords_old');
+}
+
+export function hasKeyword(item = {}, value) {
+  const target = normalizeComparable(value);
+  if (!target) return false;
+  return getKeywordValues(item).some((entry) => normalizeComparable(entry) === target);
+}
+
 const VALIDATED_FEATURE_VALUES = Object.freeze({
   poiParking: Object.freeze(['Parkpl\u00e4tze vorhanden']),
   poiPayments: Object.freeze(['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'kontaktlose Zahlung']),
   poiLanguages: Object.freeze(['Englisch', 'Polnisch', 'Tschechisch']),
   poiSuitability: Object.freeze(['Familie', 'f\u00fcr Gruppen', 'Senioren geeignet', 'f\u00fcr Schulklassen', 'f\u00fcr jedes Wetter']),
+  hotelPayments: Object.freeze(['Barzahlung']),
+  hotelLanguages: Object.freeze(['Englisch']),
   gastroParking: Object.freeze(['PKW-Parkplatz am Haus']),
   gastroPayments: Object.freeze(['Barzahlung', 'EC-Karte']),
   gastroLanguages: Object.freeze(['Englisch', 'Polnisch'])
@@ -659,10 +671,10 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'good',
       fieldCandidates: ['paymentMethods', 'payment_old', 'features'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_payment_cash_missing',
       uiPriority: 'mittel',
-      recommendation: 'Zahlungsmoeglichkeiten ergaenzen.'
+      recommendation: 'Gepruefte Zahlungsarten als Merkmale ergaenzen.'
     },
     {
       id: 'hotel_price',
@@ -703,10 +715,10 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'very_good',
       fieldCandidates: ['features', 'features_old', 'attributes'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_language_english_missing',
       uiPriority: 'niedrig',
-      recommendation: 'Fremdsprachenkenntnisse ergaenzen.'
+      recommendation: 'Gepruefte Fremdsprachen als Merkmale ergaenzen.'
     },
     {
       id: 'hotel_license',
@@ -1470,6 +1482,48 @@ export const qualityCriteria = Object.freeze([
     check: (item) => !hasPublicTransportFeature(item)
   },
   {
+    id: 'hotel_language_english_missing',
+    label: 'Feature "Englisch" fehlt',
+    types: ['Hotel'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_languages'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.hotelLanguages),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.hotelLanguages)),
+      verified: true,
+      verifiedForTypes: ['Hotel']
+    },
+    recommendation: 'Feature "Englisch" ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.hotelLanguages)
+  },
+  {
+    id: 'hotel_payment_cash_missing',
+    label: 'Feature "Barzahlung" fehlt',
+    types: ['Hotel'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_payment'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.hotelPayments),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.hotelPayments)),
+      verified: true,
+      verifiedForTypes: ['Hotel']
+    },
+    recommendation: 'Feature "Barzahlung" ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.hotelPayments)
+  },
+  {
     id: 'poi_parking_feature_missing',
     label: 'Feature "Parkplaetze vorhanden" fehlt',
     types: ['POI'],
@@ -1658,9 +1712,10 @@ export const qualityCriteria = Object.freeze([
     apiByType: {
       Hotel: {
         method: 'api_pushdown',
-        positiveQuery: 'booking:*',
-        missingQuery: 'all:all -booking:*',
-        verified: true
+        positiveQuery: 'keyword:"Bookable"',
+        missingQuery: 'all:all -keyword:"Bookable"',
+        verified: true,
+        note: 'Nicht ueber booking:* pruefen. API-Pushdown fuer Hotel-Buchbarkeit laeuft ueber keyword:"Bookable".'
       },
       Package: {
         method: 'server_scan',
@@ -1671,7 +1726,11 @@ export const qualityCriteria = Object.freeze([
       }
     },
     recommendation: 'Buchungs-, Reservierungs- oder Ticketlink ergaenzen.',
-    check: (item) => !hasBookingLink(item)
+    check: (item) => (
+      normalizeType(item?.type) === 'Hotel'
+        ? !hasKeyword(item, 'Bookable')
+        : !hasBookingLink(item)
+    )
   }
 ]);
 
@@ -2192,6 +2251,8 @@ export const qualityHelpers = Object.freeze({
   getCategoryValues,
   hasCategory,
   hasAnyCategory,
+  getKeywordValues,
+  hasKeyword,
   hasDescription,
   hasImages,
   hasImageAuthor,
