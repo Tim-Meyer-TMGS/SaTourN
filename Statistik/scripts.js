@@ -1893,6 +1893,26 @@ document.addEventListener('DOMContentLoaded', () => {
     location.href = `records.html?${params.toString()}`;
   }
 
+  function openOverviewIssueOnRecordsPage(issue) {
+    if (!issue?.criterionId) return;
+
+    const preferredType = state.context.type
+      || (issue.affectedTypes?.length === 1 ? issue.affectedTypes[0] : '');
+
+    saveRecordViewState({
+      criterionId: issue.criterionId,
+      type: preferredType,
+      label: issue.label,
+      context: state.context
+    });
+
+    const params = new URLSearchParams();
+    params.set('criterionId', issue.criterionId);
+    if (preferredType) params.set('type', preferredType);
+    params.set('from', 'overview');
+    location.href = `records.html?${params.toString()}`;
+  }
+
   async function loadTaskRecords() {
     const task = state.selectedTask;
     const type = state.selectedTaskType || task?.affectedTypes?.[0] || '';
@@ -2026,11 +2046,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRecordsLoading();
 
     try {
-      const usesCriterionView = state.pendingRecordView?.criterionId && state.pendingRecordView?.type;
+      const usesCriterionView = Boolean(state.pendingRecordView?.criterionId);
       const selectedIssue = els.recordIssueFilter?.value || '';
       const selectedType = els.recordTypeFilter?.value || state.context.type || '';
       const evaluated = usesCriterionView
-        ? await loadRecordRowsForView(state.pendingRecordView)
+        ? state.pendingRecordView?.type
+          ? await loadRecordRowsForView(state.pendingRecordView)
+          : await loadRecordRowsForIssueSelection(state.pendingRecordView.criterionId, '')
         : selectedIssue
           ? await loadRecordRowsForIssueSelection(selectedIssue, selectedType)
           : [];
@@ -3393,7 +3415,16 @@ document.addEventListener('DOMContentLoaded', () => {
     els.topTasksList.replaceChildren(...issues.map((issue) => {
       const link = document.createElement('a');
       link.className = 'task-row';
-      link.href = 'tasks.html';
+      const preferredType = state.context.type || (issue.affectedTypes?.length === 1 ? issue.affectedTypes[0] : '');
+      const params = new URLSearchParams();
+      params.set('criterionId', issue.criterionId);
+      if (preferredType) params.set('type', preferredType);
+      params.set('from', 'overview');
+      link.href = `records.html?${params.toString()}`;
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        openOverviewIssueOnRecordsPage(issue);
+      });
       const statusClass = issue.priority === 'hoch' ? 'critical' : 'review';
       link.innerHTML = `
         <span class="task-icon ${statusClass}" aria-hidden="true">${taskIcon(issue.criterionId)}</span>
