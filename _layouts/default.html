@@ -11,6 +11,44 @@
     <link rel="stylesheet" href="{{ page.css | relative_url }}">
   {% endif %}
 
+  <script>
+    window.SATOURN_RUNTIME = window.SATOURN_RUNTIME || Object.freeze({
+      generatedAt: '2026-06-11',
+      consent: {
+        version: '2026-06-11',
+        categories: ['essential', 'external_ui', 'automation', 'analytics'],
+        optionalDefaults: {
+          external_ui: false,
+          automation: false,
+          analytics: false
+        }
+      },
+      externalServices: [
+        {
+          id: 'destination-one-proxy',
+          category: 'essential',
+          active: true,
+          host: 'satourn.onrender.com',
+          purpose: 'Proxy fuer Suche, Counts und Qualitaetsabfragen'
+        },
+        {
+          id: 'google-fonts-css',
+          category: 'external_ui',
+          active: true,
+          host: 'fonts.googleapis.com',
+          purpose: 'Roboto und Material Icons Stylesheets'
+        },
+        {
+          id: 'google-fonts-files',
+          category: 'external_ui',
+          active: true,
+          host: 'fonts.gstatic.com',
+          purpose: 'Schriftdateien fuer Roboto und Material Icons'
+        }
+      ]
+    });
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">

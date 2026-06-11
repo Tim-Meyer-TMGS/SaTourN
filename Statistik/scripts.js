@@ -1,4 +1,4 @@
-import { downloadText, extractId, extractItems, extractTotal, fetchJson } from '../lib/browser.js';
+import { downloadText, extractId, extractItems, extractTotal, fetchJson as rawFetchJson } from '../lib/browser.js';
 import { evaluateAllItems, evaluateQualityForItem, getQualityAggregations, getQualityScanConfig, qualityCriteria, qualityHelpers } from './quality.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -27,6 +27,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const RECORD_VIEW_STATE_KEY = 'satournRecordViewState';
   const RECORD_LIST_STATE_KEY = 'satournRecordListState';
   const KPI_HISTORY_KEY = 'satournOverviewKpis';
+  const CONSENT_STORAGE_KEY = 'satournConsentSettings';
+  const RUNTIME_CONFIG = window.SATOURN_RUNTIME || {};
+  const REQUEST_CACHE_TTL_MS = Object.freeze({
+    searchCount: 45_000,
+    autocomplete: 15_000,
+    qualityCount: 60_000,
+    qualityScan: 20_000,
+    qualityList: 120_000,
+    qualitySnapshot: 120_000
+  });
+  const transientRequestCache = new Map();
+  const transientRequestInflight = new Map();
   const AREAS = [
     ['Sachsen', ''],
     ['Leipzig', 'Leipzig'],
@@ -181,7 +193,17 @@ document.addEventListener('DOMContentLoaded', () => {
     statsLicenseTaskCount: document.getElementById('stats-license-task-count'),
     statsLicenseTaskShare: document.getElementById('stats-license-task-share'),
     helpModelSummary: document.getElementById('help-model-summary'),
-    helpTypeGrid: document.getElementById('help-type-grid')
+    helpTypeGrid: document.getElementById('help-type-grid'),
+    helpPrivacySummary: document.getElementById('help-privacy-summary'),
+    helpLocalStorageList: document.getElementById('help-local-storage-list'),
+    helpExternalServicesList: document.getElementById('help-external-services-list'),
+    helpConsentCategoryList: document.getElementById('help-consent-category-list'),
+    consentSettingsButton: document.getElementById('consent-settings-button'),
+    consentDialog: document.getElementById('consent-dialog'),
+    consentForm: document.getElementById('consent-form'),
+    consentExternalUi: document.getElementById('consent-external-ui'),
+    consentAutomation: document.getElementById('consent-automation'),
+    consentAnalytics: document.getElementById('consent-analytics')
   };
 
   let state = {
@@ -233,6 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
     taskLoadId: 0
   };
 
+  let consentState = loadConsentState();
+
   if (page === 'records') {
     state.pendingRecordView = loadRecordViewStateFromRoute();
     if (state.pendingRecordView?.context) {
@@ -251,16 +275,24 @@ document.addEventListener('DOMContentLoaded', () => {
   function initSharedShell() {
     fillContextControls();
     renderWorkContext();
+    syncConsentControls();
 
     els.contextSummary?.addEventListener('click', openContextDialog);
     els.contextEdit?.addEventListener('click', openContextDialog);
     els.contextForm?.addEventListener('submit', handleContextSubmit);
+    els.consentSettingsButton?.addEventListener('click', openConsentDialog);
+    els.consentForm?.addEventListener('submit', handleConsentSubmit);
+    els.refreshButton?.addEventListener('click', markForceFresh, { capture: true });
   }
 
   function initOverview() {
     renderOverviewLoading();
-    els.refreshButton?.addEventListener('click', () => loadOverviewDataAsync());
+    els.refreshButton?.addEventListener('click', () => {
+      clearTransientRequestCache();
+      void loadOverviewDataAsync();
+    });
     els.quickExport?.addEventListener('click', exportOverviewCsv);
+    els.quickAi?.addEventListener('click', interceptQuickAiConsent, { capture: true });
     els.quickAi?.addEventListener('click', () => showMessage('Die KI-Analyse wird als dezente Aktion in einem späteren Schritt angebunden.'));
     void loadOverviewDataAsync();
   }
@@ -361,6 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fillStatsFilters();
     renderStatsLoading();
     els.refreshButton?.addEventListener('click', () => loadStatsDataAsync());
+    els.statsRefresh?.addEventListener('click', markForceFresh, { capture: true });
     els.statsRefresh?.addEventListener('click', applyStatsFiltersAndLoad);
     els.statsExport?.addEventListener('click', exportStatsCsv);
     els.statsResetFilters?.addEventListener('click', resetStatsFilters);
@@ -381,17 +414,216 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHelpPage();
   }
 
+  function markForceFresh() {
+    state.forceFreshUntil = Date.now() + 1500;
+  }
+
+  function shouldForceFresh() {
+    return Number(state.forceFreshUntil || 0) > Date.now();
+  }
+
+  function clearTransientRequestCache() {
+    transientRequestCache.clear();
+    transientRequestInflight.clear();
+  }
+
+  function cloneJsonValue(value) {
+    if (value == null) return value;
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function getRequestCacheTtl(url) {
+    try {
+      const parsed = new URL(url, location.href);
+      if (/\/api\/quality\/snapshot$/.test(parsed.pathname)) return REQUEST_CACHE_TTL_MS.qualitySnapshot;
+      if (/\/api\/quality\/list$/.test(parsed.pathname)) return REQUEST_CACHE_TTL_MS.qualityList;
+      if (/\/api\/quality\/count$/.test(parsed.pathname)) return REQUEST_CACHE_TTL_MS.qualityCount;
+      if (/\/api\/quality\/scan$/.test(parsed.pathname)) return REQUEST_CACHE_TTL_MS.qualityScan;
+      if (/\/api\/autocomplete$/.test(parsed.pathname)) return REQUEST_CACHE_TTL_MS.autocomplete;
+      if (/\/api\/search$/.test(parsed.pathname) && parsed.searchParams.get('limit') === '1') return REQUEST_CACHE_TTL_MS.searchCount;
+    } catch {
+      return 0;
+    }
+    return 0;
+  }
+
+  async function fetchJsonCached(url, options = {}) {
+    const {
+      optional404 = false,
+      forceFresh = shouldForceFresh(),
+      cacheTtlMs = getRequestCacheTtl(url)
+    } = options;
+
+    if (!forceFresh && cacheTtlMs > 0) {
+      const cached = transientRequestCache.get(url);
+      if (cached && cached.expiresAt > Date.now()) return cloneJsonValue(cached.value);
+      const inflight = transientRequestInflight.get(url);
+      if (inflight) return cloneJsonValue(await inflight);
+    }
+
+    const request = (async () => {
+      const payload = optional404
+        ? await fetchJsonOptionalUncached(url)
+        : await rawFetchJson(url);
+      if (cacheTtlMs > 0) {
+        transientRequestCache.set(url, {
+          value: cloneJsonValue(payload),
+          expiresAt: Date.now() + cacheTtlMs
+        });
+      }
+      return payload;
+    })();
+
+    if (!forceFresh && cacheTtlMs > 0) transientRequestInflight.set(url, request);
+
+    try {
+      return cloneJsonValue(await request);
+    } finally {
+      transientRequestInflight.delete(url);
+    }
+  }
+
+  function getConsentDefaults() {
+    const defaults = RUNTIME_CONFIG.consent?.optionalDefaults || {};
+    return {
+      essential: true,
+      external_ui: Boolean(defaults.external_ui),
+      automation: Boolean(defaults.automation),
+      analytics: Boolean(defaults.analytics)
+    };
+  }
+
+  function loadConsentState() {
+    const defaults = getConsentDefaults();
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) || '{}');
+      return {
+        essential: true,
+        external_ui: parsed.external_ui ?? defaults.external_ui,
+        automation: parsed.automation ?? defaults.automation,
+        analytics: parsed.analytics ?? defaults.analytics,
+        updatedAt: parsed.updatedAt || ''
+      };
+    } catch {
+      return {
+        essential: true,
+        external_ui: defaults.external_ui,
+        automation: defaults.automation,
+        analytics: defaults.analytics,
+        updatedAt: ''
+      };
+    }
+  }
+
+  function saveConsentState() {
+    const payload = {
+      external_ui: Boolean(consentState.external_ui),
+      automation: Boolean(consentState.automation),
+      analytics: Boolean(consentState.analytics),
+      updatedAt: new Date().toISOString()
+    };
+    consentState = {
+      essential: true,
+      ...payload
+    };
+    try {
+      localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // localStorage may be unavailable in strict privacy contexts.
+    }
+    window.dispatchEvent(new CustomEvent('satourn:consent-change', {
+      detail: { ...consentState }
+    }));
+  }
+
+  function hasConsent(category) {
+    if (!category || category === 'essential') return true;
+    return Boolean(consentState?.[category]);
+  }
+
+  function syncConsentControls() {
+    if (els.consentExternalUi) els.consentExternalUi.checked = hasConsent('external_ui');
+    if (els.consentAutomation) els.consentAutomation.checked = hasConsent('automation');
+    if (els.consentAnalytics) els.consentAnalytics.checked = hasConsent('analytics');
+  }
+
+  function openConsentDialog() {
+    syncConsentControls();
+    if (typeof els.consentDialog?.showModal === 'function') {
+      els.consentDialog.showModal();
+    } else {
+      els.consentDialog?.setAttribute('open', '');
+    }
+  }
+
+  function handleConsentSubmit(event) {
+    if (event.submitter?.value === 'cancel') return;
+    event.preventDefault();
+    consentState.external_ui = Boolean(els.consentExternalUi?.checked);
+    consentState.automation = Boolean(els.consentAutomation?.checked);
+    consentState.analytics = Boolean(els.consentAnalytics?.checked);
+    saveConsentState();
+    renderHelpPrivacySection();
+    els.consentDialog?.close?.();
+  }
+
+  function interceptQuickAiConsent(event) {
+    if (hasConsent('automation')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    showMessage('Optionale Automatisierung ist derzeit nicht freigegeben.');
+  }
+
   function renderHelpPage() {
     if (els.helpModelSummary) {
       els.helpModelSummary.textContent = 'Fehlende Kriterien ziehen den Score direkt um ihr Gewicht ab. Die Karten unten zeigen pro Datentyp die kleinste sinnvolle Pflegekombination für einen guten Score und die zusätzlichen Angaben für 100 Punkte.';
     }
     renderHelpTypeOverview();
+    renderHelpPrivacySection();
   }
 
   function renderHelpTypeOverview() {
     if (!els.helpTypeGrid) return;
     const cards = TYPES.map((type) => buildHelpTypeCard(type)).join('');
     els.helpTypeGrid.innerHTML = cards;
+  }
+
+  function renderHelpPrivacySection() {
+    const localStorageEntries = [
+      'Arbeitskontext: Gebiet, Ort und Datentyp',
+      'Consent-Einstellungen fuer optionale Kategorien',
+      'Zuletzt berechnete KPI-Vergleichswerte fuer die Uebersicht',
+      'Temporare Listen- und Detailnavigation nur in der laufenden Sitzung'
+    ];
+    const externalServices = Array.isArray(RUNTIME_CONFIG.externalServices) ? RUNTIME_CONFIG.externalServices : [];
+    const categoryRows = [
+      ['Essenziell', 'Aktiv fuer Navigation, Proxy und Kernfunktionen', true],
+      ['Externe UI-Dienste', hasConsent('external_ui') ? 'Vom Nutzer freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('external_ui')],
+      ['Automatisierung', hasConsent('automation') ? 'Freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('automation')],
+      ['Analytics', hasConsent('analytics') ? 'Freigegeben' : 'Nicht produktiv aktiv', hasConsent('analytics')]
+    ];
+
+    if (els.helpPrivacySummary) {
+      const activeOptional = categoryRows.filter(([, , enabled]) => enabled).length - 1;
+      els.helpPrivacySummary.textContent = activeOptional > 0
+        ? `Essenzielle Funktionen sind aktiv. ${formatNumber(activeOptional)} optionale Kategorie ist derzeit freigegeben.`
+        : 'Essenzielle Funktionen sind aktiv. Optionale Kategorien sind vorbereitet, derzeit aber standardmaessig deaktiviert.';
+    }
+    if (els.helpLocalStorageList) {
+      els.helpLocalStorageList.innerHTML = localStorageEntries
+        .map((entry) => `<li>${escapeHtml(entry)}</li>`)
+        .join('');
+    }
+    if (els.helpExternalServicesList) {
+      els.helpExternalServicesList.innerHTML = externalServices.length
+        ? externalServices.map((service) => `<li><strong>${escapeHtml(service.host || service.id)}</strong><br><small>${escapeHtml(service.purpose || '')}</small></li>`).join('')
+        : '<li>Keine externen Dienste hinterlegt.</li>';
+    }
+    if (els.helpConsentCategoryList) {
+      els.helpConsentCategoryList.innerHTML = categoryRows
+        .map(([label, text, enabled]) => `<li><strong>${escapeHtml(label)}</strong><br><small>${escapeHtml(text)}</small><span class="status-badge ${enabled ? 'good' : 'muted'}">${enabled ? 'Aktiv' : 'Aus'}</span></li>`)
+        .join('');
+    }
   }
 
   function buildHelpTypeCard(type) {
@@ -605,6 +837,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleContextSubmit(event) {
     if (event.submitter?.value === 'cancel') return;
     event.preventDefault();
+    clearTransientRequestCache();
+    markForceFresh();
     saveWorkContext({
       area: els.contextArea?.value || '',
       city: els.contextCity?.value.trim() || '',
@@ -642,7 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${API_BASE}?${params.toString()}`;
   }
 
-  async function fetchJsonOptional(url) {
+  async function fetchJsonOptionalUncached(url) {
     const response = await fetch(url, { cache: 'no-store' });
     const text = await response.text();
     if (response.status === 404) return null;
@@ -663,7 +897,7 @@ document.addEventListener('DOMContentLoaded', () => {
     state.qualitySnapshot = null;
     let snapshot = null;
     try {
-      snapshot = await fetchJsonOptional(buildQualitySnapshotUrl());
+      snapshot = await fetchJsonCached(buildQualitySnapshotUrl(), { optional404: true });
     } catch (error) {
       console.warn('Qualitaets-Snapshot konnte nicht aus dem Cache geladen werden.', error);
       return null;
@@ -846,8 +1080,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const results = await Promise.all(targetTypes.map(async (type) => {
       try {
         const [totalPayload, openDataPayload] = await Promise.all([
-          fetchJson(buildUrl(type, query, { limit: 1 })),
-          fetchJson(buildUrl(type, query, { limit: 1, isOpenData: true }))
+          fetchJsonCached(buildUrl(type, query, { limit: 1 })),
+          fetchJsonCached(buildUrl(type, query, { limit: 1, isOpenData: true }))
         ]);
         const row = {
           type,
@@ -875,8 +1109,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetTypes = state.context.type ? [state.context.type] : TYPES;
     return Promise.all(targetTypes.map(async (type) => {
       const [totalPayload, openDataPayload] = await Promise.all([
-        fetchJson(buildUrl(type, query, { limit: 1 })),
-        fetchJson(buildUrl(type, query, { limit: 1, isOpenData: true }))
+        fetchJsonCached(buildUrl(type, query, { limit: 1 })),
+        fetchJsonCached(buildUrl(type, query, { limit: 1, isOpenData: true }))
       ]);
       return {
         type,
@@ -943,7 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       try {
         while (!isStale() && pages < maxPages) {
-          const payload = await fetchJson(buildUrl(type, query, { limit: pageSize, offset }));
+          const payload = await fetchJsonCached(buildUrl(type, query, { limit: pageSize, offset }));
           const pageItems = extractItems(payload);
           const pageTotal = extractTotal(payload);
           if (Number.isFinite(pageTotal)) shared.estimatedByType[type] = pageTotal;
@@ -1279,7 +1513,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadCachedQualityList({ criterionId, type, query }) {
     if (!USE_QUALITY_CACHE) return null;
     try {
-      return await fetchJsonOptional(buildQualityListUrl({ criterionId, type, query }));
+      return await fetchJsonCached(buildQualityListUrl({ criterionId, type, query }), { optional404: true });
     } catch (error) {
       console.warn('Qualitaetsliste konnte nicht aus dem Cache geladen werden.', error);
       return null;
@@ -1328,7 +1562,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
-        const payload = await fetchJson(buildQualityCountUrl(criterion.id, type, query));
+        const payload = await fetchJsonCached(buildQualityCountUrl(criterion.id, type, query));
         const count = Number(payload?.count || 0);
         if (!issueMap.has(criterion.id)) {
           issueMap.set(criterion.id, {
@@ -1661,7 +1895,7 @@ document.addEventListener('DOMContentLoaded', () => {
         type,
         query
       });
-      const payload = cachedPayload || await fetchJson(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
+      const payload = cachedPayload || await fetchJsonCached(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
       const rows = extractItems(payload).map((item) => normalizeItem(item, type));
       state.taskRecordRows = rows;
       state.taskRecordMeta = payload;
@@ -1832,7 +2066,7 @@ document.addEventListener('DOMContentLoaded', () => {
       type: view.type,
       query
     });
-    const payload = cachedPayload || await fetchJson(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
+    const payload = cachedPayload || await fetchJsonCached(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
     const rows = extractItems(payload).map((item) => normalizeItem(item, view.type));
     const pageInfo = payload?.page || {};
     const stats = payload?.stats || {};
@@ -1998,7 +2232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const type of targetTypes) {
       for (const variant of queryVariants) {
         const combinedQuery = [contextQuery, variant].filter(Boolean).join(' AND ');
-        const payload = await fetchJson(buildUrl(type, combinedQuery, { limit: 10 }));
+        const payload = await fetchJsonCached(buildUrl(type, combinedQuery, { limit: 10 }));
         results.push(...extractItems(payload).map((raw) => normalizeItem(raw, type)));
         if (results.length) break;
       }
@@ -2018,7 +2252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const perTypeLimit = selectedType ? 40 : 15;
     const payloads = await Promise.all(targetTypes.map(async (type) => {
       try {
-        const payload = await fetchJson(buildUrl(type, combinedQuery, { limit: perTypeLimit }));
+        const payload = await fetchJsonCached(buildUrl(type, combinedQuery, { limit: perTypeLimit }));
         return {
           type,
           payload,
@@ -2066,7 +2300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (selectedType) params.set('type', selectedType);
 
     try {
-      const payload = await fetchJson(`${AUTOCOMPLETE_API_BASE}?${params.toString()}`);
+      const payload = await fetchJsonCached(`${AUTOCOMPLETE_API_BASE}?${params.toString()}`);
       if (requestId !== state.recordAutocompleteRequestId) return;
       renderRecordAutocomplete(normalizeAutocompleteSuggestions(payload));
     } catch (error) {
@@ -2510,7 +2744,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     for (const targetType of targetTypes) {
       for (const variant of variants) {
-        const payload = await fetchJson(buildUrl(targetType, variant, { limit: 5 }));
+        const payload = await fetchJsonCached(buildUrl(targetType, variant, { limit: 5 }));
         const item = extractItems(payload).find((entry) => {
           const entryId = String(extractId(entry) || '');
           const entryGlobalId = String(getFirst(entry, ['global_id', 'globalId']) || '');

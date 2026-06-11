@@ -1,6 +1,6 @@
 # Datenqualitaets-Monitor - Aktueller Projektstand
 
-Stand: 2026-06-05
+Stand: 2026-06-11
 
 `Statistik/` ist ein statisches GitHub-Pages-Frontend mit Vanilla JavaScript
 und Node/Express-Proxy fuer Destination.One/eT4-Requests. Es gibt keine neue
@@ -37,9 +37,17 @@ funktionieren damit unter
 - Vorbereitete Cache-Endpunkte (`/api/quality/snapshot`, `/api/quality/list`)
   werden im Frontend nur genutzt, wenn `window.SATOURN_USE_QUALITY_CACHE`
   explizit aktiv ist.
+- Zusaetzlich gibt es nun einen kurzen Browser-In-Memory-Cache mit
+  Request-Deduplizierung fuer wiederholte GET-Abfragen. Er beschleunigt
+  identische Requests innerhalb einer Sitzung, ersetzt aber keinen
+  serverseitigen Snapshot- oder Redis-Cache.
 - Arbeitskontext besteht aus Gebiet, Ort und Datentyp und wird klein in
   `localStorage` gespeichert. API-Antworten, Rohdaten, Fehlerlisten, Secrets
   und KI-Kontexte werden nicht lokal persistiert.
+- Consent ist technisch vorbereitet: Runtime-Inventar externer Dienste,
+  lokale Consent-Einstellungen fuer optionale Kategorien und ein
+  Datenschutz-/Consent-Bereich auf der Help-Seite. Ein echter
+  Consentmanager ist noch nicht produktiv angeschlossen.
 - Ganz Sachsen bekommt keinen Qualitaets-Score. Erst bei Gebiet oder Ort
   startet die Uebersicht einen asynchronen regionalen Datensatzscan und
   berechnet Score/Status aus den geladenen Datensaetzen.

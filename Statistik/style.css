@@ -2030,6 +2030,74 @@ body.statistik-page-body {
   padding: 0;
 }
 
+.statistik .help-privacy-card {
+  margin-top: 18px;
+}
+
+.statistik .help-privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.statistik .help-privacy-grid h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.statistik .help-privacy-grid .help-checklist li {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.statistik .help-privacy-grid .help-checklist small {
+  color: var(--muted);
+}
+
+.statistik .consent-dialog {
+  max-width: 640px;
+}
+
+.statistik .consent-option {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.statistik .consent-option:first-of-type {
+  border-top: 0;
+}
+
+.statistik .consent-option span {
+  display: grid;
+  gap: 4px;
+}
+
+.statistik .consent-option strong {
+  font-size: 14px;
+}
+
+.statistik .consent-option small {
+  color: var(--muted);
+}
+
+.statistik .consent-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.statistik .consent-option.is-required {
+  opacity: .85;
+}
+
 .statistik .help-checkitem {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);

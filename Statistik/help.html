@@ -112,6 +112,30 @@ module: true
         </header>
         <div id="help-type-grid" class="help-type-grid"></div>
       </section>
+
+      <section class="panel-card help-privacy-card" aria-labelledby="help-privacy-title">
+        <header class="panel-head">
+          <div>
+            <h2 id="help-privacy-title">Datenschutz und lokale Speicherung</h2>
+            <p class="data-note" id="help-privacy-summary">Datenschutz-Informationen werden geladen ...</p>
+          </div>
+          <button id="consent-settings-button" class="context-edit" type="button">Consent verwalten</button>
+        </header>
+        <div class="help-privacy-grid">
+          <article>
+            <h3>Lokal im Browser</h3>
+            <ul id="help-local-storage-list" class="help-checklist"></ul>
+          </article>
+          <article>
+            <h3>Aktive externe Verbindungen</h3>
+            <ul id="help-external-services-list" class="help-checklist"></ul>
+          </article>
+          <article>
+            <h3>Optionale Kategorien</h3>
+            <ul id="help-consent-category-list" class="help-checklist"></ul>
+          </article>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -136,6 +160,48 @@ module: true
       <footer>
         <button value="cancel" type="submit">Abbrechen</button>
         <button class="primary" value="default" type="submit">Übernehmen</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="consent-dialog" class="context-dialog consent-dialog" aria-labelledby="consent-dialog-title">
+    <form method="dialog" id="consent-form">
+      <header>
+        <h2 id="consent-dialog-title">Consent verwalten</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schliessen"><span class="material-icons" aria-hidden="true">close</span></button>
+      </header>
+      <p class="data-note">Essenzielle Funktionen bleiben aktiv. Optionale Kategorien sind fuer spaetere Erweiterungen vorbereitet und derzeit standardmaessig deaktiviert.</p>
+      <label class="consent-option is-required">
+        <span>
+          <strong>Essenzielle Funktionen</strong>
+          <small>Arbeitskontext, Navigation und Proxy-Abfragen</small>
+        </span>
+        <input id="consent-essential" type="checkbox" checked disabled>
+      </label>
+      <label class="consent-option">
+        <span>
+          <strong>Externe UI-Dienste</strong>
+          <small>Schriften und Icons von Drittanbietern</small>
+        </span>
+        <input id="consent-external-ui" type="checkbox">
+      </label>
+      <label class="consent-option">
+        <span>
+          <strong>Automatisierung</strong>
+          <small>Optionale Analyse- und Assistenzaktionen</small>
+        </span>
+        <input id="consent-automation" type="checkbox">
+      </label>
+      <label class="consent-option">
+        <span>
+          <strong>Analytics</strong>
+          <small>Derzeit nicht aktiv im Produktivbetrieb</small>
+        </span>
+        <input id="consent-analytics" type="checkbox">
+      </label>
+      <footer>
+        <button value="cancel" type="submit">Schliessen</button>
+        <button id="consent-save-button" class="primary" value="default" type="submit">Speichern</button>
       </footer>
     </form>
   </dialog>
