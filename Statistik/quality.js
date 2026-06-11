@@ -286,6 +286,13 @@ export function hasFeature(item = {}, value) {
   return getFeatureValues(item).some((entry) => normalizeComparable(entry) === target);
 }
 
+export function hasAnyFeature(item = {}, values = []) {
+  const targets = safeArray(values).map(normalizeComparable).filter(Boolean);
+  if (!targets.length) return false;
+  const targetSet = new Set(targets);
+  return getFeatureValues(item).some((entry) => targetSet.has(normalizeComparable(entry)));
+}
+
 function isPublicTransportValue(value) {
   const text = normalizeComparable(value)
     .replace(/\u00f6/g, 'oe')
@@ -334,6 +341,55 @@ export function getAreaValues(item = {}) {
 export function getCategoryValues(item = {}) {
   return collectValueList(item, 'categories', 'categories_old');
 }
+
+export function hasCategory(item = {}, value) {
+  const target = normalizeComparable(value);
+  if (!target) return false;
+  return getCategoryValues(item).some((entry) => normalizeComparable(entry) === target);
+}
+
+export function hasAnyCategory(item = {}, values = []) {
+  const targets = safeArray(values).map(normalizeComparable).filter(Boolean);
+  if (!targets.length) return false;
+  const targetSet = new Set(targets);
+  return getCategoryValues(item).some((entry) => targetSet.has(normalizeComparable(entry)));
+}
+
+function escapeMetaQueryValue(value) {
+  return String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"');
+}
+
+function buildQuotedOrQuery(prefix, values = []) {
+  const tokens = safeArray(values)
+    .map(normalizeString)
+    .filter(Boolean)
+    .map((value) => `${prefix}:"${escapeMetaQueryValue(value)}"`);
+  if (!tokens.length) return null;
+  if (tokens.length === 1) return tokens[0];
+  return `(${tokens.join(' OR ')})`;
+}
+
+function buildMissingPushdownQuery(query) {
+  const normalized = normalizeString(query);
+  if (!normalized) return 'all:all';
+  return `all:all -${normalized}`;
+}
+
+const VALIDATED_FEATURE_VALUES = Object.freeze({
+  poiParking: Object.freeze(['Parkpl\u00e4tze vorhanden']),
+  poiPayments: Object.freeze(['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'kontaktlose Zahlung']),
+  poiLanguages: Object.freeze(['Englisch', 'Polnisch', 'Tschechisch']),
+  poiSuitability: Object.freeze(['Familie', 'f\u00fcr Gruppen', 'Senioren geeignet', 'f\u00fcr Schulklassen', 'f\u00fcr jedes Wetter']),
+  gastroParking: Object.freeze(['PKW-Parkplatz am Haus']),
+  gastroPayments: Object.freeze(['Barzahlung', 'EC-Karte']),
+  gastroLanguages: Object.freeze(['Englisch', 'Polnisch'])
+});
+
+const VALIDATED_CATEGORY_VALUES = Object.freeze({
+  gastroCuisine: Object.freeze(['vegetarisch', 'deutsch', 'italienisch'])
+});
 
 function parseDate(value) {
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
@@ -875,8 +931,8 @@ export const domainQualityModel = Object.freeze({
       types: ['POI'],
       level: 'very_good',
       fieldCandidates: ['paymentMethods', 'payment_old', 'features'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'poi_payment_options_missing',
       uiPriority: 'niedrig',
       recommendation: 'Zahlungsmoeglichkeiten ergaenzen.'
     },
@@ -902,6 +958,39 @@ export const domainQualityModel = Object.freeze({
       activeCriterionId: 'public_transport_missing',
       uiPriority: 'mittel',
       recommendation: 'OePNV-Anreiseinformationen ergaenzen.'
+    },
+    {
+      id: 'poi_languages',
+      label: 'Fremdsprachenkenntnisse',
+      types: ['POI'],
+      level: 'very_good',
+      fieldCandidates: ['features', 'features_old', 'attributes'],
+      status: 'active',
+      activeCriterionId: 'poi_languages_missing',
+      uiPriority: 'niedrig',
+      recommendation: 'Gepruefte Fremdsprachen als Merkmale ergaenzen.'
+    },
+    {
+      id: 'poi_parking',
+      label: 'Parkplaetze',
+      types: ['POI'],
+      level: 'supporting',
+      fieldCandidates: ['features', 'features_old', 'texts[rel=directions]'],
+      status: 'active',
+      activeCriterionId: 'poi_parking_feature_missing',
+      uiPriority: 'niedrig',
+      recommendation: 'Parkplatzinformation als Merkmal ergaenzen.'
+    },
+    {
+      id: 'poi_suitability',
+      label: 'Eignung',
+      types: ['POI'],
+      level: 'supporting',
+      fieldCandidates: ['features', 'features_old'],
+      status: 'active',
+      activeCriterionId: 'poi_suitability_missing',
+      uiPriority: 'niedrig',
+      recommendation: 'Gepruefte Eignungsangaben als Merkmale ergaenzen.'
     },
     {
       id: 'gastro_phone',
@@ -992,8 +1081,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'good',
       fieldCandidates: ['paymentMethods', 'payment_old', 'features'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_payment_options_missing',
       uiPriority: 'mittel',
       recommendation: 'Zahlungsmoeglichkeiten ergaenzen.'
     },
@@ -1015,10 +1104,10 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'very_good',
       fieldCandidates: ['cuisineTypes', 'cuisine_types_old', 'features'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_cuisine_category_missing',
       uiPriority: 'niedrig',
-      recommendation: 'Kuechenart ergaenzen.'
+      recommendation: 'Gepruefte Kuechenarten als Kategorien ergaenzen.'
     },
     {
       id: 'gastro_languages',
@@ -1026,10 +1115,10 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'very_good',
       fieldCandidates: ['features', 'features_old', 'attributes'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_languages_missing',
       uiPriority: 'niedrig',
-      recommendation: 'Fremdsprachenkenntnisse ergaenzen.'
+      recommendation: 'Gepruefte Fremdsprachen als Merkmale ergaenzen.'
     },
     {
       id: 'gastro_directions',
@@ -1048,10 +1137,10 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'very_good',
       fieldCandidates: ['features', 'features_old', 'texts[rel=directions]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_parking_feature_missing',
       uiPriority: 'niedrig',
-      recommendation: 'Parkplatzinformationen ergaenzen.'
+      recommendation: 'Feature "PKW-Parkplatz am Haus" ergaenzen.'
     },
     {
       id: 'gastro_kitchen',
@@ -1261,7 +1350,7 @@ export const qualityCriteria = Object.freeze([
     method: 'api_pushdown',
     api: {
       positiveQuery: 'openings:*',
-      missingQuery: '*:* -openings:*',
+      missingQuery: 'all:all -openings:*',
       verified: true,
       verifiedForTypes: ['POI', 'Gastro']
     },
@@ -1283,7 +1372,7 @@ export const qualityCriteria = Object.freeze([
     method: 'api_pushdown',
     api: {
       positiveQuery: 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
-      missingQuery: '*:* -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
+      missingQuery: 'all:all -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
       verified: true,
       verifiedForTypes: ['POI', 'Gastro', 'Tour', 'Hotel', 'Package']
     },
@@ -1304,7 +1393,7 @@ export const qualityCriteria = Object.freeze([
     method: 'api_pushdown',
     api: {
       positiveQuery: 'details:*',
-      missingQuery: '*:* -details:*',
+      missingQuery: 'all:all -details:*',
       verified: true,
       verifiedForTypes: ['POI', 'Gastro', 'Tour']
     },
@@ -1325,7 +1414,7 @@ export const qualityCriteria = Object.freeze([
     method: 'api_pushdown',
     api: {
       positiveQuery: 'media:*',
-      missingQuery: '*:* -media:*',
+      missingQuery: 'all:all -media:*',
       verified: true,
       verifiedForTypes: ['POI', 'Gastro', 'Tour']
     },
@@ -1372,13 +1461,181 @@ export const qualityCriteria = Object.freeze([
     method: 'api_pushdown',
     api: {
       positiveQuery: 'feature:"Mit \u00d6PNV erreichbar"',
-      missingQuery: '*:* -feature:"Mit \u00d6PNV erreichbar"',
+      missingQuery: 'all:all -feature:"Mit \u00d6PNV erreichbar"',
       verified: true,
       verifiedForTypes: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
       requiresUtf8Value: 'Mit \u00d6PNV erreichbar'
     },
     recommendation: 'OePNV-Anreiseinformationen ergaenzen.',
     check: (item) => !hasPublicTransportFeature(item)
+  },
+  {
+    id: 'poi_parking_feature_missing',
+    label: 'Feature "Parkplaetze vorhanden" fehlt',
+    types: ['POI'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'supporting',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['poi_parking'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.poiParking),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.poiParking)),
+      verified: true,
+      verifiedForTypes: ['POI']
+    },
+    recommendation: 'Feature "Parkplaetze vorhanden" ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.poiParking)
+  },
+  {
+    id: 'poi_payment_options_missing',
+    label: 'Keine der geprueften Zahlungsarten vorhanden',
+    types: ['POI'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['poi_payment'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.poiPayments),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.poiPayments)),
+      verified: true,
+      verifiedForTypes: ['POI']
+    },
+    recommendation: 'Mindestens eine gepruefte Zahlungsart als Merkmal ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.poiPayments)
+  },
+  {
+    id: 'poi_languages_missing',
+    label: 'Keine der geprueften Fremdsprachen vorhanden',
+    types: ['POI'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['poi_languages'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.poiLanguages),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.poiLanguages)),
+      verified: true,
+      verifiedForTypes: ['POI']
+    },
+    recommendation: 'Mindestens eine gepruefte Fremdsprache als Merkmal ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.poiLanguages)
+  },
+  {
+    id: 'poi_suitability_missing',
+    label: 'Keine der geprueften Eignungsangaben vorhanden',
+    types: ['POI'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'supporting',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['poi_suitability'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.poiSuitability),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.poiSuitability)),
+      verified: true,
+      verifiedForTypes: ['POI']
+    },
+    recommendation: 'Mindestens eine gepruefte Eignungsangabe als Merkmal ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.poiSuitability)
+  },
+  {
+    id: 'gastro_payment_options_missing',
+    label: 'Keine der geprueften Zahlungsarten vorhanden',
+    types: ['Gastro'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['gastro_payment'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.gastroPayments),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.gastroPayments)),
+      verified: true,
+      verifiedForTypes: ['Gastro']
+    },
+    recommendation: 'Mindestens eine gepruefte Zahlungsart als Merkmal ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.gastroPayments)
+  },
+  {
+    id: 'gastro_languages_missing',
+    label: 'Keine der geprueften Fremdsprachen vorhanden',
+    types: ['Gastro'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['gastro_languages'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.gastroLanguages),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.gastroLanguages)),
+      verified: true,
+      verifiedForTypes: ['Gastro']
+    },
+    recommendation: 'Mindestens eine gepruefte Fremdsprache als Merkmal ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.gastroLanguages)
+  },
+  {
+    id: 'gastro_parking_feature_missing',
+    label: 'Feature "PKW-Parkplatz am Haus" fehlt',
+    types: ['Gastro'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['gastro_parking'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.gastroParking),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.gastroParking)),
+      verified: true,
+      verifiedForTypes: ['Gastro']
+    },
+    recommendation: 'Feature "PKW-Parkplatz am Haus" ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.gastroParking)
+  },
+  {
+    id: 'gastro_cuisine_category_missing',
+    label: 'Keine der geprueften Kuechenarten vorhanden',
+    types: ['Gastro'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['gastro_cuisine_type'],
+    fields: ['categories', 'categories_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('category', VALIDATED_CATEGORY_VALUES.gastroCuisine),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('category', VALIDATED_CATEGORY_VALUES.gastroCuisine)),
+      verified: true,
+      verifiedForTypes: ['Gastro']
+    },
+    recommendation: 'Mindestens eine gepruefte Kuechenart als Kategorie ergaenzen.',
+    check: (item) => !hasAnyCategory(item, VALIDATED_CATEGORY_VALUES.gastroCuisine)
   },
   {
     id: 'booking_link_missing',
@@ -1402,7 +1659,7 @@ export const qualityCriteria = Object.freeze([
       Hotel: {
         method: 'api_pushdown',
         positiveQuery: 'booking:*',
-        missingQuery: '*:* NOT booking:*',
+        missingQuery: 'all:all -booking:*',
         verified: true
       },
       Package: {
@@ -1925,6 +2182,7 @@ export const qualityHelpers = Object.freeze({
   hasValidDatasetLicense,
   getFeatureValues,
   hasFeature,
+  hasAnyFeature,
   hasPublicTransportFeature,
   getMediaObjects,
   isCheckableMediaObject,
@@ -1932,6 +2190,8 @@ export const qualityHelpers = Object.freeze({
   findMissingCopyrightMedia,
   getAreaValues,
   getCategoryValues,
+  hasCategory,
+  hasAnyCategory,
   hasDescription,
   hasImages,
   hasImageAuthor,

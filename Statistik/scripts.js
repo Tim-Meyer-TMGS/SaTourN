@@ -1452,15 +1452,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function isActiveCriterion(criterionId) {
-    return [
-      'opening_hours_missing',
-      'license_missing',
-      'description_missing',
-      'image_missing',
-      'image_author_missing',
-      'public_transport_missing',
-      'booking_link_missing'
-    ].includes(criterionId);
+    const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
+    return Boolean(criterion && criterion.autoCheck !== false);
   }
 
   function applyTaskFilters() {
@@ -3356,7 +3349,15 @@ document.addEventListener('DOMContentLoaded', () => {
       opening_hours_missing: 'Es sind keine Öffnungszeiten oder vergleichbare Zeitinformationen hinterlegt.',
       public_transport_missing: 'Informationen zur Anreise mit dem ÖPNV fehlen.',
       booking_link_missing: 'Es ist kein Buchungs-, Reservierungs- oder Ticketlink hinterlegt.',
-      image_missing: 'Für diese Datensätze ist kein prüfbares Bildmaterial vorhanden.'
+      image_missing: 'Für diese Datensätze ist kein prüfbares Bildmaterial vorhanden.',
+      poi_parking_feature_missing: 'Das Merkmal "Parkplätze vorhanden" fehlt.',
+      poi_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
+      poi_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
+      poi_suitability_missing: 'Keine der geprüften Eignungsangaben ist als Merkmal hinterlegt.',
+      gastro_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
+      gastro_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
+      gastro_parking_feature_missing: 'Das Merkmal "PKW-Parkplatz am Haus" fehlt.',
+      gastro_cuisine_category_missing: 'Keine der geprüften Küchenarten ist als Kategorie hinterlegt.'
     };
     return problems[id] || 'Für diese Datensätze fehlt eine für die Datenpflege relevante Angabe.';
   }
@@ -3369,7 +3370,15 @@ document.addEventListener('DOMContentLoaded', () => {
       opening_hours_missing: 'Fehlende Öffnungszeiten erschweren Planung und Ausspielung in Portalen.',
       public_transport_missing: 'Fehlende ÖPNV-Hinweise schwächen nachhaltige Anreiseinformationen.',
       booking_link_missing: 'Ohne Buchungslink koennen Nutzer Angebote schwerer direkt abschliessen.',
-      image_missing: 'Ohne Bilder wirken Eintraege weniger attraktiv und sind in vielen Kanaelen schwaecher.'
+      image_missing: 'Ohne Bilder wirken Eintraege weniger attraktiv und sind in vielen Kanaelen schwaecher.',
+      poi_parking_feature_missing: 'Fehlende Parkangaben erschweren Anreiseplanung mit dem Auto.',
+      poi_payment_options_missing: 'Fehlende Zahlungsarten schwaechen Nutzbarkeit und Vorbereitung vor Ort.',
+      poi_languages_missing: 'Fehlende Sprachangaben reduzieren Zugänglichkeit für internationale Gäste.',
+      poi_suitability_missing: 'Fehlende Eignungsangaben erschweren Zielgruppenansprache und Orientierung.',
+      gastro_payment_options_missing: 'Fehlende Zahlungsarten erschweren die Nutzung und Vorbereitung für Gäste.',
+      gastro_languages_missing: 'Fehlende Sprachangaben reduzieren Zugänglichkeit für internationale Gäste.',
+      gastro_parking_feature_missing: 'Fehlende Parkangaben erschweren die Anreiseplanung für Gäste.',
+      gastro_cuisine_category_missing: 'Fehlende Küchenarten schwächen Auffindbarkeit und thematische Einordnung.'
     };
     return impacts[id] || 'Die fehlende Information reduziert die praktische Nutzbarkeit der Daten.';
   }
@@ -3519,6 +3528,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'opening_hours_missing') return 'schedule';
     if (id === 'public_transport_missing') return 'directions_transit';
     if (id === 'booking_link_missing') return 'link';
+    if (id === 'poi_parking_feature_missing' || id === 'gastro_parking_feature_missing') return 'local_parking';
+    if (id === 'poi_payment_options_missing' || id === 'gastro_payment_options_missing') return 'payments';
+    if (id === 'poi_languages_missing' || id === 'gastro_languages_missing') return 'translate';
+    if (id === 'poi_suitability_missing') return 'groups';
+    if (id === 'gastro_cuisine_category_missing') return 'restaurant_menu';
     return 'warning';
   }
 
@@ -3530,7 +3544,15 @@ document.addEventListener('DOMContentLoaded', () => {
       opening_hours_missing: 'Keine Öffnungszeiten hinterlegt',
       public_transport_missing: 'Keine ÖPNV-Information vorhanden',
       booking_link_missing: 'Kein Buchungs- oder Reservierungslink',
-      image_missing: 'Kein Bildmaterial vorhanden'
+      image_missing: 'Kein Bildmaterial vorhanden',
+      poi_parking_feature_missing: 'Merkmal "Parkplätze vorhanden" fehlt',
+      poi_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
+      poi_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
+      poi_suitability_missing: 'Keine geprüfte Eignungsangabe vorhanden',
+      gastro_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
+      gastro_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
+      gastro_parking_feature_missing: 'Merkmal "PKW-Parkplatz am Haus" fehlt',
+      gastro_cuisine_category_missing: 'Keine geprüfte Küchenart vorhanden'
     };
     return descriptions[id] || 'Ergänzung empfohlen';
   }

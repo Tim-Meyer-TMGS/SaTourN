@@ -92,8 +92,32 @@ Aktiv:
   Bilder nicht unnoetig geladen werden.
 - `public_transport_missing`: POI, Gastro, Tour, Hotel, Event; API-Pushdown
   verifiziert.
+- `poi_parking_feature_missing`: POI; Feature
+  `Parkplaetze vorhanden` per API-Pushdown verifiziert.
+- `poi_payment_options_missing`: POI; validierte OR-Liste gepruefter
+  Zahlungsarten per API-Pushdown verifiziert.
+- `poi_languages_missing`: POI; validierte OR-Liste gepruefter
+  Fremdsprachen per API-Pushdown verifiziert.
+- `poi_suitability_missing`: POI; validierte OR-Liste gepruefter
+  Eignungsangaben per API-Pushdown verifiziert.
+- `gastro_payment_options_missing`: Gastro; validierte OR-Liste gepruefter
+  Zahlungsarten per API-Pushdown verifiziert.
+- `gastro_languages_missing`: Gastro; validierte OR-Liste gepruefter
+  Fremdsprachen per API-Pushdown verifiziert.
+- `gastro_parking_feature_missing`: Gastro; Feature
+  `PKW-Parkplatz am Haus` per API-Pushdown verifiziert.
+- `gastro_cuisine_category_missing`: Gastro; validierte OR-Liste
+  gepruefter Kuechenarten per API-Pushdown verifiziert.
 - `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package per
   Server-Scan verifiziert.
+
+Nicht als Pushdown aktiviert:
+
+- Telefon, E-Mail, Webseite, Teaser, Preisfelder, Bild-/Medienurheber,
+  Ansprechperson/Organisation/Veranstalter, Event-Termine,
+  Tour-Start-/Zielbeschreibung.
+- `regionale Kueche` bleibt fuer Gastro bewusst offen, weil die Missing-Query
+  nicht komplementaer zur Baseline war.
 
 Fachlich gueltig, aber nicht als automatische Pflegeaufgabe aktiv:
 `geo_missing`, `touristtrip_incomplete`, `manual_image_quality`.

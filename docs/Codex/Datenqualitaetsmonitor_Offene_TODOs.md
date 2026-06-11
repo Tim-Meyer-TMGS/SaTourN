@@ -294,6 +294,9 @@ Aktueller Arbeitsstand:
   Search-Service unterstuetzt `q`, `type`, `limit`, `offset`, `request` und
   Query-Prefixes. Reine Negativabfragen sollen mit `all:all` kombiniert
   werden.
+- Die spaeteren Pushdown-Erkenntnisse sind zusaetzlich in
+  `docs/Codex/Datenqualitaetsmonitor_API_Pushdown_Erkenntnisse.md`
+  abgelegt.
 - In `Statistik/quality.js` gibt es jetzt `apiCandidate`-Metadaten im
   `domainQualityModel`. Diese Kandidaten sind technische Vorbereitungen, aber
   noch keine aktiven Score- oder Pflegeaufgaben-Regeln.
@@ -310,6 +313,10 @@ Aktueller Arbeitsstand:
     Typ-Test noch offen.
 - Die Hilfeseite zeigt API-Kandidaten im fachlichen Kriterienmodell an. Aktive
   Regeln bleiben getrennt davon erkennbar.
+- Umgesetzt wurden inzwischen die belastbaren OR-Listen fuer POI/Gastro bei
+  Zahlungsarten, Fremdsprachen, Parkmerkmalen, POI-Eignung und
+  Gastro-Kuechenarten. Fehlende Werte nutzen serverseitig jetzt `all:all` als
+  Missing-Anker.
 
 Naechste technische Verifikation:
 
