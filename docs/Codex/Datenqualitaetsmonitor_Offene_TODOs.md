@@ -46,8 +46,8 @@ Warum jetzt:
 Offen:
 
 - Hotel:
-  erweiterte Fremdsprachen-OR-Liste, erweiterte Zahlungsarten-OR-Liste,
-  Parkplatz-Merkmale und weitere sinnvolle Feature-OR-Listen verifizieren
+  weitere sinnvolle Feature-OR-Listen ueber Sprache, Zahlungsarten und
+  Parkhinweise hinaus verifizieren
 - POI:
   Barrierefreiheits-OR-Liste und weitere fachlich sinnvolle OR-Listen gegen
   echte Datensaetze absichern
@@ -215,6 +215,8 @@ Diese Themen bleiben offen oder clientseitig:
   `poi_email_missing`
   `poi_website_missing`
   `poi_phone_missing`
+- Hotel-OR-Listen fuer Fremdsprachen, Zahlungsarten und Parkhinweise live
+  ueber den Render-Proxy verifiziert und produktiv aktiviert
 - erste zentrale POI-Ausschlusswelle in Score, Fehlerliste, Detailseite und
   Exportlogik verankert
 - Pflegeaufgaben nutzen bei Gebiet oder Ort denselben regionalen

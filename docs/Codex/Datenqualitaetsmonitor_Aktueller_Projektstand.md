@@ -135,10 +135,12 @@ Aktiv:
   Fremdsprachen per API-Pushdown verifiziert.
 - `poi_suitability_missing`: POI; validierte OR-Liste gepruefter
   Eignungsangaben per API-Pushdown verifiziert.
-- `hotel_language_english_missing`: Hotel; Feature `Englisch`
-  per API-Pushdown verifiziert.
-- `hotel_payment_cash_missing`: Hotel; Feature `Barzahlung`
-  per API-Pushdown verifiziert.
+- `hotel_language_english_missing`: Hotel; validierte OR-Liste gepruefter
+  Fremdsprachen per API-Pushdown verifiziert.
+- `hotel_payment_cash_missing`: Hotel; validierte OR-Liste gepruefter
+  Zahlungsarten per API-Pushdown verifiziert.
+- `hotel_parking_feature_missing`: Hotel; validierte OR-Liste gepruefter
+  Parkhinweise per API-Pushdown verifiziert.
 - `gastro_payment_options_missing`: Gastro; validierte OR-Liste gepruefter
   Zahlungsarten per API-Pushdown verifiziert.
 - `gastro_languages_missing`: Gastro; validierte OR-Liste gepruefter

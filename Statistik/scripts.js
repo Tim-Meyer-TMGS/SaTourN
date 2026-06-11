@@ -3621,8 +3621,9 @@ document.addEventListener('DOMContentLoaded', () => {
       poi_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
       poi_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
       poi_suitability_missing: 'Keine der geprüften Eignungsangaben ist als Merkmal hinterlegt.',
-      hotel_language_english_missing: 'Das Merkmal "Englisch" fehlt.',
-      hotel_payment_cash_missing: 'Das Merkmal "Barzahlung" fehlt.',
+      hotel_language_english_missing: 'Keine der geprueften Fremdsprachen ist als Merkmal hinterlegt.',
+      hotel_payment_cash_missing: 'Keine der geprueften Zahlungsarten ist als Merkmal hinterlegt.',
+      hotel_parking_feature_missing: 'Keine der geprueften Parkinformationen ist als Merkmal hinterlegt.',
       gastro_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
       gastro_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
       gastro_parking_feature_missing: 'Das Merkmal "PKW-Parkplatz am Haus" fehlt.',
@@ -3649,8 +3650,9 @@ document.addEventListener('DOMContentLoaded', () => {
       poi_payment_options_missing: 'Fehlende Zahlungsarten schwaechen Nutzbarkeit und Vorbereitung vor Ort.',
       poi_languages_missing: 'Fehlende Sprachangaben reduzieren Zugänglichkeit für internationale Gäste.',
       poi_suitability_missing: 'Fehlende Eignungsangaben erschweren Zielgruppenansprache und Orientierung.',
-      hotel_language_english_missing: 'Fehlende Sprachangaben reduzieren die Zugänglichkeit für internationale Gäste.',
+      hotel_language_english_missing: 'Fehlende Sprachangaben reduzieren die Zugaenglichkeit fuer internationale Gaeste.',
       hotel_payment_cash_missing: 'Fehlende Zahlungsarten erschweren Nutzung und Erwartungsmanagement vor Ort.',
+      hotel_parking_feature_missing: 'Fehlende Parkhinweise erschweren Anreiseplanung und Erwartungsmanagement vor Ort.',
       gastro_payment_options_missing: 'Fehlende Zahlungsarten erschweren die Nutzung und Vorbereitung für Gäste.',
       gastro_languages_missing: 'Fehlende Sprachangaben reduzieren Zugänglichkeit für internationale Gäste.',
       gastro_parking_feature_missing: 'Fehlende Parkangaben erschweren die Anreiseplanung für Gäste.',
@@ -3815,6 +3817,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'poi_suitability_missing') return 'groups';
     if (id === 'hotel_language_english_missing') return 'translate';
     if (id === 'hotel_payment_cash_missing') return 'payments';
+    if (id === 'hotel_parking_feature_missing') return 'local_parking';
     if (id === 'gastro_cuisine_category_missing') return 'restaurant_menu';
     return 'warning';
   }
@@ -3837,8 +3840,9 @@ document.addEventListener('DOMContentLoaded', () => {
       poi_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
       poi_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
       poi_suitability_missing: 'Keine geprüfte Eignungsangabe vorhanden',
-      hotel_language_english_missing: 'Merkmal "Englisch" fehlt',
-      hotel_payment_cash_missing: 'Merkmal "Barzahlung" fehlt',
+      hotel_language_english_missing: 'Keine gepruefte Fremdsprache vorhanden',
+      hotel_payment_cash_missing: 'Keine gepruefte Zahlungsart vorhanden',
+      hotel_parking_feature_missing: 'Keine gepruefte Parkinformation vorhanden',
       gastro_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
       gastro_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
       gastro_parking_feature_missing: 'Merkmal "PKW-Parkplatz am Haus" fehlt',

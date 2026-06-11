@@ -495,19 +495,19 @@ all:all -feature:"Mit ÖPNV erreichbar"
 - Positive Query:
 
 ```text
-booking:*
+keyword:"Bookable"
 ```
 
 - Missing Query aktuell:
 
 ```text
-*:* NOT booking:*
+all:all -keyword:"Bookable"
 ```
 
-Optionaler Gegencheck:
+Hinweis:
 
 ```text
-all:all -booking:*
+booking:* ist fuer Hotel nicht belastbar und bleibt bewusst deaktiviert.
 ```
 
 ## Nicht per API-Kandidat vorbereitet
@@ -520,11 +520,8 @@ Query-Prefix oder ein sicherer Feldname. Hier zuerst Feldmapping klaeren:
 - E-Mail
 - Webseite
 - Merkmale
-- Zahlungsmoeglichkeiten
 - Preisinformation
 - Ansprechperson
-- Fremdsprachenkenntnisse
-- Parkplaetze
 - Eignung oder Jahreszeit
 - Autor oder Organisation
 - Start- und Zielbeschreibungen
@@ -533,4 +530,3 @@ Query-Prefix oder ein sicherer Feldname. Hier zuerst Feldmapping klaeren:
 - Event-Termine und Veranstalter
 - Bildurheber per API-Pushdown
 - Package-Buchungslink per API-Pushdown
-

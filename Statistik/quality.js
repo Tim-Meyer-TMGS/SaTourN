@@ -880,8 +880,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'very_good',
       fieldCandidates: ['features', 'features_old', 'numbers'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_parking_feature_missing',
       uiPriority: 'niedrig',
       recommendation: 'Parkplatzinformationen ergaenzen.'
     },
@@ -1707,7 +1707,7 @@ export const qualityCriteria = Object.freeze([
   },
   {
     id: 'hotel_language_english_missing',
-    label: 'Feature "Englisch" fehlt',
+    label: 'Fremdsprachenangabe fehlt',
     types: ['Hotel'],
     priority: 'niedrig',
     autoCheck: true,
@@ -1723,12 +1723,12 @@ export const qualityCriteria = Object.freeze([
       verified: true,
       verifiedForTypes: ['Hotel']
     },
-    recommendation: 'Feature "Englisch" ergaenzen.',
+    recommendation: 'Mindestens eine gepruefte Fremdsprache als Merkmal ergaenzen.',
     check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.hotelLanguages)
   },
   {
     id: 'hotel_payment_cash_missing',
-    label: 'Feature "Barzahlung" fehlt',
+    label: 'Zahlungsart fehlt',
     types: ['Hotel'],
     priority: 'niedrig',
     autoCheck: true,
@@ -1744,8 +1744,29 @@ export const qualityCriteria = Object.freeze([
       verified: true,
       verifiedForTypes: ['Hotel']
     },
-    recommendation: 'Feature "Barzahlung" ergaenzen.',
+    recommendation: 'Mindestens eine gepruefte Zahlungsart als Merkmal ergaenzen.',
     check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.hotelPayments)
+  },
+  {
+    id: 'hotel_parking_feature_missing',
+    label: 'Parkhinweis fehlt',
+    types: ['Hotel'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_parking'],
+    fields: ['features', 'features_old'],
+    method: 'api_pushdown',
+    api: {
+      positiveQuery: buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.hotelParking),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', VALIDATED_FEATURE_VALUES.hotelParking)),
+      verified: true,
+      verifiedForTypes: ['Hotel']
+    },
+    recommendation: 'Mindestens einen geprueften Parkhinweis als Merkmal ergaenzen.',
+    check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.hotelParking)
   },
   {
     id: 'poi_parking_feature_missing',
