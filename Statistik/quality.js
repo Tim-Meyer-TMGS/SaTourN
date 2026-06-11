@@ -248,6 +248,52 @@ export function hasDetailsText(item = {}) {
   return hasTextByRel(item, 'details');
 }
 
+export function hasTeaserText(item = {}) {
+  return hasTextByRel(item, 'teaser');
+}
+
+export function hasStreetInfo(item = {}) {
+  return hasAnyValue(item, ['street', 'address.street', 'addresses.street']);
+}
+
+export function hasPhoneInfo(item = {}) {
+  return hasAnyValue(item, ['phone', 'phone2', 'addresses.phone']);
+}
+
+export function hasEmailInfo(item = {}) {
+  return hasAnyValue(item, ['email', 'emailRequest', 'addresses.email']);
+}
+
+export function hasWebsiteInfo(item = {}) {
+  return hasAnyValue(item, ['web', 'website', 'url', 'addresses.web']);
+}
+
+export function hasPriceInfo(item = {}) {
+  return hasAnyValue(item, ['prices', 'price']);
+}
+
+export function hasAddressRel(item = {}, relValues = []) {
+  const targets = new Set(safeArray(relValues).map(normalizeComparable).filter(Boolean));
+  if (!targets.size) return false;
+  return collectRootArrays(item, 'addresses').some((entry) => {
+    const rel = normalizeComparable(entry.rel);
+    if (!targets.has(rel)) return false;
+    return [
+      entry.name,
+      entry.street,
+      entry.city,
+      entry.zip,
+      entry.web,
+      entry.email,
+      entry.phone
+    ].some(hasValue);
+  });
+}
+
+export function hasAuthorOrOrganisation(item = {}) {
+  return hasAnyValue(item, ['author']) || hasAddressRel(item, ['author', 'organisation']);
+}
+
 export function getAttributeValue(item = {}, key) {
   const targetKey = normalizeComparable(key);
   if (!targetKey) return null;
@@ -403,6 +449,99 @@ const VALIDATED_CATEGORY_VALUES = Object.freeze({
   gastroCuisine: Object.freeze(['vegetarisch', 'deutsch', 'italienisch'])
 });
 
+const POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES = Object.freeze([
+  'Allee',
+  'Architektur',
+  'Aussichtspunkt/-turm',
+  'Bildstock',
+  'Brunnen',
+  'Bruecke',
+  'Denkmal',
+  'Ferienstrasse',
+  'Friedhof',
+  'Fussgaengerzone',
+  'Halde',
+  'Historische Staette',
+  'Industriemerkmal',
+  'Marktplatz',
+  'Orgel',
+  'Pfahlbauten',
+  'Ruine',
+  'Schlucht',
+  'Sehenswertes',
+  'Sonstige Sehenswuerdigkeit',
+  'Wegkreuz',
+  'Angeln/Fischen',
+  'Beachvolleyball',
+  'Grillplatz',
+  'Kinderspielplatz',
+  'Langlauf',
+  'Luftsport',
+  'Schanze',
+  'Ski-Nordisch',
+  'Wassertreten',
+  'Badestelle',
+  'Biwak',
+  'Geocaching',
+  'Heilquelle',
+  'See',
+  'Berggipfel',
+  'Felsen',
+  'Geotop',
+  'Insel',
+  'Kanal',
+  'Moor',
+  'Naturdenkmal',
+  'Naturerlebnispfad',
+  'Naturlehrpfad',
+  'Natursehenswuerdigkeit',
+  'Pavillon',
+  'Quelle',
+  'Schleuse',
+  'Steg',
+  'Strand',
+  'Teich',
+  'Themenweg',
+  'Trimm-Dich-Pfad',
+  'Wald',
+  'Wasserfall',
+  'Bahnhof',
+  'Bootsanlegestellen',
+  'Bushaltestelle',
+  'Busparkplatz',
+  'freies WLAN',
+  'Oeffentlicher Nahverkehr',
+  'Parkmoeglichkeiten',
+  'Parkplatz',
+  'S-Bahn',
+  'Strassenbahn',
+  'WC',
+  'eBike Akku-Wechselstation',
+  'eBike Ladestation',
+  'eBike Verleihstation',
+  'eTankstelle',
+  'Audioguide',
+  'Panoramen',
+  'Podcast',
+  'Video',
+  'Videocast',
+  'Webcam',
+  'Sendemast',
+  'Staumauer',
+  'Windrad'
+]);
+
+const POI_EXCLUSION_BY_CRITERION = Object.freeze({
+  poi_street_missing: POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES,
+  poi_phone_missing: POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES,
+  poi_email_missing: POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES,
+  poi_website_missing: POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES,
+  poi_opening_hours_missing: POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES,
+  poi_price_missing: POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES,
+  poi_payment_options_missing: POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES,
+  opening_hours_missing: POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES
+});
+
 function parseDate(value) {
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -486,6 +625,8 @@ export const domainQualityModel = Object.freeze({
     active: 'Fachlich gueltig und technisch in Count, Liste oder Detailbewertung angebunden.',
     needs_verification: 'Fachlich gueltig; Feldmapping und API-/Server-Pruefung muessen noch verifiziert werden.',
     source_guarded: 'Fachlich gueltig; fehlende Basisdaten werden bereits quellseitig vor der normalen Pflegeaufgabe abgefangen.',
+    not_applicable: 'Fachlich gueltig; fuer den Typ oder die Datenbasis nicht als normaler Qualitaetsmangel zu bewerten.',
+    excluded_by_category: 'Fachlich gueltig; fuer bestimmte Kategorien nicht erwartbar und deshalb nicht scorewirksam.',
     manual_review: 'Fachlich gueltig; nur manuell oder redaktionell bewertbar.'
   }),
   sourceGuaranteedFields: Object.freeze([
@@ -855,8 +996,8 @@ export const domainQualityModel = Object.freeze({
         prefixes: ['street'],
         confidence: 'documented_prefix'
       }),
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'poi_street_missing',
       uiPriority: 'hoch',
       recommendation: 'Strasse oder Anschrift ergaenzen.'
     },
@@ -877,8 +1018,8 @@ export const domainQualityModel = Object.freeze({
       types: ['POI'],
       level: 'minimum',
       fieldCandidates: ['texts[rel=teaser]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'poi_teaser_missing',
       uiPriority: 'hoch',
       recommendation: 'Teaser-Text ergaenzen.'
     },
@@ -888,8 +1029,8 @@ export const domainQualityModel = Object.freeze({
       types: ['POI'],
       level: 'good',
       fieldCandidates: ['email', 'addresses.email'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'poi_email_missing',
       uiPriority: 'mittel',
       recommendation: 'E-Mail-Adresse ergaenzen.'
     },
@@ -899,8 +1040,8 @@ export const domainQualityModel = Object.freeze({
       types: ['POI'],
       level: 'good',
       fieldCandidates: ['web', 'website', 'url', 'addresses.web'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'poi_website_missing',
       uiPriority: 'mittel',
       recommendation: 'Webseite ergaenzen.'
     },
@@ -910,8 +1051,8 @@ export const domainQualityModel = Object.freeze({
       types: ['POI'],
       level: 'good',
       fieldCandidates: ['phone', 'phone2', 'addresses.phone'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'poi_phone_missing',
       uiPriority: 'mittel',
       recommendation: 'Telefonnummer ergaenzen.'
     },
@@ -1359,14 +1500,16 @@ export const qualityCriteria = Object.freeze([
     uiSeverity: 'kritisch',
     domainCriterionIds: ['poi_opening_hours', 'gastro_opening_hours'],
     fields: ['texts[rel=openings]', 'timeIntervals', 'alwaysOpen'],
-    method: 'api_pushdown',
+    method: 'server_scan',
     api: {
       positiveQuery: 'openings:*',
       missingQuery: 'all:all -openings:*',
-      verified: true,
-      verifiedForTypes: ['POI', 'Gastro']
+      verified: false,
+      verifiedForTypes: [],
+      note: 'Wildcard-Pushdown fachlich verworfen; Oeffnungszeiten werden ueber Server-Scan bewertet.'
     },
     recommendation: 'Oeffnungszeiten ergaenzen oder aktualisieren.',
+    excludedCategories: POI_EXCLUSION_BY_CRITERION.opening_hours_missing,
     check: (item) => !hasOpeningHours(item)
   },
   {
@@ -1402,15 +1545,95 @@ export const qualityCriteria = Object.freeze([
     uiSeverity: 'kritisch',
     domainCriterionIds: ['tour_details', 'poi_details', 'gastro_details'],
     fields: ['texts[rel=details]'],
-    method: 'api_pushdown',
+    method: 'server_scan',
     api: {
       positiveQuery: 'details:*',
       missingQuery: 'all:all -details:*',
-      verified: true,
-      verifiedForTypes: ['POI', 'Gastro', 'Tour']
+      verified: false,
+      verifiedForTypes: [],
+      note: 'Wildcard-Pushdown fachlich verworfen; Beschreibung wird ueber Server-Scan bewertet.'
     },
     recommendation: 'Beschreibung oder Kurzbeschreibung ergaenzen.',
     check: (item) => !hasDescription(item)
+  },
+  {
+    id: 'poi_street_missing',
+    label: 'Strasse fehlt',
+    types: ['POI'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 8,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['poi_street'],
+    fields: ['street', 'address.street', 'addresses.street'],
+    method: 'server_scan',
+    recommendation: 'Strasse oder Anschrift ergaenzen.',
+    excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_street_missing,
+    check: (item) => !hasStreetInfo(item)
+  },
+  {
+    id: 'poi_teaser_missing',
+    label: 'Teaser fehlt',
+    types: ['POI'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 6,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['poi_teaser'],
+    fields: ['texts[rel=teaser]'],
+    method: 'server_scan',
+    recommendation: 'Teaser-Text ergaenzen.',
+    check: (item) => !hasTeaserText(item)
+  },
+  {
+    id: 'poi_email_missing',
+    label: 'E-Mail fehlt',
+    types: ['POI'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['poi_email'],
+    fields: ['email', 'addresses.email'],
+    method: 'server_scan',
+    recommendation: 'E-Mail-Adresse ergaenzen.',
+    excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_email_missing,
+    check: (item) => !hasEmailInfo(item)
+  },
+  {
+    id: 'poi_website_missing',
+    label: 'Webseite fehlt',
+    types: ['POI'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['poi_website'],
+    fields: ['web', 'website', 'url', 'addresses.web'],
+    method: 'server_scan',
+    recommendation: 'Webseite ergaenzen.',
+    excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_website_missing,
+    check: (item) => !hasWebsiteInfo(item)
+  },
+  {
+    id: 'poi_phone_missing',
+    label: 'Telefon fehlt',
+    types: ['POI'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['poi_phone'],
+    fields: ['phone', 'phone2', 'addresses.phone'],
+    method: 'server_scan',
+    recommendation: 'Telefonnummer ergaenzen.',
+    excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_phone_missing,
+    check: (item) => !hasPhoneInfo(item)
   },
   {
     id: 'image_missing',
@@ -1563,6 +1786,7 @@ export const qualityCriteria = Object.freeze([
       verifiedForTypes: ['POI']
     },
     recommendation: 'Mindestens eine gepruefte Zahlungsart als Merkmal ergaenzen.',
+    excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_payment_options_missing,
     check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.poiPayments)
   },
   {
@@ -1900,21 +2124,29 @@ function runCriterionCheck(criterion, item) {
   }
 }
 
+function isCriterionExcludedByCategory(criterion, item) {
+  const excludedCategories = safeArray(criterion?.excludedCategories);
+  if (!excludedCategories.length) return false;
+  return hasAnyCategory(item, excludedCategories);
+}
+
 function getCriteriaResults(item) {
   const relevantCriteria = getCriteriaForType(item?.type);
 
   return relevantCriteria.map((criterion) => {
     const manual = criterion.autoCheck === false;
-    const missing = manual ? false : runCriterionCheck(criterion, item);
+    const excluded = isCriterionExcludedByCategory(criterion, item);
+    const missing = manual || excluded ? false : runCriterionCheck(criterion, item);
 
     return {
       criterionId: criterion.id,
       criterion,
       autoCheck: !manual,
       manual,
+      excluded,
       weight: Number.isFinite(criterion.weight) ? criterion.weight : 0,
       missing,
-      fulfilled: !manual && !missing
+      fulfilled: !manual && !excluded && !missing
     };
   });
 }
@@ -1922,6 +2154,7 @@ function getCriteriaResults(item) {
 export function calculateQualityScore(item, criteriaResults = getCriteriaResults(item || {})) {
   const scoredResults = safeArray(criteriaResults).filter((result) => (
     result.autoCheck &&
+    !result.excluded &&
     Number.isFinite(result.weight) &&
     result.weight > 0
   ));
@@ -1992,6 +2225,9 @@ export function evaluateQualityForItem(item = {}) {
   const manualCriteria = criteriaResults
     .filter((result) => result.manual)
     .map((result) => result.criterionId);
+  const excludedCriteria = criteriaResults
+    .filter((result) => result.excluded)
+    .map((result) => result.criterionId);
   const qualityScore = calculateQualityScore(baseItem, criteriaResults);
 
   return {
@@ -1999,6 +2235,7 @@ export function evaluateQualityForItem(item = {}) {
     missingCriteria,
     fulfilledCriteria,
     manualCriteria,
+    excludedCriteria,
     qualityScore,
     qualityStatus: getQualityStatus(qualityScore),
     recommendations: Array.from(new Set(criteriaResults
@@ -2047,6 +2284,10 @@ function getCriteriaIdsForItem(item, key) {
 
   if (key === 'manualCriteria') {
     return results.filter((result) => result.manual).map((result) => result.criterionId);
+  }
+
+  if (key === 'excludedCriteria') {
+    return results.filter((result) => result.excluded).map((result) => result.criterionId);
   }
 
   return [];
@@ -2151,7 +2392,8 @@ export function getCriteriaMatrix(items = []) {
 
   return types.flatMap((type) => getCriteriaForType(type).map((criterion) => {
     const relevantItems = getRelevantItemsForCriterion(itemList.filter((item) => getItemType(item) === type), criterion);
-    const totalRelevantCount = relevantItems.length;
+    const excludedCount = relevantItems.filter((item) => getCriteriaIdsForItem(item, 'excludedCriteria').includes(criterion.id)).length;
+    const totalRelevantCount = Math.max(0, relevantItems.length - excludedCount);
     const manual = criterion.autoCheck === false;
     const fulfilledCount = manual ? 0 : relevantItems.filter((item) => getCriteriaIdsForItem(item, 'fulfilledCriteria').includes(criterion.id)).length;
     const missingCount = manual ? 0 : relevantItems.filter((item) => getCriteriaIdsForItem(item, 'missingCriteria').includes(criterion.id)).length;
@@ -2167,6 +2409,7 @@ export function getCriteriaMatrix(items = []) {
       autoCheck: criterion.autoCheck !== false,
       fulfilledCount,
       missingCount,
+      excludedCount,
       totalRelevantCount,
       quote,
       status: manual ? 'nicht verfuegbar' : getMatrixStatus(quote),
@@ -2236,6 +2479,14 @@ export const qualityHelpers = Object.freeze({
   getTextsByRel,
   hasTextByRel,
   hasDetailsText,
+  hasTeaserText,
+  hasStreetInfo,
+  hasPhoneInfo,
+  hasEmailInfo,
+  hasWebsiteInfo,
+  hasPriceInfo,
+  hasAddressRel,
+  hasAuthorOrOrganisation,
   getAttributeValue,
   hasAttributeValue,
   hasValidDatasetLicense,

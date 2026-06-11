@@ -10,6 +10,8 @@ verlinkten Detaildokumenten und werden hier nicht doppelt ausgeschrieben.
 
 - Projektstand:
   `docs/Codex/Datenqualitaetsmonitor_Aktueller_Projektstand.md`
+- Kriterienmatrix 2026-06-11:
+  `docs/Codex/Datenqualitaetsmonitor_Kriterienmatrix_2026-06-11.md`
 - API-Pruefliste:
   `docs/Codex/Datenqualitaetsmonitor_API_Pruefliste.md`
 - Pushdown-Erkenntnisse allgemein:
@@ -24,54 +26,96 @@ verlinkten Detaildokumenten und werden hier nicht doppelt ausgeschrieben.
 - Nur fachlich sinnvolle und technisch belastbare Kriterien aktivieren.
 - Count, Fehlerliste, Detailseite und Score muessen dieselbe Regel nutzen.
 - Missing-Queries mit API-Pushdown immer mit `all:all` verankern.
+- `source_guarded`, `not_applicable` und `excluded_by_category` sind nicht
+  scorewirksam.
 - Keine generischen Feldannahmen ohne echte Positiv-/Negativpruefung.
+- Keine generischen Wildcard-Pushdowns wie `street:*`, `details:*`,
+  `openings:*` oder `feature:*` in `open-data-sachsen-tourismus`.
 - UI zeigt handlungsrelevante Informationen, nicht technische Zwischenwerte.
 
 ## Prioritaet A - Als Naechstes
 
 ### 1. Weitere API-Kriterien verifizieren und aktivieren
 
+Warum jetzt:
+
+- Die fachlich unsauberen Wildcard-Annahmen sind bereinigt.
+- Die erste POI-Ausschlusswelle ist produktiv in der Bewertungslogik.
+- Neue Aktivierungen sollen deshalb nur noch auf der sauberen Basis erfolgen.
+
 Offen:
 
 - Hotel:
-  weitere Fremdsprachen, weitere Zahlungsarten, weitere sinnvolle
-  Ausstattungs-/Eignungsmerkmale aus `VermieterMerkmalTree.xml`
+  erweiterte Fremdsprachen-OR-Liste, erweiterte Zahlungsarten-OR-Liste,
+  Parkplatz-Merkmale und weitere sinnvolle Feature-OR-Listen verifizieren
+- POI:
+  Barrierefreiheits-OR-Liste und weitere fachlich sinnvolle OR-Listen gegen
+  echte Datensaetze absichern
 - Gastro:
-  weitere belastbare Kuechenarten aus echten Kategorien
+  erweiterte Sprachen-, Zahlungs- und Kuechenangebote-OR-Listen verifizieren
+- Tour:
+  Anreise-/OePNV-/Parken-Merkmale und Saison-/Eignungsregeln pruefen
 - Event:
-  Lizenz und Beschreibung weiter pruefen
-- Strassenregeln:
-  Hotel, POI, Gastro, Event gegen echte Positiv-/Negativbeispiele verifizieren
+  Zahlungsarten, Lizenz und optionale Sprach-/Eignungsregeln pruefen
 - Package:
   pruefen, ob fuer Buchbarkeit ein sauberer Pushdown analog zu Hotel moeglich
   ist oder ob Server-Scan bleibt
 
-Hinweis:
+Verifikationsschema je Kriterium:
 
-- Konkrete Querys und Nachweisfelder stehen in
-  `Datenqualitaetsmonitor_API_Pruefliste.md`.
-
-### 2. Sonderfaelle fuer Pflegeaufgaben ausschliessen
-
-Offen:
-
-- POI-Kategorien identifizieren, fuer die Oeffnungszeiten fachlich nicht
-  erwartet werden
-- Ausschlussregel nicht nur im UI, sondern in Query/Regellogik verankern
-- Count, Fehlerliste und Detailseite mit derselben Ausschlusslogik betreiben
+- `baseline`
+- `positiveQuery`
+- `missingQuery`
+- `positive + missing = baseline`
+- positiver Beispieldatensatz
+- negativer Beispieldatensatz
+- Listentreffer und Detailansicht pruefen
+- erst dann auf `active` umstellen
 
 Quelle:
 
+- `Datenqualitaetsmonitor_API_Pruefliste.md`
+
+### 2. POI-Ausschlusslogik erweitern
+
+Bereits umgesetzt:
+
+- zentrale Ausschlusslogik in `Statistik/quality.js`
+- produktiv fuer:
+  `poi_street_missing`
+  `poi_phone_missing`
+  `poi_email_missing`
+  `poi_website_missing`
+  `opening_hours_missing`
+  `poi_payment_options_missing`
+
+Noch offen:
+
+- Preisregel produktiv nachziehen, sobald Feldbasis und Kategorien sauber
+  gegen echte Daten geprueft sind
+- weitere spaetere POI-Kriterien dieselbe Ausschlusslogik mitnutzen lassen
+- reale Grenzfaelle gegen `testdata/treepoi.xml` und Live-Daten querpruefen
+
+Quellen:
+
 - `testdata/treepoi.xml`
+- `docs/Codex/Datenqualitaetsmonitor_Kriterienmatrix_2026-06-11.md`
 
-### 3. Hilfe-Seite fachlich weiter schaerfen
+### 3. Hilfe-Seite bei neuen Kriterien fortlaufend nachziehen
 
-Offen:
+Bereits umgesetzt:
 
-- Entscheiden, ob neben den aktiven Score-Regeln eine zweite, kurze Sektion
-  fuer "fachlich relevant, aber noch nicht scorewirksam" sichtbar werden soll
-- Hotel-/POI-/Gastro-/Tour-Karten mit spaeteren aktivierten Kriterien
-  fortlaufend nachziehen
+- Score-Erklaerung fokussiert auf Nutzerwirkung
+- Sektion fuer `source_guarded`, `not_applicable` und
+  `excluded_by_category`
+- Typkarten zeigen automatisch gepruefte versus fachlich vorbereitete
+  Kriterien
+
+Noch offen:
+
+- neue aktivierte Kriterien spaeter direkt in die Typkarten uebernehmen
+- Nutzertexte nachjustieren, falls sich Score-Gewichte oder Mindestlogik
+  fachlich aendern
 
 ## Prioritaet B - Wichtig, aber nicht zuerst
 
@@ -147,18 +191,35 @@ Offen:
 
 Diese Themen bleiben offen oder clientseitig:
 
-- Telefon
-- E-Mail
-- Webseite
-- Teaser
-- Preisfelder / Preisinformation
+- generische Wildcard-Pushdowns:
+  `street:*`
+  `details:*`
+  `openings:*`
+  `feature:*`
+- `category:"regionale Kueche"` als Missing-Regel
 - Bild-/Medienurheber als API-Pushdown
-- Ansprechperson / Organisation / Veranstalter
-- Event-Termine als Datenqualitaetskriterium
-- Tour-Startbeschreibung / Tour-Zielbeschreibung
-- `category:"regionale Küche"` als Missing-Regel
+- Event-Termine und Event-Veranstaltungsort als Datenqualitaetskriterium
+- Tour-Polyline, Tour-Laenge, Tour-Dauer als Datenqualitaetskriterium
+- fehlender Titel / fehlende Kategorie / fehlende Geo-Daten als normale
+  Pflegeaufgabe
 - `booking:*` fuer Hotel
 - `keywords:"Bookable"` fuer Hotel
+
+## Zuletzt umgesetzt
+
+- aktive Wildcard-Annahmen fuer Beschreibung und Oeffnungszeiten aus
+  fachlich unsauberen Pushdowns entfernt und auf Server-Scan umgestellt
+- neue produktive POI-Server-Scan-Kriterien aktiviert:
+  `poi_street_missing`
+  `poi_teaser_missing`
+  `poi_email_missing`
+  `poi_website_missing`
+  `poi_phone_missing`
+- erste zentrale POI-Ausschlusswelle in Score, Fehlerliste, Detailseite und
+  Exportlogik verankert
+- Pflegeaufgaben nutzen bei Gebiet oder Ort denselben regionalen
+  Qualitaetsscan wie die Uebersicht
+- Help-Seite erklaert jetzt auch bewusst nicht scorewirksame Faelle
 
 ## Standardchecks
 

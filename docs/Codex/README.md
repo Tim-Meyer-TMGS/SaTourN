@@ -11,6 +11,9 @@ Aktiver Kurzkontext fuer die weitere Arbeit am Datenqualitaetsmonitor.
 
 - `Datenqualitaetsmonitor_Entscheidungen.md`: Architektur-, API-, UI- und
   Kriterienentscheidungen.
+- `Datenqualitaetsmonitor_Kriterienmatrix_2026-06-11.md`: fachliche
+  Referenz fuer `source_guarded`, Ausschlusslogik, Pushdown-Regeln und
+  Ziel-Kriterium-IDs.
 - `../Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md`: nur lesen, wenn wieder
   am urspruenglichen Abschnittsauftrag gearbeitet wird.
 

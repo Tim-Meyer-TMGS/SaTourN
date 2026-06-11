@@ -20,8 +20,8 @@ Build-Kette und keine Secrets im Frontend.
 - `Statistik/stats.html`: Open-Data-Statistik mit aggregierten Counts,
   Datentyp-Verteilung und Einstieg zur Pflegeaufgabe `license_missing`.
 - `Statistik/help.html`: Hilfeseite zum Datenqualitaets-Score mit
-  Score-Matrix, automatisch geprueften Kriterien und fachlichem
-  Kriterienmodell.
+  Score-Matrix, automatisch geprueften Kriterien, Erklaerung zu
+  nicht scorewirksamen Faellen und fachlichem Kriterienmodell.
 
 Alle Statistik-Links bleiben relativ (`index.html`, `tasks.html`,
 `records.html`, `record-detail.html`, `stats.html`, `help.html`) und
@@ -51,6 +51,9 @@ funktionieren damit unter
 - Ganz Sachsen bekommt keinen Qualitaets-Score. Erst bei Gebiet oder Ort
   startet die Uebersicht einen asynchronen regionalen Datensatzscan und
   berechnet Score/Status aus den geladenen Datensaetzen.
+- Die Pflegeaufgaben nutzen bei Gebiet oder Ort nun ebenfalls den regionalen
+  Qualitaetsscan. Dadurch koennen auch serverseitig gepruefte Kriterien im
+  begrenzten Arbeitskontext sichtbar werden.
 - Pflegeaufgaben mit `0` betroffenen Datensaetzen werden nicht angezeigt.
 - Open-Data-Status ist binaer: Open-Data-faehig oder nicht
   Open-Data-faehig. Es gibt keinen sichtbaren Status `Nicht bewertbar`.
@@ -77,23 +80,47 @@ bereits technisch angebundene Pruefung; `needs_verification` bleibt fachlich
 gueltig, muss aber in Feldmapping/API-Query oder Server-Scan noch verifiziert
 werden.
 
+Fachliche Ergaenzung vom 2026-06-11:
+
+- Die Kriterienmatrix in
+  `docs/Codex/Datenqualitaetsmonitor_Kriterienmatrix_2026-06-11.md`
+  praezisiert `source_guarded`, `not_applicable`, `excluded_by_category`,
+  verifizierte Pushdowns und die POI-Ausschlusslogik.
+- Diese Matrix ist eine fachliche Referenz. Sie ersetzt nicht den aktuellen
+  Codezustand, aber sie bestimmt die naechsten fachlichen Korrekturen.
+
 Technische API-Vorbereitung:
 
 - Das Fachmodell kann `apiCandidate`-Metadaten enthalten. Diese beschreiben
   moegliche `q`-Abfragen aus der Meta Query Language, sind aber noch nicht
   automatisch scorewirksam.
-- Dokumentiert vorbereitete Kandidaten sind unter anderem `street:*`,
-  `lat`/`lon`, `length`/`duration`, `details:*` fuer weitere Typen und
-  `attribute_license` fuer Event.
+- Dokumentiert vorbereitete Kandidaten sind unter anderem `lat`/`lon`,
+  `length`/`duration` und konkrete `feature:`-, `category:`-,
+  `keyword:`- oder `attribute_license:`-Abfragen.
 - Aktivierung erfolgt erst nach echten positiven und negativen API-Tests pro
   Datentyp. Count, Liste und Detailseite muessen dieselbe Regel verwenden.
+- Generische Wildcard-Pushdowns wie `street:*`, `details:*`, `openings:*`
+  oder `feature:*` gelten laut Kriterienmatrix fachlich nicht als belastbar
+  fuer `open-data-sachsen-tourismus`. Wo der aktuelle Code noch mit solchen
+  Annahmen arbeitet, ist eine Umstellung auf Server-Scan oder konkreten
+  Wert-Pushdown vorgesehen.
 
 Aktiv:
 
-- `opening_hours_missing`: POI, Gastro; API-Pushdown verifiziert.
+- `opening_hours_missing`: POI, Gastro; aktuell technisch aktiv. Laut
+  Kriterienmatrix darf generisches `openings:*` fachlich nicht als belastbarer
+  Pushdown gelten; die Regel laeuft jetzt ueber Server-Scan. Fuer POI greift
+  zusaetzlich die erste Welle der Kategorien-Ausschlusslogik.
 - `license_missing`: POI, Gastro, Tour, Hotel, Package; API-Pushdown
   verifiziert.
-- `description_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
+- `description_missing`: POI, Gastro, Tour; aktuell technisch aktiv. Laut
+  Kriterienmatrix darf generisches `details:*` fachlich nicht als belastbarer
+  Pushdown gelten; die Regel laeuft jetzt ueber Server-Scan.
+- `poi_street_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik.
+- `poi_teaser_missing`: POI; Server-Scan aktiv.
+- `poi_email_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik.
+- `poi_website_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik.
+- `poi_phone_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik.
 - `image_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
 - `image_author_missing`: Server-Scan; kein verifizierter API-Pushdown.
   Der Server nutzt `media:*` als Kandidaten-Prefilter, damit Datensaetze ohne
@@ -138,6 +165,30 @@ Fachlich gueltig, aber nicht als automatische Pflegeaufgabe aktiv:
 Diese Kriterien sind im `domainQualityModel` enthalten; `geo_missing` und
 `touristtrip_incomplete` sind quellseitig abgefangene Basisfaelle,
 `manual_image_quality` bleibt redaktionelle Pruefung.
+
+Fachlich zusaetzlich als nicht scorewirksam festgelegt:
+
+- `title_missing`
+- `category_missing`
+- `geo_missing`
+- `event_dates_missing`
+- `event_venue_missing`
+- `tour_polyline_missing`
+- `tour_length_missing`
+- `tour_duration_missing`
+
+POI-Ausschlusslogik:
+
+- Fuer POI gelten fachliche Ausschluesse insbesondere bei
+  Strasse, Telefon, E-Mail, Webseite, Oeffnungszeiten, Preisangaben und
+  Zahlungsmoeglichkeiten.
+- Die Matrix liefert dafuer eine konkrete Kategorienliste.
+- Die erste produktive Welle ist jetzt fuer
+  `poi_street_missing`, `poi_phone_missing`, `poi_email_missing`,
+  `poi_website_missing`, `opening_hours_missing` und
+  `poi_payment_options_missing` in der Bewertungslogik verankert.
+- Weitere Ausschluesse, insbesondere fuer Preisregeln und spaetere
+  Kriterienaktivierungen, bleiben ein priorisierter offener Schritt.
 
 ## Pflegesystem-Erkennung
 

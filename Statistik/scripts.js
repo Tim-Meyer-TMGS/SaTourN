@@ -483,6 +483,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function isAbortLikeError(error) {
+    const message = String(error?.message || error || '');
+    return error?.name === 'AbortError' || /aborted|abort|timeout/i.test(message);
+  }
+
   function getConsentDefaults() {
     const defaults = RUNTIME_CONFIG.consent?.optionalDefaults || {};
     return {
@@ -576,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHelpPage() {
     if (els.helpModelSummary) {
-      els.helpModelSummary.textContent = 'Fehlende Kriterien ziehen den Score direkt um ihr Gewicht ab. Die Karten unten zeigen pro Datentyp die kleinste sinnvolle Pflegekombination für einen guten Score und die zusätzlichen Angaben für 100 Punkte.';
+      els.helpModelSummary.textContent = 'Fehlende automatisch gepruefte Kriterien ziehen den Score direkt um ihr Gewicht ab. Weitere fachlich relevante Kriterien bleiben sichtbar vorbereitet, wirken aber erst nach technischer Verifikation oder wenn sie fuer die Kategorie wirklich erwartet werden.';
     }
     renderHelpTypeOverview();
     renderHelpPrivacySection();
@@ -634,6 +639,9 @@ document.addEventListener('DOMContentLoaded', () => {
         Number(b.weight || 0) - Number(a.weight || 0) ||
         a.label.localeCompare(b.label, 'de')
       ));
+    const domainCriteria = qualityHelpers.getDomainCriteriaForType(type);
+    const autoCheckedCount = criteria.length;
+    const pendingCount = domainCriteria.filter((criterion) => criterion.status === 'needs_verification').length;
     const model = buildHelpTypeScoreModel(criteria);
     const minimumItems = model.minimumCriteria.length
       ? model.minimumCriteria
@@ -660,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <footer class="help-type-footer">
           <span>Fehlende Punkte ziehen den Score direkt ab.</span>
-          <span>Maximaler Verlust: ${formatNumber(model.totalWeight)} Punkte</span>
+          <span>${formatNumber(autoCheckedCount)} automatisch geprueft, ${formatNumber(pendingCount)} fachlich vorbereitet</span>
         </footer>
       </article>
     `;
@@ -1037,7 +1045,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (statisticResult.status === 'fulfilled') {
         state.latestRows = statisticResult.value;
-      } else {
+      } else if (!isAbortLikeError(statisticResult.reason)) {
         console.error('Statistik-Counts konnten nicht geladen werden.', statisticResult.reason);
       }
 
@@ -1053,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mode: 'sachsen_total'
           };
         }
-      } else {
+      } else if (!isAbortLikeError(qualityResult.reason)) {
         console.error('Qualitaetsdaten konnten nicht geladen werden.', qualityResult.reason);
       }
 
@@ -1092,7 +1100,9 @@ document.addEventListener('DOMContentLoaded', () => {
         onRow?.(row, sortStatisticRows(rows));
         return row;
       } catch (error) {
-        console.warn('Statistik-Count fehlgeschlagen.', type, error);
+        if (!isAbortLikeError(error)) {
+          console.warn('Statistik-Count fehlgeschlagen.', type, error);
+        }
         return null;
       }
     }));
@@ -1202,8 +1212,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } catch (error) {
-        shared.failedTypes += 1;
-        console.warn('Regionaler Qualitaetsscan fehlgeschlagen.', type, error);
+        if (!isAbortLikeError(error) && !isStale()) {
+          shared.failedTypes += 1;
+          console.warn('Regionaler Qualitaetsscan fehlgeschlagen.', type, error);
+        }
       } finally {
         if (!complete && !isStale()) shared.truncated = true;
         shared.completedTypes += 1;
@@ -1641,9 +1653,25 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
-      const issueSummary = await loadQualityCountSummary({
-        onUpdate: (partialIssueSummary) => applyIssueSummary(partialIssueSummary)
-      });
+      const issueSummary = canCalculateQualityForContext()
+        ? await loadRegionalQualityEvaluation({
+          isStale: () => loadId !== state.taskLoadId,
+          onUpdate: (aggregations, meta, items) => {
+            if (loadId !== state.taskLoadId) return;
+            state.taskItems = items || [];
+            state.qualityAggregations = aggregations;
+            state.qualityDataMeta = meta;
+            applyIssueSummary(aggregations?.issueSummary || []);
+          }
+        }).then((result) => {
+          state.taskItems = result.items || [];
+          state.qualityAggregations = result.aggregations;
+          state.qualityDataMeta = result.meta;
+          return result.aggregations?.issueSummary || [];
+        })
+        : await loadQualityCountSummary({
+          onUpdate: (partialIssueSummary) => applyIssueSummary(partialIssueSummary)
+        });
       if (loadId !== state.taskLoadId) return;
       applyIssueSummary(issueSummary);
       state.taskPage = 1;
@@ -3576,6 +3604,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function taskProblem(id) {
+    if (id === 'poi_street_missing') return 'Fuer diese POI fehlt eine belastbare Strassen- oder Anschriftsangabe.';
+    if (id === 'poi_teaser_missing') return 'Fuer diese POI fehlt ein kurzer Teaser-Text.';
+    if (id === 'poi_email_missing') return 'Fuer diese POI fehlt eine E-Mail-Adresse.';
+    if (id === 'poi_website_missing') return 'Fuer diese POI fehlt eine Webseite.';
+    if (id === 'poi_phone_missing') return 'Fuer diese POI fehlt eine Telefonnummer.';
     const problems = {
       license_missing: 'Für diese Datensätze ist keine gültige Lizenzangabe hinterlegt.',
       image_author_missing: 'Bildmaterial ist vorhanden, aber der Urheberhinweis fehlt.',
@@ -3599,6 +3632,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function taskImpactText(id) {
+    if (id === 'poi_street_missing') return 'Fehlende Anschriften erschweren Orientierung, Routing und redaktionelle Pflege.';
+    if (id === 'poi_teaser_missing') return 'Fehlende Teaser schwaechen Kurzansicht, Auffindbarkeit und Erstverstaendnis.';
+    if (id === 'poi_email_missing') return 'Fehlende E-Mail-Adressen erschweren Rueckfragen und Kontaktaufnahme.';
+    if (id === 'poi_website_missing') return 'Fehlende Webseiten schwaechen Weiterleitung zu vertiefenden Informationen.';
+    if (id === 'poi_phone_missing') return 'Fehlende Telefonnummern erschweren direkte Rueckfragen und Kontaktaufnahme.';
     const impacts = {
       license_missing: 'Ohne Lizenz sind Daten nicht Open-Data-fähig und nur eingeschränkt weiterverwendbar.',
       image_author_missing: 'Ohne Urheberangabe ist die Weitergabe von Bildmaterial rechtlich eingeschränkt.',
@@ -3761,6 +3799,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function taskIcon(id) {
+    if (id === 'poi_street_missing') return 'pin_drop';
+    if (id === 'poi_teaser_missing') return 'notes';
+    if (id === 'poi_email_missing') return 'mail';
+    if (id === 'poi_website_missing') return 'language';
+    if (id === 'poi_phone_missing') return 'call';
     if (id === 'license_missing') return 'description';
     if (id === 'image_author_missing' || id === 'image_missing') return 'image';
     if (id === 'opening_hours_missing') return 'schedule';
@@ -3777,6 +3820,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function taskDescription(id) {
+    if (id === 'poi_street_missing') return 'Keine Strasse oder Anschrift hinterlegt';
+    if (id === 'poi_teaser_missing') return 'Kein Teaser-Text vorhanden';
+    if (id === 'poi_email_missing') return 'Keine E-Mail-Adresse vorhanden';
+    if (id === 'poi_website_missing') return 'Keine Webseite vorhanden';
+    if (id === 'poi_phone_missing') return 'Keine Telefonnummer vorhanden';
     const descriptions = {
       license_missing: 'Datensätze ohne Lizenzangabe',
       image_author_missing: 'Bilder ohne Urheberangabe',

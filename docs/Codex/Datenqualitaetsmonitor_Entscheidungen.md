@@ -1,6 +1,6 @@
 # Datenqualitaets-Monitor - Entscheidungen
 
-Stand: 2026-06-05
+Stand: 2026-06-11
 
 ## Architektur
 
@@ -56,13 +56,38 @@ Stand: 2026-06-05
   Technische Status wie `active`, `needs_verification`, `source_guarded` oder
   `manual_review` entscheiden nur ueber die aktuelle automatische
   Pruefbarkeit, nicht ueber fachliche Gueltigkeit.
+- `source_guarded`, `not_applicable` und `excluded_by_category` sind nicht
+  scorewirksam und duerfen keine sichtbaren Pflegeaufgaben erzeugen.
+- Wenn ein Kriterium nur per Server-Scan belastbar ist, wird es nicht ueber
+  einen unsauberen API-Pushdown halbaktiv gehalten.
 - API-Pushdown nur fuer dokumentiert verifizierte Typ-/Kriterium-Kombinationen.
 - Nicht verifizierte Kombis laufen ueber Server-Scan mit
   `Statistik/quality.js`.
-- Negative Queries werden nicht generisch erzeugt.
+- Negative Queries werden nicht generisch erzeugt; Pushdown-Missing-Queries
+  werden immer mit `all:all` verankert.
+- Generische Wildcard-Pushdowns wie `street:*`, `details:*`, `openings:*` und
+  `feature:*` gelten fachlich nicht als belastbar fuer
+  `open-data-sachsen-tourismus`.
 - `image_author_missing` bleibt Server-Scan; `media:*` ist nur Prefilter.
 - Package-`booking_link_missing` bleibt Server-Scan, bis ein API-Pushdown
   verifiziert ist.
+- Die POI-Ausschlusslogik ist keine reine UI-Sonderbehandlung. Wenn Kategorien
+  fuer Kontakt-, Oeffnungs-, Preis- oder Zahlungsinformationen fachlich
+  ausgeschlossen sind, muss dieselbe Regel fuer Count, Fehlerliste,
+  Detailseite, Score und Export gelten.
+- Die erste produktive Ausschlusswelle ist bereits zentral verankert fuer
+  `poi_street_missing`, `poi_phone_missing`, `poi_email_missing`,
+  `poi_website_missing`, `opening_hours_missing` und
+  `poi_payment_options_missing`.
+
+## Regionale Bewertung
+
+- Ganz Sachsen bleibt eine Count-/Orientierungsansicht ohne berechneten
+  Qualitaets-Score.
+- Sobald Gebiet oder Ort gesetzt ist, duerfen Uebersicht und Pflegeaufgaben
+  denselben regionalen Qualitaetsscan nutzen.
+- Servergescannte Kriterien werden nur in diesen begrenzten Arbeitskontexten
+  sichtbar, nicht als globale Sachsen-Behauptung.
 
 ## Links und externe Systeme
 

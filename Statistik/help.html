@@ -103,6 +103,33 @@ module: true
         </div>
       </section>
 
+      <section class="help-score-grid" aria-label="Wann etwas nicht als Fehler zaehlt">
+        <article class="panel-card help-score-card">
+          <span class="help-score-icon blue material-icons" aria-hidden="true">shield</span>
+          <div>
+            <h2>Quellseitig abgefangen</h2>
+            <p><strong>Kein Score-Abzug</strong></p>
+            <p>Manche Basisfehler tauchen in der Datenbasis gar nicht als normale Pflegefaelle auf. Sie werden daher nicht als sichtbare Aufgabe gewertet.</p>
+          </div>
+        </article>
+        <article class="panel-card help-score-card">
+          <span class="help-score-icon amber material-icons" aria-hidden="true">category</span>
+          <div>
+            <h2>Kategoriebedingt nicht erwartet</h2>
+            <p><strong>Kein Score-Abzug</strong></p>
+            <p>Einige Angaben sind nur fuer bestimmte Objektarten sinnvoll. Wenn sie fachlich nicht erwartbar sind, zaehlen sie nicht als Fehler.</p>
+          </div>
+        </article>
+        <article class="panel-card help-score-card">
+          <span class="help-score-icon material-icons" aria-hidden="true">pending_actions</span>
+          <div>
+            <h2>Noch nicht automatisch geprueft</h2>
+            <p><strong>Noch nicht scorewirksam</strong></p>
+            <p>Fachlich relevante Kriterien koennen sichtbar vorbereitet sein, beeinflussen den Score aber erst nach technischer Verifikation.</p>
+          </div>
+        </article>
+      </section>
+
       <section class="help-type-overview" aria-labelledby="help-type-overview-title">
         <header class="panel-head">
           <div>
