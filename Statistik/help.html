@@ -41,8 +41,8 @@ module: true
 
     <main class="help-main" aria-labelledby="help-title">
       <section class="overview-hero help-hero">
-        <h1 id="help-title">Hilfe zum Datenqualitäts-Score</h1>
-        <p>Der Score zeigt, wie gut ein Datensatz die aktuell automatisch prüfbaren Qualitätskriterien erfüllt. Die fachlichen Kriterien gelten gemeinsam; der technische Prüfstatus entscheidet nur, ob ein Kriterium bereits automatisch in Score, Pflegeaufgaben und Detailansicht eingeht.</p>
+        <h1 id="help-title">Score verstehen</h1>
+        <p>Hier siehst du, was für deinen Datentyp zählt, was du mindestens gepflegt haben solltest und welche Angaben den Score weiter nach oben bringen. Fehlende Punkte wirken direkt als Abzug.</p>
       </section>
 
       <section class="help-score-grid" aria-label="Score-Berechnung">
@@ -50,8 +50,8 @@ module: true
           <span class="help-score-icon material-icons" aria-hidden="true">calculate</span>
           <div>
             <h2>Berechnung</h2>
-            <p><strong>Score = erfülltes Gewicht / prüfbares Gesamtgewicht × 100</strong></p>
-            <p>Nur automatisch prüfbare Kriterien mit Gewicht werden eingerechnet. Fachlich gültige, aber noch nicht verifizierte Kriterien werden sichtbar dokumentiert und später nach Verifikation technisch aktiviert.</p>
+            <p><strong>Score = erfüllte Gewichtspunkte / mögliche Gewichtspunkte × 100</strong></p>
+            <p>Jedes relevante Kriterium hat ein Gewicht. Fehlt es, sinkt der Score genau um diese Punkte. Erfüllt ein Datensatz alle für seinen Typ relevanten Kriterien, erreicht er 100.</p>
           </div>
         </article>
         <article class="panel-card help-score-card">
@@ -59,7 +59,7 @@ module: true
           <div>
             <h2>Gut</h2>
             <p><strong>80 bis 100 Punkte</strong></p>
-            <p>Die wichtigsten prüfbaren Angaben sind vorhanden. Einzelne Ergänzungen können trotzdem sinnvoll sein.</p>
+            <p>Die wichtigsten Angaben sind gepflegt. Kleinere Lücken können noch existieren, ohne den Datensatz aus dem grünen Bereich zu ziehen.</p>
           </div>
         </article>
         <article class="panel-card help-score-card">
@@ -67,7 +67,7 @@ module: true
           <div>
             <h2>Prüfen</h2>
             <p><strong>60 bis 79 Punkte</strong></p>
-            <p>Der Datensatz ist grundsätzlich nutzbar, braucht aber erkennbare Pflege oder Ergänzungen.</p>
+            <p>Der Datensatz ist nutzbar, braucht aber erkennbare Nachpflege, damit er wieder stabil im grünen Bereich liegt.</p>
           </div>
         </article>
         <article class="panel-card help-score-card">
@@ -75,71 +75,42 @@ module: true
           <div>
             <h2>Kritisch</h2>
             <p><strong>0 bis 59 Punkte</strong></p>
-            <p>Mindestens ein wichtiges Kriterium fehlt oder mehrere Kriterien reduzieren die Nutzbarkeit deutlich.</p>
+            <p>Wichtige Angaben fehlen noch deutlich. Der Datensatz ist sichtbar, aber inhaltlich noch nicht sauber gepflegt.</p>
           </div>
         </article>
       </section>
 
-      <section class="panel-card help-matrix-card" aria-labelledby="help-active-criteria-title">
+      <section class="panel-card help-summary-card" aria-label="Was den Score trägt">
         <header class="panel-head">
           <div>
-            <h2 id="help-active-criteria-title">Score-Matrix der automatisch geprüften Kriterien</h2>
-            <p id="help-model-summary" class="data-note">Kriterienmodell wird geladen ...</p>
+            <h2>Was dein Score trägt</h2>
+            <p class="data-note" id="help-model-summary">Die wichtigsten Angaben werden geladen ...</p>
           </div>
         </header>
-        <div class="tasks-table-wrap">
-          <table class="help-matrix-table">
-            <thead>
-              <tr>
-                <th>Kriterium</th>
-                <th>Datentypen</th>
-                <th>Gewicht</th>
-                <th>Wirkung</th>
-                <th>Prüfung</th>
-              </tr>
-            </thead>
-            <tbody id="help-active-criteria-body">
-              <tr><td colspan="5" class="table-empty">Kriterien werden geladen ...</td></tr>
-            </tbody>
-          </table>
+        <div class="help-score-rules">
+          <article>
+            <h3>Minimal für einen guten Score</h3>
+            <p>Die Karten je Datentyp zeigen dir die kleinste sinnvolle Pflegekombination, mit der du den grünen Bereich erreichst oder knapp hältst.</p>
+          </article>
+          <article>
+            <h3>Optimal gepflegt</h3>
+            <p>Wenn alle für deinen Typ relevanten Angaben vorhanden sind, erreichst du 100 Punkte. Das ist das saubere Zielbild.</p>
+          </article>
+          <article>
+            <h3>Scorewirkung</h3>
+            <p>Je höher das Gewicht eines fehlenden Kriteriums, desto stärker sinkt dein Score. Ein fehlendes Lizenz- oder Buchungsfeld wirkt stärker als ein kleineres Ergänzungsfeld.</p>
+          </article>
         </div>
       </section>
 
-      <section class="help-explain-grid" aria-label="Einordnung der Kriterien">
-        <article class="panel-card help-info-card">
-          <h2>Warum nicht jedes fachliche Kriterium sofort zählt</h2>
-          <p>Alle fachlichen Kriterien gelten. Ein Kriterium fließt aber erst dann automatisch in den Score ein, wenn Feldmapping, API-Query oder Server-Scan belastbar sind. Dadurch bleibt der Score nachvollziehbar und wird nicht durch ungeprüfte Annahmen verzerrt.</p>
-        </article>
-        <article class="panel-card help-info-card">
-          <h2>Open-Data-Relevanz</h2>
-          <p>Lizenz und Bildurheber sind besonders wichtig, weil sie direkt beeinflussen, ob Datensätze offen weiterverwendet werden können. Diese Kriterien werden in Pflegeaufgaben sichtbar priorisiert.</p>
-        </article>
-      </section>
-
-      <section class="panel-card help-matrix-card" aria-labelledby="help-domain-criteria-title">
+      <section class="help-type-overview" aria-labelledby="help-type-overview-title">
         <header class="panel-head">
           <div>
-            <h2 id="help-domain-criteria-title">Fachliches Kriterienmodell</h2>
-            <p class="data-note">Diese Matrix zeigt alte und neue Kriterien gemeinsam. Der technische Status beschreibt die automatische Prüfbarkeit, nicht die fachliche Gültigkeit.</p>
+            <h2 id="help-type-overview-title">Was du je Datentyp pflegen solltest</h2>
+            <p class="data-note">Die Karten zeigen dir jeweils die kleinste Pflegekombination für einen guten Score und die zusätzlichen Angaben für 100 Punkte.</p>
           </div>
         </header>
-        <div class="tasks-table-wrap">
-          <table class="help-matrix-table">
-            <thead>
-              <tr>
-                <th>Kriterium</th>
-                <th>Datentypen</th>
-                <th>Stufe</th>
-                <th>Technischer Status</th>
-                <th>API-Hinweis</th>
-                <th>Empfehlung</th>
-              </tr>
-            </thead>
-            <tbody id="help-domain-criteria-body">
-              <tr><td colspan="6" class="table-empty">Fachmodell wird geladen ...</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="help-type-grid" class="help-type-grid"></div>
       </section>
     </main>
   </div>
