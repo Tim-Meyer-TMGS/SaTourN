@@ -1,6 +1,6 @@
 # Datenqualitaets-Monitor - Aktueller Projektstand
 
-Stand: 2026-06-11
+Stand: 2026-06-12
 
 `Statistik/` ist ein statisches GitHub-Pages-Frontend mit Vanilla JavaScript
 und Node/Express-Proxy fuer Destination.One/eT4-Requests. Es gibt keine neue
@@ -14,7 +14,8 @@ Build-Kette und keine Secrets im Frontend.
   Datensatzlisten nach Nutzeraktion.
 - `Statistik/records.html`: Datensatz-Hauptseite mit lokaler Suche,
   Autovervollstaendigung, serverseitiger Volltextsuche, Filtern,
-  Schnellfiltern, Liste, Pagination und CSV-Export.
+  Schnellfiltern, Liste, Pagination, CSV-Export, KI-Suche und
+  Mail-Entwurf aus den Aktionen.
 - `Statistik/record-detail.html`: Datensatz-Detailseite fuer genau einen
   Datensatz per `type`, `id` oder `global_id`.
 - `Statistik/stats.html`: Open-Data-Statistik mit aggregierten Counts,
@@ -32,7 +33,8 @@ funktionieren damit unter
 
 - Aktueller Betrieb: Browser ruft live ueber Render als Proxy ab.
 - Genutzte Endpunkte: `/api/search`, `/api/autocomplete`, `/api/quality/count`,
-  `/api/quality/scan`.
+  `/api/quality/scan`, `/api/oi/mail-draft`, `/api/oi/search-records`,
+  `/api/records/by-global-ids`.
 - Kein produktiver Cronjob, kein Nacht-Snapshot und kein aktiver Cache.
 - Vorbereitete Cache-Endpunkte (`/api/quality/snapshot`, `/api/quality/list`)
   werden im Frontend nur genutzt, wenn `window.SATOURN_USE_QUALITY_CACHE`
@@ -44,6 +46,9 @@ funktionieren damit unter
 - Arbeitskontext besteht aus Gebiet, Ort und Datentyp und wird klein in
   `localStorage` gespeichert. API-Antworten, Rohdaten, Fehlerlisten, Secrets
   und KI-Kontexte werden nicht lokal persistiert.
+- one.intelligence ist technisch getrennt von der bestehenden Meta-Anbindung:
+  eigener Server-Client, eigene Environment-Variablen `OI_*`, eigener
+  Fehlerpfad und kein Secret im Frontend.
 - Consent ist technisch vorbereitet: Runtime-Inventar externer Dienste,
   lokale Consent-Einstellungen fuer optionale Kategorien und ein
   Datenschutz-/Consent-Bereich auf der Help-Seite. Ein echter
@@ -67,9 +72,28 @@ funktionieren damit unter
   `Statistik/main.js`.
 - Styling: `Statistik/style.css`.
 - Proxy: `index.js`, `routes/search.js`, `routes/quality.js`,
-  `lib/search-utils.js`.
+  `routes/records.js`, `routes/oi.js`, `lib/search-utils.js`,
+  `lib/oi-config.js`.
 - Optionale Snapshot-Vorbereitung: `lib/kv-store.js`,
   `scripts/run-quality-snapshot.mjs`.
+
+## one.intelligence-Stand
+
+- Mail-Entwurf ist serverseitig vorbereitet:
+  `POST /api/oi/mail-draft`.
+- KI-Suche ist serverseitig vorbereitet:
+  `POST /api/oi/search-records`.
+- Trefferaufloesung per `global_id` ist vorbereitet:
+  `POST /api/records/by-global-ids`.
+- Das Frontend nutzt fuer beide KI-Funktionen keine eigenen Secrets.
+  Der Browser spricht nur mit dem Render-Proxy.
+- Mail-Entwurf erzeugt Plaintext fuer `mailto:` und uebergibt
+  `to`, optional `cc`/`bcc`, `subject` und `body`.
+- KI-Suche erwartet von one.intelligence eine parsebare JSON-Antwort mit
+  `globalIds` und begrenzt die erste Ergebnismenge auf 50 IDs.
+- Offener Betriebs-Schritt: produktive Render-Konfiguration mit
+  `OI_API_KEY`, `OI_MODEL_MAIL` und `OI_MODEL_SEARCH` hinterlegen und
+  gegen Live-Modelle testen.
 
 ## Qualitaetskriterien
 
@@ -214,3 +238,12 @@ Die Logik basiert auf den Item-Keywords, insbesondere `keywords_old`.
   `npm run diagnose:quality-examples`.
 - In der aktuellen Codex-Umgebung war `node` zuletzt nicht verfuegbar. Dann
   Node-Checks als nicht ausgefuehrt dokumentieren.
+
+## Zuletzt umgesetzt
+
+- one.intelligence als separaten Integrationsstrang vorbereitet, ohne die
+  bestehende Meta-/Search-/Qualitaetskonfiguration anzufassen
+- neue Render-Proxy-Endpunkte fuer Mail-Entwurf, KI-Suche und
+  `global_id`-Trefferaufloesung eingebaut
+- Datensatzliste um `AI-Search` und KI-gestuetzten Mail-Entwurf erweitert
+- OI-Konfiguration in eigene `OI_*`-Variablen getrennt dokumentiert

@@ -1,6 +1,6 @@
 # Datenqualitaets-Monitor - Offene TODOs
 
-Stand: 2026-06-11
+Stand: 2026-06-12
 
 Diese Datei ist die kurze Arbeitsliste fuer die naechsten Schritte.
 Abgeschlossene Analysen, Mockup-Arbeiten und Pushdown-Nachweise stehen in den
@@ -34,6 +34,41 @@ verlinkten Detaildokumenten und werden hier nicht doppelt ausgeschrieben.
 - UI zeigt handlungsrelevante Informationen, nicht technische Zwischenwerte.
 
 ## Prioritaet A - Als Naechstes
+
+### 0. one.intelligence produktiv anschliessen und testen
+
+Warum jetzt:
+
+- die technische Trennung ist im Code vorbereitet
+- die produktive Nutzbarkeit haengt jetzt an Render-Setup, Modellwahl und
+  Live-Tests
+- dieser Schritt ist fachlich getrennt von der Qualitaetslogik und kann
+  parallel sauber abgeschlossen werden
+
+Offen:
+
+- `OI_API_KEY`, `OI_MODEL_MAIL` und `OI_MODEL_SEARCH` in Render hinterlegen
+- pruefen, welche konkreten Modellnamen in one.intelligence fuer
+  `chat/completions` freigegeben sind
+- zwei getrennte Modelle oder Konfigurationen sauber benennen:
+  eines fuer Mail-Entwurf, eines fuer KI-Suche
+- Systemprompts in one.intelligence anlegen, ohne den im Code gesendeten
+  JSON-Zwang zu verwischen
+- Mail-Entwurf mit echtem Datensatz, E-Mail-Adresse und Fehlerkontext
+  pruefen
+- KI-Suche mit echten Themenanfragen pruefen und die Qualitaet der
+  `global_id`-Rueckgaben bewerten
+- Rate-Limit, Timeout und Fehlermeldungen gegen Live-Verhalten pruefen
+
+Arbeitsanweisung:
+
+- Render nur um neue `OI_*`-Variablen erweitern
+- bestehende Meta-/Search-Keys, `LICENSEKEY` und bestehende Proxy-Logik nicht
+  anfassen
+- bei Modelltests zunaechst niedrige Kreativitaet und strikt parsebare
+  Antworten bevorzugen
+- Erkenntnisse in `Render_OI_Einrichtung.md` und spaeter in den
+  Entscheidungen nachziehen
 
 ### 1. Weitere API-Kriterien verifizieren und aktivieren
 
@@ -138,6 +173,8 @@ Offen:
 - Statistikseite weiter auf konkrete Aussagen reduzieren
 - Technische Hinweise in UI nur dort zeigen, wo sie eine echte Entscheidung
   beeinflussen
+- OI-Aktionen in der Datensatzliste nach Live-Test noch feinjustieren:
+  deaktivierte Zustaende, Fehlermeldungen, Button-Texte und Modal-Texte
 
 ## Prioritaet C - Spaeter / Rahmenbedingungen
 
@@ -187,6 +224,9 @@ Offen:
 - Vercel-Migration separat behandeln; aktuell bleibt Render der Proxy
 - n8n nur produktiv anbinden, wenn CORS, Auth, Limits und Antwortformat
   sauber geklaert sind
+- fuer one.intelligence spaeter entscheiden, ob getrennte Modelle genuegen
+  oder ob eigene Assistent-/Prompt-Konfigurationen versioniert gepflegt
+  werden sollen
 
 ## Bewusst nicht aktivieren
 
@@ -207,6 +247,11 @@ Diese Themen bleiben offen oder clientseitig:
 - `keywords:"Bookable"` fuer Hotel
 
 ## Zuletzt umgesetzt
+
+- one.intelligence-Integration als separaten Backend-Strang vorbereitet:
+  `/api/oi/mail-draft`, `/api/oi/search-records`,
+  `/api/records/by-global-ids`
+- Datensatzliste um `AI-Search` und KI-Mailaktion erweitert
 
 - aktive Wildcard-Annahmen fuer Beschreibung und Oeffnungszeiten aus
   fachlich unsauberen Pushdowns entfernt und auf Server-Scan umgestellt

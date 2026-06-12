@@ -4,7 +4,9 @@ import cors from 'cors';
 import { CACHE_TTL_MS, PORT } from './lib/config.js';
 import { TTLCache } from './lib/cache.js';
 import { createKeyValueStore } from './lib/kv-store.js';
+import { registerOiRoutes } from './routes/oi.js';
 import { registerQualityRoute } from './routes/quality.js';
+import { registerRecordRoutes } from './routes/records.js';
 import { registerSearchRoute } from './routes/search.js';
 
 const app = express();
@@ -31,6 +33,8 @@ app.get('/health', (req, res) => {
 });
 
 registerSearchRoute(app, cache);
+registerRecordRoutes(app);
+registerOiRoutes(app);
 registerQualityRoute(app, { keyValueStore });
 
 app.use((req, res) => {

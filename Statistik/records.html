@@ -69,7 +69,10 @@ module: true
             <input id="record-search-input" type="search" placeholder="Suche nach Titel, ID, global_id, Ort, Kategorie oder Problem ...">
             <button id="record-search-clear" class="plain-button" type="button" aria-label="Suche leeren"><span class="material-icons" aria-hidden="true">close</span></button>
           </label>
+          <div class="record-search-actions">
             <button id="record-search-button" class="context-edit" type="button">Suchen</button>
+            <button id="record-ai-search-button" class="plain-button icon-text-button" type="button"><span class="material-icons" aria-hidden="true">auto_awesome</span>AI-Search</button>
+          </div>
           <small>Du kannst auch direkt eine ID oder global_id eingeben.</small>
           <div id="record-autocomplete-list" class="record-autocomplete-list" role="listbox" hidden></div>
         </div>
@@ -173,6 +176,24 @@ module: true
       <footer>
         <button value="cancel" type="submit">Abbrechen</button>
         <button class="primary" value="default" type="submit">Übernehmen</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="record-ai-search-dialog" class="context-dialog record-ai-search-dialog" aria-labelledby="record-ai-search-title">
+    <form method="dialog" id="record-ai-search-form">
+      <header>
+        <h2 id="record-ai-search-title">AI-Search</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
+      </header>
+      <label>
+        Suchanfrage
+        <textarea id="record-ai-search-input" rows="4" placeholder="z. B. Kampagnenthema Wandern im Erzgebirge oder familienfreundliche Ausflugsziele"></textarea>
+      </label>
+      <p id="record-ai-search-note" class="data-note">Die KI liefert passende global_id-Treffer. Diese Datensätze werden anschließend direkt geladen.</p>
+      <footer>
+        <button value="cancel" type="submit">Abbrechen</button>
+        <button id="record-ai-search-submit" class="primary" value="default" type="submit">Mit KI suchen</button>
       </footer>
     </form>
   </dialog>

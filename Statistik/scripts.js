@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/snapshot');
   const QUALITY_LIST_API_BASE = window.SATOURN_QUALITY_LIST_API_BASE
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/quality/list');
+  const OI_MAIL_DRAFT_API_BASE = window.SATOURN_OI_MAIL_DRAFT_API_BASE
+    || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/oi/mail-draft');
+  const OI_SEARCH_API_BASE = window.SATOURN_OI_SEARCH_API_BASE
+    || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/oi/search-records');
+  const RECORDS_BY_GLOBAL_IDS_API_BASE = window.SATOURN_RECORDS_BY_GLOBAL_IDS_API_BASE
+    || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/records/by-global-ids');
   const AUTOCOMPLETE_API_BASE = window.SATOURN_AUTOCOMPLETE_API_BASE
     || API_BASE.replace(/\/api\/search(?:\?.*)?$/, '/api/autocomplete');
   const USE_QUALITY_CACHE = window.SATOURN_USE_QUALITY_CACHE === true
@@ -160,6 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
     recordSearchInput: document.getElementById('record-search-input'),
     recordSearchClear: document.getElementById('record-search-clear'),
     recordSearchButton: document.getElementById('record-search-button'),
+    recordAiSearchButton: document.getElementById('record-ai-search-button'),
+    recordAiSearchDialog: document.getElementById('record-ai-search-dialog'),
+    recordAiSearchForm: document.getElementById('record-ai-search-form'),
+    recordAiSearchInput: document.getElementById('record-ai-search-input'),
+    recordAiSearchSubmit: document.getElementById('record-ai-search-submit'),
+    recordAiSearchNote: document.getElementById('record-ai-search-note'),
     recordAutocompleteList: document.getElementById('record-autocomplete-list'),
     recordTypeFilter: document.getElementById('record-type-filter'),
     recordCategoryFilter: document.getElementById('record-category-filter'),
@@ -279,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
     recordAutocompleteTimer: null,
     recordAutocompleteRequestId: 0,
     recordServerSearchKeys: new Set(),
+    recordAiSearchPrompt: '',
     recordDataMeta: {
       mode: 'empty',
       collectedItems: 0,
@@ -363,8 +376,11 @@ document.addEventListener('DOMContentLoaded', () => {
     fillRecordControls();
     renderRecordsLoading();
     els.refreshButton?.addEventListener('click', () => loadRecordsData());
+    els.recordAiSearchButton?.addEventListener('click', openRecordAiSearchDialog);
+    els.recordAiSearchForm?.addEventListener('submit', handleRecordAiSearchSubmit);
     els.recordSearchInput?.addEventListener('input', () => {
       state.recordServerSearchKeys = new Set();
+      state.recordAiSearchPrompt = '';
       clearTimeout(state.recordSearchTimer);
       state.recordSearchTimer = setTimeout(() => {
         state.recordPage = 1;
@@ -389,6 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
     els.recordSearchClear?.addEventListener('click', () => {
       if (els.recordSearchInput) els.recordSearchInput.value = '';
       hideRecordAutocomplete();
+      state.recordAiSearchPrompt = '';
       state.recordPage = 1;
       applyRecordFilters();
     });
@@ -490,22 +507,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const {
       optional404 = false,
       forceFresh = shouldForceFresh(),
-      cacheTtlMs = getRequestCacheTtl(url)
+      cacheTtlMs = getRequestCacheTtl(url),
+      method = 'GET',
+      headers,
+      body,
+      timeout,
+      signal
     } = options;
+    const isCacheableRequest = String(method || 'GET').toUpperCase() === 'GET';
+    const cacheKey = isCacheableRequest ? url : '';
 
-    if (!forceFresh && cacheTtlMs > 0) {
-      const cached = transientRequestCache.get(url);
+    if (!forceFresh && isCacheableRequest && cacheTtlMs > 0) {
+      const cached = transientRequestCache.get(cacheKey);
       if (cached && cached.expiresAt > Date.now()) return cloneJsonValue(cached.value);
-      const inflight = transientRequestInflight.get(url);
+      const inflight = transientRequestInflight.get(cacheKey);
       if (inflight) return cloneJsonValue(await inflight);
     }
 
     const request = (async () => {
       const payload = optional404
-        ? await fetchJsonOptionalUncached(url)
-        : await rawFetchJson(url);
-      if (cacheTtlMs > 0) {
-        transientRequestCache.set(url, {
+        ? await fetchJsonOptionalUncached(url, { method, headers, body, timeout, signal })
+        : await rawFetchJson(url, { method, headers, body, timeout, signal });
+      if (isCacheableRequest && cacheTtlMs > 0) {
+        transientRequestCache.set(cacheKey, {
           value: cloneJsonValue(payload),
           expiresAt: Date.now() + cacheTtlMs
         });
@@ -513,12 +537,12 @@ document.addEventListener('DOMContentLoaded', () => {
       return payload;
     })();
 
-    if (!forceFresh && cacheTtlMs > 0) transientRequestInflight.set(url, request);
+    if (!forceFresh && isCacheableRequest && cacheTtlMs > 0) transientRequestInflight.set(cacheKey, request);
 
     try {
       return cloneJsonValue(await request);
     } finally {
-      transientRequestInflight.delete(url);
+      if (cacheKey) transientRequestInflight.delete(cacheKey);
     }
   }
 
@@ -942,8 +966,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${API_BASE}?${params.toString()}`;
   }
 
-  async function fetchJsonOptionalUncached(url) {
-    const response = await fetch(url, { cache: 'no-store' });
+  async function fetchJsonOptionalUncached(url, options = {}) {
+    const response = await fetch(url, { cache: 'no-store', ...options });
     const text = await response.text();
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${text}`);
@@ -2184,6 +2208,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadRecordsData() {
     const startedAt = new Date();
     state.recordServerSearchKeys = new Set();
+    state.recordAiSearchPrompt = '';
     showRecordsMessage('');
     renderRecordsLoading();
 
@@ -2277,6 +2302,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const primaryCriterion = qualityCriteria.find((criterion) => criterion.id === primaryIssueId);
     const id = item.id || extractId(item.raw || item);
     const globalId = item.globalId || getFirst(item, ['global_id', 'globalId', 'raw.global_id', 'raw.globalId']);
+    const raw = item.raw || item;
     return {
       item,
       id,
@@ -2293,6 +2319,9 @@ document.addEventListener('DOMContentLoaded', () => {
       primaryIssue: primaryCriterion?.label || '-',
       recommendation: primaryCriterion?.recommendation || '',
       missingCriteria,
+      email: getFirst(raw, ['email']) || '',
+      web: getFirst(raw, ['web', 'url']) || '',
+      et4Url: buildVerifiedEt4Url(item),
       updatedAt: item.updatedAt || '',
       detailUrl: buildRecordDetailUrl({ id, globalId, type: item.type || '' }),
       searchText: ''
@@ -2332,8 +2361,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderPendingRecordViewMessage() {
+    if (state.recordAiSearchPrompt) {
+      showRecordsMessage(`KI-Suche aktiv: ${state.recordAiSearchPrompt}`);
+      return;
+    }
     const view = state.pendingRecordView;
-    if (!view) return;
+    if (!view) {
+      showRecordsMessage('');
+      return;
+    }
     const criterion = qualityCriteria.find((entry) => entry.id === view.criterionId);
     const label = view.label || criterion?.label || view.criterionId;
     const typeText = view.type ? ` (${view.type})` : '';
@@ -2360,11 +2396,121 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRecordStatusLegend();
     renderRecordTable();
     renderRecordDataNote();
-    showRecordsMessage('');
+    renderPendingRecordViewMessage();
+  }
+
+  function openRecordAiSearchDialog() {
+    if (!els.recordAiSearchDialog) return;
+    if (els.recordAiSearchInput) els.recordAiSearchInput.value = state.recordAiSearchPrompt || '';
+    if (els.recordAiSearchNote) {
+      els.recordAiSearchNote.textContent = 'Die KI liefert passende global_id-Treffer. Diese Datensätze werden anschließend direkt geladen.';
+    }
+    if (typeof els.recordAiSearchDialog.showModal === 'function') {
+      els.recordAiSearchDialog.showModal();
+    } else {
+      els.recordAiSearchDialog.setAttribute('open', '');
+    }
+  }
+
+  async function handleRecordAiSearchSubmit(event) {
+    const submitterValue = event?.submitter?.value || '';
+    if (submitterValue === 'cancel') return;
+    event.preventDefault();
+
+    const prompt = (els.recordAiSearchInput?.value || '').trim();
+    if (!prompt) {
+      if (els.recordAiSearchNote) els.recordAiSearchNote.textContent = 'Bitte gib zuerst eine Suchanfrage ein.';
+      return;
+    }
+
+    if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = true;
+    if (els.recordAiSearchNote) els.recordAiSearchNote.innerHTML = '<span class="inline-loading">KI-Suche wird ausgeführt ...</span>';
+
+    try {
+      const aiPayload = await fetchJsonCached(OI_SEARCH_API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          context: {
+            area: contextAreaLabel(),
+            city: state.context.city || '',
+            type: els.recordTypeFilter?.value || state.context.type || ''
+          }
+        })
+      });
+      const globalIds = Array.isArray(aiPayload?.globalIds) ? aiPayload.globalIds : [];
+      state.recordAiSearchPrompt = prompt;
+      state.pendingRecordView = null;
+      clearRecordViewState();
+      state.recordServerSearchKeys = new Set();
+      if (els.recordSearchInput) els.recordSearchInput.value = '';
+      if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
+      if (els.recordStatusFilter) els.recordStatusFilter.value = '';
+      if (els.recordIssueFilter) els.recordIssueFilter.value = '';
+      hideRecordAutocomplete();
+
+      if (!globalIds.length) {
+        state.recordItems = [];
+        state.recordRows = [];
+        state.filteredRecordRows = [];
+        state.recordPage = 1;
+        state.recordDataMeta = {
+          mode: 'ai_search',
+          collectedItems: 0,
+          estimatedTotalItems: 0,
+          truncated: false
+        };
+        fillRecordDynamicFilters();
+        applyRecordFilters();
+        showRecordsMessage(`KI-Suche aktiv: ${prompt}`);
+        return closeRecordAiSearchDialog();
+      }
+
+      renderRecordsLoading();
+      const recordsPayload = await fetchJsonCached(RECORDS_BY_GLOBAL_IDS_API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          globalIds,
+          type: els.recordTypeFilter?.value || state.context.type || ''
+        })
+      });
+      const resolved = Array.isArray(recordsPayload?.items) ? recordsPayload.items : [];
+      const evaluated = evaluateAllItems(resolved.map((raw) => normalizeItem(raw.raw || raw, raw._resolvedType || raw.type)));
+      state.recordItems = evaluated;
+      state.recordRows = evaluated.map(buildRecordViewModel);
+      state.filteredRecordRows = [];
+      state.recordPage = 1;
+      state.recordDataMeta = {
+        mode: 'ai_search',
+        collectedItems: evaluated.length,
+        estimatedTotalItems: globalIds.length,
+        truncated: Boolean(aiPayload?.truncated)
+      };
+      fillRecordDynamicFilters();
+      applyRecordFilters();
+      closeRecordAiSearchDialog();
+    } catch (error) {
+      console.error('KI-Suche fehlgeschlagen.', error);
+      if (els.recordAiSearchNote) els.recordAiSearchNote.textContent = 'Die KI-Suche konnte nicht ausgeführt werden.';
+    } finally {
+      if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = false;
+    }
+  }
+
+  function closeRecordAiSearchDialog() {
+    if (!els.recordAiSearchDialog) return;
+    if (typeof els.recordAiSearchDialog.close === 'function') {
+      els.recordAiSearchDialog.close();
+    } else {
+      els.recordAiSearchDialog.removeAttribute('open');
+    }
   }
 
   async function handleRecordSearchSubmit() {
     state.recordPage = 1;
+    state.recordAiSearchPrompt = '';
     applyRecordFilters();
     const query = (els.recordSearchInput?.value || '').trim();
     if (!query || state.filteredRecordRows.length) return;
@@ -2407,6 +2553,86 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen';
     }
+  }
+
+  async function handleRecordMailDraft(row, triggerNode) {
+    if (!row?.email || !row?.missingCriteria?.length) {
+      showRecordsMessage('Für diesen Datensatz kann kein KI-Mailentwurf erzeugt werden.');
+      return;
+    }
+
+    if (triggerNode) triggerNode.disabled = true;
+    try {
+      const issueContext = getRecordMailIssueContext(row);
+      const payload = await fetchJsonCached(OI_MAIL_DRAFT_API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          record: {
+            id: row.id || '',
+            globalId: row.globalId || '',
+            type: row.type || '',
+            title: row.title || '',
+            city: row.city || '',
+            region: row.region || '',
+            email: row.email || '',
+            web: row.web || '',
+            et4Url: row.et4Url || ''
+          },
+          issueContext,
+          issues: getRecordMailIssues(row, issueContext)
+        })
+      });
+      const mailtoUrl = buildMailtoUrl(payload);
+      if (!mailtoUrl) throw new Error('Mailto payload invalid');
+      location.href = mailtoUrl;
+    } catch (error) {
+      console.error('Mail-Entwurf konnte nicht erzeugt werden.', error);
+      showRecordsMessage('Der KI-Mailentwurf konnte nicht erzeugt werden.');
+    } finally {
+      if (triggerNode) triggerNode.disabled = !row?.email;
+    }
+  }
+
+  function getRecordMailIssueContext(row) {
+    const criterionId = state.pendingRecordView?.criterionId || els.recordIssueFilter?.value || '';
+    const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
+    return {
+      source: state.pendingRecordView?.criterionId ? 'task' : (criterionId ? 'records-filter' : 'records'),
+      criterionId,
+      criterionLabel: criterion?.label || row.primaryIssue || ''
+    };
+  }
+
+  function getRecordMailIssues(row, issueContext) {
+    const activeCriterionId = issueContext?.criterionId || '';
+    const relevantIds = activeCriterionId && row.missingCriteria.includes(activeCriterionId)
+      ? [activeCriterionId]
+      : row.missingCriteria;
+
+    return relevantIds
+      .map((criterionId) => {
+        const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
+        if (!criterion) return null;
+        return {
+          criterionId,
+          label: criterion.label,
+          problem: taskProblem(criterionId),
+          recommendation: criterion.recommendation || row.recommendation || 'Datensatz prüfen und fehlende Angaben ergänzen.'
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function buildMailtoUrl(payload) {
+    const to = String(payload?.to || '').trim();
+    if (!to) return '';
+    const params = new URLSearchParams();
+    if (payload?.subject) params.set('subject', String(payload.subject).slice(0, 240));
+    if (payload?.body) params.set('body', String(payload.body).slice(0, 3500));
+    if (Array.isArray(payload?.cc) && payload.cc.length) params.set('cc', payload.cc.join(','));
+    if (Array.isArray(payload?.bcc) && payload.bcc.length) params.set('bcc', payload.bcc.join(','));
+    return `mailto:${encodeURIComponent(to)}?${params.toString()}`;
   }
 
   async function searchSingleRecordById(query) {
@@ -2611,6 +2837,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${escapeHtml(formatRecordDate(row.updatedAt))}</td>
           <td>
             <span class="row-actions">
+              <button class="icon-button" type="button" data-record-mail="${escapeHtml(row.globalId || row.id || '')}" aria-label="E-Mail entwerfen"${row.email && row.missingCriteria.length ? '' : ' disabled'}><span class="material-icons" aria-hidden="true">mail</span></button>
               <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Datensatz ansehen"><span class="material-icons" aria-hidden="true">visibility</span></a>
               <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail öffnen"><span class="material-icons" aria-hidden="true">chevron_right</span></a>
             </span>
@@ -2625,12 +2852,22 @@ document.addEventListener('DOMContentLoaded', () => {
       els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 Datensätze';
     }
     if (els.recordResultSummary) {
-      els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladene Treffer` : `${formatNumber(rows.length)} Datensätze`}`;
+      if (state.recordDataMeta.mode === 'ai_search') {
+        els.recordResultSummary.textContent = `KI-Suche: ${formatNumber(rows.length)} Datensätze geladen`;
+      } else {
+        els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladene Treffer` : `${formatNumber(rows.length)} Datensätze`}`;
+      }
     }
     if (els.recordPageStatus) els.recordPageStatus.textContent = `${state.recordPage} / ${totalPages}`;
     if (els.recordPrevPage) els.recordPrevPage.disabled = state.recordPage <= 1;
     if (els.recordNextPage) els.recordNextPage.disabled = state.recordPage >= totalPages;
     if (els.recordExport) els.recordExport.disabled = !rows.length;
+    els.recordTableBody.querySelectorAll('[data-record-mail]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const row = rows.find((entry) => (entry.globalId || entry.id) === button.dataset.recordMail);
+        if (row) void handleRecordMailDraft(row, button);
+      });
+    });
     saveRecordListState(rows);
   }
 
@@ -2750,6 +2987,10 @@ document.addEventListener('DOMContentLoaded', () => {
         : 'Diese Liste basiert auf einem Qualitäts-Scan für die ausgewählte Pflegeaufgabe.';
       return;
     }
+    if (state.recordDataMeta.mode === 'ai_search') {
+      els.recordDataNote.textContent = 'Diese Liste basiert auf einer KI-Suche und anschließend geladenen Datensätzen per global_id.';
+      return;
+    }
     if (state.recordDataMeta.mode === 'snapshot_list') {
       els.recordDataNote.textContent = state.recordDataMeta.truncated
         ? 'Diese Liste stammt aus dem gecachten Nachtlauf und ist auf die gespeicherten Treffer begrenzt.'
@@ -2762,13 +3003,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function resetRecordFilters() {
-    const reloadFullList = state.recordDataMeta.mode === 'criterion';
+    const reloadFullList = state.recordDataMeta.mode === 'criterion' || state.recordDataMeta.mode === 'ai_search';
     if (els.recordSearchInput) els.recordSearchInput.value = '';
+    if (els.recordAiSearchInput) els.recordAiSearchInput.value = '';
     if (els.recordTypeFilter) els.recordTypeFilter.value = '';
     if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
     if (els.recordStatusFilter) els.recordStatusFilter.value = '';
     if (els.recordIssueFilter) els.recordIssueFilter.value = '';
     state.recordServerSearchKeys = new Set();
+    state.recordAiSearchPrompt = '';
     state.pendingRecordView = null;
     clearRecordViewState();
     state.recordPage = 1;

@@ -1262,6 +1262,12 @@ body.statistik-page-body {
   gap: 10px;
 }
 
+.statistik .record-search-actions {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .statistik .record-search-block small {
   grid-column: 1 / -1;
   color: var(--muted);
@@ -1325,7 +1331,8 @@ body.statistik-page-body {
 }
 
 .statistik .record-filter-card input,
-.statistik .record-filter-card select {
+.statistik .record-filter-card select,
+.statistik .record-ai-search-dialog textarea {
   width: 100%;
   min-height: 42px;
   padding: 10px 12px;
@@ -1333,6 +1340,11 @@ body.statistik-page-body {
   border-radius: 8px;
   background: var(--surface);
   color: var(--text);
+}
+
+.statistik .record-ai-search-dialog textarea {
+  min-height: 108px;
+  resize: vertical;
 }
 
 .statistik .record-search-field input {
@@ -1412,6 +1424,10 @@ body.statistik-page-body {
   display: inline-flex;
   gap: 8px;
   align-items: center;
+}
+
+.statistik .row-actions {
+  flex-wrap: wrap;
 }
 
 .statistik .view-toggle .icon-button.active {
