@@ -175,6 +175,9 @@ Offen:
   beeinflussen
 - OI-Aktionen in der Datensatzliste nach Live-Test noch feinjustieren:
   deaktivierte Zustaende, Fehlermeldungen, Button-Texte und Modal-Texte
+- die neue 3-Ebenen-Logik systemweit nachziehen:
+  `Kritische Fehler`, `Fehler`, `Leichte Optimierungen`
+  fuer Pflegeaufgaben, Detailseite, E-Mail-Texte und spaetere Filter
 
 ## Prioritaet C - Spaeter / Rahmenbedingungen
 
@@ -248,6 +251,9 @@ Diese Themen bleiben offen oder clientseitig:
 
 ## Zuletzt umgesetzt
 
+- Help-Seite reduziert:
+  Consent aus dem Help-Hauptinhalt entfernt, Score-Texte vereinfacht,
+  neue 3-Ebenen-Erklaerung vorbereitet
 - one.intelligence-Integration als separaten Backend-Strang vorbereitet:
   `/api/oi/mail-draft`, `/api/oi/search-records`,
   `/api/records/by-global-ids`

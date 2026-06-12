@@ -20,9 +20,9 @@ Build-Kette und keine Secrets im Frontend.
   Datensatz per `type`, `id` oder `global_id`.
 - `Statistik/stats.html`: Open-Data-Statistik mit aggregierten Counts,
   Datentyp-Verteilung und Einstieg zur Pflegeaufgabe `license_missing`.
-- `Statistik/help.html`: Hilfeseite zum Datenqualitaets-Score mit
-  Score-Matrix, automatisch geprueften Kriterien, Erklaerung zu
-  nicht scorewirksamen Faellen und fachlichem Kriterienmodell.
+- `Statistik/help.html`: reduzierte Hilfeseite zum Datenqualitaets-Score mit
+  Score-Erklaerung, drei Fehler-Ebenen, Datentyp-Karten und knapper
+  Einordnung nicht automatisch bewerteter Faelle.
 
 Alle Statistik-Links bleiben relativ (`index.html`, `tasks.html`,
 `records.html`, `record-detail.html`, `stats.html`, `help.html`) und
@@ -49,10 +49,10 @@ funktionieren damit unter
 - one.intelligence ist technisch getrennt von der bestehenden Meta-Anbindung:
   eigener Server-Client, eigene Environment-Variablen `OI_*`, eigener
   Fehlerpfad und kein Secret im Frontend.
-- Consent ist technisch vorbereitet: Runtime-Inventar externer Dienste,
-  lokale Consent-Einstellungen fuer optionale Kategorien und ein
-  Datenschutz-/Consent-Bereich auf der Help-Seite. Ein echter
-  Consentmanager ist noch nicht produktiv angeschlossen.
+- Consent ist technisch noch im Frontend vorbereitet, wird aber nicht mehr
+  ueber die Help-Seite erklaert. Datenschutz und rechtliche Hinweise sollen
+  spaeter in einen Footer uebergehen. Ein echter Consentmanager ist noch
+  nicht produktiv angeschlossen.
 - Ganz Sachsen bekommt keinen Qualitaets-Score. Erst bei Gebiet oder Ort
   startet die Uebersicht einen asynchronen regionalen Datensatzscan und
   berechnet Score/Status aus den geladenen Datensaetzen.
@@ -241,6 +241,10 @@ Die Logik basiert auf den Item-Keywords, insbesondere `keywords_old`.
 
 ## Zuletzt umgesetzt
 
+- Help-Seite aus Nutzersicht verschlankt: kein Consent-Bereich mehr im
+  Hauptinhalt, stattdessen Fokus auf Score-Verstaendnis und Priorisierung
+- Help-Seite um die kuenftige 3-Ebenen-Logik vorbereitet:
+  `Kritische Fehler`, `Fehler`, `Leichte Optimierungen`
 - one.intelligence als separaten Integrationsstrang vorbereitet, ohne die
   bestehende Meta-/Search-/Qualitaetskonfiguration anzufassen
 - neue Render-Proxy-Endpunkte fuer Mail-Entwurf, KI-Suche und

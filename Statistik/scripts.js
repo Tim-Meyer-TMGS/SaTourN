@@ -244,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     statsLicenseTaskCount: document.getElementById('stats-license-task-count'),
     statsLicenseTaskShare: document.getElementById('stats-license-task-share'),
     helpModelSummary: document.getElementById('help-model-summary'),
+    helpSeverityGrid: document.getElementById('help-severity-grid'),
     helpTypeGrid: document.getElementById('help-type-grid'),
     helpPrivacySummary: document.getElementById('help-privacy-summary'),
     helpLocalStorageList: document.getElementById('help-local-storage-list'),
@@ -644,16 +645,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHelpPage() {
     if (els.helpModelSummary) {
-      els.helpModelSummary.textContent = 'Fehlende automatisch gepruefte Kriterien ziehen den Score direkt um ihr Gewicht ab. Weitere fachlich relevante Kriterien bleiben sichtbar vorbereitet, wirken aber erst nach technischer Verifikation oder wenn sie fuer die Kategorie wirklich erwartet werden.';
+      els.helpModelSummary.textContent = 'Nicht jeder Fehler wirkt gleich stark. Kritische Luecken schlagen deutlich auf den Score, normale Fehler schwaechen ihn sichtbar und leichte Optimierungen runden den Datensatz spaeter ab.';
     }
+    renderHelpSeverityOverview();
     renderHelpTypeOverview();
-    renderHelpPrivacySection();
   }
 
   function renderHelpTypeOverview() {
     if (!els.helpTypeGrid) return;
     const cards = TYPES.map((type) => buildHelpTypeCard(type)).join('');
     els.helpTypeGrid.innerHTML = cards;
+  }
+
+  function renderHelpSeverityOverview() {
+    if (!els.helpSeverityGrid) return;
+
+    const groups = [
+      {
+        key: 'critical',
+        icon: 'error',
+        iconClass: 'red',
+        title: 'Kritische Fehler',
+        impact: 'Wirken stark auf Score und Nutzbarkeit.',
+        body: 'Diese Luecken solltest du zuerst schliessen. Sie betreffen haeufig Lizenz, Beschreibung oder andere zentrale Pflichtangaben.',
+        action: 'Zuerst bearbeiten'
+      },
+      {
+        key: 'error',
+        icon: 'rule',
+        iconClass: 'amber',
+        title: 'Fehler',
+        impact: 'Schwaechen den Datensatz klar sichtbar.',
+        body: 'Diese Angaben sind wichtig fuer Vollstaendigkeit und Verstaendlichkeit. Sie sollten nach den kritischen Punkten nachgezogen werden.',
+        action: 'Danach bearbeiten'
+      },
+      {
+        key: 'optimization',
+        icon: 'auto_fix_high',
+        iconClass: 'green',
+        title: 'Leichte Optimierungen',
+        impact: 'Verbessern Qualitaet und Feinschliff.',
+        body: 'Diese Angaben machen den Datensatz runder und aussagekraeftiger, sind aber nicht so gravierend wie harte Luecken.',
+        action: 'Zum Schluss optimieren'
+      }
+    ];
+
+    els.helpSeverityGrid.innerHTML = groups.map((group) => {
+      const examples = getHelpSeverityExamples(group.key);
+      return `
+        <article class="panel-card help-score-card help-severity-card">
+          <span class="help-score-icon ${group.iconClass} material-icons" aria-hidden="true">${group.icon}</span>
+          <div>
+            <h2>${escapeHtml(group.title)}</h2>
+            <p><strong>${escapeHtml(group.impact)}</strong></p>
+            <p>${escapeHtml(group.body)}</p>
+            <div class="help-severity-examples">
+              <span class="help-severity-action">${escapeHtml(group.action)}</span>
+              <p>${escapeHtml(examples)}</p>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join('');
   }
 
   function renderHelpPrivacySection() {
@@ -694,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function buildHelpTypeCard(type) {
+  function buildHelpTypeCardV2(type) {
     const criteria = qualityCriteria
       .filter((criterion) => (criterion.types || []).includes(type))
       .sort((a, b) => (
@@ -722,11 +775,11 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="help-type-columns">
           <section>
             <h4>Minimal für guten Score</h4>
-            ${renderHelpCriterionList(minimumItems, 'required')}
+            ${renderHelpCriterionListV2(minimumItems, 'required')}
           </section>
           <section>
             <h4>Optimal gepflegt</h4>
-            ${renderHelpCriterionList(extraItems, 'optional')}
+            ${renderHelpCriterionListV2(extraItems, 'optional')}
           </section>
         </div>
         <footer class="help-type-footer">
@@ -771,7 +824,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  function renderHelpCriterionList(criteria, tone) {
+  function renderHelpCriterionListV2(criteria, tone) {
     if (!criteria.length) {
       return '<p class="help-empty-state">Keine weiteren Kriterien.</p>';
     }
@@ -788,6 +841,120 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('')}
       </ul>
     `;
+  }
+
+  function buildHelpTypeCard(type) {
+    const criteria = qualityCriteria
+      .filter((criterion) => (criterion.types || []).includes(type))
+      .sort((a, b) => (
+        priorityRank(b.priority) - priorityRank(a.priority) ||
+        Number(b.weight || 0) - Number(a.weight || 0) ||
+        a.label.localeCompare(b.label, 'de')
+      ));
+    const domainCriteria = qualityHelpers.getDomainCriteriaForType(type);
+    const autoCheckedCount = criteria.length;
+    const pendingCount = domainCriteria.filter((criterion) => criterion.status === 'needs_verification').length;
+    const model = buildHelpTypeScoreModel(criteria);
+    const minimumItems = model.minimumCriteria.length
+      ? model.minimumCriteria
+      : criteria.slice(0, 1);
+    const extraItems = criteria.filter((criterion) => !model.minimumIds.has(criterion.id));
+    return `
+      <article class="panel-card help-type-card">
+        <header class="help-type-head">
+          <div>
+            <h3>${escapeHtml(type)}</h3>
+            <p class="data-note">Ab ${formatNumber(model.threshold)} Punkten liegt dieser Typ im guten Bereich.</p>
+          </div>
+          <span class="help-type-score">Ab ${formatNumber(model.threshold)} Punkten gut</span>
+        </header>
+        <div class="help-type-columns">
+          <section>
+            <h4>Mindestens fuer einen guten Stand</h4>
+            ${renderHelpCriterionList(minimumItems, 'required')}
+          </section>
+          <section>
+            <h4>Danach sinnvoll optimieren</h4>
+            ${renderHelpCriterionList(extraItems, 'optional')}
+          </section>
+        </div>
+        <footer class="help-type-footer">
+          <span>Fehlende Angaben ziehen den Score direkt ab.</span>
+          <span>${renderHelpTypeFooterSummary(autoCheckedCount, pendingCount)}</span>
+        </footer>
+      </article>
+    `;
+  }
+
+  function renderHelpCriterionList(criteria, tone) {
+    if (!criteria.length) {
+      return '<p class="help-empty-state">Keine weiteren Angaben in diesem Block.</p>';
+    }
+    return `
+      <ul class="help-checklist">
+        ${criteria.map((criterion) => `
+          <li class="help-checkitem ${tone}">
+            <span class="help-checkweight">${formatNumber(criterion.weight || 0)}</span>
+            <div>
+              <div class="help-checkheadline">
+                <strong>${escapeHtml(criterion.label)}</strong>
+                <span class="help-severity-badge ${getHelpSeverityClass(criterion)}">${escapeHtml(getHelpSeverityLabel(criterion))}</span>
+              </div>
+              <small>${escapeHtml(criterion.recommendation || '')}</small>
+            </div>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+  }
+
+  function getHelpSeverityClass(criterion) {
+    const severity = getHelpCriterionSeverity(criterion);
+    if (severity === 'critical') return 'critical';
+    if (severity === 'error') return 'error';
+    return 'optimization';
+  }
+
+  function getHelpSeverityLabel(criterion) {
+    const severity = getHelpCriterionSeverity(criterion);
+    if (severity === 'critical') return 'Kritischer Fehler';
+    if (severity === 'error') return 'Fehler';
+    return 'Leichte Optimierung';
+  }
+
+  function getHelpCriterionSeverity(criterion) {
+    if (!criterion) return 'optimization';
+    if (criterion.severity === 'critical' || criterion.severity === 'error' || criterion.severity === 'optimization') {
+      return criterion.severity;
+    }
+
+    const priority = criterion.priority || '';
+    const weight = Number(criterion.weight || 0);
+    if (priority === 'hoch' || weight >= 8) return 'critical';
+    if (priority === 'mittel' || weight >= 4) return 'error';
+    return 'optimization';
+  }
+
+  function getHelpSeverityExamples(severity) {
+    const labels = qualityCriteria
+      .filter((criterion) => getHelpCriterionSeverity(criterion) === severity)
+      .sort((a, b) => (
+        Number(b.weight || 0) - Number(a.weight || 0) ||
+        a.label.localeCompare(b.label, 'de')
+      ))
+      .map((criterion) => criterion.label)
+      .filter((label, index, all) => all.indexOf(label) === index)
+      .slice(0, 3);
+
+    if (!labels.length) return 'Beispiele werden mit den aktiven Kriterien nachgezogen.';
+    return `Beispiele: ${labels.join(', ')}`;
+  }
+
+  function renderHelpTypeFooterSummary(autoCheckedCount, pendingCount) {
+    if (pendingCount > 0) {
+      return `${formatNumber(autoCheckedCount)} Kriterien aktiv, ${formatNumber(pendingCount)} weitere spaeter moeglich`;
+    }
+    return `${formatNumber(autoCheckedCount)} Kriterien fliessen aktuell in den Score ein`;
   }
 
   function loadWorkContext() {
