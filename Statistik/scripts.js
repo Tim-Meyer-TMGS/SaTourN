@@ -2216,7 +2216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('task-open-records')?.addEventListener('click', () => {
       const type = typeSelect?.value || selectedType;
       if (type) state.selectedTaskType = type;
-      openTaskRecordsOnRecordsPage(task, state.selectedTaskType || type);
+      void loadTaskRecords();
     });
 
     renderPrimarySystemsForTask(task);

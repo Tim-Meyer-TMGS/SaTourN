@@ -102,6 +102,20 @@ function parseJsonFromModelText(text) {
   return null;
 }
 
+function collectDeepValues(value, bucket = []) {
+  if (value == null) return bucket;
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectDeepValues(entry, bucket));
+    return bucket;
+  }
+  if (typeof value === 'object') {
+    Object.values(value).forEach((entry) => collectDeepValues(entry, bucket));
+    return bucket;
+  }
+  bucket.push(value);
+  return bucket;
+}
+
 async function callOiChat({ model, messages }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OI_TIMEOUT_MS);
@@ -211,13 +225,42 @@ function normalizeSearchIds(value) {
       ? value.globalIds
       : Array.isArray(value?.global_ids)
         ? value.global_ids
-        : [];
+        : Array.isArray(value?.data?.ids)
+          ? value.data.ids
+          : Array.isArray(value?.result?.ids)
+            ? value.result.ids
+            : [];
 
   return Array.from(new Set(
     list
       .map((entry) => String(entry || '').trim())
       .filter((entry) => /^\d+$/.test(entry) || /^[A-Za-z]+_\d+$/.test(entry))
   )).slice(0, MAX_AI_SEARCH_RESULTS);
+}
+
+function extractSearchIdsFromRawText(text) {
+  const normalized = String(text || '');
+  const directJson = parseJsonFromModelText(normalized);
+  const fromJson = directJson ? normalizeSearchIds(directJson) : [];
+  if (fromJson.length) return fromJson;
+
+  const digitMatches = normalized.match(/\b\d{5,}\b/g) || [];
+  return Array.from(new Set(digitMatches)).slice(0, MAX_AI_SEARCH_RESULTS);
+}
+
+function extractMailDraft(parsed, rawText) {
+  const subject = sanitizePlainText(
+    parsed?.subject || parsed?.betreff || parsed?.title || '',
+    240
+  );
+  const body = sanitizePlainText(
+    parsed?.body || parsed?.text || parsed?.message || rawText || '',
+    3500
+  );
+  return {
+    subject,
+    body
+  };
 }
 
 export function registerOiRoutes(app) {
@@ -287,17 +330,19 @@ export function registerOiRoutes(app) {
         model: OI_MODEL_MAIL,
         messages: buildMailMessages({ record, issues, issueContext })
       });
-      const parsed = parseJsonFromModelText(extractCompletionText(payload));
-      if (!parsed || typeof parsed !== 'object') {
-        return res.status(502).json({ error: 'OI-Antwort fuer Mail-Entwurf war nicht parsebar.' });
+      const rawText = extractCompletionText(payload);
+      const parsed = parseJsonFromModelText(rawText);
+      const draft = extractMailDraft(parsed || {}, rawText);
+      if (!draft.subject && !draft.body) {
+        return res.status(502).json({ error: 'OI-Antwort fuer Mail-Entwurf war nicht nutzbar.' });
       }
 
       return res.json({
         to,
         cc: parseMailCopies(OI_MAIL_CC),
         bcc: parseMailCopies(OI_MAIL_BCC),
-        subject: sanitizePlainText(parsed.subject, 240),
-        body: sanitizePlainText(parsed.body, 3500)
+        subject: draft.subject || `Hinweis zur Datenpflege: ${sanitizePlainText(record.title || record.type || 'Datensatz', 120)}`,
+        body: draft.body
       });
     } catch (error) {
       console.error('OI mail draft failed:', error.message || error);
@@ -321,12 +366,11 @@ export function registerOiRoutes(app) {
         model: OI_MODEL_SEARCH,
         messages: buildSearchMessages({ prompt, context })
       });
-      const parsed = parseJsonFromModelText(extractCompletionText(payload));
-      if (!parsed || typeof parsed !== 'object') {
-        return res.status(502).json({ error: 'OI-Antwort fuer AI-Search war nicht parsebar.' });
-      }
-
-      const ids = normalizeSearchIds(parsed);
+      const rawText = extractCompletionText(payload);
+      const parsed = parseJsonFromModelText(rawText);
+      const ids = parsed && typeof parsed === 'object'
+        ? normalizeSearchIds(parsed)
+        : extractSearchIdsFromRawText(rawText);
       return res.json({
         prompt,
         ids,
