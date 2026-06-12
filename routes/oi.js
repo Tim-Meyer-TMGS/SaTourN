@@ -13,6 +13,7 @@ const OI_TIMEOUT_MS = 30000;
 const MAX_AI_SEARCH_RESULTS = 50;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
+const OI_SEARCH_TOOL_IDS = Object.freeze(['server:meta-open-data-sachsen-tourismus']);
 
 const rateLimitStore = new Map();
 
@@ -116,7 +117,7 @@ function collectDeepValues(value, bucket = []) {
   return bucket;
 }
 
-async function callOiChat({ model, messages }) {
+async function callOiChat({ model, messages, extraBody = {} }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OI_TIMEOUT_MS);
 
@@ -132,7 +133,8 @@ async function callOiChat({ model, messages }) {
         model,
         messages,
         temperature: 0,
-        response_format: { type: 'json_object' }
+        response_format: { type: 'json_object' },
+        ...extraBody
       })
     });
     const text = await response.text();
@@ -420,7 +422,11 @@ export function registerOiRoutes(app) {
     try {
       const payload = await callOiChat({
         model: OI_MODEL_SEARCH,
-        messages: buildSearchMessages({ prompt, context })
+        messages: buildSearchMessages({ prompt, context }),
+        extraBody: {
+          tool_ids: OI_SEARCH_TOOL_IDS,
+          tool_ids_enable_default: false
+        }
       });
       const rawText = extractCompletionText(payload);
       const parsed = parseJsonFromModelText(rawText);

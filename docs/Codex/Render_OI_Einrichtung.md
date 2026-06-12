@@ -186,6 +186,14 @@ Beispiel:
 https://satourn.onrender.com/api/oi/tools
 ```
 
+## Aktueller Tool-Einsatz
+
+- Der Mail-Entwurf nutzt aktuell keine zusätzlichen OI-Werkzeuge.
+- Die KI-Suche aktiviert im Proxy gezielt nur:
+  `server:meta-open-data-sachsen-tourismus`
+- Diese Aktivierung ist derzeit fest auf das Modell für AI-Search
+  ausgelegt, nicht auf den Mail-Entwurf.
+
 ## Was du testen sollst
 
 ### 1. Mail-Entwurf
