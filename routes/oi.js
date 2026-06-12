@@ -263,6 +263,17 @@ function extractMailDraft(parsed, rawText) {
   };
 }
 
+function buildSearchDebugInfo({ rawText, parsed, ids }) {
+  if (ids.length) return undefined;
+  return {
+    rawPreview: sanitizePlainText(rawText, 800),
+    parsedKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
+    parsedPreview: parsed && typeof parsed === 'object'
+      ? sanitizePlainText(JSON.stringify(parsed), 800)
+      : ''
+  };
+}
+
 export function registerOiRoutes(app) {
   app.get('/api/oi/status', async (req, res) => {
     if (!OI_API_KEY) {
@@ -371,11 +382,13 @@ export function registerOiRoutes(app) {
       const ids = parsed && typeof parsed === 'object'
         ? normalizeSearchIds(parsed)
         : extractSearchIdsFromRawText(rawText);
+      const debug = buildSearchDebugInfo({ rawText, parsed, ids });
       return res.json({
         prompt,
         ids,
         limit: MAX_AI_SEARCH_RESULTS,
-        truncated: ids.length >= MAX_AI_SEARCH_RESULTS
+        truncated: ids.length >= MAX_AI_SEARCH_RESULTS,
+        ...(debug ? { debug } : {})
       });
     } catch (error) {
       console.error('OI search failed:', error.message || error);
