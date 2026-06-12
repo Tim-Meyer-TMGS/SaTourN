@@ -223,12 +223,15 @@ function buildMailMessages({ record, issues, issueContext }) {
   ];
 }
 
-function buildSearchMessages({ prompt, context }) {
+function buildSearchMessages({ prompt, context, requireToolUsage = false }) {
   return [
     {
       role: 'system',
       content: [
         'Du analysierst touristische Suchanfragen für einen Datenqualitätsmonitor.',
+        requireToolUsage
+          ? 'Nutze vor deiner Antwort die verfügbaren Tools zur Recherche. Wenn kein Tool genutzt werden kann, gib {"ids":[],"reason":"tool_not_used"} zurück.'
+          : 'Nutze verfügbare Tools, wenn sie für die Recherche notwendig sind.',
         'Antworte ausschließlich als JSON im Format {"ids":["..."]}.',
         'Verwende nur plausible destination.one Datensatz-IDs als reine Zeichenketten ohne Präfix.',
         'Keine Erklärung, keine Markdown-Ausgabe, keine weiteren Felder.'
@@ -308,12 +311,54 @@ function buildSearchDebugInfo({ rawText, parsed, ids, payload, requestedToolIds 
     requestedToolIds,
     defaultToolsEnabled,
     finishReason: sanitizePlainText(payload?.choices?.[0]?.finish_reason || '', 80),
+    messageKeys: payload?.choices?.[0]?.message && typeof payload.choices[0].message === 'object'
+      ? Object.keys(payload.choices[0].message)
+      : [],
     toolCalls: summarizeToolCalls(payload),
     rawPreview: sanitizePlainText(rawText, 800),
     parsedKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
     parsedPreview: parsed && typeof parsed === 'object'
       ? sanitizePlainText(JSON.stringify(parsed), 800)
       : ''
+  };
+}
+
+async function executeSearchRequest({
+  prompt,
+  context,
+  useDefaultTools = false,
+  requireToolUsage = false
+}) {
+  const payload = await callOiChat({
+    model: OI_MODEL_SEARCH,
+    messages: buildSearchMessages({ prompt, context, requireToolUsage }),
+    useJsonResponseFormat: false,
+    extraBody: useDefaultTools
+      ? {
+          tool_ids_enable_default: true
+        }
+      : {
+          tool_ids: OI_SEARCH_TOOL_IDS,
+          tool_ids_enable_default: false
+        }
+  });
+  const rawText = extractCompletionText(payload);
+  const parsed = parseJsonFromModelText(rawText);
+  const ids = parsed && typeof parsed === 'object'
+    ? normalizeSearchIds(parsed)
+    : extractSearchIdsFromRawText(rawText);
+  const debug = buildSearchDebugInfo({
+    rawText,
+    parsed,
+    ids,
+    payload,
+    requestedToolIds: useDefaultTools ? [] : OI_SEARCH_TOOL_IDS,
+    defaultToolsEnabled: useDefaultTools
+  });
+
+  return {
+    ids,
+    debug
   };
 }
 
@@ -436,27 +481,11 @@ export function registerOiRoutes(app) {
     }
 
     try {
-      const payload = await callOiChat({
-        model: OI_MODEL_SEARCH,
-        messages: buildSearchMessages({ prompt, context }),
-        useJsonResponseFormat: false,
-        extraBody: {
-          tool_ids: OI_SEARCH_TOOL_IDS,
-          tool_ids_enable_default: false
-        }
-      });
-      const rawText = extractCompletionText(payload);
-      const parsed = parseJsonFromModelText(rawText);
-      const ids = parsed && typeof parsed === 'object'
-        ? normalizeSearchIds(parsed)
-        : extractSearchIdsFromRawText(rawText);
-      const debug = buildSearchDebugInfo({
-        rawText,
-        parsed,
-        ids,
-        payload,
-        requestedToolIds: OI_SEARCH_TOOL_IDS,
-        defaultToolsEnabled: false
+      const { ids, debug } = await executeSearchRequest({
+        prompt,
+        context,
+        useDefaultTools: false,
+        requireToolUsage: false
       });
       return res.json({
         prompt,
@@ -468,6 +497,37 @@ export function registerOiRoutes(app) {
     } catch (error) {
       console.error('OI search failed:', error.message || error);
       return res.status(502).json({ error: `KI-Suche konnte nicht ausgeführt werden. ${error.message || ''}`.trim() });
+    }
+  });
+
+  app.post('/api/oi/search-records-default-tools', async (req, res) => {
+    if (!applyRateLimit(req, res)) return;
+    if (!requireOiConfig(res, OI_MODEL_SEARCH, 'OI_MODEL_SEARCH')) return;
+
+    const prompt = sanitizePlainText(req.body?.prompt, 800);
+    const context = req.body?.context || {};
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Suchtext fehlt.' });
+    }
+
+    try {
+      const { ids, debug } = await executeSearchRequest({
+        prompt,
+        context,
+        useDefaultTools: true,
+        requireToolUsage: true
+      });
+      return res.json({
+        prompt,
+        ids,
+        limit: MAX_AI_SEARCH_RESULTS,
+        truncated: ids.length >= MAX_AI_SEARCH_RESULTS,
+        ...(debug ? { debug } : {})
+      });
+    } catch (error) {
+      console.error('OI default-tool search failed:', error.message || error);
+      return res.status(502).json({ error: `KI-Suche mit Modell-Standardwerkzeugen konnte nicht ausgeführt werden. ${error.message || ''}`.trim() });
     }
   });
 }
