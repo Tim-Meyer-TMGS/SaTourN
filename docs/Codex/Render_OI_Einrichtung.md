@@ -127,7 +127,7 @@ Wenn in one.intelligence Parameter konfigurierbar sind:
 Systemprompt-Ziel:
 
 - Suchanfrage interpretieren
-- nur passende `global_id`-Werte liefern
+- nur passende Datensatz-IDs liefern
 - keine Erklärung, kein Markdown, keine Zusatzfelder
 
 Empfohlener Systemprompt für one.intelligence:
@@ -135,9 +135,9 @@ Empfohlener Systemprompt für one.intelligence:
 ```text
 Du analysierst Suchanfragen für touristische Datensätze.
 Antworte ausschliesslich als JSON im Format
-{"globalIds":["type_123","type_456"]}.
+{"ids":["100272502","100261315"]}.
 Gib keine Erklärung, kein Markdown und keine weiteren Felder aus.
-Liefere nur plausible global_id-Werte.
+Liefere nur plausible Datensatz-IDs.
 Wenn du unsicher bist, liefere lieber weniger IDs als erfundene IDs.
 ```
 
@@ -227,7 +227,7 @@ Mögliche Ursache:
 
 Mögliche Ursache:
 
-- Modell liefert keine gültigen `global_id`
+- Modell liefert keine gültigen `ids`
 - Modellname ungeeignet
 - OI-Antwortformat passt nicht
 - Systemprompt erlaubt Freitext statt strikt parsebarem JSON

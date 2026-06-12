@@ -35,21 +35,18 @@ verlinkten Detaildokumenten und werden hier nicht doppelt ausgeschrieben.
 
 ## Priorität A - Als Nächstes
 
-### 0. one.intelligence produktiv anschliessen und testen
+### 0. one.intelligence produktiv testen und feinjustieren
 
 Warum jetzt:
 
-- die technische Trennung ist im Code vorbereitet
-- die produktive Nutzbarkeit hängt jetzt an Render-Setup, Modellwahl und
-  Live-Tests
+- die technische Trennung ist im Code live vorbereitet
+- die produktive Nutzbarkeit hängt jetzt vor allem an Modellwahl,
+  Systemprompt und Live-Tests
 - dieser Schritt ist fachlich getrennt von der Qualitätslogik und kann
   parallel sauber abgeschlossen werden
 
 Offen:
 
-- `OI_API_KEY`, `OI_MODEL_MAIL` und `OI_MODEL_SEARCH` in Render hinterlegen
-- prüfen, welche konkreten Modellnamen in one.intelligence für
-  `chat/completions` freigegeben sind
 - zwei getrennte Modelle oder Konfigurationen sauber benennen:
   eines für Mail-Entwurf, eines für KI-Suche
 - Systemprompts in one.intelligence anlegen, ohne den im Code gesendeten
@@ -57,7 +54,7 @@ Offen:
 - Mail-Entwurf mit echtem Datensatz, E-Mail-Adresse und Fehlerkontext
   prüfen
 - KI-Suche mit echten Themenanfragen prüfen und die Qualität der
-  `global_id`-Rückgaben bewerten
+  `ids`-Rückgaben bewerten
 - Rate-Limit, Timeout und Fehlermeldungen gegen Live-Verhalten prüfen
 
 Arbeitsanweisung:

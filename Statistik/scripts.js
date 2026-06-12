@@ -2602,7 +2602,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!els.recordAiSearchDialog) return;
     if (els.recordAiSearchInput) els.recordAiSearchInput.value = state.recordAiSearchPrompt || '';
     if (els.recordAiSearchNote) {
-      els.recordAiSearchNote.textContent = 'Die KI liefert passende global_id-Treffer. Diese Datensätze werden anschließend direkt geladen.';
+      els.recordAiSearchNote.textContent = 'Die KI liefert passende Datensatz-IDs. Diese Datensätze werden anschließend direkt geladen.';
     }
     if (typeof els.recordAiSearchDialog.showModal === 'function') {
       els.recordAiSearchDialog.showModal();
@@ -2638,7 +2638,11 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         })
       });
-      const globalIds = Array.isArray(aiPayload?.globalIds) ? aiPayload.globalIds : [];
+      const ids = Array.isArray(aiPayload?.ids)
+        ? aiPayload.ids
+        : Array.isArray(aiPayload?.globalIds)
+          ? aiPayload.globalIds
+          : [];
       state.recordAiSearchPrompt = prompt;
       state.pendingRecordView = null;
       clearRecordViewState();
@@ -2649,7 +2653,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (els.recordIssueFilter) els.recordIssueFilter.value = '';
       hideRecordAutocomplete();
 
-      if (!globalIds.length) {
+      if (!ids.length) {
         state.recordItems = [];
         state.recordRows = [];
         state.filteredRecordRows = [];
@@ -2671,7 +2675,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          globalIds,
+          ids,
           type: els.recordTypeFilter?.value || state.context.type || ''
         })
       });
@@ -2684,7 +2688,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.recordDataMeta = {
         mode: 'ai_search',
         collectedItems: evaluated.length,
-        estimatedTotalItems: globalIds.length,
+        estimatedTotalItems: ids.length,
         truncated: Boolean(aiPayload?.truncated)
       };
       fillRecordDynamicFilters();

@@ -84,19 +84,18 @@ funktionieren damit unter
 
 - Mail-Entwurf ist serverseitig vorbereitet:
   `POST /api/oi/mail-draft`.
-- KI-Suche ist serverseitig vorbereitet:
+- KI-Suche ist serverseitig live vorbereitet:
   `POST /api/oi/search-records`.
-- Trefferauflösung per `global_id` ist vorbereitet:
+- Trefferauflösung für KI-Treffer ist vorbereitet:
   `POST /api/records/by-global-ids`.
 - Das Frontend nutzt für beide KI-Funktionen keine eigenen Secrets.
   Der Browser spricht nur mit dem Render-Proxy.
 - Mail-Entwurf erzeugt Plaintext für `mailto:` und übergibt
   `to`, optional `cc`/`bcc`, `subject` und `body`.
 - KI-Suche erwartet von one.intelligence eine parsebare JSON-Antwort mit
-  `globalIds` und begrenzt die erste Ergebnismenge auf 50 IDs.
-- Offener Betriebs-Schritt: produktive Render-Konfiguration mit
-  `OI_API_KEY`, `OI_MODEL_MAIL` und `OI_MODEL_SEARCH` hinterlegen und
-  gegen Live-Modelle testen.
+  `ids` und begrenzt die erste Ergebnismenge auf 50 IDs.
+- Render-Konfiguration mit `OI_API_KEY`, `OI_MODEL_MAIL` und
+  `OI_MODEL_SEARCH` kann jetzt produktiv genutzt werden.
 
 ## Qualitätskriterien
 

@@ -12,11 +12,11 @@ import { buildSearchUrl } from '../lib/search-utils.js';
 const TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
 const MAX_IDS = 50;
 
-function normalizeGlobalIds(input) {
+function normalizeRecordIdentifiers(input) {
   return Array.from(new Set(
     (Array.isArray(input) ? input : [])
       .map((entry) => String(entry || '').trim())
-      .filter((entry) => /^[A-Za-z]+_\d+$/.test(entry))
+      .filter((entry) => /^\d+$/.test(entry) || /^[A-Za-z]+_\d+$/.test(entry))
   )).slice(0, MAX_IDS);
 }
 
@@ -73,13 +73,17 @@ function getIdFromGlobalId(globalId) {
   return match ? match[1] : '';
 }
 
-async function resolveRecordByGlobalId(globalId, preferredType = '') {
-  const identifier = getIdFromGlobalId(globalId);
+async function resolveRecordByIdentifier(identifier, preferredType = '') {
+  const normalized = String(identifier || '').trim();
+  const derivedId = getIdFromGlobalId(normalized);
+  const numericId = /^\d+$/.test(normalized) ? normalized : derivedId;
+  const globalId = /^[A-Za-z]+_\d+$/.test(normalized) ? normalized : '';
   const variants = [
-    `global_id:"${globalId}"`,
+    globalId ? `global_id:"${globalId}"` : '',
     globalId,
-    identifier ? `id:"${identifier}"` : '',
-    identifier
+    numericId ? `id:"${numericId}"` : '',
+    numericId,
+    normalized
   ].filter(Boolean);
   const targetTypeGroups = preferredType ? [[preferredType], TYPES.filter((type) => type !== preferredType)] : [TYPES];
 
@@ -88,10 +92,10 @@ async function resolveRecordByGlobalId(globalId, preferredType = '') {
       for (const variant of variants) {
         try {
           const payload = await fetchSearchPayload({ type, query: variant, limit: 5 });
-          const item = findMatchingItem(extractItems(payload), globalId, identifier);
+          const item = findMatchingItem(extractItems(payload), globalId, numericId || normalized);
           if (item) return { ...item, _resolvedType: type };
         } catch (error) {
-          console.warn('Record by global id lookup failed.', globalId, type, error.message || error);
+          console.warn('Record lookup by identifier failed.', normalized, type, error.message || error);
         }
       }
     }
@@ -106,27 +110,29 @@ export function registerRecordRoutes(app) {
     }
 
     const preferredType = String(req.body?.type || '').trim();
-    const globalIds = normalizeGlobalIds(req.body?.globalIds);
+    const ids = normalizeRecordIdentifiers(req.body?.ids);
+    const globalIds = normalizeRecordIdentifiers(req.body?.globalIds);
+    const identifiers = Array.from(new Set([...ids, ...globalIds])).slice(0, MAX_IDS);
 
-    if (!globalIds.length) {
-      return res.json({ items: [], missingGlobalIds: [] });
+    if (!identifiers.length) {
+      return res.json({ items: [], missingIds: [] });
     }
 
     const resolved = [];
-    const missingGlobalIds = [];
+    const missingIds = [];
 
-    for (const globalId of globalIds) {
-      const item = await resolveRecordByGlobalId(globalId, preferredType);
+    for (const identifier of identifiers) {
+      const item = await resolveRecordByIdentifier(identifier, preferredType);
       if (item) {
         resolved.push(item);
       } else {
-        missingGlobalIds.push(globalId);
+        missingIds.push(identifier);
       }
     }
 
     return res.json({
       items: resolved,
-      missingGlobalIds
+      missingIds
     });
   });
 }

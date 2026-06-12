@@ -160,10 +160,10 @@ function buildSearchMessages({ prompt, context }) {
     {
       role: 'system',
       content: [
-        'Du analysierst touristische Suchanfragen fuer einen Datenqualitaetsmonitor.',
-        'Antworte ausschließlich als JSON im Format {"globalIds":["..."]}.',
-        'Verwende nur plausible destination.one global_id-Werte.',
-        'Keine Erklaerung, keine Markdown-Ausgabe, keine weiteren Felder.'
+        'Du analysierst touristische Suchanfragen für einen Datenqualitätsmonitor.',
+        'Antworte ausschließlich als JSON im Format {"ids":["..."]}.',
+        'Verwende nur plausible destination.one Datensatz-IDs als reine Zeichenketten ohne Präfix.',
+        'Keine Erklärung, keine Markdown-Ausgabe, keine weiteren Felder.'
       ].join(' ')
     },
     {
@@ -177,17 +177,19 @@ function buildSearchMessages({ prompt, context }) {
   ];
 }
 
-function normalizeGlobalIds(value) {
-  const list = Array.isArray(value?.globalIds)
-    ? value.globalIds
-    : Array.isArray(value?.global_ids)
-      ? value.global_ids
-      : [];
+function normalizeSearchIds(value) {
+  const list = Array.isArray(value?.ids)
+    ? value.ids
+    : Array.isArray(value?.globalIds)
+      ? value.globalIds
+      : Array.isArray(value?.global_ids)
+        ? value.global_ids
+        : [];
 
   return Array.from(new Set(
     list
       .map((entry) => String(entry || '').trim())
-      .filter((entry) => /^[A-Za-z]+_\d+$/.test(entry))
+      .filter((entry) => /^\d+$/.test(entry) || /^[A-Za-z]+_\d+$/.test(entry))
   )).slice(0, MAX_AI_SEARCH_RESULTS);
 }
 
@@ -252,12 +254,12 @@ export function registerOiRoutes(app) {
         return res.status(502).json({ error: 'OI-Antwort fuer AI-Search war nicht parsebar.' });
       }
 
-      const globalIds = normalizeGlobalIds(parsed);
+      const ids = normalizeSearchIds(parsed);
       return res.json({
         prompt,
-        globalIds,
+        ids,
         limit: MAX_AI_SEARCH_RESULTS,
-        truncated: globalIds.length >= MAX_AI_SEARCH_RESULTS
+        truncated: ids.length >= MAX_AI_SEARCH_RESULTS
       });
     } catch (error) {
       console.error('OI search failed:', error.message || error);
