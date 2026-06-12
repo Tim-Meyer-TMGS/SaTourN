@@ -117,7 +117,7 @@ function collectDeepValues(value, bucket = []) {
   return bucket;
 }
 
-async function callOiChat({ model, messages, extraBody = {} }) {
+async function callOiChat({ model, messages, extraBody = {}, useJsonResponseFormat = true }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OI_TIMEOUT_MS);
 
@@ -133,7 +133,7 @@ async function callOiChat({ model, messages, extraBody = {} }) {
         model,
         messages,
         temperature: 0,
-        response_format: { type: 'json_object' },
+        ...(useJsonResponseFormat ? { response_format: { type: 'json_object' } } : {}),
         ...extraBody
       })
     });
@@ -290,9 +290,25 @@ function extractMailDraft(parsed, rawText) {
   };
 }
 
-function buildSearchDebugInfo({ rawText, parsed, ids }) {
+function summarizeToolCalls(payload = {}) {
+  const toolCalls = Array.isArray(payload?.choices?.[0]?.message?.tool_calls)
+    ? payload.choices[0].message.tool_calls
+    : [];
+
+  return toolCalls.map((entry) => ({
+    id: sanitizePlainText(entry?.id || '', 120),
+    type: sanitizePlainText(entry?.type || '', 40),
+    name: sanitizePlainText(entry?.function?.name || entry?.name || '', 120)
+  }));
+}
+
+function buildSearchDebugInfo({ rawText, parsed, ids, payload, requestedToolIds = [], defaultToolsEnabled = false }) {
   if (ids.length) return undefined;
   return {
+    requestedToolIds,
+    defaultToolsEnabled,
+    finishReason: sanitizePlainText(payload?.choices?.[0]?.finish_reason || '', 80),
+    toolCalls: summarizeToolCalls(payload),
     rawPreview: sanitizePlainText(rawText, 800),
     parsedKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
     parsedPreview: parsed && typeof parsed === 'object'
@@ -423,6 +439,7 @@ export function registerOiRoutes(app) {
       const payload = await callOiChat({
         model: OI_MODEL_SEARCH,
         messages: buildSearchMessages({ prompt, context }),
+        useJsonResponseFormat: false,
         extraBody: {
           tool_ids: OI_SEARCH_TOOL_IDS,
           tool_ids_enable_default: false
@@ -433,7 +450,14 @@ export function registerOiRoutes(app) {
       const ids = parsed && typeof parsed === 'object'
         ? normalizeSearchIds(parsed)
         : extractSearchIdsFromRawText(rawText);
-      const debug = buildSearchDebugInfo({ rawText, parsed, ids });
+      const debug = buildSearchDebugInfo({
+        rawText,
+        parsed,
+        ids,
+        payload,
+        requestedToolIds: OI_SEARCH_TOOL_IDS,
+        defaultToolsEnabled: false
+      });
       return res.json({
         prompt,
         ids,
