@@ -2502,6 +2502,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const id = item.id || extractId(item.raw || item);
     const globalId = item.globalId || getFirst(item, ['global_id', 'globalId', 'raw.global_id', 'raw.globalId']);
     const raw = item.raw || item;
+    const email = getRecordEmail(raw);
+    const web = getRecordWeb(raw);
     return {
       item,
       id,
@@ -2518,8 +2520,8 @@ document.addEventListener('DOMContentLoaded', () => {
       primaryIssue: primaryCriterion?.label || '-',
       recommendation: primaryCriterion?.recommendation || '',
       missingCriteria,
-      email: getFirst(raw, ['email']) || '',
-      web: getFirst(raw, ['web', 'url']) || '',
+      email,
+      web,
       et4Url: buildVerifiedEt4Url(item),
       updatedAt: item.updatedAt || '',
       detailUrl: buildRecordDetailUrl({ id, globalId, type: item.type || '' }),
@@ -2845,7 +2847,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (payload?.body) params.set('body', String(payload.body).slice(0, 3500));
     if (Array.isArray(payload?.cc) && payload.cc.length) params.set('cc', payload.cc.join(','));
     if (Array.isArray(payload?.bcc) && payload.bcc.length) params.set('bcc', payload.bcc.join(','));
-    return `mailto:${encodeURIComponent(to)}?${params.toString()}`;
+    const query = params.toString();
+    return query ? `mailto:${to}?${query}` : `mailto:${to}`;
   }
 
   async function searchSingleRecordById(query) {
@@ -3503,9 +3506,9 @@ document.addEventListener('DOMContentLoaded', () => {
         licenseUrl: qualityHelpers.getAttributeValue(raw, 'licenseurl') || '',
         source: getFirst(raw, ['source', 'provider', 'channel']) || 'Destination.One',
         sourceUrl: getFirst(raw, ['source.url', 'raw.source.url']) || '',
-        web: getFirst(raw, ['web', 'url']) || '',
-        email: getFirst(raw, ['email']) || '',
-        phone: getFirst(raw, ['phone']) || '',
+        web: getRecordWeb(raw),
+        email: getRecordEmail(raw),
+        phone: getRecordPhone(raw),
         street: getFirst(raw, ['street', 'address.street']) || '',
         zip: getFirst(raw, ['zip', 'address.zip']) || '',
         coordinates: getCoordinates(raw),
@@ -3979,6 +3982,35 @@ document.addEventListener('DOMContentLoaded', () => {
       if (text) return text;
     }
     return '';
+  }
+
+  function getRecordEmail(raw) {
+    return getFirst(raw, [
+      'email',
+      'emailRequest',
+      'address.email',
+      'addresses.email',
+      'addresses_mail.email'
+    ]) || '';
+  }
+
+  function getRecordWeb(raw) {
+    return getFirst(raw, [
+      'web',
+      'url',
+      'website',
+      'address.web',
+      'addresses.web'
+    ]) || '';
+  }
+
+  function getRecordPhone(raw) {
+    return getFirst(raw, [
+      'phone',
+      'phone2',
+      'address.phone',
+      'addresses.phone'
+    ]) || '';
   }
 
   function textValue(value) {
