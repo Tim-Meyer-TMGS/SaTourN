@@ -301,20 +301,37 @@ function summarizeToolCalls(payload = {}) {
   return toolCalls.map((entry) => ({
     id: sanitizePlainText(entry?.id || '', 120),
     type: sanitizePlainText(entry?.type || '', 40),
-    name: sanitizePlainText(entry?.function?.name || entry?.name || '', 120)
+    name: sanitizePlainText(entry?.function?.name || entry?.name || '', 120),
+    argumentsPreview: sanitizePlainText(
+      typeof entry?.function?.arguments === 'string'
+        ? entry.function.arguments
+        : JSON.stringify(entry?.function?.arguments || entry?.arguments || ''),
+      1200
+    )
   }));
 }
 
 function buildSearchDebugInfo({ rawText, parsed, ids, payload, requestedToolIds = [], defaultToolsEnabled = false }) {
   if (ids.length) return undefined;
+  const message = payload?.choices?.[0]?.message && typeof payload.choices[0].message === 'object'
+    ? payload.choices[0].message
+    : {};
   return {
     requestedToolIds,
     defaultToolsEnabled,
     finishReason: sanitizePlainText(payload?.choices?.[0]?.finish_reason || '', 80),
-    messageKeys: payload?.choices?.[0]?.message && typeof payload.choices[0].message === 'object'
-      ? Object.keys(payload.choices[0].message)
+    messageKeys: message
+      ? Object.keys(message)
       : [],
     toolCalls: summarizeToolCalls(payload),
+    providerSpecificFieldsPreview: sanitizePlainText(
+      JSON.stringify(message?.provider_specific_fields || {}),
+      2000
+    ),
+    thinkingBlocksPreview: sanitizePlainText(
+      JSON.stringify(message?.thinking_blocks || []),
+      1200
+    ),
     rawPreview: sanitizePlainText(rawText, 800),
     parsedKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
     parsedPreview: parsed && typeof parsed === 'object'
