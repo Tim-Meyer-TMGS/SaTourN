@@ -1,20 +1,20 @@
-# Datenqualitaetsmonitor - API-Pushdown-Erkenntnisse
+# Datenqualitätsmonitor - API-Pushdown-Erkenntnisse
 
 Stand: 2026-06-11
-Quelle: `codex_api_pushdown_erkenntnisse.md` aus dem Download-Ordner
+Qülle: `codex_api_pushdown_erkenntnisse.md` aus dem Download-Ordner
 
-Diese Datei haelt die belastbaren Pushdown-Regeln fest, die in den Monitor
+Diese Datei hält die belastbaren Pushdown-Regeln fest, die in den Monitor
 eingebaut oder bewusst nicht eingebaut werden sollen.
 
 ## Harte Regeln
 
 - Baseline pro Datentyp ist `all:all`.
 - Ein Pushdown gilt nur dann als belastbar, wenn
-  `positiveQuery + missingQuery = all:all` fuer denselben Datentyp ergibt.
-- Missing-Queries verwenden immer `all:all` als Anker.
-- `*:* -field:*` wird fuer Missing-Regeln nicht mehr verwendet.
-- Exakte Merkmalwerte nur aus Trees oder echten Exportdaten uebernehmen.
-- Exakte Kategoriewerte nur aus Trees oder echten Exportdaten uebernehmen.
+  `positiveQüry + missingQüry = all:all` für denselben Datentyp ergibt.
+- Missing-Qüries verwenden immer `all:all` als Anker.
+- `*:* -field:*` wird für Missing-Regeln nicht mehr verwendet.
+- Exakte Merkmalwerte nur aus Trees oder echten Exportdaten übernehmen.
+- Exakte Kategoriewerte nur aus Trees oder echten Exportdaten übernehmen.
 - Kontrolltests mit `id:`, nicht mit `global_id:`.
 
 ## Aktivierte Pushdown-Muster
@@ -36,7 +36,7 @@ Bereits bekannte feldbasierte Regeln:
 - `public_transport_missing`
   positive: `feature:"Mit ÖPNV erreichbar"`
   missing: `all:all -feature:"Mit ÖPNV erreichbar"`
-- `booking_link_missing` fuer `Hotel`
+- `booking_link_missing` für `Hotel`
   positive: `booking:*`
   missing: `all:all -booking:*`
 
@@ -78,12 +78,11 @@ Diese Themen bleiben offen oder clientseitig:
 - Tour-Startbeschreibung / Tour-Zielbeschreibung
 - `category:"regionale Küche"` als Missing-Regel
 
-## Offene Nachpruefung
+## Offene Nachprüfung
 
 - Weitere validierte `feature`-OR-Listen je Datentyp
 - Weitere validierte `category`-OR-Listen je Datentyp
 - Event-Lizenz
 - Event-Beschreibung
 - Strassenregeln je Datentyp
-- Geo und Tour-Basisdaten nur als API-Teilpruefung, nicht blind aktivieren
-
+- Geo und Tour-Basisdaten nur als API-Teilprüfung, nicht blind aktivieren

@@ -1,31 +1,31 @@
-# Datenqualitaets-Monitor - Aktueller Projektstand
+# Datenqualitäts-Monitor - Aktüller Projektstand
 
 Stand: 2026-06-12
 
 `Statistik/` ist ein statisches GitHub-Pages-Frontend mit Vanilla JavaScript
-und Node/Express-Proxy fuer Destination.One/eT4-Requests. Es gibt keine neue
+und Node/Express-Proxy für Destination.One/eT4-Reqüsts. Es gibt keine neü
 Build-Kette und keine Secrets im Frontend.
 
 ## Aktive Seiten
 
-- `Statistik/index.html`: Uebersicht mit Arbeitskontext, Kennzahlen,
+- `Statistik/index.html`: Übersicht mit Arbeitskontext, Kennzahlen,
   asynchronen Pflegeaufgaben und Open-Data-Status.
 - `Statistik/tasks.html`: Pflegeaufgaben mit API-Counts und konkreten
   Datensatzlisten nach Nutzeraktion.
 - `Statistik/records.html`: Datensatz-Hauptseite mit lokaler Suche,
-  Autovervollstaendigung, serverseitiger Volltextsuche, Filtern,
+  Autovervollständigung, serverseitiger Volltextsuche, Filtern,
   Schnellfiltern, Liste, Pagination, CSV-Export, KI-Suche und
   Mail-Entwurf aus den Aktionen.
-- `Statistik/record-detail.html`: Datensatz-Detailseite fuer genau einen
-  Datensatz per `type`, `id` oder `global_id`. Neben der aktuellen
-  Qualitaetsbewertung werden dort jetzt auch vorbereitete, manuelle und
-  quellseitig abgefangene Pruefungen sichtbar gemacht.
+- `Statistik/record-detail.html`: Datensatz-Detailseite für genau einen
+  Datensatz per `type`, `id` oder `global_id`. Neben der aktüllen
+  Qualitätsbewertung werden dort jetzt auch vorbereitete, manülle und
+  qüllseitig abgefangene Prüfungen sichtbar gemacht.
 - `Statistik/stats.html`: Open-Data-Statistik mit aggregierten Counts,
   Datentyp-Verteilung und Einstieg zur Pflegeaufgabe `license_missing`.
-- `Statistik/help.html`: reduzierte Hilfeseite zum Datenqualitaets-Score mit
-  Score-Erklaerung, drei Fehler-Ebenen, Datentyp-Karten und knapper
-  Einordnung nicht automatisch bewerteter Faelle. Fachlich vorbereitete
-  Pruefungen werden je Datentyp bereits sichtbar gemacht.
+- `Statistik/help.html`: reduzierte Hilfeseite zum Datenqualitäts-Score mit
+  Score-Erklärung, drei Fehler-Ebenen, Datentyp-Karten und knapper
+  Einordnung nicht automatisch bewerteter Fälle. Fachlich vorbereitete
+  Prüfungen werden je Datentyp bereits sichtbar gemacht.
 
 Alle Statistik-Links bleiben relativ (`index.html`, `tasks.html`,
 `records.html`, `record-detail.html`, `stats.html`, `help.html`) und
@@ -34,7 +34,7 @@ funktionieren damit unter
 
 ## Betrieb und Datenfluss
 
-- Aktueller Betrieb: Browser ruft live ueber Render als Proxy ab.
+- Aktüller Betrieb: Browser ruft live über Render als Proxy ab.
 - Genutzte Endpunkte: `/api/search`, `/api/autocomplete`, `/api/quality/count`,
   `/api/quality/scan`, `/api/oi/mail-draft`, `/api/oi/search-records`,
   `/api/records/by-global-ids`.
@@ -42,9 +42,9 @@ funktionieren damit unter
 - Vorbereitete Cache-Endpunkte (`/api/quality/snapshot`, `/api/quality/list`)
   werden im Frontend nur genutzt, wenn `window.SATOURN_USE_QUALITY_CACHE`
   explizit aktiv ist.
-- Zusaetzlich gibt es nun einen kurzen Browser-In-Memory-Cache mit
-  Request-Deduplizierung fuer wiederholte GET-Abfragen. Er beschleunigt
-  identische Requests innerhalb einer Sitzung, ersetzt aber keinen
+- Zusätzlich gibt es nun einen kurzen Browser-In-Memory-Cache mit
+  Reqüst-Deduplizierung für wiederholte GET-Abfragen. Er beschleunigt
+  identische Reqüsts innerhalb einer Sitzung, ersetzt aber keinen
   serverseitigen Snapshot- oder Redis-Cache.
 - Arbeitskontext besteht aus Gebiet, Ort und Datentyp und wird klein in
   `localStorage` gespeichert. API-Antworten, Rohdaten, Fehlerlisten, Secrets
@@ -53,18 +53,18 @@ funktionieren damit unter
   eigener Server-Client, eigene Environment-Variablen `OI_*`, eigener
   Fehlerpfad und kein Secret im Frontend.
 - Consent ist technisch noch im Frontend vorbereitet, wird aber nicht mehr
-  ueber die Help-Seite erklaert. Datenschutz und rechtliche Hinweise sollen
-  spaeter in einen Footer uebergehen. Ein echter Consentmanager ist noch
+  über die Help-Seite erklärt. Datenschutz und rechtliche Hinweise sollen
+  später in einen Footer übergehen. Ein echter Consentmanager ist noch
   nicht produktiv angeschlossen.
-- Ganz Sachsen bekommt keinen Qualitaets-Score. Erst bei Gebiet oder Ort
-  startet die Uebersicht einen asynchronen regionalen Datensatzscan und
-  berechnet Score/Status aus den geladenen Datensaetzen.
+- Ganz Sachsen bekommt keinen Qualitäts-Score. Erst bei Gebiet oder Ort
+  startet die Übersicht einen asynchronen regionalen Datensatzscan und
+  berechnet Score/Status aus den geladenen Datensätzen.
 - Die Pflegeaufgaben nutzen bei Gebiet oder Ort nun ebenfalls den regionalen
-  Qualitaetsscan. Dadurch koennen auch serverseitig gepruefte Kriterien im
+  Qualitätsscan. Dadurch können auch serverseitig geprüfte Kriterien im
   begrenzten Arbeitskontext sichtbar werden.
-- Pflegeaufgaben mit `0` betroffenen Datensaetzen werden nicht angezeigt.
-- Open-Data-Status ist binaer: Open-Data-faehig oder nicht
-  Open-Data-faehig. Es gibt keinen sichtbaren Status `Nicht bewertbar`.
+- Pflegeaufgaben mit `0` betroffenen Datensätzen werden nicht angezeigt.
+- Open-Data-Status ist binär: Open-Data-fähig oder nicht
+  Open-Data-fähig. Es gibt keinen sichtbaren Status `Nicht bewertbar`.
 
 ## Relevante Dateien
 
@@ -86,11 +86,11 @@ funktionieren damit unter
   `POST /api/oi/mail-draft`.
 - KI-Suche ist serverseitig vorbereitet:
   `POST /api/oi/search-records`.
-- Trefferaufloesung per `global_id` ist vorbereitet:
+- Trefferauflösung per `global_id` ist vorbereitet:
   `POST /api/records/by-global-ids`.
-- Das Frontend nutzt fuer beide KI-Funktionen keine eigenen Secrets.
+- Das Frontend nutzt für beide KI-Funktionen keine eigenen Secrets.
   Der Browser spricht nur mit dem Render-Proxy.
-- Mail-Entwurf erzeugt Plaintext fuer `mailto:` und uebergibt
+- Mail-Entwurf erzeugt Plaintext für `mailto:` und übergibt
   `to`, optional `cc`/`bcc`, `subject` und `body`.
 - KI-Suche erwartet von one.intelligence eine parsebare JSON-Antwort mit
   `globalIds` und begrenzt die erste Ergebnismenge auf 50 IDs.
@@ -98,51 +98,51 @@ funktionieren damit unter
   `OI_API_KEY`, `OI_MODEL_MAIL` und `OI_MODEL_SEARCH` hinterlegen und
   gegen Live-Modelle testen.
 
-## Qualitaetskriterien
+## Qualitätskriterien
 
-`Statistik/quality.js` enthaelt neben den aktiven Pruefregeln ein
-fachliches `domainQualityModel`. Alle dort modellierten alten und neuen
-Qualitaets- und Pruefkriterien gelten fachlich. `active` beschreibt nur die
-bereits technisch angebundene Pruefung; `needs_verification` bleibt fachlich
-gueltig, muss aber in Feldmapping/API-Query oder Server-Scan noch verifiziert
+`Statistik/quality.js` enthält neben den aktiven Prüfregeln ein
+fachliches `domainQualityModel`. Alle dort modellierten alten und neün
+Qualitäts- und Prüfkriterien gelten fachlich. `active` beschreibt nur die
+bereits technisch angebundene Prüfung; `needs_verification` bleibt fachlich
+gültig, muss aber in Feldmapping/API-Qüry oder Server-Scan noch verifiziert
 werden.
 
-Fachliche Ergaenzung vom 2026-06-11:
+Fachliche Ergänzung vom 2026-06-11:
 
 - Die Kriterienmatrix in
-  `docs/Codex/Datenqualitaetsmonitor_Kriterienmatrix_2026-06-11.md`
-  praezisiert `source_guarded`, `not_applicable`, `excluded_by_category`,
+  `docs/Codex/Datenqualitätsmonitor_Kriterienmatrix_2026-06-11.md`
+  präzisiert `source_guarded`, `not_applicable`, `excluded_by_category`,
   verifizierte Pushdowns und die POI-Ausschlusslogik.
-- Diese Matrix ist eine fachliche Referenz. Sie ersetzt nicht den aktuellen
-  Codezustand, aber sie bestimmt die naechsten fachlichen Korrekturen.
+- Diese Matrix ist eine fachliche Referenz. Sie ersetzt nicht den aktüllen
+  Codezustand, aber sie bestimmt die nächsten fachlichen Korrekturen.
 
 Technische API-Vorbereitung:
 
 - Das Fachmodell kann `apiCandidate`-Metadaten enthalten. Diese beschreiben
-  moegliche `q`-Abfragen aus der Meta Query Language, sind aber noch nicht
+  mögliche `q`-Abfragen aus der Meta Qüry Language, sind aber noch nicht
   automatisch scorewirksam.
 - Dokumentiert vorbereitete Kandidaten sind unter anderem `lat`/`lon`,
   `length`/`duration` und konkrete `feature:`-, `category:`-,
   `keyword:`- oder `attribute_license:`-Abfragen.
 - Aktivierung erfolgt erst nach echten positiven und negativen API-Tests pro
-  Datentyp. Count, Liste und Detailseite muessen dieselbe Regel verwenden.
+  Datentyp. Count, Liste und Detailseite müssen dieselbe Regel verwenden.
 - Generische Wildcard-Pushdowns wie `street:*`, `details:*`, `openings:*`
   oder `feature:*` gelten laut Kriterienmatrix fachlich nicht als belastbar
-  fuer `open-data-sachsen-tourismus`. Wo der aktuelle Code noch mit solchen
+  für `open-data-sachsen-tourismus`. Wo der aktülle Code noch mit solchen
   Annahmen arbeitet, ist eine Umstellung auf Server-Scan oder konkreten
   Wert-Pushdown vorgesehen.
 
 Aktiv:
 
-- `opening_hours_missing`: POI, Gastro; aktuell technisch aktiv. Laut
+- `opening_hours_missing`: POI, Gastro; aktüll technisch aktiv. Laut
   Kriterienmatrix darf generisches `openings:*` fachlich nicht als belastbarer
-  Pushdown gelten; die Regel laeuft jetzt ueber Server-Scan. Fuer POI greift
-  zusaetzlich die erste Welle der Kategorien-Ausschlusslogik.
+  Pushdown gelten; die Regel läuft jetzt über Server-Scan. Für POI greift
+  zusätzlich die erste Welle der Kategorien-Ausschlusslogik.
 - `license_missing`: POI, Gastro, Tour, Hotel, Package; API-Pushdown
   verifiziert.
-- `description_missing`: POI, Gastro, Tour; aktuell technisch aktiv. Laut
+- `description_missing`: POI, Gastro, Tour; aktüll technisch aktiv. Laut
   Kriterienmatrix darf generisches `details:*` fachlich nicht als belastbarer
-  Pushdown gelten; die Regel laeuft jetzt ueber Server-Scan.
+  Pushdown gelten; die Regel läuft jetzt über Server-Scan.
 - `poi_street_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik.
 - `poi_teaser_missing`: POI; Server-Scan aktiv.
 - `poi_email_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik.
@@ -150,34 +150,34 @@ Aktiv:
 - `poi_phone_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik.
 - `image_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
 - `image_author_missing`: Server-Scan; kein verifizierter API-Pushdown.
-  Der Server nutzt `media:*` als Kandidaten-Prefilter, damit Datensaetze ohne
-  Bilder nicht unnoetig geladen werden.
+  Der Server nutzt `media:*` als Kandidaten-Prefilter, damit Datensätze ohne
+  Bilder nicht unnötig geladen werden.
 - `public_transport_missing`: POI, Gastro, Tour, Hotel, Event; API-Pushdown
   verifiziert.
 - `poi_parking_feature_missing`: POI; Feature
-  `Parkplaetze vorhanden` per API-Pushdown verifiziert.
-- `poi_payment_options_missing`: POI; validierte OR-Liste gepruefter
+  `Parkplätze vorhanden` per API-Pushdown verifiziert.
+- `poi_payment_options_missing`: POI; validierte OR-Liste geprüfter
   Zahlungsarten per API-Pushdown verifiziert.
-- `poi_languages_missing`: POI; validierte OR-Liste gepruefter
+- `poi_languages_missing`: POI; validierte OR-Liste geprüfter
   Fremdsprachen per API-Pushdown verifiziert.
-- `poi_suitability_missing`: POI; validierte OR-Liste gepruefter
+- `poi_suitability_missing`: POI; validierte OR-Liste geprüfter
   Eignungsangaben per API-Pushdown verifiziert.
 - `poi_price_missing`: POI; Server-Scan aktiv, mit Kategorien-Ausschlusslogik
-  fuer fachlich nicht erwartbare Preisangaben.
-- `hotel_language_english_missing`: Hotel; validierte OR-Liste gepruefter
+  für fachlich nicht erwartbare Preisangaben.
+- `hotel_language_english_missing`: Hotel; validierte OR-Liste geprüfter
   Fremdsprachen per API-Pushdown verifiziert.
-- `hotel_payment_cash_missing`: Hotel; validierte OR-Liste gepruefter
+- `hotel_payment_cash_missing`: Hotel; validierte OR-Liste geprüfter
   Zahlungsarten per API-Pushdown verifiziert.
-- `hotel_parking_feature_missing`: Hotel; validierte OR-Liste gepruefter
+- `hotel_parking_feature_missing`: Hotel; validierte OR-Liste geprüfter
   Parkhinweise per API-Pushdown verifiziert.
-- `gastro_payment_options_missing`: Gastro; validierte OR-Liste gepruefter
+- `gastro_payment_options_missing`: Gastro; validierte OR-Liste geprüfter
   Zahlungsarten per API-Pushdown verifiziert.
-- `gastro_languages_missing`: Gastro; validierte OR-Liste gepruefter
+- `gastro_languages_missing`: Gastro; validierte OR-Liste geprüfter
   Fremdsprachen per API-Pushdown verifiziert.
 - `gastro_parking_feature_missing`: Gastro; Feature
   `PKW-Parkplatz am Haus` per API-Pushdown verifiziert.
 - `gastro_cuisine_category_missing`: Gastro; validierte OR-Liste
-  gepruefter Kuechenarten per API-Pushdown verifiziert.
+  geprüfter Küchenarten per API-Pushdown verifiziert.
 - `booking_link_missing`: Hotel per `keyword:"Bookable"` API-Pushdown
   verifiziert, Package per Server-Scan verifiziert.
 - `tour_season_missing`: Tour; Server-Scan aktiv auf Basis gepflegter
@@ -190,69 +190,69 @@ Nicht als Pushdown aktiviert:
 - Telefon, E-Mail, Webseite, Teaser, Preisfelder, Bild-/Medienurheber,
   Ansprechperson/Organisation/Veranstalter, Event-Termine,
   Tour-Start-/Zielbeschreibung.
-- `regionale Kueche` bleibt fuer Gastro bewusst offen, weil die Missing-Query
-  nicht komplementaer zur Baseline war.
-- `booking:*` bleibt fuer Hotel bewusst ungenutzt; der Pushdown laeuft ueber
+- `regionale Küche` bleibt für Gastro bewusst offen, weil die Missing-Qüry
+  nicht komplementär zur Baseline war.
+- `booking:*` bleibt für Hotel bewusst ungenutzt; der Pushdown läuft über
   `keyword:"Bookable"`.
 
-Fachlich gueltig, aber nicht als automatische Pflegeaufgabe aktiv:
+Fachlich gültig, aber nicht als automatische Pflegeaufgabe aktiv:
 `geo_missing`, `touristtrip_incomplete`, `manual_image_quality`.
 Diese Kriterien sind im `domainQualityModel` enthalten; `geo_missing` und
-`touristtrip_incomplete` sind quellseitig abgefangene Basisfaelle,
-`manual_image_quality` bleibt redaktionelle Pruefung.
+`touristtrip_incomplete` sind qüllseitig abgefangene Basisfälle,
+`manual_image_quality` bleibt redaktionelle Prüfung.
 
-Fachlich zusaetzlich als nicht scorewirksam festgelegt:
+Fachlich zusätzlich als nicht scorewirksam festgelegt:
 
 - `title_missing`
 - `category_missing`
 - `geo_missing`
 - `event_dates_missing`
-- `event_venue_missing`
+- `event_venü_missing`
 - `tour_polyline_missing`
 - `tour_length_missing`
 - `tour_duration_missing`
 
 POI-Ausschlusslogik:
 
-- Fuer POI gelten fachliche Ausschluesse insbesondere bei
-  Strasse, Telefon, E-Mail, Webseite, Oeffnungszeiten, Preisangaben und
-  Zahlungsmoeglichkeiten.
-- Die Matrix liefert dafuer eine konkrete Kategorienliste.
-- Die erste produktive Welle ist jetzt fuer
+- Für POI gelten fachliche Ausschlüsse insbesondere bei
+  Strasse, Telefon, E-Mail, Webseite, Öffnungszeiten, Preisangaben und
+  Zahlungsmöglichkeiten.
+- Die Matrix liefert dafür eine konkrete Kategorienliste.
+- Die erste produktive Welle ist jetzt für
   `poi_street_missing`, `poi_phone_missing`, `poi_email_missing`,
   `poi_website_missing`, `opening_hours_missing` und
   `poi_payment_options_missing` in der Bewertungslogik verankert.
-- Weitere Ausschluesse, insbesondere fuer Preisregeln und spaetere
+- Weitere Ausschlüsse, insbesondere für Preisregeln und spätere
   Kriterienaktivierungen, bleiben ein priorisierter offener Schritt.
 
 ## Pflegesystem-Erkennung
 
 - `import_source_feratel` oder `HasSystemId_Feratel`:
-  Primaersystem Feratel.
-- `import_source_outdooractive`: Primaersystem Outdooractive.
-- Sonst: Primaersystem SaTourN.
+  Primärsystem Feratel.
+- `import_source_outdooractive`: Primärsystem Outdooractive.
+- Sonst: Primärsystem SaTourN.
 
 Die Logik basiert auf den Item-Keywords, insbesondere `keywords_old`.
 
 ## Tests
 
 - Standardcheck: `git diff --check`.
-- Wenn Node verfuegbar ist: `npm run check` und
+- Wenn Node verfügbar ist: `npm run check` und
   `npm run diagnose:quality-examples`.
-- In der aktuellen Codex-Umgebung war `node` zuletzt nicht verfuegbar. Dann
-  Node-Checks als nicht ausgefuehrt dokumentieren.
+- In der aktüllen Codex-Umgebung war `node` zuletzt nicht verfügbar. Dann
+  Node-Checks als nicht ausgeführt dokumentieren.
 
 ## Zuletzt umgesetzt
 
 - Help-Seite aus Nutzersicht verschlankt: kein Consent-Bereich mehr im
-  Hauptinhalt, stattdessen Fokus auf Score-Verstaendnis und Priorisierung
-- Help-Seite um die kuenftige 3-Ebenen-Logik vorbereitet:
+  Hauptinhalt, stattdessen Fokus auf Score-Verständnis und Priorisierung
+- Help-Seite um die künftige 3-Ebenen-Logik vorbereitet:
   `Kritische Fehler`, `Fehler`, `Leichte Optimierungen`
-- vorbereitete Pruefungen in Hilfe und Datensatz-Detail integriert, ohne die
-  bestehende Score-Logik oder automatische Pflegeaufgaben zu veraendern
+- vorbereitete Prüfungen in Hilfe und Datensatz-Detail integriert, ohne die
+  bestehende Score-Logik oder automatische Pflegeaufgaben zu verändern
 - one.intelligence als separaten Integrationsstrang vorbereitet, ohne die
-  bestehende Meta-/Search-/Qualitaetskonfiguration anzufassen
-- neue Render-Proxy-Endpunkte fuer Mail-Entwurf, KI-Suche und
-  `global_id`-Trefferaufloesung eingebaut
-- Datensatzliste um `AI-Search` und KI-gestuetzten Mail-Entwurf erweitert
+  bestehende Meta-/Search-/Qualitätskonfiguration anzufassen
+- neü Render-Proxy-Endpunkte für Mail-Entwurf, KI-Suche und
+  `global_id`-Trefferauflösung eingebaut
+- Datensatzliste um `AI-Search` und KI-gestützten Mail-Entwurf erweitert
 - OI-Konfiguration in eigene `OI_*`-Variablen getrennt dokumentiert

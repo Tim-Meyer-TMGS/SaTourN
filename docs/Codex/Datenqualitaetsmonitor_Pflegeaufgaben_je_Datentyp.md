@@ -1,27 +1,27 @@
-# Datenqualitaets-Monitor - Pflegeaufgaben je Datentyp
+# Datenqualitäts-Monitor - Pflegeaufgaben je Datentyp
 
 Stand: 2026-06-12
 
 Diese Liste fasst zusammen, welche Pflegeaufgaben pro Datentyp fachlich
-vorkommen koennen. Sie basiert auf dem `domainQualityModel` in
+vorkommen können. Sie basiert auf dem `domainQualityModel` in
 `Statistik/quality.js`.
 
 Legende:
 
 - `aktiv`: bereits technisch angebunden
-- `vorbereitet`: fachlich gueltig, aber technisch noch nicht voll verifiziert
-- `manuell`: keine automatische Pflegeaufgabe, nur redaktionell pruefbar
-- `quellseitig`: fachlich relevant, wird aber nicht als normale Pflegeaufgabe
-  im Monitor gefuehrt
+- `vorbereitet`: fachlich gültig, aber technisch noch nicht voll verifiziert
+- `manüll`: keine automatische Pflegeaufgabe, nur redaktionell prüfbar
+- `qüllseitig`: fachlich relevant, wird aber nicht als normale Pflegeaufgabe
+  im Monitor geführt
 
 Hinweis:
 
-- Diese Liste ist die richtige Grundlage fuer deine kuenftige Gewichtung.
-- `Score-Status` und kuenftige Fehler-Ebenen sind davon getrennt.
-- Aufgaben wie `Geo-Information fehlt` oder `Tour-Basisdaten unvollstaendig`
+- Diese Liste ist die richtige Grundlage für deine künftige Gewichtung.
+- `Score-Status` und künftige Fehler-Ebenen sind davon getrennt.
+- Aufgaben wie `Geo-Information fehlt` oder `Tour-Basisdaten unvollständig`
   stehen hier bewusst mit drin, auch wenn sie derzeit nicht als normale
   Pflegeaufgabe ausgespielt werden.
-- Der aktuelle UI-Stand zeigt vorbereitete Pruefungen bereits in der Hilfe
+- Der aktülle UI-Stand zeigt vorbereitete Prüfungen bereits in der Hilfe
   und auf der Datensatz-Detailseite, aber noch nicht als automatische
   Pflegeaufgabe oder Score-Abzug.
 
@@ -29,11 +29,11 @@ Hinweis:
 
 ### Aktiv
 
-- Zahlungsmoeglichkeiten
-- Erreichbarkeit per OePNV
+- Zahlungsmöglichkeiten
+- Erreichbarkeit per ÖPNV
 - Fremdsprachenkenntnisse
 - CC-Lizenz
-- Parkplaetze
+- Parkplätze
 - Buchungslink
 - Bildurheber
 
@@ -49,11 +49,11 @@ Hinweis:
 - Preisinformation
 - Ansprechperson
 
-### Manuell
+### Manüll
 
-- Bildqualitaet redaktionell pruefen
+- Bildqualität redaktionell prüfen
 
-### Quellseitig / nicht als normale Pflegeaufgabe
+### Qüllseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 
@@ -63,7 +63,7 @@ Hinweis:
 
 - Beschreibungstext
 - Eignung oder Jahreszeit
-- Anreise mit OePNV
+- Anreise mit ÖPNV
 - Parken
 - CC-Lizenz
 - Bildmaterial
@@ -75,14 +75,14 @@ Hinweis:
 - Autor oder Organisation
 - Start- und Zielbeschreibungen
 
-### Manuell
+### Manüll
 
-- Bildqualitaet redaktionell pruefen
+- Bildqualität redaktionell prüfen
 
-### Quellseitig / nicht als normale Pflegeaufgabe
+### Qüllseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
-- Tour-Basisdaten unvollstaendig
+- Tour-Basisdaten unvollständig
 
 ## POI
 
@@ -94,26 +94,26 @@ Hinweis:
 - E-Mail
 - Webseite
 - Telefon
-- Oeffnungszeiten
+- Öffnungszeiten
 - Preisinformation
-- Zahlungsmoeglichkeiten
+- Zahlungsmöglichkeiten
 - Lizenz
-- OePNV-Anreise
+- ÖPNV-Anreise
 - Fremdsprachenkenntnisse
-- Parkplaetze
+- Parkplätze
 - Eignung
 - Bildmaterial
 - Bildurheber
 
 ### Vorbereitet
 
-- keine weiteren fachlich vorbereiteten Standard-Pflegeaufgaben im aktuellen Modell
+- keine weiteren fachlich vorbereiteten Standard-Pflegeaufgaben im aktüllen Modell
 
-### Manuell
+### Manüll
 
-- Bildqualitaet redaktionell pruefen
+- Bildqualität redaktionell prüfen
 
-### Quellseitig / nicht als normale Pflegeaufgabe
+### Qüllseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 
@@ -122,13 +122,13 @@ Hinweis:
 ### Aktiv
 
 - Beschreibungstext
-- Oeffnungszeiten
-- Zahlungsmoeglichkeiten
+- Öffnungszeiten
+- Zahlungsmöglichkeiten
 - CC-Lizenz
-- Kuechenart
+- Küchenart
 - Fremdsprachenkenntnisse
 - Anfahrt
-- Parkplaetze
+- Parkplätze
 - Bildmaterial
 - Bildurheber
 
@@ -139,13 +139,13 @@ Hinweis:
 - Teaser-Text
 - E-Mail
 - Webseite
-- Kueche
+- Küche
 
-### Manuell
+### Manüll
 
-- Bildqualitaet redaktionell pruefen
+- Bildqualität redaktionell prüfen
 
-### Quellseitig / nicht als normale Pflegeaufgabe
+### Qüllseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 
@@ -153,7 +153,7 @@ Hinweis:
 
 ### Aktiv
 
-- OePNV-Anreise
+- ÖPNV-Anreise
 - Bildurheber
 
 ### Vorbereitet
@@ -165,14 +165,14 @@ Hinweis:
 - E-Mail
 - Webseite
 - Preisinformationen
-- Zahlungsmoeglichkeiten
+- Zahlungsmöglichkeiten
 - CC-Lizenz
 
-### Manuell
+### Manüll
 
-- Bildqualitaet redaktionell pruefen
+- Bildqualität redaktionell prüfen
 
-### Quellseitig / nicht als normale Pflegeaufgabe
+### Qüllseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 
@@ -186,16 +186,16 @@ Hinweis:
 
 ### Vorbereitet
 
-- keine weiteren fachlich vorbereiteten Standard-Pflegeaufgaben im aktuellen Modell
+- keine weiteren fachlich vorbereiteten Standard-Pflegeaufgaben im aktüllen Modell
 
-### Manuell
+### Manüll
 
-- Bildqualitaet redaktionell pruefen
+- Bildqualität redaktionell prüfen
 
-## Datentyp-uebergreifende Querschnittsaufgaben
+## Datentyp-übergreifende Qürschnittsaufgaben
 
 Diese Aufgaben kommen in mehreren Datentypen vor und sollten bei der
-Gewichtung moeglichst konsistent behandelt werden:
+Gewichtung möglichst konsistent behandelt werden:
 
 - Beschreibungstext
 - Teaser-Text
@@ -203,30 +203,30 @@ Gewichtung moeglichst konsistent behandelt werden:
 - Strasse
 - E-Mail
 - Webseite
-- Oeffnungszeiten
+- Öffnungszeiten
 - Preisinformation / Preisinformationen
-- Zahlungsmoeglichkeiten
+- Zahlungsmöglichkeiten
 - Lizenz / CC-Lizenz
-- OePNV-Anreise / Anfahrt
+- ÖPNV-Anreise / Anfahrt
 - Fremdsprachenkenntnisse
-- Parkplaetze / Parkhinweise
+- Parkplätze / Parkhinweise
 - Buchungslink
 - Bildmaterial
 - Bildurheber
 
-## Technischer Bezug fuer die spaetere Gewichtung
+## Technischer Bezug für die spätere Gewichtung
 
-Wenn du mir als Naechstes die Gewichtung gibst, sind fuer jede Aufgabe diese
+Wenn du mir als Nächstes die Gewichtung gibst, sind für jede Aufgabe diese
 Felder relevant:
 
 - Datentyp
 - Aufgabenname
 - Statusgruppe:
-  `aktiv`, `vorbereitet`, `manuell`, `quellseitig`
+  `aktiv`, `vorbereitet`, `manüll`, `qüllseitig`
 - fachliches Level im Modell:
   `minimum`, `good`, `very_good`, `supporting`
-- aktuelle UI-Prioritaet:
+- aktülle UI-Priorität:
   `hoch`, `mittel`, `niedrig`
 
-Darauf kann ich dir dann sauber die neue 3-Ebenen-Logik
-`Kritische Fehler | Fehler | Leichte Optimierungen` aufbauen.
+Darauf kann ich dir dann sauber die neü 3-Ebenen-Logik
+`Kritische Fehler | Fehler | Leichte Optimierungen` aufbaün.

@@ -1,20 +1,20 @@
-# Datenqualitaetsmonitor - Hotel/Vermieter Pushdown
+# Datenqualitätsmonitor - Hotel/Vermieter Pushdown
 
 Stand: 2026-06-11
-Quelle: `codex_hotel_vermieter_pushdown.md` aus dem Download-Ordner
+Qülle: `codex_hotel_vermieter_pushdown.md` aus dem Download-Ordner
 
-Diese Datei haelt die nachgeprueften Hotel-/Vermieter-Regeln fest.
+Diese Datei hält die nachgeprüften Hotel-/Vermieter-Regeln fest.
 
 ## Harte Aussagen
 
 - Event-Termine sind kein API-Pushdown-Kriterium.
-  Events ohne Termine sind ueber die API nicht abrufbar und duerfen daher
+  Events ohne Termine sind über die API nicht abrufbar und dürfen daher
   nicht als `event_dates_missing` modelliert werden.
-- Hotel/Vermieter unterstuetzt `feature:"..."`.
-- Hotel/Vermieter unterstuetzt `category:"..."`.
-- Hotel/Vermieter unterstuetzt `feature`-OR-Regeln.
-- Hotel-Buchbarkeit ist nicht ueber `booking:*` pushdownfaehig.
-- Hotel-Buchbarkeit ist ueber `keyword:"Bookable"` pushdownfaehig.
+- Hotel/Vermieter unterstützt `feature:"..."`.
+- Hotel/Vermieter unterstützt `category:"..."`.
+- Hotel/Vermieter unterstützt `feature`-OR-Regeln.
+- Hotel-Buchbarkeit ist nicht über `booking:*` pushdownfähig.
+- Hotel-Buchbarkeit ist über `keyword:"Bookable"` pushdownfähig.
 
 ## Aktivierte Hotel-Regeln
 
@@ -36,24 +36,24 @@ Diese Datei haelt die nachgeprueften Hotel-/Vermieter-Regeln fest.
   `(feature:"Parkplätze" OR feature:"Parkgarage / Tiefgarage" OR feature:"Öffentliches Parkhaus fußläufig" OR feature:"Busparkplatz (-plätze)" OR feature:"E-Ladesäulen")`
   missing:
   `all:all -(feature:"Parkplätze" OR feature:"Parkgarage / Tiefgarage" OR feature:"Öffentliches Parkhaus fußläufig" OR feature:"Busparkplatz (-plätze)" OR feature:"E-Ladesäulen")`
-- `booking_link_missing` fuer `Hotel`
+- `booking_link_missing` für `Hotel`
   positive: `keyword:"Bookable"`
   missing: `all:all -keyword:"Bookable"`
   Hinweis: lokal bleibt der echte Buchungslink weiter im Export unter
   `media_objects[].rel = "booking"` sichtbar, aber der serverseitige Pushdown
-  laeuft ueber den Bookable-Indikator.
+  läuft über den Bookable-Indikator.
 
-## Technisch bestaetigt, aber noch nicht als eigenes Qualitaetskriterium aktiv
+## Technisch bestätigt, aber noch nicht als eigenes Qualitätskriterium aktiv
 
 - `category:"Hotel"`
-  Grund: Der Wert ist technisch komplementaer pushdownfaehig, beschreibt aber
-  nur die Kategorie `Hotel` und waere als allgemeine Pflegeaufgabe fuer
+  Grund: Der Wert ist technisch komplementär pushdownfähig, beschreibt aber
+  nur die Kategorie `Hotel` und wäre als allgemeine Pflegeaufgabe für
   Unterkunftsdaten fachlich zu unscharf.
 - Feature-OR aus `Englisch`, `Barzahlung`, `Mit ÖPNV erreichbar`
-  Grund: Technischer Nachweis fuer Hotel-OR-Kombinationen; Sprache und
-  Zahlungsarten sind inzwischen als konkrete Nutzerkriterien uebernommen.
+  Grund: Technischer Nachweis für Hotel-OR-Kombinationen; Sprache und
+  Zahlungsarten sind inzwischen als konkrete Nutzerkriterien übernommen.
 
-## Live-Nachweis 2026-06-11 ueber Render-Proxy
+## Live-Nachweis 2026-06-11 über Render-Proxy
 
 Baseline `Hotel`: `1591`
 
@@ -77,7 +77,7 @@ Baseline `Hotel`: `1591`
 - `keywords:"Bookable"`
 - `all:all -keywords:"Bookable"`
 
-## Offen fuer spaetere Nachpruefung
+## Offen für spätere Nachprüfung
 
 - Weitere Hotel-Fremdsprachen aus `VermieterMerkmalTree.xml`
 - Weitere Hotel-Zahlungsarten aus `VermieterMerkmalTree.xml`

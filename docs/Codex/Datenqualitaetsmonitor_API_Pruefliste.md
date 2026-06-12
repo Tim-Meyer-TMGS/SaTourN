@@ -1,26 +1,26 @@
-# Datenqualitaetsmonitor - API-Pruefliste
+# Datenqualitätsmonitor - API-Prüfliste
 
 Stand: 2026-06-11
 
-Diese Datei sammelt die API-Anfragen, die fachlich und technisch geprueft
-werden sollen, bevor neue Kriterien in `qualityCriteria` und damit in Score,
+Diese Datei sammelt die API-Anfragen, die fachlich und technisch geprüft
+werden sollen, bevor neü Kriterien in `qualityCriteria` und damit in Score,
 Pflegeaufgaben, Listen und Detailseite aktiviert werden.
 
-## Pruefprinzip
+## Prüfprinzip
 
-Pro Kriterium und Datentyp bitte mindestens pruefen:
+Pro Kriterium und Datentyp bitte mindestens prüfen:
 
-- Positive Query liefert Datensaetze, bei denen das Feld vorhanden ist.
-- Missing Query liefert Datensaetze, bei denen das Feld wirklich fehlt.
+- Positive Qüry liefert Datensätze, bei denen das Feld vorhanden ist.
+- Missing Qüry liefert Datensätze, bei denen das Feld wirklich fehlt.
 - Ein positiver und ein negativer Beispieldatensatz werden mit `global_id`
   dokumentiert.
 - Count, Fehlerliste und Detailansicht zeigen denselben Befund.
 - Erst danach darf ein `apiCandidate` als aktive Regel umgesetzt werden.
 
 Wichtig: Reine Negativabfragen sollen mit `all:all` kombiniert werden. Das
-kommt aus der Meta Query Language und verhindert unklare negative-only Queries.
+kommt aus der Meta Qüry Language und verhindert unklare negative-only Qüries.
 
-## Request-Vorlagen
+## Reqüst-Vorlagen
 
 ### Direkt gegen Destination.One / eT4
 
@@ -28,7 +28,7 @@ kommt aus der Meta Query Language und verhindert unklare negative-only Queries.
 https://meta.et4.de/rest.ashx/search/ET2014A.json/?experience=DESTINATION_ONE_EXPERIENCE&licensekey=LICENSEKEY&type=TYPE&q=QUERY&limit=10&offset=0&mkt=de-DE
 ```
 
-### Ueber den Render-Proxy
+### Über den Render-Proxy
 
 Die konkrete Proxy-URL kann je nach Parameterstruktur im Frontend variieren.
 Als Orientierung:
@@ -37,24 +37,24 @@ Als Orientierung:
 https://satourn.onrender.com/api/search?type=TYPE&q=QUERY&limit=10&offset=0
 ```
 
-Wenn ein Gebiet oder Ort geprueft wird, dieselben Kontextparameter wie im
-Frontend ergaenzen. Die technische Aktivierung darf nur mit derselben
-Kontextlogik erfolgen, die spaeter auch Count und Liste verwenden.
+Wenn ein Gebiet oder Ort geprüft wird, dieselben Kontextparameter wie im
+Frontend ergänzen. Die technische Aktivierung darf nur mit derselben
+Kontextlogik erfolgen, die später auch Count und Liste verwenden.
 
 ## Einzutragende Nachweise
 
 Pro Test bitte eintragen:
 
 ```text
-Geprueft am:
+Geprüft am:
 Datentyp:
-Query:
+Qüry:
 Count:
 Positiver Beispiel-Datensatz global_id:
 Negativer Beispiel-Datensatz global_id:
 Detailseite stimmt? ja/nein
 Bemerkung:
-Entscheidung: aktivieren / weiter pruefen / verwerfen
+Entscheidung: aktivieren / weiter prüfen / verwerfen
 ```
 
 ## API-Kandidaten
@@ -63,28 +63,28 @@ Entscheidung: aktivieren / weiter pruefen / verwerfen
 
 - Fachkriterium: `hotel_street`
 - Datentyp: `Hotel`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 street:*
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all -street:*
 ```
 
-Zu pruefen:
+Zu prüfen:
 
-- Stimmt `street:*` mit sichtbarer Anschrift im Datensatz ueberein?
+- Stimmt `street:*` mit sichtbarer Anschrift im Datensatz überein?
 - Liefert `all:all -street:*` echte Hotels ohne Strasse?
 - Reicht `street` oder braucht der Datensatz intern ein anderes Adressfeld?
 
 Nachweis:
 
 ```text
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -97,19 +97,19 @@ Bemerkung:
 
 - Fachkriterium: `poi_street`
 - Datentyp: `POI`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 street:*
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all -street:*
 ```
 
-Zu pruefen:
+Zu prüfen:
 
 - Gibt es fachlich erlaubte POIs ohne Strasse, z. B. Naturpunkte?
 - Falls ja, braucht das Kriterium Ausschlussregeln nach Kategorie.
@@ -117,7 +117,7 @@ Zu pruefen:
 Nachweis:
 
 ```text
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -130,27 +130,27 @@ Bemerkung:
 
 - Fachkriterium: `gastro_street`
 - Datentyp: `Gastro`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 street:*
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all -street:*
 ```
 
-Zu pruefen:
+Zu prüfen:
 
-- Stimmt das Feld mit der sichtbaren Gastro-Anschrift ueberein?
-- Gibt es Importquellen, bei denen die Strasse anders gemappt wird?
+- Stimmt das Feld mit der sichtbaren Gastro-Anschrift überein?
+- Gibt es Importqüllen, bei denen die Strasse anders gemappt wird?
 
 Nachweis:
 
 ```text
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -163,19 +163,19 @@ Bemerkung:
 
 - Fachkriterium: `event_street`
 - Datentyp: `Event`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 street:*
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all -street:*
 ```
 
-Zu pruefen:
+Zu prüfen:
 
 - Bezieht sich `street` bei Events auf den Veranstaltungsort?
 - Sind Online-Events oder ortslose Events fachlich auszuschliessen?
@@ -183,7 +183,7 @@ Zu pruefen:
 Nachweis:
 
 ```text
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -196,21 +196,21 @@ Bemerkung:
 
 - Fachkriterium: `hotel_details`
 - Datentyp: `Hotel`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 details:*
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all -details:*
 ```
 
-Zu pruefen:
+Zu prüfen:
 
-- Ist `details:*` fuer Hotels verfuegbar?
+- Ist `details:*` für Hotels verfügbar?
 - Entspricht `details` dem Beschreibungstext, der in der Detailseite angezeigt
   wird?
 - Gibt es Hotels mit Teaser, aber ohne Details, die trotzdem als fehlende
@@ -219,7 +219,7 @@ Zu pruefen:
 Nachweis:
 
 ```text
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -232,29 +232,29 @@ Bemerkung:
 
 - Fachkriterium: `event_details`
 - Datentyp: `Event`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 details:*
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all -details:*
 ```
 
-Zu pruefen:
+Zu prüfen:
 
-- Ist `details:*` fuer Events verfuegbar?
+- Ist `details:*` für Events verfügbar?
 - Gibt es Events, bei denen nur Termin- oder Kurztextfelder vorhanden sind?
-- Muss eine Beschreibung fuer Events ueber `details` oder ein anderes Feld
+- Muss eine Beschreibung für Events über `details` oder ein anderes Feld
   bewertet werden?
 
 Nachweis:
 
 ```text
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -267,30 +267,30 @@ Bemerkung:
 
 - Fachkriterium: `event_license`
 - Datentyp: `Event`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)
 ```
 
-Zu pruefen:
+Zu prüfen:
 
 - Funktioniert `attribute_license` bei Events genauso wie bei POI, Gastro,
   Tour, Hotel und Package?
-- Werden Events ohne Open-Data-Lizenz korrekt als nicht Open-Data-faehig
+- Werden Events ohne Open-Data-Lizenz korrekt als nicht Open-Data-fähig
   erkannt?
 - Muss Event-Lizenz fachlich in die Open-Data-Statistik aufgenommen werden?
 
 Nachweis:
 
 ```text
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -303,32 +303,32 @@ Bemerkung:
 
 - Fachkriterium: `geo_missing`
 - Datentypen: `POI`, `Gastro`, `Tour`, `Hotel`, `Event`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 lat:* AND lon:*
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all AND (-lat:* OR -lon:*)
 ```
 
-Zu pruefen:
+Zu prüfen:
 
-- Werden Datensaetze ohne Koordinaten ueberhaupt in der normalen Suche
+- Werden Datensätze ohne Koordinaten überhaupt in der normalen Suche
   ausgegeben?
 - Wenn nein, bleibt das Kriterium `source_guarded` und wird nicht als normale
   Pflegeaufgabe aktiviert.
-- Wenn ja, pruefen, ob `lat` und `lon` reichen oder weitere Geo-Felder
+- Wenn ja, prüfen, ob `lat` und `lon` reichen oder weitere Geo-Felder
   relevant sind.
 
 Nachweis je Datentyp:
 
 ```text
 Datentyp:
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -337,34 +337,34 @@ Entscheidung:
 Bemerkung:
 ```
 
-### 9. Tour-Basisdaten unvollstaendig
+### 9. Tour-Basisdaten unvollständig
 
 - Fachkriterium: `touristtrip_incomplete`
 - Datentyp: `Tour`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 length:[1 TO *] AND duration:[1 TO *]
 ```
 
-- Missing Query:
+- Missing Qüry:
 
 ```text
 all:all AND (-length:* OR -duration:*)
 ```
 
-Zu pruefen:
+Zu prüfen:
 
-- Laesst sich fehlende Laenge oder Dauer per API sicher finden?
+- Lässt sich fehlende Länge oder Daür per API sicher finden?
 - Reicht das fachlich nicht aus, weil auch Route, Geometrie, Start/Ziel oder
-  weitere Tour-Basisdaten fehlen koennen?
-- Falls nur ein Teil pruefbar ist, als separates technisches Teilkriterium
-  dokumentieren, nicht als vollstaendige Tour-Basisdaten-Regel aktivieren.
+  weitere Tour-Basisdaten fehlen können?
+- Falls nur ein Teil prüfbar ist, als separates technisches Teilkriterium
+  dokumentieren, nicht als vollständige Tour-Basisdaten-Regel aktivieren.
 
 Nachweis:
 
 ```text
-Geprueft am:
+Geprüft am:
 Count positive:
 Count missing:
 Positiver global_id:
@@ -375,20 +375,20 @@ Bemerkung:
 
 ## Bereits aktive API-Regeln zum Gegencheck
 
-Diese Regeln sind bereits aktiv, koennen aber beim Testen als Vergleich dienen.
-Bitte nicht ohne konkreten Grund umbauen.
+Diese Regeln sind bereits aktiv, können aber beim Testen als Vergleich dienen.
+Bitte nicht ohne konkreten Grund umbaün.
 
-### Oeffnungszeiten fehlen
+### Öffnungszeiten fehlen
 
 - Kriterium: `opening_hours_missing`
 - Datentypen: `POI`, `Gastro`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 openings:*
 ```
 
-- Missing Query aktuell:
+- Missing Qüry aktüll:
 
 ```text
 *:* -openings:*
@@ -404,13 +404,13 @@ all:all -openings:*
 
 - Kriterium: `license_missing`
 - Datentypen: `POI`, `Gastro`, `Tour`, `Hotel`, `Package`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)
 ```
 
-- Missing Query aktuell:
+- Missing Qüry aktüll:
 
 ```text
 *:* -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)
@@ -426,13 +426,13 @@ all:all -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)
 
 - Kriterium: `description_missing`
 - Datentypen: `POI`, `Gastro`, `Tour`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 details:*
 ```
 
-- Missing Query aktuell:
+- Missing Qüry aktüll:
 
 ```text
 *:* -details:*
@@ -448,13 +448,13 @@ all:all -details:*
 
 - Kriterium: `image_missing`
 - Datentypen: `POI`, `Gastro`, `Tour`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 media:*
 ```
 
-- Missing Query aktuell:
+- Missing Qüry aktüll:
 
 ```text
 *:* -media:*
@@ -466,17 +466,17 @@ Optionaler Gegencheck:
 all:all -media:*
 ```
 
-### OePNV-Anreise fehlt
+### ÖPNV-Anreise fehlt
 
 - Kriterium: `public_transport_missing`
 - Datentypen: `POI`, `Gastro`, `Tour`, `Hotel`, `Event`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 feature:"Mit ÖPNV erreichbar"
 ```
 
-- Missing Query aktuell:
+- Missing Qüry aktüll:
 
 ```text
 *:* -feature:"Mit ÖPNV erreichbar"
@@ -492,13 +492,13 @@ all:all -feature:"Mit ÖPNV erreichbar"
 
 - Kriterium: `booking_link_missing`
 - Datentyp: `Hotel`
-- Positive Query:
+- Positive Qüry:
 
 ```text
 keyword:"Bookable"
 ```
 
-- Missing Query aktuell:
+- Missing Qüry aktüll:
 
 ```text
 all:all -keyword:"Bookable"
@@ -507,13 +507,13 @@ all:all -keyword:"Bookable"
 Hinweis:
 
 ```text
-booking:* ist fuer Hotel nicht belastbar und bleibt bewusst deaktiviert.
+booking:* ist für Hotel nicht belastbar und bleibt bewusst deaktiviert.
 ```
 
 ## Nicht per API-Kandidat vorbereitet
 
-Fuer folgende fachliche Kriterien fehlt aktuell noch ein belastbarer
-Query-Prefix oder ein sicherer Feldname. Hier zuerst Feldmapping klaeren:
+Für folgende fachliche Kriterien fehlt aktüll noch ein belastbarer
+Qüry-Prefix oder ein sicherer Feldname. Hier zürst Feldmapping klären:
 
 - Telefon
 - Teaser-Text
@@ -525,8 +525,8 @@ Query-Prefix oder ein sicherer Feldname. Hier zuerst Feldmapping klaeren:
 - Eignung oder Jahreszeit
 - Autor oder Organisation
 - Start- und Zielbeschreibungen
-- Kuechenart
-- Kueche
+- Küchenart
+- Küche
 - Event-Termine und Veranstalter
 - Bildurheber per API-Pushdown
 - Package-Buchungslink per API-Pushdown
@@ -538,11 +538,11 @@ werden nur im begrenzten Arbeitskontext per Server-Scan bewertet:
 
 - `poi_price_missing`
   Grund: `prices:*` und verwandte Preisabfragen liefern keine belastbare
-  Komplementaerlogik; textuelle Preisfelder wie `PRICE_INFO` muessen direkt am
-  Datensatz geprueft werden.
+  Komplementärlogik; textülle Preisfelder wie `PRICE_INFO` müssen direkt am
+  Datensatz geprüft werden.
 - `tour_season_missing`
-  Grund: Saisonangaben sind in den Datensaetzen strukturiert vorhanden, aber
-  nicht ueber einen sauberen Meta-Query-Pushdown verifizierbar.
+  Grund: Saisonangaben sind in den Datensätzen strukturiert vorhanden, aber
+  nicht über einen sauberen Meta-Qüry-Pushdown verifizierbar.
 - `tour_parking_missing`
   Grund: Parkhinweise liegen in der Praxis vor allem in Tourtexten und nicht
   als belastbarer Pushdown-Wert vor.

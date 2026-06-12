@@ -59,27 +59,27 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const TASK_FAMILY_META = Object.freeze({
     payment_options_missing: {
-      label: 'Zahlungsmoeglichkeiten fehlen',
-      description: 'Keine der geprueften Zahlungsarten vorhanden',
-      problem: 'Fuer diese Datensaetze fehlt mindestens eine gepflegte Zahlungsart.',
+      label: 'Zahlungsmöglichkeiten fehlen',
+      description: 'Keine der geprüften Zahlungsarten vorhanden',
+      problem: 'Für diese Datensätze fehlt mindestens eine gepflegte Zahlungsart.',
       impactText: 'Fehlende Zahlungsarten erschweren Planung, Vergleich und Erwartungsmanagement.',
-      recommendation: 'Mindestens eine gepruefte Zahlungsart als Merkmal ergaenzen.',
+      recommendation: 'Mindestens eine geprüfte Zahlungsart als Merkmal ergänzen.',
       iconCriterionId: 'poi_payment_options_missing'
     },
     languages_missing: {
       label: 'Fremdsprachenangaben fehlen',
-      description: 'Keine der geprueften Fremdsprachen vorhanden',
-      problem: 'Fuer diese Datensaetze fehlt mindestens eine gepflegte Fremdsprachenangabe.',
-      impactText: 'Fehlende Sprachangaben schraenken Auffindbarkeit und Nutzbarkeit fuer internationale Gaeste ein.',
-      recommendation: 'Mindestens eine gepruefte Fremdsprache als Merkmal ergaenzen.',
+      description: 'Keine der geprüften Fremdsprachen vorhanden',
+      problem: 'Für diese Datensätze fehlt mindestens eine gepflegte Fremdsprachenangabe.',
+      impactText: 'Fehlende Sprachangaben schränken Auffindbarkeit und Nutzbarkeit für internationale Gäste ein.',
+      recommendation: 'Mindestens eine geprüfte Fremdsprache als Merkmal ergänzen.',
       iconCriterionId: 'poi_languages_missing'
     },
     parking_missing: {
       label: 'Parkhinweise fehlen',
-      description: 'Keine Parkinformation oder kein gepruefter Parkhinweis vorhanden',
-      problem: 'Fuer diese Datensaetze fehlt eine belastbare Parkinformation oder ein Parkhinweis.',
+      description: 'Keine Parkinformation oder kein geprüfter Parkhinweis vorhanden',
+      problem: 'Für diese Datensätze fehlt eine belastbare Parkinformation oder ein Parkhinweis.',
       impactText: 'Fehlende Parkhinweise erschweren die Anreiseplanung vor Ort.',
-      recommendation: 'Parkmoeglichkeiten oder gepruefte Parkhinweise ergaenzen.',
+      recommendation: 'Parkmöglichkeiten oder geprüfte Parkhinweise ergänzen.',
       iconCriterionId: 'tour_parking_missing'
     }
   });
@@ -645,7 +645,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHelpPage() {
     if (els.helpModelSummary) {
-      els.helpModelSummary.textContent = 'Nicht jeder Fehler wirkt gleich stark. Kritische Luecken schlagen deutlich auf den Score, normale Fehler schwaechen ihn sichtbar und leichte Optimierungen runden den Datensatz spaeter ab.';
+      els.helpModelSummary.textContent = 'Nicht jeder Fehler wirkt gleich stark. Kritische Lücken schlagen deutlich auf den Score, normale Fehler schwächen ihn sichtbar und leichte Optimierungen runden den Datensatz später ab.';
     }
     renderHelpSeverityOverview();
     renderHelpTypeOverview();
@@ -667,7 +667,7 @@ document.addEventListener('DOMContentLoaded', () => {
         iconClass: 'red',
         title: 'Kritische Fehler',
         impact: 'Wirken stark auf Score und Nutzbarkeit.',
-        body: 'Diese Luecken solltest du zuerst schliessen. Sie betreffen haeufig Lizenz, Beschreibung oder andere zentrale Pflichtangaben.',
+        body: 'Diese Lücken solltest du zuerst schließen. Sie betreffen häufig Lizenz, Beschreibung oder andere zentrale Pflichtangaben.',
         action: 'Zuerst bearbeiten'
       },
       {
@@ -675,8 +675,8 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: 'rule',
         iconClass: 'amber',
         title: 'Fehler',
-        impact: 'Schwaechen den Datensatz klar sichtbar.',
-        body: 'Diese Angaben sind wichtig fuer Vollstaendigkeit und Verstaendlichkeit. Sie sollten nach den kritischen Punkten nachgezogen werden.',
+        impact: 'Schwächen den Datensatz klar sichtbar.',
+        body: 'Diese Angaben sind wichtig für Vollständigkeit und Verständlichkeit. Sie sollten nach den kritischen Punkten nachgezogen werden.',
         action: 'Danach bearbeiten'
       },
       {
@@ -684,8 +684,8 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: 'auto_fix_high',
         iconClass: 'green',
         title: 'Leichte Optimierungen',
-        impact: 'Verbessern Qualitaet und Feinschliff.',
-        body: 'Diese Angaben machen den Datensatz runder und aussagekraeftiger, sind aber nicht so gravierend wie harte Luecken.',
+        impact: 'Verbessern Qualität und Feinschliff.',
+        body: 'Diese Angaben machen den Datensatz runder und aussagekräftiger, sind aber nicht so gravierend wie harte Lücken.',
         action: 'Zum Schluss optimieren'
       }
     ];
@@ -712,13 +712,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderHelpPrivacySection() {
     const localStorageEntries = [
       'Arbeitskontext: Gebiet, Ort und Datentyp',
-      'Consent-Einstellungen fuer optionale Kategorien',
-      'Zuletzt berechnete KPI-Vergleichswerte fuer die Uebersicht',
+      'Consent-Einstellungen für optionale Kategorien',
+      'Zuletzt berechnete KPI-Vergleichswerte für die Übersicht',
       'Temporare Listen- und Detailnavigation nur in der laufenden Sitzung'
     ];
     const externalServices = Array.isArray(RUNTIME_CONFIG.externalServices) ? RUNTIME_CONFIG.externalServices : [];
     const categoryRows = [
-      ['Essenziell', 'Aktiv fuer Navigation, Proxy und Kernfunktionen', true],
+      ['Essenziell', 'Aktiv für Navigation, Proxy und Kernfunktionen', true],
       ['Externe UI-Dienste', hasConsent('external_ui') ? 'Vom Nutzer freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('external_ui')],
       ['Automatisierung', hasConsent('automation') ? 'Freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('automation')],
       ['Analytics', hasConsent('analytics') ? 'Freigegeben' : 'Nicht produktiv aktiv', hasConsent('analytics')]
@@ -728,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeOptional = categoryRows.filter(([, , enabled]) => enabled).length - 1;
       els.helpPrivacySummary.textContent = activeOptional > 0
         ? `Essenzielle Funktionen sind aktiv. ${formatNumber(activeOptional)} optionale Kategorie ist derzeit freigegeben.`
-        : 'Essenzielle Funktionen sind aktiv. Optionale Kategorien sind vorbereitet, derzeit aber standardmaessig deaktiviert.';
+        : 'Essenzielle Funktionen sind aktiv. Optionale Kategorien sind vorbereitet, derzeit aber standardmäßig deaktiviert.';
     }
     if (els.helpLocalStorageList) {
       els.helpLocalStorageList.innerHTML = localStorageEntries
@@ -784,7 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <footer class="help-type-footer">
           <span>Fehlende Punkte ziehen den Score direkt ab.</span>
-          <span>${formatNumber(autoCheckedCount)} automatisch geprueft, ${formatNumber(pendingCount)} fachlich vorbereitet</span>
+          <span>${formatNumber(autoCheckedCount)} automatisch geprüft, ${formatNumber(pendingCount)} fachlich vorbereitet</span>
         </footer>
       </article>
     `;
@@ -876,7 +876,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </header>
         <div class="help-type-columns">
           <section>
-            <h4>Mindestens fuer einen guten Stand</h4>
+            <h4>Mindestens für einen guten Stand</h4>
             ${renderHelpCriterionList(minimumItems, 'required')}
           </section>
           <section>
@@ -886,7 +886,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         ${preparedItems.length ? `
           <section class="help-prepared-section">
-            <h4>Fachlich vorbereitet, spaeter automatisch pruefbar</h4>
+            <h4>Fachlich vorbereitet, später automatisch prüfbar</h4>
             ${renderPreparedHelpCriterionList(preparedItems)}
           </section>
         ` : ''}
@@ -932,7 +932,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <strong>${escapeHtml(criterion.label)}</strong>
                 <span class="help-prepared-badge">Vorbereitet</span>
               </div>
-              <small>${escapeHtml(criterion.recommendation || 'Diese Pruefung ist fachlich hinterlegt und wird spaeter technisch nachgezogen.')}</small>
+              <small>${escapeHtml(criterion.recommendation || 'Diese Prüfung ist fachlich hinterlegt und wird später technisch nachgezogen.')}</small>
             </div>
           </li>
         `).join('')}
@@ -984,7 +984,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHelpTypeFooterSummary(autoCheckedCount, pendingCount) {
     if (pendingCount > 0) {
-      return `${formatNumber(autoCheckedCount)} Kriterien aktiv, ${formatNumber(pendingCount)} weitere spaeter moeglich`;
+      return `${formatNumber(autoCheckedCount)} Kriterien aktiv, ${formatNumber(pendingCount)} weitere später möglich`;
     }
     return `${formatNumber(autoCheckedCount)} Kriterien fliessen aktuell in den Score ein`;
   }
@@ -1188,7 +1188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       snapshot = await fetchJsonCached(buildQualitySnapshotUrl(), { optional404: true });
     } catch (error) {
-      console.warn('Qualitaets-Snapshot konnte nicht aus dem Cache geladen werden.', error);
+      console.warn('Qualitäts-Snapshot konnte nicht aus dem Cache geladen werden.', error);
       return null;
     }
     if (!snapshot?.rows?.length) return null;
@@ -1343,7 +1343,7 @@ document.addEventListener('DOMContentLoaded', () => {
           };
         }
       } else if (!isAbortLikeError(qualityResult.reason)) {
-        console.error('Qualitaetsdaten konnten nicht geladen werden.', qualityResult.reason);
+        console.error('Qualitätsdaten konnten nicht geladen werden.', qualityResult.reason);
       }
 
       renderOverviewCurrent({ saveHistory: true });
@@ -1356,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('Startseite konnte nicht geladen werden.', error);
-      showMessage('Die Daten konnten nicht geladen werden. Bitte spaeter erneut versuchen.');
+      showMessage('Die Daten konnten nicht geladen werden. Bitte später erneut versuchen.');
       renderOverviewEmpty();
     }
   }
@@ -1495,7 +1495,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         if (!isAbortLikeError(error) && !isStale()) {
           shared.failedTypes += 1;
-          console.warn('Regionaler Qualitaetsscan fehlgeschlagen.', type, error);
+          console.warn('Regionaler Qualitätsscan fehlgeschlagen.', type, error);
         }
       } finally {
         if (!complete && !isStale()) shared.truncated = true;
@@ -1808,7 +1808,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       return await fetchJsonCached(buildQualityListUrl({ criterionId, type, query }), { optional404: true });
     } catch (error) {
-      console.warn('Qualitaetsliste konnte nicht aus dem Cache geladen werden.', error);
+      console.warn('Qualitätsliste konnte nicht aus dem Cache geladen werden.', error);
       return null;
     }
   }
@@ -2116,7 +2116,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (state.qualityDataMeta.mode === 'snapshot') {
         els.taskDataNote.textContent = state.qualityDataMeta.truncated
           ? 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf. Der Lauf war begrenzt; einzelne Listen koennen weiter live nachgeladen werden.'
-          : 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf und basieren auf vollstaendig gescannten Datensaetzen.';
+          : 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf und basieren auf vollständig gescannten Datensätzen.';
         return;
       }
       const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
@@ -2877,7 +2877,7 @@ document.addEventListener('DOMContentLoaded', () => {
           total: extractTotal(payload)
         };
       } catch (error) {
-        console.warn('Volltextsuche konnte fuer Typ nicht geladen werden.', type, error);
+        console.warn('Volltextsuche konnte für Typ nicht geladen werden.', type, error);
         return { type, payload: null, items: [], total: 0 };
       }
     }));
@@ -3733,8 +3733,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const sourceGuarded = model.quality.sourceGuardedCriteria || [];
     const sections = [
       renderDetailCriteriaSection('Automatisch bewertet', automatic, 'Diese Kriterien fliessen heute bereits in die Datensatzbewertung ein.'),
-      renderDetailCriteriaSection('Fachlich vorbereitet', prepared, 'Diese Pruefungen sind fuer diesen Datentyp bereits fachlich vorgesehen, aber technisch noch nicht automatisch angebunden.'),
-      renderDetailCriteriaSection('Manuell zu pruefen', manualDomain, 'Diese Punkte brauchen weiterhin eine redaktionelle Sichtpruefung.'),
+      renderDetailCriteriaSection('Fachlich vorbereitet', prepared, 'Diese Prüfungen sind für diesen Datentyp bereits fachlich vorgesehen, aber technisch noch nicht automatisch angebunden.'),
+      renderDetailCriteriaSection('Manuell zu prüfen', manualDomain, 'Diese Punkte brauchen weiterhin eine redaktionelle Sichtprüfung.'),
       renderDetailCriteriaSection('Nicht als normale Pflegeaufgabe', sourceGuarded, 'Diese Punkte sind fachlich relevant, werden aber nicht als normale automatische Pflegeaufgabe behandelt.')
     ].filter(Boolean);
     els.detailCriteriaList.innerHTML = sections.join('');
@@ -3763,8 +3763,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getCriterionDisplayStatus(status) {
     return {
-      erfuellt: 'Erfuellt',
-      'erfÃ¼llt': 'Erfuellt',
+      erfuellt: 'Erfüllt',
+      erfüllt: 'Erfüllt',
       fehlt: 'Fehlt',
       'nicht bewertbar': 'Nicht bewertbar',
       'nicht relevant': 'Nicht relevant',
@@ -3777,7 +3777,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function criterionStatusClass(status) {
-    if (status === 'erfuellt') return 'erfuellt';
+    if (status === 'erfüllt' || status === 'erfuellt') return 'erfuellt';
     if (status === 'vorbereitet' || status === 'manuell') return 'vorbereitet';
     if (status === 'source_guarded' || status === 'not_applicable' || status === 'excluded_by_category') return 'nicht-bewertbar';
     return {
@@ -4052,7 +4052,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function setQualityDataNoteLoading() {
     if (!els.qualityDataNote) return;
     els.qualityDataNote.hidden = false;
-    els.qualityDataNote.innerHTML = '<span class="inline-loading" aria-label="Qualitaetsdaten werden geladen"></span>';
+    els.qualityDataNote.innerHTML = '<span class="inline-loading" aria-label="Qualitätsdaten werden geladen"></span>';
   }
 
   function setQualityDataNoteText(text) {
@@ -4163,7 +4163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderDataNote(sampleSize) {
     if (state.qualityDataMeta.mode === 'sachsen_total') {
-      setQualityDataNoteText('Fuer ganz Sachsen wird kein Qualitaets-Score angezeigt. Pflegeaufgaben laden im Hintergrund.');
+      setQualityDataNoteText('Für ganz Sachsen wird kein Qualitäts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.');
       return;
     }
     if (state.qualityDataMeta.mode === 'regional_scan') {
@@ -4173,7 +4173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       if (state.qualityDataMeta.truncated) {
-        setQualityDataNoteText('Weitere Treffer koennen spaeter nachgeladen werden.');
+        setQualityDataNoteText('Weitere Treffer können später nachgeladen werden.');
         return;
       }
       hideQualityDataNote();
@@ -4188,7 +4188,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const note = state.qualityDataMeta.truncated
-      ? `Regionale Bewertung geladen. Weitere Treffer koennen spaeter nachgeladen werden.`
+      ? `Regionale Bewertung geladen. Weitere Treffer können später nachgeladen werden.`
       : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensätzen.`;
     setQualityDataNoteText(note);
     if (state.qualityDataMeta.truncated) console.debug('Qualitätsdaten sind begrenzt.', state.qualityDataMeta);
@@ -4316,7 +4316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'poi_phone_missing') return 'Fuer diese POI fehlt eine Telefonnummer.';
     if (id === 'poi_price_missing') return 'Fuer diese POI fehlt eine Preis-, Eintritts- oder Kosteninformation.';
     if (id === 'tour_season_missing') return 'Fuer diese Tour fehlt eine belastbare Saison- oder Eignungsangabe.';
-    if (id === 'tour_parking_missing') return 'Fuer diese Tour fehlt eine belastbare Parkinformation.';
+    if (id === 'tour_parking_missing') return 'Für diese Tour fehlt eine belastbare Parkinformation.';
     const problems = {
       license_missing: 'Für diese Datensätze ist keine gültige Lizenzangabe hinterlegt.',
       image_author_missing: 'Bildmaterial ist vorhanden, aber der Urheberhinweis fehlt.',
@@ -4329,9 +4329,9 @@ document.addEventListener('DOMContentLoaded', () => {
       poi_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
       poi_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
       poi_suitability_missing: 'Keine der geprüften Eignungsangaben ist als Merkmal hinterlegt.',
-      hotel_language_english_missing: 'Keine der geprueften Fremdsprachen ist als Merkmal hinterlegt.',
-      hotel_payment_cash_missing: 'Keine der geprueften Zahlungsarten ist als Merkmal hinterlegt.',
-      hotel_parking_feature_missing: 'Keine der geprueften Parkinformationen ist als Merkmal hinterlegt.',
+      hotel_language_english_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
+      hotel_payment_cash_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
+      hotel_parking_feature_missing: 'Keine der geprüften Parkinformationen ist als Merkmal hinterlegt.',
       gastro_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
       gastro_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
       gastro_parking_feature_missing: 'Das Merkmal "PKW-Parkplatz am Haus" fehlt.',
@@ -4342,26 +4342,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function taskImpactText(id) {
     if (id === 'poi_street_missing') return 'Fehlende Anschriften erschweren Orientierung, Routing und redaktionelle Pflege.';
-    if (id === 'poi_teaser_missing') return 'Fehlende Teaser schwaechen Kurzansicht, Auffindbarkeit und Erstverstaendnis.';
-    if (id === 'poi_email_missing') return 'Fehlende E-Mail-Adressen erschweren Rueckfragen und Kontaktaufnahme.';
-    if (id === 'poi_website_missing') return 'Fehlende Webseiten schwaechen Weiterleitung zu vertiefenden Informationen.';
-    if (id === 'poi_phone_missing') return 'Fehlende Telefonnummern erschweren direkte Rueckfragen und Kontaktaufnahme.';
+    if (id === 'poi_teaser_missing') return 'Fehlende Teaser schwächen Kurzansicht, Auffindbarkeit und Erstverständnis.';
+    if (id === 'poi_email_missing') return 'Fehlende E-Mail-Adressen erschweren Rückfragen und Kontaktaufnahme.';
+    if (id === 'poi_website_missing') return 'Fehlende Webseiten schwächen Weiterleitung zu vertiefenden Informationen.';
+    if (id === 'poi_phone_missing') return 'Fehlende Telefonnummern erschweren direkte Rückfragen und Kontaktaufnahme.';
     if (id === 'poi_price_missing') return 'Fehlende Preis- oder Eintrittshinweise erschweren Erwartungsmanagement und Besuchsplanung.';
     if (id === 'tour_season_missing') return 'Fehlende Saisonangaben erschweren Einordnung, Planung und passende Nutzung der Tour.';
-    if (id === 'tour_parking_missing') return 'Fehlende Parkhinweise erschweren die Anreiseplanung fuer Touren mit Startpunkt vor Ort.';
+    if (id === 'tour_parking_missing') return 'Fehlende Parkhinweise erschweren die Anreiseplanung für Touren mit Startpunkt vor Ort.';
     const impacts = {
       license_missing: 'Ohne Lizenz sind Daten nicht Open-Data-fähig und nur eingeschränkt weiterverwendbar.',
       image_author_missing: 'Ohne Urheberangabe ist die Weitergabe von Bildmaterial rechtlich eingeschränkt.',
-      description_missing: 'Fehlende Beschreibungen reduzieren Auffindbarkeit, Verstaendlichkeit und Nutzbarkeit.',
+      description_missing: 'Fehlende Beschreibungen reduzieren Auffindbarkeit, Verständlichkeit und Nutzbarkeit.',
       opening_hours_missing: 'Fehlende Öffnungszeiten erschweren Planung und Ausspielung in Portalen.',
       public_transport_missing: 'Fehlende ÖPNV-Hinweise schwächen nachhaltige Anreiseinformationen.',
-      booking_link_missing: 'Ohne Buchungslink koennen Nutzer Angebote schwerer direkt abschliessen.',
-      image_missing: 'Ohne Bilder wirken Eintraege weniger attraktiv und sind in vielen Kanaelen schwaecher.',
+      booking_link_missing: 'Ohne Buchungslink können Nutzer Angebote schwerer direkt abschließen.',
+      image_missing: 'Ohne Bilder wirken Einträge weniger attraktiv und sind in vielen Kanälen schwächer.',
       poi_parking_feature_missing: 'Fehlende Parkangaben erschweren Anreiseplanung mit dem Auto.',
-      poi_payment_options_missing: 'Fehlende Zahlungsarten schwaechen Nutzbarkeit und Vorbereitung vor Ort.',
+      poi_payment_options_missing: 'Fehlende Zahlungsarten schwächen Nutzbarkeit und Vorbereitung vor Ort.',
       poi_languages_missing: 'Fehlende Sprachangaben reduzieren Zugänglichkeit für internationale Gäste.',
       poi_suitability_missing: 'Fehlende Eignungsangaben erschweren Zielgruppenansprache und Orientierung.',
-      hotel_language_english_missing: 'Fehlende Sprachangaben reduzieren die Zugaenglichkeit fuer internationale Gaeste.',
+      hotel_language_english_missing: 'Fehlende Sprachangaben reduzieren die Zugänglichkeit für internationale Gäste.',
       hotel_payment_cash_missing: 'Fehlende Zahlungsarten erschweren Nutzung und Erwartungsmanagement vor Ort.',
       hotel_parking_feature_missing: 'Fehlende Parkhinweise erschweren Anreiseplanung und Erwartungsmanagement vor Ort.',
       gastro_payment_options_missing: 'Fehlende Zahlungsarten erschweren die Nutzung und Vorbereitung für Gäste.',
@@ -4526,7 +4526,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await navigator.clipboard?.writeText(value);
     } catch (error) {
-      console.debug('Kopieren nicht moeglich.', error);
+      console.debug('Kopieren nicht möglich.', error);
     }
   }
 
@@ -4576,9 +4576,9 @@ document.addEventListener('DOMContentLoaded', () => {
       poi_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
       poi_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
       poi_suitability_missing: 'Keine geprüfte Eignungsangabe vorhanden',
-      hotel_language_english_missing: 'Keine gepruefte Fremdsprache vorhanden',
-      hotel_payment_cash_missing: 'Keine gepruefte Zahlungsart vorhanden',
-      hotel_parking_feature_missing: 'Keine gepruefte Parkinformation vorhanden',
+      hotel_language_english_missing: 'Keine geprüfte Fremdsprache vorhanden',
+      hotel_payment_cash_missing: 'Keine geprüfte Zahlungsart vorhanden',
+      hotel_parking_feature_missing: 'Keine geprüfte Parkinformation vorhanden',
       gastro_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
       gastro_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
       gastro_parking_feature_missing: 'Merkmal "PKW-Parkplatz am Haus" fehlt',

@@ -1,34 +1,34 @@
-# one.intelligence - Kontext und Fehlerbilder fuer KI-Modelle
+# one.intelligence - Kontext und Fehlerbilder für KI-Modelle
 
 Stand: 2026-06-12
 
-Dieses Dokument beschreibt den fachlichen Kontext fuer die beiden
-one.intelligence-Anwendungsfaelle im Datenqualitaets-Monitor:
+Dieses Dokument beschreibt den fachlichen Kontext für die beiden
+one.intelligence-Anwendungsfälle im Datenqualitäts-Monitor:
 
 - KI-Mail-Entwurf an Dateninhaber
-- KI-Suche nach thematisch passenden Datensaetzen
+- KI-Suche nach thematisch passenden Datensätzen
 
 Ziel ist nicht die technische API-Beschreibung, sondern ein gemeinsames
-Verstaendnis der Aufgabe, der Sprache und der Fehlerbilder.
+Verständnis der Aufgabe, der Sprache und der Fehlerbilder.
 
 ## 1. Fachlicher Rahmen
 
-Der Datenqualitaets-Monitor bewertet touristische Datensaetze aus
-Destination.One. Er zeigt Luecken in den Daten und hilft Redaktionen oder
-Dateninhabern dabei, Datensaetze zu verbessern.
+Der Datenqualitäts-Monitor bewertet touristische Datensätze aus
+Destination.One. Er zeigt Lücken in den Daten und hilft Redaktionen oder
+Dateninhabern dabei, Datensätze zu verbessern.
 
-Wichtige Grundsaetze:
+Wichtige Grundsätze:
 
 - Es geht um Datenpflege, nicht um Werbung.
 - Die Kommunikation soll sachlich, freundlich und handlungsorientiert sein.
-- Fehler bedeuten: bestimmte Angaben fehlen, sind unvollstaendig oder fuer den
+- Fehler bedeuten: bestimmte Angaben fehlen, sind unvollständig oder für den
   Anwendungsfall nicht ausreichend gepflegt.
-- Nicht jede fachlich sinnvolle Pruefung ist schon technisch automatisch
+- Nicht jede fachlich sinnvolle Prüfung ist schon technisch automatisch
   aktiviert.
 - Das Modell darf keine Felder, Inhalte oder Fehler erfinden, die nicht im
-  Input uebergeben wurden.
+  Input übergeben wurden.
 
-## 2. Wofuer die beiden Modelle da sind
+## 2. Wofür die beiden Modelle da sind
 
 ### 2.1 Mail-Entwurf
 
@@ -37,43 +37,43 @@ Ziel:
 - Ein Dateninhaber soll freundlich und konkret auf Pflegebedarf hingewiesen
   werden.
 - Die Mail soll helfen, den Datensatz zu verbessern.
-- Der Text soll verstaendlich sein, auch ohne internes Systemwissen.
+- Der Text soll verständlich sein, auch ohne internes Systemwissen.
 
 Die Mail darf nicht:
 
 - technische API-Begriffe verwenden
 - interne Statusnamen nennen
 - Schuld zuweisen
-- Druck oder Drohkulissen aufbauen
+- Druck oder Drohkulissen aufbaün
 - unbekannte Fakten oder Ursachen erfinden
 
 Die Mail soll:
 
 - den Datensatz kurz einordnen
 - die relevanten Fehler knapp benennen
-- kurz erklaeren, warum die Angaben wichtig sind
+- kurz erklären, warum die Angaben wichtig sind
 - eine konkrete Pflegeempfehlung geben
 
 ### 2.2 AI-Search
 
 Ziel:
 
-- Ein Nutzer soll per Freitext Datensaetze zu einem Thema finden koennen.
-- Die Rueckgabe besteht spaeter aus `global_id`-Treffern, nicht aus Text.
-- Die Suche dient dazu, Datensaetze zu Themen, Kampagnen oder inhaltlichen
+- Ein Nutzer soll per Freitext Datensätze zu einem Thema finden können.
+- Die Rückgabe besteht später aus `global_id`-Treffern, nicht aus Text.
+- Die Suche dient dazu, Datensätze zu Themen, Kampagnen oder inhaltlichen
   Gruppen zusammenzustellen.
 
 Die Suche soll:
 
-- thematisch passende touristische Datensaetze erkennen
-- den Arbeitskontext beruecksichtigen, wenn Gebiet, Ort oder Datentyp
-  uebergeben wurden
-- eher praezise als breit antworten
+- thematisch passende touristische Datensätze erkennen
+- den Arbeitskontext berücksichtigen, wenn Gebiet, Ort oder Datentyp
+  übergeben wurden
+- eher präzise als breit antworten
 
 Die Suche darf nicht:
 
 - IDs erfinden
-- Freitext erklaeren statt IDs liefern
+- Freitext erklären statt IDs liefern
 - fachlich unpassende Treffer aufblasen
 
 ## 3. Was ein Fehler in diesem System bedeutet
@@ -82,44 +82,44 @@ Ein Fehler bedeutet in diesem Kontext:
 
 - eine erwartete Angabe fehlt
 - eine wichtige offene Datenangabe fehlt
-- eine fuer Nutzer relevante Kontextangabe fehlt
-- ein Datensatz ist dadurch schwaecher nutzbar, schlechter auffindbar oder
-  nicht ausreichend open-data-faehig
+- eine für Nutzer relevante Kontextangabe fehlt
+- ein Datensatz ist dadurch schwächer nutzbar, schlechter auffindbar oder
+  nicht ausreichend open-data-fähig
 
 Es gibt ausserdem:
 
-- `vorbereitete` Pruefungen:
+- `vorbereitete` Prüfungen:
   fachlich bereits sinnvoll, aber noch nicht voll automatisch angebunden
-- `manuelle` Pruefungen:
+- `manülle` Prüfungen:
   nur redaktionell beurteilbar
-- `quellseitig` abgefangene oder ausgeschlossene Faelle:
+- `qüllseitig` abgefangene oder ausgeschlossene Fälle:
   fachlich relevant, aber keine normale Pflegeaufgabe
 
-Fuer die Modelle ist wichtig:
+Für die Modelle ist wichtig:
 
 - Nur die im Input enthaltenen Fehler als echte Probleme behandeln.
-- Nicht jede moegliche Pruefung ist automatisch ein aktueller Fehler.
+- Nicht jede mögliche Prüfung ist automatisch ein aktüller Fehler.
 
 ## 4. Fehlerbilder und Bedeutung
 
-Die folgenden Fehlerbilder sind besonders relevant fuer Mails und spaetere
-KI-Unterstuetzung. Die Beschreibungen sind absichtlich nutzerorientiert.
+Die folgenden Fehlerbilder sind besonders relevant für Mails und spätere
+KI-Unterstützung. Die Beschreibungen sind absichtlich nutzerorientiert.
 
 ### 4.1 Lizenz / Open Data
 
 Fehlerbild:
 
-- Es fehlt eine gueltige Lizenzangabe fuer offene Daten.
+- Es fehlt eine gültige Lizenzangabe für offene Daten.
 
 Bedeutung:
 
-- Ohne Lizenz ist die rechtssichere Nachnutzung erschwert oder nicht moeglich.
-- Der Datensatz ist dann meist nicht oder nur eingeschraenkt open-data-faehig.
+- Ohne Lizenz ist die rechtssichere Nachnutzung erschwert oder nicht möglich.
+- Der Datensatz ist dann meist nicht oder nur eingeschränkt open-data-fähig.
 
 Empfohlene Sprache:
 
 - Die Lizenzangabe fehlt noch.
-- Bitte eine passende Lizenz ergaenzen oder den Open-Data-Status pruefen.
+- Bitte eine passende Lizenz ergänzen oder den Open-Data-Status prüfen.
 
 ### 4.2 Beschreibung / Beschreibungstext
 
@@ -134,8 +134,8 @@ Bedeutung:
 
 Empfohlene Sprache:
 
-- Der Datensatz enthaelt noch keine ausreichende Beschreibung.
-- Bitte einen klaren Beschreibungstext ergaenzen.
+- Der Datensatz enthält noch keine ausreichende Beschreibung.
+- Bitte einen klaren Beschreibungstext ergänzen.
 
 ### 4.3 Teaser / Kurztext
 
@@ -145,13 +145,13 @@ Fehlerbild:
 
 Bedeutung:
 
-- Der Datensatz wirkt unvollstaendig.
-- Kurze Uebersichten, Listen und Vorschaudarstellungen werden schwaecher.
+- Der Datensatz wirkt unvollständig.
+- Kurze Übersichten, Listen und Vorschaudarstellungen werden schwächer.
 
 Empfohlene Sprache:
 
 - Ein kurzer Teaser oder Einleitungstext fehlt noch.
-- Bitte einen kompakten Kurztext ergaenzen.
+- Bitte einen kompakten Kurztext ergänzen.
 
 ### 4.4 Strasse / Anschrift
 
@@ -166,8 +166,8 @@ Bedeutung:
 
 Empfohlene Sprache:
 
-- Die Anschrift ist noch nicht vollstaendig.
-- Bitte Strasse oder vollstaendige Adressangaben ergaenzen.
+- Die Anschrift ist noch nicht vollständig.
+- Bitte Strasse oder vollständige Adressangaben ergänzen.
 
 ### 4.5 Telefon
 
@@ -177,12 +177,12 @@ Fehlerbild:
 
 Bedeutung:
 
-- Rueckfragen oder kurzfristige Kontaktaufnahme sind erschwert.
+- Rückfragen oder kurzfristige Kontaktaufnahme sind erschwert.
 
 Empfohlene Sprache:
 
 - Eine Telefonnummer ist noch nicht hinterlegt.
-- Bitte eine erreichbare Telefonnummer ergaenzen.
+- Bitte eine erreichbare Telefonnummer ergänzen.
 
 ### 4.6 E-Mail
 
@@ -207,28 +207,28 @@ Fehlerbild:
 
 Bedeutung:
 
-- Weiterfuehrende Informationen, Buchung oder Verifikation sind erschwert.
+- Weiterführende Informationen, Buchung oder Verifikation sind erschwert.
 
 Empfohlene Sprache:
 
-- Eine weiterfuehrende Webseite fehlt noch.
-- Bitte eine passende Webadresse ergaenzen.
+- Eine weiterführende Webseite fehlt noch.
+- Bitte eine passende Webadresse ergänzen.
 
-### 4.8 Oeffnungszeiten
+### 4.8 Öffnungszeiten
 
 Fehlerbild:
 
-- Es sind keine Oeffnungszeiten hinterlegt.
+- Es sind keine Öffnungszeiten hinterlegt.
 
 Bedeutung:
 
-- Nutzer koennen den Besuch schlechter planen.
+- Nutzer können den Besuch schlechter planen.
 - Die Aussagekraft des Datensatzes sinkt deutlich.
 
 Empfohlene Sprache:
 
-- Es sind noch keine Oeffnungszeiten hinterlegt.
-- Bitte Oeffnungszeiten ergaenzen oder aktualisieren.
+- Es sind noch keine Öffnungszeiten hinterlegt.
+- Bitte Öffnungszeiten ergänzen oder aktualisieren.
 
 ### 4.9 Preisinformation
 
@@ -243,13 +243,13 @@ Bedeutung:
 Empfohlene Sprache:
 
 - Preisinformationen fehlen noch.
-- Bitte Preis-, Eintritts- oder Kostenhinweise ergaenzen.
+- Bitte Preis-, Eintritts- oder Kostenhinweise ergänzen.
 
-### 4.10 Zahlungsmoeglichkeiten
+### 4.10 Zahlungsmöglichkeiten
 
 Fehlerbild:
 
-- Es ist keine gepruefte Zahlungsart vorhanden.
+- Es ist keine geprüfte Zahlungsart vorhanden.
 
 Bedeutung:
 
@@ -257,8 +257,8 @@ Bedeutung:
 
 Empfohlene Sprache:
 
-- Zahlungsmoeglichkeiten sind noch nicht ausreichend gepflegt.
-- Bitte mindestens eine passende Zahlungsart ergaenzen.
+- Zahlungsmöglichkeiten sind noch nicht ausreichend gepflegt.
+- Bitte mindestens eine passende Zahlungsart ergänzen.
 
 ### 4.11 Buchungslink
 
@@ -273,13 +273,13 @@ Bedeutung:
 Empfohlene Sprache:
 
 - Ein direkter Buchungs- oder Reservierungslink fehlt noch.
-- Bitte eine passende Buchungsmoeglichkeit hinterlegen.
+- Bitte eine passende Buchungsmöglichkeit hinterlegen.
 
-### 4.12 OePNV-Anreise / Anfahrt
+### 4.12 ÖPNV-Anreise / Anfahrt
 
 Fehlerbild:
 
-- Informationen zur Anreise mit OePNV oder allgemeine Anfahrtshinweise fehlen.
+- Informationen zur Anreise mit ÖPNV oder allgemeine Anfahrtshinweise fehlen.
 
 Bedeutung:
 
@@ -288,47 +288,47 @@ Bedeutung:
 Empfohlene Sprache:
 
 - Hinweise zur Anreise fehlen noch.
-- Bitte Informationen zu OePNV oder Anfahrt ergaenzen.
+- Bitte Informationen zu ÖPNV oder Anfahrt ergänzen.
 
 ### 4.13 Parken / Parkhinweise
 
 Fehlerbild:
 
-- Parkmoeglichkeiten oder gepruefte Parkhinweise fehlen.
+- Parkmöglichkeiten oder geprüfte Parkhinweise fehlen.
 
 Bedeutung:
 
-- Die Erreichbarkeit mit dem Auto ist schlechter einschaetzbar.
+- Die Erreichbarkeit mit dem Auto ist schlechter einschätzbar.
 
 Empfohlene Sprache:
 
 - Parkhinweise sind noch nicht ausreichend gepflegt.
-- Bitte Parkmoeglichkeiten oder passende Hinweise ergaenzen.
+- Bitte Parkmöglichkeiten oder passende Hinweise ergänzen.
 
 ### 4.14 Fremdsprachen
 
 Fehlerbild:
 
-- Es ist keine gepruefte Fremdsprache vorhanden.
+- Es ist keine geprüfte Fremdsprache vorhanden.
 
 Bedeutung:
 
-- Internationale Nutzbarkeit und Auffindbarkeit sind eingeschraenkt.
+- Internationale Nutzbarkeit und Auffindbarkeit sind eingeschränkt.
 
 Empfohlene Sprache:
 
 - Fremdsprachenangaben fehlen noch.
-- Bitte mindestens eine passende Fremdsprache ergaenzen.
+- Bitte mindestens eine passende Fremdsprache ergänzen.
 
 ### 4.15 Eignung
 
 Fehlerbild:
 
-- Es fehlt eine gepruefte Eignungsangabe.
+- Es fehlt eine geprüfte Eignungsangabe.
 
 Bedeutung:
 
-- Nutzer koennen schwerer einschaetzen, fuer wen das Angebot geeignet ist.
+- Nutzer können schwerer einschätzen, für wen das Angebot geeignet ist.
 
 Empfohlene Sprache:
 
@@ -349,22 +349,22 @@ Bedeutung:
 Empfohlene Sprache:
 
 - Angaben zu Saison oder Jahreszeit fehlen noch.
-- Bitte die passende saisonale Einordnung ergaenzen.
+- Bitte die passende saisonale Einordnung ergänzen.
 
 ### 4.17 Bildmaterial
 
 Fehlerbild:
 
-- Es fehlt pruefbares Bildmaterial.
+- Es fehlt prüfbares Bildmaterial.
 
 Bedeutung:
 
-- Der Datensatz wirkt weniger anschaulich und redaktionell schwaecher.
+- Der Datensatz wirkt weniger anschaulich und redaktionell schwächer.
 
 Empfohlene Sprache:
 
 - Es ist noch kein geeignetes Bildmaterial hinterlegt.
-- Bitte mindestens ein passendes Bild ergaenzen.
+- Bitte mindestens ein passendes Bild ergänzen.
 
 ### 4.18 Bildurheber
 
@@ -379,37 +379,37 @@ Bedeutung:
 Empfohlene Sprache:
 
 - Beim Bildmaterial fehlt noch ein Urheberhinweis.
-- Bitte Fotograf oder Copyright-Angabe ergaenzen.
+- Bitte Fotograf oder Copyright-Angabe ergänzen.
 
-### 4.19 Kuechenart / Kueche
+### 4.19 Küchenart / Küche
 
 Fehlerbild:
 
-- Bei Gastro fehlen gepruefte Kuechenarten oder weitere Kuecheninformationen.
+- Bei Gastro fehlen geprüfte Küchenarten oder weitere Kücheninformationen.
 
 Bedeutung:
 
-- Nutzer koennen das gastronomische Angebot schlechter einordnen.
+- Nutzer können das gastronomische Angebot schlechter einordnen.
 
 Empfohlene Sprache:
 
-- Angaben zur Kuechenart sind noch nicht vollstaendig.
-- Bitte passende Kuechenarten oder Kuecheninformationen ergaenzen.
+- Angaben zur Küchenart sind noch nicht vollständig.
+- Bitte passende Küchenarten oder Kücheninformationen ergänzen.
 
 ### 4.20 Autor / Organisation / Ansprechperson
 
 Fehlerbild:
 
-- Zustaendige Kontakt- oder Organisationsangaben fehlen.
+- Zuständige Kontakt- oder Organisationsangaben fehlen.
 
 Bedeutung:
 
-- Verantwortlichkeiten und redaktionelle Einordnung werden schwaecher.
+- Verantwortlichkeiten und redaktionelle Einordnung werden schwächer.
 
 Empfohlene Sprache:
 
-- Zustaendige Kontakt- oder Organisationsangaben fehlen noch.
-- Bitte die passenden Angaben ergaenzen.
+- Zuständige Kontakt- oder Organisationsangaben fehlen noch.
+- Bitte die passenden Angaben ergänzen.
 
 ### 4.21 Start- und Zielbeschreibungen
 
@@ -423,10 +423,10 @@ Bedeutung:
 
 Empfohlene Sprache:
 
-- Angaben zu Start oder Ziel sind noch nicht vollstaendig.
-- Bitte Start- und Zielbeschreibung ergaenzen.
+- Angaben zu Start oder Ziel sind noch nicht vollständig.
+- Bitte Start- und Zielbeschreibung ergänzen.
 
-## 5. Datentyp-Kontext fuer die Modelle
+## 5. Datentyp-Kontext für die Modelle
 
 ### Hotel
 
@@ -452,7 +452,7 @@ Typische Schwerpunkte:
 Typische Schwerpunkte:
 
 - Basisbeschreibung
-- Oeffnungszeiten
+- Öffnungszeiten
 - Kontakt
 - Preis
 - Lizenz
@@ -463,9 +463,9 @@ Typische Schwerpunkte:
 Typische Schwerpunkte:
 
 - Beschreibung
-- Oeffnungszeiten
-- Zahlungsmoeglichkeiten
-- Kuechenart
+- Öffnungszeiten
+- Zahlungsmöglichkeiten
+- Küchenart
 - Lizenz
 
 ### Event
@@ -473,10 +473,10 @@ Typische Schwerpunkte:
 Typische Schwerpunkte:
 
 - Beschreibung
-- Termin- und Kontextverstaendnis
+- Termin- und Kontextverständnis
 - Preis
 - Kontakt
-- OePNV-Anreise
+- ÖPNV-Anreise
 
 ### Package
 
@@ -488,7 +488,7 @@ Typische Schwerpunkte:
 
 ## 6. Welche Eingaben ein KI-Modell idealerweise versteht
 
-### Fuer Mail-Entwurf
+### Für Mail-Entwurf
 
 Hilfreiche Eingaben:
 
@@ -496,7 +496,7 @@ Hilfreiche Eingaben:
 - Datentyp
 - Ort / Gebiet
 - globale oder interne ID
-- Empfaengeradresse
+- Empfängeradresse
 - Liste der relevanten Fehler
 - pro Fehler:
   - Label
@@ -513,7 +513,7 @@ Das Modell soll daraus:
 
 erzeugen.
 
-### Fuer AI-Search
+### Für AI-Search
 
 Hilfreiche Eingaben:
 
@@ -525,10 +525,10 @@ Hilfreiche Eingaben:
 
 Das Modell soll daraus:
 
-- thematisch passende touristische Datensaetze ableiten
-- spaeter nur passende `global_id`-Treffer liefern
+- thematisch passende touristische Datensätze ableiten
+- später nur passende `global_id`-Treffer liefern
 
-## 7. Sprachstil fuer beide Modelle
+## 7. Sprachstil für beide Modelle
 
 Gemeinsame Anforderungen:
 
@@ -539,16 +539,16 @@ Gemeinsame Anforderungen:
 - keine internen Systembegriffe
 - keine Halluzinationen
 
-Fuer Mail besonders wichtig:
+Für Mail besonders wichtig:
 
 - nicht vorwurfsvoll
 - nicht juristisch drohend
 - nicht zu lang
 - klar strukturierte Bitte zur Nachpflege
 
-Fuer Search besonders wichtig:
+Für Search besonders wichtig:
 
-- kein Erklaertext
+- kein Erklärtext
 - keine freie Interpretation ohne Bezug zu realistischen touristischen
   Inhalten
 
@@ -557,22 +557,22 @@ Fuer Search besonders wichtig:
 - Fehler erfinden
 - IDs erfinden
 - fehlende Felder als sicher vorhanden darstellen
-- interne Codex-, API- oder Proxy-Logik erklaeren
+- interne Codex-, API- oder Proxy-Logik erklären
 - Datenschutz-, Lizenz- oder Rechtsbewertung frei erfinden
 - eine fehlende Angabe mit einer vermuteten Angabe ersetzen
 
 ## 9. Einsatz als Referenz
 
-Dieses Dokument ist sinnvoll als Referenz fuer:
+Dieses Dokument ist sinnvoll als Referenz für:
 
 - Systemprompts
 - Assistentenbeschreibung in one.intelligence
-- spaetere Prompt-Bausteine im Backend
+- spätere Prompt-Bausteine im Backend
 - Abstimmung der Fehlertexte zwischen UI, Mail und KI-Suche
 
 Verwandte Dateien:
 
 - `docs/Codex/Render_OI_Einrichtung.md`
-- `docs/Codex/Datenqualitaetsmonitor_Pflegeaufgaben_je_Datentyp.md`
+- `docs/Codex/Datenqualitätsmonitor_Pflegeaufgaben_je_Datentyp.md`
 - `Statistik/quality.js`
 - `Statistik/scripts.js`

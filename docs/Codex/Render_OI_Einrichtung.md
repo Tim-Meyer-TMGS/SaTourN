@@ -1,40 +1,40 @@
-# Render-Einrichtung fuer one.intelligence
+# Render-Einrichtung für one.intelligence
 
 Stand: 2026-06-12
 
-Diese Datei beschreibt nur die neuen Schritte fuer die one.intelligence-
-Anbindung. Die bestehende Render-Konfiguration fuer `destination.meta`,
-Suche und Qualitaetspruefungen bleibt unveraendert.
+Diese Datei beschreibt nur die neün Schritte für die one.intelligence-
+Anbindung. Die bestehende Render-Konfiguration für `destination.meta`,
+Suche und Qualitätsprüfungen bleibt unverändert.
 
 ## Ziel
 
-In Render sollen zusaetzlich zur bestehenden Konfiguration neue
-Umgebungsvariablen fuer one.intelligence hinterlegt werden.
+In Render sollen zusätzlich zur bestehenden Konfiguration neü
+Umgebungsvariablen für one.intelligence hinterlegt werden.
 
 Wichtig:
 
-- bestehende Variablen fuer Meta/Search nicht aendern
+- bestehende Variablen für Meta/Search nicht ändern
 - bestehenden `LICENSEKEY` oder andere Search-Keys nicht ersetzen
-- nur neue OI-Variablen ergaenzen
+- nur neü OI-Variablen ergänzen
 
 ## Technische Grundregel
 
-Die Anwendung spricht one.intelligence aktuell serverseitig ueber
+Die Anwendung spricht one.intelligence aktüll serverseitig über
 
 - `POST /chat/completions`
 
-an. Deshalb muessen die verwendeten OI-Modelle oder OI-Konfigurationen diese
-Art von Chat-Aufruf unterstuetzen.
+an. Deshalb müssen die verwendeten OI-Modelle oder OI-Konfigurationen diese
+Art von Chat-Aufruf unterstützen.
 
 Wichtig:
 
 - die App sendet pro Anfrage bereits eigene System- und User-Nachrichten
-- falls du in one.intelligence zusaetzliche feste Systemprompts hinterlegst,
-  duerfen diese die JSON-Ausgabe und die Rollenlogik nicht aufweichen
-- keine Konfiguration bauen, die Freitext, HTML oder lange Marketingtexte
+- falls du in one.intelligence zusätzliche feste Systemprompts hinterlegst,
+  dürfen diese die JSON-Ausgabe und die Rollenlogik nicht aufweichen
+- keine Konfiguration baün, die Freitext, HTML oder lange Marketingtexte
   erzwingt
 
-## Neue Environment Variables in Render
+## Neü Environment Variables in Render
 
 Diese Variablen im Render-Service des SaTourN-Proxys hinterlegen:
 
@@ -43,9 +43,9 @@ Diese Variablen im Render-Service des SaTourN-Proxys hinterlegen:
 - `OI_API_BASE`
   - Wert: `https://oi.destination.one/api`
 - `OI_MODEL_MAIL`
-  - Modellname fuer Mail-Entwuerfe
+  - Modellname für Mail-Entwürfe
 - `OI_MODEL_SEARCH`
-  - Modellname fuer AI-Search
+  - Modellname für AI-Search
 - `OI_MAIL_CC`
   - optional, mehrere Adressen mit Komma oder Semikolon trennen
 - `OI_MAIL_BCC`
@@ -60,31 +60,31 @@ Wenn du erst einmal klein starten willst:
 - `OI_MODEL_MAIL=<dein-mail-modell>`
 - `OI_MODEL_SEARCH=<dein-search-modell>`
 
-`OI_MAIL_CC` und `OI_MAIL_BCC` koennen zunaechst leer bleiben.
+`OI_MAIL_CC` und `OI_MAIL_BCC` können zunächst leer bleiben.
 
 ## Wie die beiden Modelle eingerichtet sein sollten
 
-Es gibt fachlich zwei getrennte Anwendungsfaelle. Deshalb sollten auch in
+Es gibt fachlich zwei getrennte Anwendungsfälle. Deshalb sollten auch in
 one.intelligence zwei getrennte Modellkonfigurationen oder Modellaliases
 existieren.
 
-### 1. Modell fuer Mail-Entwurf
+### 1. Modell für Mail-Entwurf
 
 Dieses Modell wird in Render als `OI_MODEL_MAIL` hinterlegt.
 
 Anforderungen:
 
-- Chat-Modell, ansprechbar ueber `/chat/completions`
-- deutschsprachige Ausgabe moeglich
+- Chat-Modell, ansprechbar über `/chat/completions`
+- deutschsprachige Ausgabe möglich
 - kurze, sachliche Business-Texte
-- zuverlaessige JSON-Ausgabe
+- zuverlässige JSON-Ausgabe
 - keine HTML-Erzeugung
 - keine sehr kreative oder werbliche Schreibe
 
 Wenn in one.intelligence Parameter konfigurierbar sind:
 
 - Temperatur eher niedrig
-- Ausgabe moeglichst stabil und knapp
+- Ausgabe möglichst stabil und knapp
 
 Systemprompt-Ziel:
 
@@ -94,29 +94,29 @@ Systemprompt-Ziel:
 - keine technischen API-Begriffe
 - nur JSON mit `subject` und `body`
 
-Empfohlener Systemprompt fuer one.intelligence:
+Empfohlener Systemprompt für one.intelligence:
 
 ```text
-Du erstellst kurze, sachliche und freundliche E-Mail-Entwuerfe auf Deutsch.
+Du erstellst kurze, sachliche und freundliche E-Mail-Entwürfe auf Deutsch.
 Du erfindest keine Fakten, Namen oder Felder, die nicht im Input stehen.
 Du verwendest keine HTML-Ausgabe, keine Markdown-Ausgabe und keine
 technischen Systembegriffe.
 Antworte ausschliesslich als JSON im Format
 {"subject":"...","body":"..."}.
-Der Betreff soll kurz und eindeutig sein. Der Text soll fuer Dateninhaber
-verstaendlich und handlungsorientiert sein.
+Der Betreff soll kurz und eindeutig sein. Der Text soll für Dateninhaber
+verständlich und handlungsorientiert sein.
 ```
 
-### 2. Modell fuer KI-Suche
+### 2. Modell für KI-Suche
 
 Dieses Modell wird in Render als `OI_MODEL_SEARCH` hinterlegt.
 
 Anforderungen:
 
-- Chat-Modell, ansprechbar ueber `/chat/completions`
+- Chat-Modell, ansprechbar über `/chat/completions`
 - sehr hohe Formatdisziplin
-- keine erklaerenden Texte
-- geeignet, aus einem Suchsatz passende touristische Datensaetze abzuleiten
+- keine erklärenden Texte
+- geeignet, aus einem Suchsatz passende touristische Datensätze abzuleiten
 - JSON-Ausgabe mit IDs statt Freitext
 
 Wenn in one.intelligence Parameter konfigurierbar sind:
@@ -128,37 +128,37 @@ Systemprompt-Ziel:
 
 - Suchanfrage interpretieren
 - nur passende `global_id`-Werte liefern
-- keine Erklaerung, kein Markdown, keine Zusatzfelder
+- keine Erklärung, kein Markdown, keine Zusatzfelder
 
-Empfohlener Systemprompt fuer one.intelligence:
+Empfohlener Systemprompt für one.intelligence:
 
 ```text
-Du analysierst Suchanfragen fuer touristische Datensaetze.
+Du analysierst Suchanfragen für touristische Datensätze.
 Antworte ausschliesslich als JSON im Format
 {"globalIds":["type_123","type_456"]}.
-Gib keine Erklaerung, kein Markdown und keine weiteren Felder aus.
+Gib keine Erklärung, kein Markdown und keine weiteren Felder aus.
 Liefere nur plausible global_id-Werte.
 Wenn du unsicher bist, liefere lieber weniger IDs als erfundene IDs.
 ```
 
 ## Wichtiger Hinweis zu den Systemprompts
 
-Die Anwendung sendet bereits pro Request einen eigenen Systemhinweis mit.
+Die Anwendung sendet bereits pro Reqüst einen eigenen Systemhinweis mit.
 Deine in one.intelligence hinterlegten Systemprompts sollten deshalb:
 
-- denselben JSON-Rahmen bestaetigen
+- denselben JSON-Rahmen bestätigen
 - nicht im Widerspruch zum Code stehen
-- nicht laenger oder allgemeiner als noetig sein
+- nicht länger oder allgemeiner als nötig sein
 
-Die fachlichen Unterschiede zwischen Mail und Suche sollten ueber zwei
+Die fachlichen Unterschiede zwischen Mail und Suche sollten über zwei
 getrennte Modelle oder zwei getrennte Modellkonfigurationen abgebildet
-werden, nicht ueber ein einziges gemeinsames Allzweck-Modell.
+werden, nicht über ein einziges gemeinsames Allzweck-Modell.
 
-## Wo du das in Render eintraegst
+## Wo du das in Render einträgst
 
-1. Render oeffnen
-2. den laufenden SaTourN-Proxy-Service auswaehlen
-3. `Environment` oder `Environment Variables` oeffnen
+1. Render öffnen
+2. den laufenden SaTourN-Proxy-Service auswählen
+3. `Environment` oder `Environment Variables` öffnen
 4. die oben genannten Variablen neu anlegen
 5. speichern
 
@@ -166,7 +166,7 @@ werden, nicht ueber ein einziges gemeinsames Allzweck-Modell.
 
 Nach dem Hinterlegen der Variablen:
 
-1. einen neuen Deploy starten
+1. einen neün Deploy starten
 2. warten bis der Deploy erfolgreich abgeschlossen ist
 3. danach die Funktionen im Frontend testen
 
@@ -176,14 +176,14 @@ Nach dem Hinterlegen der Variablen:
 
 In `Statistik/records.html`:
 
-1. Datensatzliste oeffnen
-2. einen Datensatz mit E-Mail-Adresse und Fehlern waehlen
+1. Datensatzliste öffnen
+2. einen Datensatz mit E-Mail-Adresse und Fehlern wählen
 3. in `Aktionen` auf das Mail-Symbol klicken
-4. pruefen, ob sich das lokale Mailprogramm mit vorausgefuellter Mail oeffnet
+4. prüfen, ob sich das lokale Mailprogramm mit vorausgefüllter Mail öffnet
 
-Pruefen:
+Prüfen:
 
-- Empfaenger korrekt
+- Empfänger korrekt
 - Betreff vorhanden
 - Text vorhanden
 - CC/BCC korrekt, falls gesetzt
@@ -195,64 +195,64 @@ In `Statistik/records.html`:
 1. `AI-Search` klicken
 2. Suchsatz eingeben
 3. Anfrage absenden
-4. pruefen, ob Datensaetze geladen werden
+4. prüfen, ob Datensätze geladen werden
 
-Pruefen:
+Prüfen:
 
 - Datensatzliste wird ersetzt durch KI-Treffer
 - Ergebnistext zeigt `KI-Suche`
-- Detailseiten der Treffer lassen sich oeffnen
-- `Filter zuruecksetzen` verlaesst den KI-Modus
+- Detailseiten der Treffer lassen sich öffnen
+- `Filter zurücksetzen` verlässt den KI-Modus
 
 ### 3. Regression
 
-Zusatzpruefung:
+Zusatzprüfung:
 
 - normale Datensatzsuche funktioniert weiter
 - Pflegeaufgaben funktionieren weiter
 - Detailseite funktioniert weiter
-- Qualitaetsansichten funktionieren weiter
+- Qualitätsansichten funktionieren weiter
 
 ## Typische Fehlerbilder
 
 ### Mail-/AI-Search-Buttons reagieren mit Fehler
 
-Moegliche Ursache:
+Mögliche Ursache:
 
 - `OI_API_KEY` fehlt
 - `OI_MODEL_MAIL` oder `OI_MODEL_SEARCH` fehlt
-- Deploy nach Variablen-Aenderung noch nicht neu gestartet
+- Deploy nach Variablen-Änderung noch nicht neu gestartet
 
-### AI-Search liefert keine Datensaetze
+### AI-Search liefert keine Datensätze
 
-Moegliche Ursache:
+Mögliche Ursache:
 
-- Modell liefert keine gueltigen `global_id`
+- Modell liefert keine gültigen `global_id`
 - Modellname ungeeignet
 - OI-Antwortformat passt nicht
 - Systemprompt erlaubt Freitext statt strikt parsebarem JSON
 
 ### Modell antwortet, aber Format ist unbrauchbar
 
-Moegliche Ursache:
+Mögliche Ursache:
 
 - Modell ist zu kreativ konfiguriert
-- es gibt nur ein allgemeines Modell fuer beide Faelle
+- es gibt nur ein allgemeines Modell für beide Fälle
 - Systemprompt widerspricht der von der Anwendung erwarteten JSON-Form
 
 ### Mail-Button ist deaktiviert
 
-Moegliche Ursache:
+Mögliche Ursache:
 
 - Datensatz hat keine E-Mail-Adresse
 - Datensatz hat keine erkannten Pflegeprobleme
 
-## Wichtig fuer spaetere Pflege
+## Wichtig für spätere Pflege
 
-Die neuen OI-Variablen sind fachlich getrennt von der bestehenden Search-
+Die neün OI-Variablen sind fachlich getrennt von der bestehenden Search-
 Konfiguration:
 
-- Meta/Search/Qualitaet: bestehende Variablen
+- Meta/Search/Qualität: bestehende Variablen
 - one.intelligence: nur `OI_*`
 
-Diese Trennung bitte bei kuenftigen Aenderungen beibehalten.
+Diese Trennung bitte bei künftigen Änderungen beibehalten.
