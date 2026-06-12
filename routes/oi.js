@@ -32,13 +32,13 @@ function applyRateLimit(req, res) {
   return true;
 }
 
-function requireOiConfig(res, model) {
+function requireOiConfig(res, model, modelEnvName) {
   if (!OI_API_KEY) {
     res.status(503).json({ error: 'Server configuration missing: OI_API_KEY' });
     return false;
   }
   if (!model) {
-    res.status(503).json({ error: 'Server configuration missing: OI model' });
+    res.status(503).json({ error: `Server configuration missing: ${modelEnvName || 'OI model'}` });
     return false;
   }
   return true;
@@ -116,7 +116,9 @@ async function callOiChat({ model, messages }) {
       },
       body: JSON.stringify({
         model,
-        messages
+        messages,
+        temperature: 0,
+        response_format: { type: 'json_object' }
       })
     });
     const text = await response.text();
@@ -125,6 +127,31 @@ async function callOiChat({ model, messages }) {
     }
     const payload = safeJsonParse(text);
     if (!payload) throw new Error('OI returned invalid JSON');
+    return payload;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchOiModels() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), OI_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${OI_API_BASE}/models`, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${OI_API_KEY}`,
+        Accept: 'application/json'
+      }
+    });
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`OI models error ${response.status}: ${text.slice(0, 500)}`);
+    }
+    const payload = safeJsonParse(text);
+    if (!payload) throw new Error('OI models returned invalid JSON');
     return payload;
   } finally {
     clearTimeout(timeout);
@@ -194,9 +221,54 @@ function normalizeSearchIds(value) {
 }
 
 export function registerOiRoutes(app) {
+  app.get('/api/oi/status', async (req, res) => {
+    if (!OI_API_KEY) {
+      return res.status(503).json({
+        ok: false,
+        configured: {
+          apiKey: false,
+          mailModel: Boolean(OI_MODEL_MAIL),
+          searchModel: Boolean(OI_MODEL_SEARCH)
+        },
+        error: 'Server configuration missing: OI_API_KEY'
+      });
+    }
+
+    try {
+      const payload = await fetchOiModels();
+      const models = Array.isArray(payload?.data)
+        ? payload.data.map((entry) => ({
+            id: entry?.id || '',
+            name: entry?.name || entry?.id || ''
+          }))
+        : [];
+
+      return res.json({
+        ok: true,
+        configured: {
+          apiKey: true,
+          mailModel: OI_MODEL_MAIL || '',
+          searchModel: OI_MODEL_SEARCH || ''
+        },
+        availableModels: models
+      });
+    } catch (error) {
+      console.error('OI status failed:', error.message || error);
+      return res.status(502).json({
+        ok: false,
+        configured: {
+          apiKey: true,
+          mailModel: OI_MODEL_MAIL || '',
+          searchModel: OI_MODEL_SEARCH || ''
+        },
+        error: error.message || 'OI status failed'
+      });
+    }
+  });
+
   app.post('/api/oi/mail-draft', async (req, res) => {
     if (!applyRateLimit(req, res)) return;
-    if (!requireOiConfig(res, OI_MODEL_MAIL)) return;
+    if (!requireOiConfig(res, OI_MODEL_MAIL, 'OI_MODEL_MAIL')) return;
 
     const record = req.body?.record || {};
     const issues = Array.isArray(req.body?.issues) ? req.body.issues : [];
@@ -229,13 +301,13 @@ export function registerOiRoutes(app) {
       });
     } catch (error) {
       console.error('OI mail draft failed:', error.message || error);
-      return res.status(502).json({ error: 'Mail-Entwurf konnte nicht erzeugt werden.' });
+      return res.status(502).json({ error: `Mail-Entwurf konnte nicht erzeugt werden. ${error.message || ''}`.trim() });
     }
   });
 
   app.post('/api/oi/search-records', async (req, res) => {
     if (!applyRateLimit(req, res)) return;
-    if (!requireOiConfig(res, OI_MODEL_SEARCH)) return;
+    if (!requireOiConfig(res, OI_MODEL_SEARCH, 'OI_MODEL_SEARCH')) return;
 
     const prompt = sanitizePlainText(req.body?.prompt, 800);
     const context = req.body?.context || {};
@@ -263,7 +335,7 @@ export function registerOiRoutes(app) {
       });
     } catch (error) {
       console.error('OI search failed:', error.message || error);
-      return res.status(502).json({ error: 'KI-Suche konnte nicht ausgefuehrt werden.' });
+      return res.status(502).json({ error: `KI-Suche konnte nicht ausgeführt werden. ${error.message || ''}`.trim() });
     }
   });
 }

@@ -2611,6 +2611,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function getErrorMessage(error, fallback) {
+    const text = String(error?.message || '').trim();
+    if (!text) return fallback;
+    const httpPrefix = text.match(/^HTTP\s+\d+:\s*(.+)$/i);
+    if (httpPrefix?.[1]) return httpPrefix[1].trim();
+    return text;
+  }
+
   async function handleRecordAiSearchSubmit(event) {
     const submitterValue = event?.submitter?.value || '';
     if (submitterValue === 'cancel') return;
@@ -2696,7 +2704,9 @@ document.addEventListener('DOMContentLoaded', () => {
       closeRecordAiSearchDialog();
     } catch (error) {
       console.error('KI-Suche fehlgeschlagen.', error);
-      if (els.recordAiSearchNote) els.recordAiSearchNote.textContent = 'Die KI-Suche konnte nicht ausgeführt werden.';
+      if (els.recordAiSearchNote) {
+        els.recordAiSearchNote.textContent = getErrorMessage(error, 'Die KI-Suche konnte nicht ausgeführt werden.');
+      }
     } finally {
       if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = false;
     }
@@ -2791,7 +2801,7 @@ document.addEventListener('DOMContentLoaded', () => {
       location.href = mailtoUrl;
     } catch (error) {
       console.error('Mail-Entwurf konnte nicht erzeugt werden.', error);
-      showRecordsMessage('Der KI-Mailentwurf konnte nicht erzeugt werden.');
+      showRecordsMessage(getErrorMessage(error, 'Der KI-Mailentwurf konnte nicht erzeugt werden.'));
     } finally {
       if (triggerNode) triggerNode.disabled = !row?.email;
     }
