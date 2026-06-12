@@ -17,12 +17,15 @@ Build-Kette und keine Secrets im Frontend.
   Schnellfiltern, Liste, Pagination, CSV-Export, KI-Suche und
   Mail-Entwurf aus den Aktionen.
 - `Statistik/record-detail.html`: Datensatz-Detailseite fuer genau einen
-  Datensatz per `type`, `id` oder `global_id`.
+  Datensatz per `type`, `id` oder `global_id`. Neben der aktuellen
+  Qualitaetsbewertung werden dort jetzt auch vorbereitete, manuelle und
+  quellseitig abgefangene Pruefungen sichtbar gemacht.
 - `Statistik/stats.html`: Open-Data-Statistik mit aggregierten Counts,
   Datentyp-Verteilung und Einstieg zur Pflegeaufgabe `license_missing`.
 - `Statistik/help.html`: reduzierte Hilfeseite zum Datenqualitaets-Score mit
   Score-Erklaerung, drei Fehler-Ebenen, Datentyp-Karten und knapper
-  Einordnung nicht automatisch bewerteter Faelle.
+  Einordnung nicht automatisch bewerteter Faelle. Fachlich vorbereitete
+  Pruefungen werden je Datentyp bereits sichtbar gemacht.
 
 Alle Statistik-Links bleiben relativ (`index.html`, `tasks.html`,
 `records.html`, `record-detail.html`, `stats.html`, `help.html`) und
@@ -245,6 +248,8 @@ Die Logik basiert auf den Item-Keywords, insbesondere `keywords_old`.
   Hauptinhalt, stattdessen Fokus auf Score-Verstaendnis und Priorisierung
 - Help-Seite um die kuenftige 3-Ebenen-Logik vorbereitet:
   `Kritische Fehler`, `Fehler`, `Leichte Optimierungen`
+- vorbereitete Pruefungen in Hilfe und Datensatz-Detail integriert, ohne die
+  bestehende Score-Logik oder automatische Pflegeaufgaben zu veraendern
 - one.intelligence als separaten Integrationsstrang vorbereitet, ohne die
   bestehende Meta-/Search-/Qualitaetskonfiguration anzufassen
 - neue Render-Proxy-Endpunkte fuer Mail-Entwurf, KI-Suche und

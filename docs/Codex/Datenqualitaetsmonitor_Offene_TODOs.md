@@ -152,6 +152,8 @@ Noch offen:
 - neue aktivierte Kriterien spaeter direkt in die Typkarten uebernehmen
 - Nutzertexte nachjustieren, falls sich Score-Gewichte oder Mindestlogik
   fachlich aendern
+- vorbereitete Pruefungen sind jetzt sichtbar; als Naechstes muessen sie
+  gewichtet und spaeter in die 3-Ebenen-Logik ueberfuehrt werden
 
 ## Prioritaet B - Wichtig, aber nicht zuerst
 
@@ -178,6 +180,8 @@ Offen:
 - die neue 3-Ebenen-Logik systemweit nachziehen:
   `Kritische Fehler`, `Fehler`, `Leichte Optimierungen`
   fuer Pflegeaufgaben, Detailseite, E-Mail-Texte und spaetere Filter
+- entscheiden, ob vorbereitete Pruefungen spaeter auch eine eigene Sicht in
+  Datensatzliste oder Pflegeaufgaben erhalten sollen
 
 ## Prioritaet C - Spaeter / Rahmenbedingungen
 
@@ -254,6 +258,8 @@ Diese Themen bleiben offen oder clientseitig:
 - Help-Seite reduziert:
   Consent aus dem Help-Hauptinhalt entfernt, Score-Texte vereinfacht,
   neue 3-Ebenen-Erklaerung vorbereitet
+- vorbereitete Pruefungen in Help-Karten und Datensatz-Detailseite
+  integriert; Score und automatische Fehlerlisten bleiben unveraendert
 - one.intelligence-Integration als separaten Backend-Strang vorbereitet:
   `/api/oi/mail-draft`, `/api/oi/search-records`,
   `/api/records/by-global-ids`

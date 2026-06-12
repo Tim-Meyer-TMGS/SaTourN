@@ -2132,6 +2132,15 @@ body.statistik-page-body {
   font-size: 14px;
 }
 
+.statistik .help-prepared-section {
+  padding-top: 4px;
+}
+
+.statistik .help-prepared-section h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
 .statistik .help-checklist {
   display: grid;
   gap: 10px;
@@ -2175,6 +2184,54 @@ body.statistik-page-body {
 .statistik .help-severity-badge.optimization {
   background: var(--green-soft);
   color: var(--green);
+}
+
+.statistik .help-checkweight.muted {
+  color: var(--muted);
+  background: #eef2f6;
+}
+
+.statistik .help-prepared-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #eef2f6;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.statistik .detail-criteria-list {
+  display: grid;
+  gap: 16px;
+}
+
+.statistik .detail-criteria-section {
+  display: grid;
+  gap: 10px;
+}
+
+.statistik .detail-criteria-head h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+
+.statistik .detail-criteria-head p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.statistik .detail-criteria-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.statistik .criteria-chip.vorbereitet {
+  border-color: #d9e7ff;
+  background: #f3f8ff;
 }
 
 .statistik .help-privacy-grid {

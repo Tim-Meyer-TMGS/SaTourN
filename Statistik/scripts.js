@@ -854,6 +854,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const domainCriteria = qualityHelpers.getDomainCriteriaForType(type);
     const autoCheckedCount = criteria.length;
     const pendingCount = domainCriteria.filter((criterion) => criterion.status === 'needs_verification').length;
+    const preparedItems = domainCriteria
+      .filter((criterion) => criterion.status === 'needs_verification')
+      .sort((a, b) => (
+        priorityRank(b.uiPriority) - priorityRank(a.uiPriority) ||
+        a.label.localeCompare(b.label, 'de')
+      ));
     const model = buildHelpTypeScoreModel(criteria);
     const minimumItems = model.minimumCriteria.length
       ? model.minimumCriteria
@@ -878,6 +884,12 @@ document.addEventListener('DOMContentLoaded', () => {
             ${renderHelpCriterionList(extraItems, 'optional')}
           </section>
         </div>
+        ${preparedItems.length ? `
+          <section class="help-prepared-section">
+            <h4>Fachlich vorbereitet, spaeter automatisch pruefbar</h4>
+            ${renderPreparedHelpCriterionList(preparedItems)}
+          </section>
+        ` : ''}
         <footer class="help-type-footer">
           <span>Fehlende Angaben ziehen den Score direkt ab.</span>
           <span>${renderHelpTypeFooterSummary(autoCheckedCount, pendingCount)}</span>
@@ -901,6 +913,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="help-severity-badge ${getHelpSeverityClass(criterion)}">${escapeHtml(getHelpSeverityLabel(criterion))}</span>
               </div>
               <small>${escapeHtml(criterion.recommendation || '')}</small>
+            </div>
+          </li>
+        `).join('')}
+      </ul>
+    `;
+  }
+
+  function renderPreparedHelpCriterionList(criteria) {
+    if (!criteria.length) return '';
+    return `
+      <ul class="help-checklist prepared">
+        ${criteria.map((criterion) => `
+          <li class="help-checkitem prepared">
+            <span class="help-checkweight muted">Spaeter</span>
+            <div>
+              <div class="help-checkheadline">
+                <strong>${escapeHtml(criterion.label)}</strong>
+                <span class="help-prepared-badge">Vorbereitet</span>
+              </div>
+              <small>${escapeHtml(criterion.recommendation || 'Diese Pruefung ist fachlich hinterlegt und wird spaeter technisch nachgezogen.')}</small>
             </div>
           </li>
         `).join('')}
@@ -3370,6 +3402,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function getRecordDetailViewModel(item) {
     const raw = item.raw || item;
     const criteria = qualityCriteria.filter((criterion) => !criterion.types?.length || criterion.types.includes(item.type));
+    const domainCriteria = qualityHelpers.getDomainCriteriaForType(item.type);
     const missing = new Set(item.missingCriteria || []);
     const fulfilled = new Set(item.fulfilledCriteria || []);
     const manual = new Set(item.manualCriteria || []);
@@ -3399,12 +3432,37 @@ document.addEventListener('DOMContentLoaded', () => {
         fulfilledCount: criteria.filter((criterion) => fulfilled.has(criterion.id)).length,
         missingCount: criteria.filter((criterion) => missing.has(criterion.id)).length,
         manualCount: criteria.filter((criterion) => manual.has(criterion.id)).length,
+        preparedCount: domainCriteria.filter((criterion) => criterion.status === 'needs_verification').length,
         criteria: criteria.map((criterion) => ({
           id: criterion.id,
           label: criterion.label,
           recommendation: criterion.recommendation,
           status: missing.has(criterion.id) ? 'fehlt' : fulfilled.has(criterion.id) ? 'erfüllt' : manual.has(criterion.id) ? 'nicht bewertbar' : 'nicht relevant'
-        }))
+        })),
+        preparedCriteria: domainCriteria
+          .filter((criterion) => criterion.status === 'needs_verification')
+          .map((criterion) => ({
+            id: criterion.id,
+            label: criterion.label,
+            recommendation: criterion.recommendation,
+            status: 'vorbereitet'
+          })),
+        manualDomainCriteria: domainCriteria
+          .filter((criterion) => criterion.status === 'manual_review')
+          .map((criterion) => ({
+            id: criterion.id,
+            label: criterion.label,
+            recommendation: criterion.recommendation,
+            status: 'manuell'
+          })),
+        sourceGuardedCriteria: domainCriteria
+          .filter((criterion) => criterion.status === 'source_guarded' || criterion.status === 'not_applicable' || criterion.status === 'excluded_by_category')
+          .map((criterion) => ({
+            id: criterion.id,
+            label: criterion.label,
+            recommendation: criterion.recommendation,
+            status: criterion.status
+          }))
       },
       issues: criteria
         .filter((criterion) => missing.has(criterion.id))
@@ -3530,12 +3588,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     els.detailContent.hidden = false;
-    els.detailCriteriaCard.hidden = true;
     renderDetailIssues(model);
     renderDetailUsability(model);
     renderDetailTextCards(model);
     renderDetailMedia(model);
     renderDetailInfo(model);
+    renderDetailCriteria(model);
 
     if (model.details.et4Url && els.detailEt4Link) {
       els.detailEt4Link.href = model.details.et4Url;
@@ -3668,15 +3726,60 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderDetailCriteria(model) {
-    els.detailCriteriaList.innerHTML = model.quality.criteria.map((criterion) => `
-      <span class="criteria-chip ${criterionStatusClass(criterion.status)}">
-        <strong>${escapeHtml(criterion.label)}</strong>
-        <small>${escapeHtml(criterion.status)}</small>
-      </span>
-    `).join('');
+    if (!els.detailCriteriaCard || !els.detailCriteriaList) return;
+    const automatic = model.quality.criteria || [];
+    const prepared = model.quality.preparedCriteria || [];
+    const manualDomain = model.quality.manualDomainCriteria || [];
+    const sourceGuarded = model.quality.sourceGuardedCriteria || [];
+    const sections = [
+      renderDetailCriteriaSection('Automatisch bewertet', automatic, 'Diese Kriterien fliessen heute bereits in die Datensatzbewertung ein.'),
+      renderDetailCriteriaSection('Fachlich vorbereitet', prepared, 'Diese Pruefungen sind fuer diesen Datentyp bereits fachlich vorgesehen, aber technisch noch nicht automatisch angebunden.'),
+      renderDetailCriteriaSection('Manuell zu pruefen', manualDomain, 'Diese Punkte brauchen weiterhin eine redaktionelle Sichtpruefung.'),
+      renderDetailCriteriaSection('Nicht als normale Pflegeaufgabe', sourceGuarded, 'Diese Punkte sind fachlich relevant, werden aber nicht als normale automatische Pflegeaufgabe behandelt.')
+    ].filter(Boolean);
+    els.detailCriteriaList.innerHTML = sections.join('');
+    els.detailCriteriaCard.hidden = !sections.length;
+  }
+
+  function renderDetailCriteriaSection(title, criteria, note) {
+    if (!Array.isArray(criteria) || !criteria.length) return '';
+    return `
+      <section class="detail-criteria-section">
+        <header class="detail-criteria-head">
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(note)}</p>
+        </header>
+        <div class="detail-criteria-group">
+          ${criteria.map((criterion) => `
+            <span class="criteria-chip ${criterionStatusClass(criterion.status)}">
+              <strong>${escapeHtml(criterion.label)}</strong>
+              <small>${escapeHtml(getCriterionDisplayStatus(criterion.status))}</small>
+            </span>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function getCriterionDisplayStatus(status) {
+    return {
+      erfuellt: 'Erfuellt',
+      'erfÃ¼llt': 'Erfuellt',
+      fehlt: 'Fehlt',
+      'nicht bewertbar': 'Nicht bewertbar',
+      'nicht relevant': 'Nicht relevant',
+      vorbereitet: 'Vorbereitet',
+      manuell: 'Manuell',
+      source_guarded: 'Quellseitig abgefangen',
+      not_applicable: 'Nicht erforderlich',
+      excluded_by_category: 'Kategoriebedingt ausgenommen'
+    }[status] || status;
   }
 
   function criterionStatusClass(status) {
+    if (status === 'erfuellt') return 'erfuellt';
+    if (status === 'vorbereitet' || status === 'manuell') return 'vorbereitet';
+    if (status === 'source_guarded' || status === 'not_applicable' || status === 'excluded_by_category') return 'nicht-bewertbar';
     return {
       'erfüllt': 'erfuellt',
       fehlt: 'fehlt',
