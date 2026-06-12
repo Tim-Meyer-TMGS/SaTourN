@@ -172,6 +172,31 @@ async function fetchOiModels() {
   }
 }
 
+async function fetchOiTools() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), OI_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${OI_API_BASE}/v1/tools/`, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${OI_API_KEY}`,
+        Accept: 'application/json'
+      }
+    });
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(`OI tools error ${response.status}: ${text.slice(0, 500)}`);
+    }
+    const payload = safeJsonParse(text);
+    if (!payload) throw new Error('OI tools returned invalid JSON');
+    return payload;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function buildMailMessages({ record, issues, issueContext }) {
   return [
     {
@@ -316,6 +341,26 @@ export function registerOiRoutes(app) {
           searchModel: OI_MODEL_SEARCH || ''
         },
         error: error.message || 'OI status failed'
+      });
+    }
+  });
+
+  app.get('/api/oi/tools', async (req, res) => {
+    if (!OI_API_KEY) {
+      return res.status(503).json({
+        ok: false,
+        error: 'Server configuration missing: OI_API_KEY'
+      });
+    }
+
+    try {
+      const payload = await fetchOiTools();
+      return res.json(payload);
+    } catch (error) {
+      console.error('OI tools failed:', error.message || error);
+      return res.status(502).json({
+        ok: false,
+        error: error.message || 'OI tools failed'
       });
     }
   });

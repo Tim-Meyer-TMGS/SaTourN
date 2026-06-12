@@ -170,6 +170,22 @@ Nach dem Hinterlegen der Variablen:
 2. warten bis der Deploy erfolgreich abgeschlossen ist
 3. danach die Funktionen im Frontend testen
 
+## Proxy-Links für Live-Prüfung
+
+Wenn der SaTourN-Proxy auf Render läuft, kannst du diese Endpunkte direkt im
+Browser oder per `curl` aufrufen:
+
+- OI-Status:
+  `/api/oi/status`
+- verfügbare OI-Werkzeuge:
+  `/api/oi/tools`
+
+Beispiel:
+
+```text
+https://satourn.onrender.com/api/oi/tools
+```
+
 ## Was du testen sollst
 
 ### 1. Mail-Entwurf
