@@ -3467,10 +3467,15 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
+  function normalizeCriterionStatus(status) {
+    if (status === 'erfuellt' || status === 'erfÃƒÆ’Ã‚Â¼llt') return 'erfuellt';
+    return status;
+  }
+
   function getCriterionDisplayStatus(status) {
+    const normalizedStatus = normalizeCriterionStatus(status);
     return {
       erfuellt: 'ErfÃƒÆ’Ã‚Â¼llt',
-      'erfÃƒÆ’Ã‚Â¼llt': 'ErfÃƒÆ’Ã‚Â¼llt',
       fehlt: 'Fehlt',
       'nicht bewertbar': 'Nicht bewertbar',
       'nicht relevant': 'Nicht relevant',
@@ -3479,19 +3484,19 @@ document.addEventListener('DOMContentLoaded', () => {
       source_guarded: 'Quellseitig abgefangen',
       not_applicable: 'Nicht erforderlich',
       excluded_by_category: 'Kategoriebedingt ausgenommen'
-    }[status] || status;
+    }[normalizedStatus] || normalizedStatus;
   }
 
   function criterionStatusClass(status) {
-    if (status === 'erfÃƒÆ’Ã‚Â¼llt' || status === 'erfuellt') return 'erfuellt';
-    if (status === 'vorbereitet' || status === 'manuell') return 'vorbereitet';
-    if (status === 'source_guarded' || status === 'not_applicable' || status === 'excluded_by_category') return 'nicht-bewertbar';
+    const normalizedStatus = normalizeCriterionStatus(status);
+    if (normalizedStatus === 'erfuellt') return 'erfuellt';
+    if (normalizedStatus === 'vorbereitet' || normalizedStatus === 'manuell') return 'vorbereitet';
+    if (normalizedStatus === 'source_guarded' || normalizedStatus === 'not_applicable' || normalizedStatus === 'excluded_by_category') return 'nicht-bewertbar';
     return {
-      'erfÃƒÆ’Ã‚Â¼llt': 'erfuellt',
       fehlt: 'fehlt',
       'nicht bewertbar': 'nicht-bewertbar',
       'nicht relevant': 'nicht-bewertbar'
-    }[status] || 'nicht-bewertbar';
+    }[normalizedStatus] || 'nicht-bewertbar';
   }
 
   function renderDetailLoading() {
