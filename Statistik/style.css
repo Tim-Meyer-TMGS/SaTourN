@@ -80,6 +80,52 @@ body.statistik-page-body {
   font: inherit;
 }
 
+.statistik select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 42px !important;
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(45deg, transparent 50%, #667085 50%),
+    linear-gradient(135deg, #667085 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 12px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  box-shadow: inset 0 1px 2px rgba(16, 24, 40, .03);
+  cursor: pointer;
+}
+
+.statistik select:hover {
+  border-color: #d0d5dd;
+  background-color: #fcfcfd;
+}
+
+.statistik select:focus,
+.statistik select:focus-visible {
+  outline: 0;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(8, 119, 201, .14);
+}
+
+.statistik select:disabled {
+  cursor: not-allowed;
+  color: #98a2b3;
+  background-color: #f2f4f7;
+  opacity: 1;
+}
+
+.statistik select option {
+  color: #101828;
+  background: #ffffff;
+}
+
 .statistik .material-icons {
   font-family: "Material Icons";
   font-weight: normal;

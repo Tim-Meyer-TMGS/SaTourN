@@ -11,6 +11,7 @@ import { buildSearchUrl } from '../lib/search-utils.js';
 
 const TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
 const MAX_IDS = 50;
+const RESOLVE_CONCURRENCY = 4;
 
 function normalizeRecordIdentifiers(input) {
   return Array.from(new Set(
@@ -73,34 +74,74 @@ function getIdFromGlobalId(globalId) {
   return match ? match[1] : '';
 }
 
+function getTypeFromGlobalId(globalId) {
+  const prefix = String(globalId || '').trim().match(/^([a-z]+)_\d+$/i)?.[1]?.toLowerCase() || '';
+  switch (prefix) {
+    case 'poi': return 'POI';
+    case 'tour': return 'Tour';
+    case 'hotel': return 'Hotel';
+    case 'event': return 'Event';
+    case 'gastro': return 'Gastro';
+    case 'package': return 'Package';
+    default: return '';
+  }
+}
+
+function getQueryVariants({ normalized, numericId, globalId }) {
+  const variants = [];
+  if (globalId) variants.push(`global_id:"${globalId}"`);
+  if (numericId) variants.push(`id:"${numericId}"`);
+  if (globalId) variants.push(globalId);
+  if (numericId) variants.push(numericId);
+  if (normalized && !variants.includes(normalized)) variants.push(normalized);
+  return variants;
+}
+
+function getTargetTypes({ preferredType, hintedType }) {
+  const prioritized = [preferredType, hintedType]
+    .map((entry) => String(entry || '').trim())
+    .filter(Boolean);
+  const unique = Array.from(new Set(prioritized));
+  return [...unique, ...TYPES.filter((type) => !unique.includes(type))];
+}
+
 async function resolveRecordByIdentifier(identifier, preferredType = '') {
   const normalized = String(identifier || '').trim();
   const derivedId = getIdFromGlobalId(normalized);
   const numericId = /^\d+$/.test(normalized) ? normalized : derivedId;
   const globalId = /^[A-Za-z]+_\d+$/.test(normalized) ? normalized : '';
-  const variants = [
-    globalId ? `global_id:"${globalId}"` : '',
-    globalId,
-    numericId ? `id:"${numericId}"` : '',
-    numericId,
-    normalized
-  ].filter(Boolean);
-  const targetTypeGroups = preferredType ? [[preferredType], TYPES.filter((type) => type !== preferredType)] : [TYPES];
+  const hintedType = getTypeFromGlobalId(globalId);
+  const variants = getQueryVariants({ normalized, numericId, globalId });
+  const targetTypes = getTargetTypes({ preferredType, hintedType });
 
-  for (const targetTypes of targetTypeGroups) {
-    for (const type of targetTypes) {
-      for (const variant of variants) {
-        try {
-          const payload = await fetchSearchPayload({ type, query: variant, limit: 5 });
-          const item = findMatchingItem(extractItems(payload), globalId, numericId || normalized);
-          if (item) return { ...item, _resolvedType: type };
-        } catch (error) {
-          console.warn('Record lookup by identifier failed.', normalized, type, error.message || error);
-        }
+  for (const type of targetTypes) {
+    for (const variant of variants) {
+      try {
+        const payload = await fetchSearchPayload({ type, query: variant, limit: 5 });
+        const item = findMatchingItem(extractItems(payload), globalId, numericId || normalized);
+        if (item) return { ...item, _resolvedType: type };
+      } catch (error) {
+        console.warn('Record lookup by identifier failed.', normalized, type, error.message || error);
       }
     }
   }
   return null;
+}
+
+async function mapWithConcurrency(values, limit, iteratee) {
+  const results = new Array(values.length);
+  let index = 0;
+
+  async function worker() {
+    while (index < values.length) {
+      const currentIndex = index++;
+      results[currentIndex] = await iteratee(values[currentIndex], currentIndex);
+    }
+  }
+
+  const workerCount = Math.max(1, Math.min(limit, values.length));
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
 }
 
 export function registerRecordRoutes(app) {
@@ -118,17 +159,17 @@ export function registerRecordRoutes(app) {
       return res.json({ items: [], missingIds: [] });
     }
 
-    const resolved = [];
-    const missingIds = [];
+    const resolutionResults = await mapWithConcurrency(
+      identifiers,
+      RESOLVE_CONCURRENCY,
+      async (identifier) => ({
+        identifier,
+        item: await resolveRecordByIdentifier(identifier, preferredType)
+      })
+    );
 
-    for (const identifier of identifiers) {
-      const item = await resolveRecordByIdentifier(identifier, preferredType);
-      if (item) {
-        resolved.push(item);
-      } else {
-        missingIds.push(identifier);
-      }
-    }
+    const resolved = resolutionResults.filter((entry) => entry.item).map((entry) => entry.item);
+    const missingIds = resolutionResults.filter((entry) => !entry.item).map((entry) => entry.identifier);
 
     return res.json({
       items: resolved,

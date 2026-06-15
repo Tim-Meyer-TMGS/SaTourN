@@ -1,29 +1,37 @@
 # Codex-Dokumentation
 
-Aktiver Kurzkontext für die weitere Arbeit am Datenqualitätsmonitor.
+Stand: 2026-06-15
 
-## Standard-Kontext
+Diese Datei beschreibt, welche Codex-Dokumente aktiv genutzt werden und was
+nur noch als Archivmaterial vorliegt.
 
-1. `Datenqualitätsmonitor_Aktüller_Projektstand.md`
-2. `Datenqualitätsmonitor_Offene_TODOs.md`
+## Standardkontext für neue Arbeitssitzungen
 
-## Nur bei Bedarf
+Diese beiden Dateien zuerst lesen:
 
-- `Datenqualitätsmonitor_Entscheidungen.md`: Architektur-, API-, UI- und
-  Kriterienentscheidungen.
-- `Datenqualitätsmonitor_Kriterienmatrix_2026-06-11.md`: fachliche
-  Referenz für `source_guarded`, Ausschlusslogik, Pushdown-Regeln und
-  Ziel-Kriterium-IDs.
-- `../Datenqualitätsmonitor_Codex_Arbeitsauftrag.md`: nur lesen, wenn wieder
-  am ursprünglichen Abschnittsauftrag gearbeitet wird.
+1. `Datenqualitaetsmonitor_Aktueller_Projektstand.md`
+2. `Datenqualitaetsmonitor_Offene_TODOs.md`
 
-## Nicht automatisch laden
+## Aktive Fachdokumente bei Bedarf
 
-- `_archive/codex-docs/2026-06-05-cleanup/`: alte Arbeitsstände,
-  abgeschlossene Mockup-Pakete, Zielbild und Beispieldaten-Index.
-- `testdata/quality-examples/`: grosse reale JSON-Fixtures.
-- `_archive/codex-docs/2026-06-04/`: historische Analysen und alte Prompts.
+- `Datenqualitaetsmonitor_Entscheidungen.md`
+  Architektur-, API-, UI- und Bewertungsentscheidungen.
+- `Datenqualitaetsmonitor_Pflegeaufgaben_je_Datentyp.md`
+  Übersicht, welche Pflegeaufgaben pro Datentyp fachlich vorkommen können.
+- `one_intelligence_Kontext_und_Fehlerbilder.md`
+  Kontext für KI-Modelle, Mailentwürfe und Fehlerbeschreibungen.
+- `Render_OI_Einrichtung.md`
+  produktive Einrichtung der one.intelligence-Anbindung in Render.
 
-Regel: Neü Codex-Sitzungen starten mit Projektstand und offenen TODOs. Alte
-Mockups, Protokolle und Rohdaten nur gezielt laden, wenn sie für eine konkrete
-Prüfung benötigt werden.
+## Archiv
+
+Nicht mehr automatisch laden. Nur gezielt nachschlagen:
+
+- `Archiv/2026-06-15_Analyse-und-Nachweise/`
+  historische API-Prüfungen, Pushdown-Nachweise und Kriterienmatrix
+
+## Arbeitsregel
+
+Neue Codex-Sitzungen starten mit Projektstand und offener TODO-Liste.
+Archivdokumente nur dann lesen, wenn eine konkrete technische oder fachliche
+Nachweisfrage offen ist.

@@ -1,282 +1,135 @@
 # Render-Einrichtung für one.intelligence
 
-Stand: 2026-06-12
+Stand: 2026-06-15
 
-Diese Datei beschreibt nur die neün Schritte für die one.intelligence-
-Anbindung. Die bestehende Render-Konfiguration für `destination.meta`,
-Suche und Qualitätsprüfungen bleibt unverändert.
+Diese Datei beschreibt nur die produktive OI-Anbindung. Die bestehende
+Meta-/Search-/Qualitätskonfiguration bleibt unverändert.
 
-## Ziel
+## Neue Environment-Variablen in Render
 
-In Render sollen zusätzlich zur bestehenden Konfiguration neü
-Umgebungsvariablen für one.intelligence hinterlegt werden.
+Im laufenden SaTourN-Proxy-Service zusätzlich hinterlegen:
+
+- `OI_API_KEY`
+- `OI_API_BASE=https://oi.destination.one/api`
+- `OI_MODEL_MAIL`
+- `OI_MODEL_SEARCH`
+- `OI_MAIL_CC` optional
+- `OI_MAIL_BCC` optional
 
 Wichtig:
 
 - bestehende Variablen für Meta/Search nicht ändern
-- bestehenden `LICENSEKEY` oder andere Search-Keys nicht ersetzen
-- nur neü OI-Variablen ergänzen
+- bestehenden `LICENSEKEY` nicht ersetzen
+- nur die neuen `OI_*`-Variablen ergänzen
 
-## Technische Grundregel
+## Technischer Zielzustand
 
-Die Anwendung spricht one.intelligence aktüll serverseitig über
+Die Anwendung spricht one.intelligence serverseitig über:
 
 - `POST /chat/completions`
 
-an. Deshalb müssen die verwendeten OI-Modelle oder OI-Konfigurationen diese
-Art von Chat-Aufruf unterstützen.
+an. Deshalb müssen beide verwendeten OI-Modelle mit diesem API-Weg sauber
+funktionieren.
 
-Wichtig:
+## Modell 1: Mailentwurf
 
-- die App sendet pro Anfrage bereits eigene System- und User-Nachrichten
-- falls du in one.intelligence zusätzliche feste Systemprompts hinterlegst,
-  dürfen diese die JSON-Ausgabe und die Rollenlogik nicht aufweichen
-- keine Konfiguration baün, die Freitext, HTML oder lange Marketingtexte
-  erzwingt
-
-## Neü Environment Variables in Render
-
-Diese Variablen im Render-Service des SaTourN-Proxys hinterlegen:
-
-- `OI_API_KEY`
-  - dein separater one.intelligence API-Key
-- `OI_API_BASE`
-  - Wert: `https://oi.destination.one/api`
-- `OI_MODEL_MAIL`
-  - Modellname für Mail-Entwürfe
-- `OI_MODEL_SEARCH`
-  - Modellname für AI-Search
-- `OI_MAIL_CC`
-  - optional, mehrere Adressen mit Komma oder Semikolon trennen
-- `OI_MAIL_BCC`
-  - optional, mehrere Adressen mit Komma oder Semikolon trennen
-
-## Empfohlene Minimal-Konfiguration
-
-Wenn du erst einmal klein starten willst:
-
-- `OI_API_KEY`
-- `OI_API_BASE=https://oi.destination.one/api`
-- `OI_MODEL_MAIL=<dein-mail-modell>`
-- `OI_MODEL_SEARCH=<dein-search-modell>`
-
-`OI_MAIL_CC` und `OI_MAIL_BCC` können zunächst leer bleiben.
-
-## Wie die beiden Modelle eingerichtet sein sollten
-
-Es gibt fachlich zwei getrennte Anwendungsfälle. Deshalb sollten auch in
-one.intelligence zwei getrennte Modellkonfigurationen oder Modellaliases
-existieren.
-
-### 1. Modell für Mail-Entwurf
-
-Dieses Modell wird in Render als `OI_MODEL_MAIL` hinterlegt.
+In Render als `OI_MODEL_MAIL`.
 
 Anforderungen:
 
-- Chat-Modell, ansprechbar über `/chat/completions`
-- deutschsprachige Ausgabe möglich
-- kurze, sachliche Business-Texte
-- zuverlässige JSON-Ausgabe
-- keine HTML-Erzeugung
-- keine sehr kreative oder werbliche Schreibe
+- Chat-Modell
+- stabile JSON-Ausgabe
+- kurze, sachliche deutsche Texte
+- keine HTML-Ausgabe
+- keine erfundenen Namen oder Fakten
 
-Wenn in one.intelligence Parameter konfigurierbar sind:
-
-- Temperatur eher niedrig
-- Ausgabe möglichst stabil und knapp
-
-Systemprompt-Ziel:
-
-- eine kurze, freundliche und sachliche E-Mail an Dateninhaber schreiben
-- keine unbekannten Fakten erfinden
-- keine Anrede mit frei erfundenem Namen
-- keine technischen API-Begriffe
-- nur JSON mit `subject` und `body`
-
-Empfohlener Systemprompt für one.intelligence:
+Empfohlener Systemprompt:
 
 ```text
 Du erstellst kurze, sachliche und freundliche E-Mail-Entwürfe auf Deutsch.
 Du erfindest keine Fakten, Namen oder Felder, die nicht im Input stehen.
 Du verwendest keine HTML-Ausgabe, keine Markdown-Ausgabe und keine
 technischen Systembegriffe.
-Antworte ausschliesslich als JSON im Format
+Antworte ausschließlich als JSON im Format
 {"subject":"...","body":"..."}.
 Der Betreff soll kurz und eindeutig sein. Der Text soll für Dateninhaber
 verständlich und handlungsorientiert sein.
 ```
 
-### 2. Modell für KI-Suche
+## Modell 2: KI-Suche
 
-Dieses Modell wird in Render als `OI_MODEL_SEARCH` hinterlegt.
+In Render als `OI_MODEL_SEARCH`.
 
 Anforderungen:
 
-- Chat-Modell, ansprechbar über `/chat/completions`
-- sehr hohe Formatdisziplin
-- keine erklärenden Texte
-- geeignet, aus einem Suchsatz passende touristische Datensätze abzuleiten
-- JSON-Ausgabe mit IDs statt Freitext
+- Chat-Modell
+- sehr stabile JSON-Ausgabe
+- direkte Tool-Nutzung für Open Data Sachsen Tourismus
+- keine vorgeschaltete Skill-Orchestrierung, die den Tool-Call verdeckt
 
-Wenn in one.intelligence Parameter konfigurierbar sind:
+Wichtige Produktregel:
 
-- Temperatur sehr niedrig
-- Fokus auf stabile, reproduzierbare Antworten
+- Im Suchmodell darf kein vorgeschalteter Skill aktiv sein, der statt des
+  Open-Data-Tools aufgerufen wird.
+- Produktiv funktioniert die Suche nur sauber, wenn das Modell direkt mit dem
+  Tool `server:meta-open-data-sachsen-tourismus` arbeitet.
 
-Systemprompt-Ziel:
-
-- Suchanfrage interpretieren
-- nur passende Datensatz-IDs liefern
-- keine Erklärung, kein Markdown, keine Zusatzfelder
-
-Empfohlener Systemprompt für one.intelligence:
+Empfohlener Systemprompt:
 
 ```text
 Du analysierst Suchanfragen für touristische Datensätze.
-Antworte ausschliesslich als JSON im Format
+Antworte ausschließlich als JSON im Format
 {"ids":["100272502","100261315"]}.
 Gib keine Erklärung, kein Markdown und keine weiteren Felder aus.
 Liefere nur plausible Datensatz-IDs.
 Wenn du unsicher bist, liefere lieber weniger IDs als erfundene IDs.
 ```
 
-## Wichtiger Hinweis zu den Systemprompts
+## Werkzeugkonfiguration im OI-Suchmodell
 
-Die Anwendung sendet bereits pro Reqüst einen eigenen Systemhinweis mit.
-Deine in one.intelligence hinterlegten Systemprompts sollten deshalb:
+Aktiv lassen:
 
-- denselben JSON-Rahmen bestätigen
-- nicht im Widerspruch zum Code stehen
-- nicht länger oder allgemeiner als nötig sein
+- `Destination.Meta: Open-Data-Sachsen-Tourismus (OpenAPI)`
 
-Die fachlichen Unterschiede zwischen Mail und Suche sollten über zwei
-getrennte Modelle oder zwei getrennte Modellkonfigurationen abgebildet
-werden, nicht über ein einziges gemeinsames Allzweck-Modell.
+Nicht für den produktiven Suchpfad verwenden:
 
-## Wo du das in Render einträgst
+- vorgeschaltete Skills, die im API-Call nur als `tool_calls` auftauchen,
+  aber keine finalen IDs zurückliefern
+
+## Deployment in Render
 
 1. Render öffnen
 2. den laufenden SaTourN-Proxy-Service auswählen
-3. `Environment` oder `Environment Variables` öffnen
-4. die oben genannten Variablen neu anlegen
+3. `Environment` öffnen
+4. `OI_*`-Variablen ergänzen
 5. speichern
+6. neuen Deploy starten
 
-## Danach neu deployen
-
-Nach dem Hinterlegen der Variablen:
-
-1. einen neün Deploy starten
-2. warten bis der Deploy erfolgreich abgeschlossen ist
-3. danach die Funktionen im Frontend testen
-
-## Proxy-Links für Live-Prüfung
-
-Wenn der SaTourN-Proxy auf Render läuft, kannst du diese Endpunkte direkt im
-Browser oder per `curl` aufrufen:
+## Produktive Testendpunkte
 
 - OI-Status:
-  `/api/oi/status`
-- verfügbare OI-Werkzeuge:
-  `/api/oi/tools`
+  `https://satourn.onrender.com/api/oi/status`
+- OI-Werkzeuge:
+  `https://satourn.onrender.com/api/oi/tools`
+- KI-Suche:
+  `https://satourn.onrender.com/api/oi/search-records`
+- Mailentwurf:
+  `https://satourn.onrender.com/api/oi/mail-draft`
 
-Beispiel:
+## Funktionsprüfung
 
-```text
-https://satourn.onrender.com/api/oi/tools
-```
+### KI-Suche
 
-## Aktueller Tool-Einsatz
+Erwartung:
 
-- Der Mail-Entwurf nutzt aktuell keine zusätzlichen OI-Werkzeuge.
-- Die KI-Suche aktiviert im Proxy gezielt nur:
-  `server:meta-open-data-sachsen-tourismus`
-- Diese Aktivierung ist derzeit fest auf das Modell für AI-Search
-  ausgelegt, nicht auf den Mail-Entwurf.
+- Response enthält `ids`
+- keine Debugstruktur nötig
+- IDs lassen sich anschließend über `records.html` sauber auflösen
 
-## Was du testen sollst
+### Mailentwurf
 
-### 1. Mail-Entwurf
+Erwartung:
 
-In `Statistik/records.html`:
-
-1. Datensatzliste öffnen
-2. einen Datensatz mit E-Mail-Adresse und Fehlern wählen
-3. in `Aktionen` auf das Mail-Symbol klicken
-4. prüfen, ob sich das lokale Mailprogramm mit vorausgefüllter Mail öffnet
-
-Prüfen:
-
-- Empfänger korrekt
-- Betreff vorhanden
-- Text vorhanden
-- CC/BCC korrekt, falls gesetzt
-
-### 2. AI-Search
-
-In `Statistik/records.html`:
-
-1. `AI-Search` klicken
-2. Suchsatz eingeben
-3. Anfrage absenden
-4. prüfen, ob Datensätze geladen werden
-
-Prüfen:
-
-- Datensatzliste wird ersetzt durch KI-Treffer
-- Ergebnistext zeigt `KI-Suche`
-- Detailseiten der Treffer lassen sich öffnen
-- `Filter zurücksetzen` verlässt den KI-Modus
-
-### 3. Regression
-
-Zusatzprüfung:
-
-- normale Datensatzsuche funktioniert weiter
-- Pflegeaufgaben funktionieren weiter
-- Detailseite funktioniert weiter
-- Qualitätsansichten funktionieren weiter
-
-## Typische Fehlerbilder
-
-### Mail-/AI-Search-Buttons reagieren mit Fehler
-
-Mögliche Ursache:
-
-- `OI_API_KEY` fehlt
-- `OI_MODEL_MAIL` oder `OI_MODEL_SEARCH` fehlt
-- Deploy nach Variablen-Änderung noch nicht neu gestartet
-
-### AI-Search liefert keine Datensätze
-
-Mögliche Ursache:
-
-- Modell liefert keine gültigen `ids`
-- Modellname ungeeignet
-- OI-Antwortformat passt nicht
-- Systemprompt erlaubt Freitext statt strikt parsebarem JSON
-
-### Modell antwortet, aber Format ist unbrauchbar
-
-Mögliche Ursache:
-
-- Modell ist zu kreativ konfiguriert
-- es gibt nur ein allgemeines Modell für beide Fälle
-- Systemprompt widerspricht der von der Anwendung erwarteten JSON-Form
-
-### Mail-Button ist deaktiviert
-
-Mögliche Ursache:
-
-- Datensatz hat keine E-Mail-Adresse
-- Datensatz hat keine erkannten Pflegeprobleme
-
-## Wichtig für spätere Pflege
-
-Die neün OI-Variablen sind fachlich getrennt von der bestehenden Search-
-Konfiguration:
-
-- Meta/Search/Qualität: bestehende Variablen
-- one.intelligence: nur `OI_*`
-
-Diese Trennung bitte bei künftigen Änderungen beibehalten.
+- Response enthält `to`, optional `cc`/`bcc`, `subject`, `body`
+- Frontend erzeugt daraus einen `mailto:`-Link
+- lokales Mailprogramm öffnet mit vorausgefüllten Inhalten

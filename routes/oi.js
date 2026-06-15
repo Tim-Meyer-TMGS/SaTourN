@@ -103,20 +103,6 @@ function parseJsonFromModelText(text) {
   return null;
 }
 
-function collectDeepValues(value, bucket = []) {
-  if (value == null) return bucket;
-  if (Array.isArray(value)) {
-    value.forEach((entry) => collectDeepValues(entry, bucket));
-    return bucket;
-  }
-  if (typeof value === 'object') {
-    Object.values(value).forEach((entry) => collectDeepValues(entry, bucket));
-    return bucket;
-  }
-  bucket.push(value);
-  return bucket;
-}
-
 async function callOiChat({ model, messages, extraBody = {}, useJsonResponseFormat = true }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OI_TIMEOUT_MS);
@@ -204,12 +190,12 @@ function buildMailMessages({ record, issues, issueContext }) {
     {
       role: 'system',
       content: [
-        'Erstelle einen kurzen, höflichen und sachlichen E-Mail-Entwurf an einen Dateninhaber.',
+        'Erstelle einen kurzen, hoeflichen und sachlichen E-Mail-Entwurf an einen Dateninhaber.',
         'Schreibe auf Deutsch.',
-        'Keine Begrüßung mit unbekannten Namen erfinden.',
+        'Keine Begruessung mit unbekannten Namen erfinden.',
         'Keine HTML-Ausgabe.',
         'Keine technischen API- oder Systembegriffe.',
-        'Gib ausschließlich JSON im Format {"subject":"...","body":"..."} zurück.'
+        'Gib ausschliesslich JSON im Format {"subject":"...","body":"..."} zurueck.'
       ].join(' ')
     },
     {
@@ -223,18 +209,16 @@ function buildMailMessages({ record, issues, issueContext }) {
   ];
 }
 
-function buildSearchMessages({ prompt, context, requireToolUsage = false }) {
+function buildSearchMessages({ prompt, context }) {
   return [
     {
       role: 'system',
       content: [
-        'Du analysierst touristische Suchanfragen für einen Datenqualitätsmonitor.',
-        requireToolUsage
-          ? 'Nutze vor deiner Antwort die verfügbaren Tools zur Recherche. Wenn kein Tool genutzt werden kann, gib {"ids":[],"reason":"tool_not_used"} zurück.'
-          : 'Nutze verfügbare Tools, wenn sie für die Recherche notwendig sind.',
-        'Antworte ausschließlich als JSON im Format {"ids":["..."]}.',
-        'Verwende nur plausible destination.one Datensatz-IDs als reine Zeichenketten ohne Präfix.',
-        'Keine Erklärung, keine Markdown-Ausgabe, keine weiteren Felder.'
+        'Du analysierst touristische Suchanfragen fuer einen Datenqualitaetsmonitor.',
+        'Nutze verfuegbare Tools, wenn sie fuer die Recherche notwendig sind.',
+        'Antworte ausschliesslich als JSON im Format {"ids":["..."]}.',
+        'Verwende nur plausible destination.one Datensatz-IDs als reine Zeichenketten ohne Praefix.',
+        'Keine Erklaerung, keine Markdown-Ausgabe, keine weiteren Felder.'
       ].join(' ')
     },
     {
@@ -293,115 +277,21 @@ function extractMailDraft(parsed, rawText) {
   };
 }
 
-function summarizeToolCalls(payload = {}) {
-  const toolCalls = Array.isArray(payload?.choices?.[0]?.message?.tool_calls)
-    ? payload.choices[0].message.tool_calls
-    : [];
-
-  return toolCalls.map((entry) => ({
-    id: sanitizePlainText(entry?.id || '', 120),
-    type: sanitizePlainText(entry?.type || '', 40),
-    name: sanitizePlainText(entry?.function?.name || entry?.name || '', 120),
-    argumentsPreview: sanitizePlainText(
-      typeof entry?.function?.arguments === 'string'
-        ? entry.function.arguments
-        : JSON.stringify(entry?.function?.arguments || entry?.arguments || ''),
-      1200
-    )
-  }));
-}
-
-function buildSearchDebugInfo({ rawText, parsed, ids, payload, requestedToolIds = [], defaultToolsEnabled = false }) {
-  if (ids.length) return undefined;
-  const message = payload?.choices?.[0]?.message && typeof payload.choices[0].message === 'object'
-    ? payload.choices[0].message
-    : {};
-  return {
-    requestedToolIds,
-    defaultToolsEnabled,
-    finishReason: sanitizePlainText(payload?.choices?.[0]?.finish_reason || '', 80),
-    messageKeys: message
-      ? Object.keys(message)
-      : [],
-    toolCalls: summarizeToolCalls(payload),
-    providerSpecificFieldsPreview: sanitizePlainText(
-      JSON.stringify(message?.provider_specific_fields || {}),
-      2000
-    ),
-    thinkingBlocksPreview: sanitizePlainText(
-      JSON.stringify(message?.thinking_blocks || []),
-      1200
-    ),
-    rawPreview: sanitizePlainText(rawText, 800),
-    parsedKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
-    parsedPreview: parsed && typeof parsed === 'object'
-      ? sanitizePlainText(JSON.stringify(parsed), 800)
-      : ''
-  };
-}
-
-function buildMailDebugInfo({ rawText, parsed, payload }) {
-  const message = payload?.choices?.[0]?.message && typeof payload.choices[0].message === 'object'
-    ? payload.choices[0].message
-    : {};
-
-  return {
-    finishReason: sanitizePlainText(payload?.choices?.[0]?.finish_reason || '', 80),
-    messageKeys: message ? Object.keys(message) : [],
-    toolCalls: summarizeToolCalls(payload),
-    providerSpecificFieldsPreview: sanitizePlainText(
-      JSON.stringify(message?.provider_specific_fields || {}),
-      2000
-    ),
-    thinkingBlocksPreview: sanitizePlainText(
-      JSON.stringify(message?.thinking_blocks || []),
-      1200
-    ),
-    rawPreview: sanitizePlainText(rawText, 1200),
-    parsedKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
-    parsedPreview: parsed && typeof parsed === 'object'
-      ? sanitizePlainText(JSON.stringify(parsed), 1200)
-      : ''
-  };
-}
-
-async function executeSearchRequest({
-  prompt,
-  context,
-  useDefaultTools = false,
-  requireToolUsage = false
-}) {
+async function executeSearchRequest({ prompt, context }) {
   const payload = await callOiChat({
     model: OI_MODEL_SEARCH,
-    messages: buildSearchMessages({ prompt, context, requireToolUsage }),
+    messages: buildSearchMessages({ prompt, context }),
     useJsonResponseFormat: false,
-    extraBody: useDefaultTools
-      ? {
-          tool_ids_enable_default: true
-        }
-      : {
-          tool_ids: OI_SEARCH_TOOL_IDS,
-          tool_ids_enable_default: false
-        }
+    extraBody: {
+      tool_ids: OI_SEARCH_TOOL_IDS,
+      tool_ids_enable_default: false
+    }
   });
   const rawText = extractCompletionText(payload);
   const parsed = parseJsonFromModelText(rawText);
-  const ids = parsed && typeof parsed === 'object'
+  return parsed && typeof parsed === 'object'
     ? normalizeSearchIds(parsed)
     : extractSearchIdsFromRawText(rawText);
-  const debug = buildSearchDebugInfo({
-    rawText,
-    parsed,
-    ids,
-    payload,
-    requestedToolIds: useDefaultTools ? [] : OI_SEARCH_TOOL_IDS,
-    defaultToolsEnabled: useDefaultTools
-  });
-
-  return {
-    ids,
-    debug
-  };
 }
 
 export function registerOiRoutes(app) {
@@ -495,10 +385,7 @@ export function registerOiRoutes(app) {
       const parsed = parseJsonFromModelText(rawText);
       const draft = extractMailDraft(parsed || {}, rawText);
       if (!draft.subject && !draft.body) {
-        return res.status(502).json({
-          error: 'OI-Antwort fuer Mail-Entwurf war nicht nutzbar.',
-          debug: buildMailDebugInfo({ rawText, parsed, payload })
-        });
+        return res.status(502).json({ error: 'OI-Antwort fuer Mail-Entwurf war nicht nutzbar.' });
       }
 
       return res.json({
@@ -526,53 +413,16 @@ export function registerOiRoutes(app) {
     }
 
     try {
-      const { ids, debug } = await executeSearchRequest({
-        prompt,
-        context,
-        useDefaultTools: false,
-        requireToolUsage: false
-      });
+      const ids = await executeSearchRequest({ prompt, context });
       return res.json({
         prompt,
         ids,
         limit: MAX_AI_SEARCH_RESULTS,
-        truncated: ids.length >= MAX_AI_SEARCH_RESULTS,
-        ...(debug ? { debug } : {})
+        truncated: ids.length >= MAX_AI_SEARCH_RESULTS
       });
     } catch (error) {
       console.error('OI search failed:', error.message || error);
-      return res.status(502).json({ error: `KI-Suche konnte nicht ausgeführt werden. ${error.message || ''}`.trim() });
-    }
-  });
-
-  app.post('/api/oi/search-records-default-tools', async (req, res) => {
-    if (!applyRateLimit(req, res)) return;
-    if (!requireOiConfig(res, OI_MODEL_SEARCH, 'OI_MODEL_SEARCH')) return;
-
-    const prompt = sanitizePlainText(req.body?.prompt, 800);
-    const context = req.body?.context || {};
-
-    if (!prompt) {
-      return res.status(400).json({ error: 'Suchtext fehlt.' });
-    }
-
-    try {
-      const { ids, debug } = await executeSearchRequest({
-        prompt,
-        context,
-        useDefaultTools: true,
-        requireToolUsage: true
-      });
-      return res.json({
-        prompt,
-        ids,
-        limit: MAX_AI_SEARCH_RESULTS,
-        truncated: ids.length >= MAX_AI_SEARCH_RESULTS,
-        ...(debug ? { debug } : {})
-      });
-    } catch (error) {
-      console.error('OI default-tool search failed:', error.message || error);
-      return res.status(502).json({ error: `KI-Suche mit Modell-Standardwerkzeugen konnte nicht ausgeführt werden. ${error.message || ''}`.trim() });
+      return res.status(502).json({ error: `KI-Suche konnte nicht ausgefuehrt werden. ${error.message || ''}`.trim() });
     }
   });
 }
