@@ -1015,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function buildOverviewTitle() {
     if (state.context.type) return `${state.context.type}-Monitor`;
-    return 'DatenqualitÃƒÆ’Ã‚Â¤ts-Monitor';
+    return 'Datenqualitäts-Monitor';
   }
 
   function buildOverviewSubtitle({ areaLabel, cityLabel, typeLabel }) {
@@ -1024,9 +1024,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.context.city) scope.push(cityLabel);
     const scopeLabel = scope.join(' - ') || 'Sachsen';
     if (state.context.type) {
-      return `Pflegeaufgaben, QualitÃƒÆ’Ã‚Â¤tsstatus und Open-Data-Quote fÃƒÆ’Ã‚Â¼r ${typeLabel} in ${scopeLabel}.`;
+      return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${typeLabel} in ${scopeLabel}.`;
     }
-    return `Pflegeaufgaben, QualitÃƒÆ’Ã‚Â¤tsstatus und Open-Data-Quote fÃƒÆ’Ã‚Â¼r ${scopeLabel}.`;
+    return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${scopeLabel}.`;
   }
 
   function openContextDialog() {
@@ -3821,7 +3821,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .slice(0, 5);
 
     if (!issues.length) {
-      els.topTasksList.innerHTML = '<div class="empty-note">FÃƒÆ’Ã‚Â¼r die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
+      els.topTasksList.innerHTML = '<div class="empty-note">Für die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
       return;
     }
 
@@ -3843,7 +3843,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="task-icon ${statusClass}" aria-hidden="true">${taskIcon(issue.criterionId)}</span>
         <span class="task-copy"><strong>${escapeHtml(issue.label)}</strong><small>${escapeHtml(taskDescription(issue.criterionId))}</small></span>
         <span class="task-count">${formatNumber(issue.affectedCount)}</span>
-        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'PrÃƒÆ’Ã‚Â¼fen'}</span>
+        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'Prüfen'}</span>
         <span class="task-open material-icons" aria-hidden="true">chevron_right</span>
       `;
       return link;
@@ -3881,7 +3881,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rows = [
       ['Gut', good, goodPct, 'good'],
-      ['PrÃƒÆ’Ã‚Â¼fen', review, reviewPct, 'review'],
+      ['Prüfen', review, reviewPct, 'review'],
       ['Kritisch', critical, criticalPct, 'critical']
     ];
     if (unknown > 0) rows.push(['Nicht bewertbar', unknown, percent(unknown, total), 'muted']);
@@ -4256,26 +4256,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (id === 'tour_season_missing') return 'Keine Saisonangabe vorhanden';
     if (id === 'tour_parking_missing') return 'Keine Parkinformation vorhanden';
     const descriptions = {
-      license_missing: 'DatensÃƒÆ’Ã‚Â¤tze ohne Lizenzangabe',
+      license_missing: 'Datensätze ohne Lizenzangabe',
       image_author_missing: 'Bilder ohne Urheberangabe',
       description_missing: 'Keine Beschreibung oder Details',
-      opening_hours_missing: 'Keine ÃƒÆ’Ã¢â‚¬â€œffnungszeiten hinterlegt',
-      public_transport_missing: 'Keine ÃƒÆ’Ã¢â‚¬â€œPNV-Information vorhanden',
+      opening_hours_missing: 'Keine Öffnungszeiten hinterlegt',
+      public_transport_missing: 'Keine ÖPNV-Information vorhanden',
       booking_link_missing: 'Kein Buchungs- oder Reservierungslink',
       image_missing: 'Kein Bildmaterial vorhanden',
-      poi_parking_feature_missing: 'Merkmal "ParkplÃƒÆ’Ã‚Â¤tze vorhanden" fehlt',
-      poi_payment_options_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte Zahlungsart vorhanden',
-      poi_languages_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte Fremdsprache vorhanden',
-      poi_suitability_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte Eignungsangabe vorhanden',
-      hotel_language_english_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte Fremdsprache vorhanden',
-      hotel_payment_cash_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte Zahlungsart vorhanden',
-      hotel_parking_feature_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte Parkinformation vorhanden',
-      gastro_payment_options_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte Zahlungsart vorhanden',
-      gastro_languages_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte Fremdsprache vorhanden',
+      poi_parking_feature_missing: 'Merkmal "Parkplätze vorhanden" fehlt',
+      poi_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
+      poi_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
+      poi_suitability_missing: 'Keine geprüfte Eignungsangabe vorhanden',
+      hotel_language_english_missing: 'Keine geprüfte Fremdsprache vorhanden',
+      hotel_payment_cash_missing: 'Keine geprüfte Zahlungsart vorhanden',
+      hotel_parking_feature_missing: 'Keine geprüfte Parkinformation vorhanden',
+      gastro_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
+      gastro_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
       gastro_parking_feature_missing: 'Merkmal "PKW-Parkplatz am Haus" fehlt',
-      gastro_cuisine_category_missing: 'Keine geprÃƒÆ’Ã‚Â¼fte KÃƒÆ’Ã‚Â¼chenart vorhanden'
+      gastro_cuisine_category_missing: 'Keine geprüfte Küchenart vorhanden'
     };
-    return descriptions[id] || 'ErgÃƒÆ’Ã‚Â¤nzung empfohlen';
+    return descriptions[id] || 'Ergänzung empfohlen';
   }
 
   function priorityRank(priority) {
