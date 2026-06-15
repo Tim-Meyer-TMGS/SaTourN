@@ -21,6 +21,15 @@ import {
   searchSingleRecordById as executeRecordIdSearch
 } from './records-search.js';
 import {
+  csvValue,
+  escapeHtml,
+  formatDateTime,
+  formatNumber,
+  formatPercent,
+  formatRecordDate,
+  percent
+} from './format-utils.js';
+import {
   buildTaskRows as buildTaskRowsModel,
   computeTaskSummary,
   findTaskById as findTaskByIdModel,
@@ -3967,10 +3976,6 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadText('satourn_startseite_ÃƒÆ’Ã‚Â¼bersicht.csv', text, 'text/csv;charset=utf-8');
   }
 
-  function csvValue(value) {
-    return `"${String(value ?? '').replaceAll('"', '""')}"`;
-  }
-
   function showMessage(message) {
     if (!els.overviewMessage) return;
     els.overviewMessage.textContent = message || '';
@@ -4278,45 +4283,4 @@ document.addEventListener('DOMContentLoaded', () => {
     return (counts.gut || 0) + (counts.pruefen || 0) + (counts.kritisch || 0) + (counts.nichtBerechenbar || 0);
   }
 
-  function percent(value, total) {
-    return total > 0 ? (value / total) * 100 : 0;
-  }
-
-  function formatNumber(value) {
-    return Number(value || 0).toLocaleString('de-DE');
-  }
-
-  function formatPercent(value) {
-    return `${Number(value || 0).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
-  }
-
-  function formatDateTime(date) {
-    return date.toLocaleString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
-  function formatRecordDate(value) {
-    if (!value) return '-';
-    const date = new Date(value);
-    if (!Number.isFinite(date.getTime())) return String(value).slice(0, 10) || '-';
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
 });
