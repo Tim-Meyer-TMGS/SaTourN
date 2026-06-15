@@ -2842,12 +2842,20 @@ document.addEventListener('DOMContentLoaded', () => {
   function buildMailtoUrl(payload) {
     const to = String(payload?.to || '').trim();
     if (!to) return '';
-    const params = new URLSearchParams();
-    if (payload?.subject) params.set('subject', String(payload.subject).slice(0, 240));
-    if (payload?.body) params.set('body', String(payload.body).slice(0, 3500));
-    if (Array.isArray(payload?.cc) && payload.cc.length) params.set('cc', payload.cc.join(','));
-    if (Array.isArray(payload?.bcc) && payload.bcc.length) params.set('bcc', payload.bcc.join(','));
-    const query = params.toString();
+    const params = [];
+    if (payload?.subject) {
+      params.push(`subject=${encodeURIComponent(String(payload.subject).slice(0, 240))}`);
+    }
+    if (payload?.body) {
+      params.push(`body=${encodeURIComponent(String(payload.body).slice(0, 3500))}`);
+    }
+    if (Array.isArray(payload?.cc) && payload.cc.length) {
+      params.push(`cc=${encodeURIComponent(payload.cc.join(','))}`);
+    }
+    if (Array.isArray(payload?.bcc) && payload.bcc.length) {
+      params.push(`bcc=${encodeURIComponent(payload.bcc.join(','))}`);
+    }
+    const query = params.join('&');
     return query ? `mailto:${to}?${query}` : `mailto:${to}`;
   }
 
