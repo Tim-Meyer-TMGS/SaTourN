@@ -3470,7 +3470,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function getCriterionDisplayStatus(status) {
     return {
       erfuellt: 'ErfÃƒÆ’Ã‚Â¼llt',
-      erfÃƒÆ’Ã‚Â¼llt: 'ErfÃƒÆ’Ã‚Â¼llt',
+      'erfÃƒÆ’Ã‚Â¼llt': 'ErfÃƒÆ’Ã‚Â¼llt',
       fehlt: 'Fehlt',
       'nicht bewertbar': 'Nicht bewertbar',
       'nicht relevant': 'Nicht relevant',
