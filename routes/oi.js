@@ -340,6 +340,31 @@ function buildSearchDebugInfo({ rawText, parsed, ids, payload, requestedToolIds 
   };
 }
 
+function buildMailDebugInfo({ rawText, parsed, payload }) {
+  const message = payload?.choices?.[0]?.message && typeof payload.choices[0].message === 'object'
+    ? payload.choices[0].message
+    : {};
+
+  return {
+    finishReason: sanitizePlainText(payload?.choices?.[0]?.finish_reason || '', 80),
+    messageKeys: message ? Object.keys(message) : [],
+    toolCalls: summarizeToolCalls(payload),
+    providerSpecificFieldsPreview: sanitizePlainText(
+      JSON.stringify(message?.provider_specific_fields || {}),
+      2000
+    ),
+    thinkingBlocksPreview: sanitizePlainText(
+      JSON.stringify(message?.thinking_blocks || []),
+      1200
+    ),
+    rawPreview: sanitizePlainText(rawText, 1200),
+    parsedKeys: parsed && typeof parsed === 'object' ? Object.keys(parsed).slice(0, 20) : [],
+    parsedPreview: parsed && typeof parsed === 'object'
+      ? sanitizePlainText(JSON.stringify(parsed), 1200)
+      : ''
+  };
+}
+
 async function executeSearchRequest({
   prompt,
   context,
@@ -470,7 +495,10 @@ export function registerOiRoutes(app) {
       const parsed = parseJsonFromModelText(rawText);
       const draft = extractMailDraft(parsed || {}, rawText);
       if (!draft.subject && !draft.body) {
-        return res.status(502).json({ error: 'OI-Antwort fuer Mail-Entwurf war nicht nutzbar.' });
+        return res.status(502).json({
+          error: 'OI-Antwort fuer Mail-Entwurf war nicht nutzbar.',
+          debug: buildMailDebugInfo({ rawText, parsed, payload })
+        });
       }
 
       return res.json({

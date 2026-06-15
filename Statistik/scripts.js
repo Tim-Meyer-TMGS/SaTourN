@@ -2800,12 +2800,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const mailtoUrl = buildMailtoUrl(payload);
       if (!mailtoUrl) throw new Error('Mailto payload invalid');
-      location.href = mailtoUrl;
+      if (!launchMailto(mailtoUrl)) throw new Error('Mailto launch failed');
     } catch (error) {
       console.error('Mail-Entwurf konnte nicht erzeugt werden.', error);
       showRecordsMessage(getErrorMessage(error, 'Der KI-Mailentwurf konnte nicht erzeugt werden.'));
     } finally {
-      if (triggerNode) triggerNode.disabled = !row?.email;
+      if (triggerNode) triggerNode.disabled = !(row?.email && row?.missingCriteria?.length);
     }
   }
 
@@ -2849,6 +2849,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (Array.isArray(payload?.bcc) && payload.bcc.length) params.set('bcc', payload.bcc.join(','));
     const query = params.toString();
     return query ? `mailto:${to}?${query}` : `mailto:${to}`;
+  }
+
+  function launchMailto(mailtoUrl) {
+    if (!mailtoUrl) return false;
+    const link = document.createElement('a');
+    link.href = mailtoUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    return true;
   }
 
   async function searchSingleRecordById(query) {
