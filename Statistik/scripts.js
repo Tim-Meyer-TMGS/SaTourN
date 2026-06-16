@@ -3903,7 +3903,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderDataNote(sampleSize) {
     if (state.qualityDataMeta.mode === 'sachsen_total') {
-      setQualityDataNoteText('Für ganz Sachsen wird kein Qualitäts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.');
+      setQualityDataNoteText('F\u00fcr ganz Sachsen wird kein Qualit\u00e4ts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.');
       return;
     }
     if (state.qualityDataMeta.mode === 'regional_scan') {
