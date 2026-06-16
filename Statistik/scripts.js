@@ -2457,7 +2457,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.recordSearchInput && view.query) els.recordSearchInput.value = view.query;
     if (els.recordTypeFilter && TYPES.includes(view.type)) els.recordTypeFilter.value = view.type;
     if (els.recordStatusFilter && view.status) els.recordStatusFilter.value = view.status;
-    if (els.recordIssueFilter && view.criterionId) els.recordIssueFilter.value = view.criterionId;
+    const hasGroupedCriteria = Array.isArray(view.criterionIds) && view.criterionIds.length > 1;
+    if (els.recordIssueFilter) {
+      els.recordIssueFilter.value = !hasGroupedCriteria && view.criterionId ? view.criterionId : '';
+    }
     state.recordPage = 1;
   }
 
