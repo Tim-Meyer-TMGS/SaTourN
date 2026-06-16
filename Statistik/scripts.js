@@ -935,6 +935,8 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       sessionStorage.setItem(RECORD_VIEW_STATE_KEY, JSON.stringify({
         criterionId: viewState.criterionId || '',
+        criterionIds: Array.isArray(viewState.criterionIds) ? viewState.criterionIds.filter(Boolean) : [],
+        criteriaByType: viewState.criteriaByType && typeof viewState.criteriaByType === 'object' ? viewState.criteriaByType : {},
         type: TYPES.includes(viewState.type) ? viewState.type : '',
         status: viewState.status || '',
         query: viewState.query || '',
@@ -965,6 +967,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     return {
       criterionId: params.get('criterionId') || cached.criterionId || '',
+      criterionIds: Array.isArray(cached.criterionIds) ? cached.criterionIds.filter(Boolean) : [],
+      criteriaByType: cached.criteriaByType && typeof cached.criteriaByType === 'object' ? cached.criteriaByType : {},
       type: params.get('type') || cached.type || '',
       status: params.get('status') || cached.status || '',
       query: params.get('q') || cached.query || '',
@@ -2074,6 +2078,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveRecordViewState({
       criterionId,
+      criterionIds: task.criterionIds || [criterionId],
+      criteriaByType: task.criteriaByType || {},
       type,
       label: task.label,
       context: state.context
@@ -2097,16 +2103,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const preferredType = state.context.type
       || (issue.affectedTypes?.length === 1 ? issue.affectedTypes[0] : '');
+    const criterionId = resolveTaskCriterionId(issue, preferredType)
+      || issue.criterionId
+      || issue.criterionIds?.[0]
+      || '';
+    if (!criterionId) return;
 
     saveRecordViewState({
-      criterionId: issue.criterionId,
+      criterionId,
+      criterionIds: issue.criterionIds || [criterionId],
+      criteriaByType: issue.criteriaByType || {},
       type: preferredType,
       label: issue.label,
       context: state.context
     });
 
     const params = new URLSearchParams();
-    params.set('criterionId', issue.criterionId);
+    params.set('criterionId', criterionId);
     if (preferredType) params.set('type', preferredType);
     params.set('from', 'overview');
     location.href = `records.html?${params.toString()}`;
@@ -2255,9 +2268,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const selectedIssue = els.recordIssueFilter?.value || '';
       const selectedType = els.recordTypeFilter?.value || state.context.type || '';
       const evaluated = usesCriterionView
-        ? state.pendingRecordView?.type
-          ? await loadRecordRowsForView(state.pendingRecordView)
-          : await loadRecordRowsForIssueSelection(state.pendingRecordView.criterionId, '')
+        ? await loadRecordRowsForPendingView(state.pendingRecordView)
         : selectedIssue
           ? await loadRecordRowsForIssueSelection(selectedIssue, selectedType)
           : [];
@@ -2281,6 +2292,56 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Datensätze konnten nicht geladen werden.', error);
       renderRecordsEmpty('Die Datensätze konnten nicht geladen werden. Bitte versuche es später erneut.');
     }
+  }
+
+  async function loadRecordRowsForPendingView(view) {
+    if (!view?.criterionId) return [];
+
+    if (view.type) {
+      const criterionId = view.criteriaByType?.[view.type] || view.criterionId;
+      return loadRecordRowsForView({
+        ...view,
+        criterionId,
+        type: view.type
+      });
+    }
+
+    const criterionIds = Array.isArray(view.criterionIds) && view.criterionIds.length
+      ? view.criterionIds
+      : [view.criterionId];
+
+    if (criterionIds.length <= 1) {
+      return loadRecordRowsForIssueSelection(view.criterionId, '');
+    }
+
+    const entries = Object.entries(view.criteriaByType || {})
+      .filter(([type, criterionId]) => TYPES.includes(type) && criterionIds.includes(criterionId));
+
+    if (!entries.length) {
+      return loadRecordRowsForIssueSelection(view.criterionId, '');
+    }
+
+    const payloads = await Promise.all(entries.map(async ([type, criterionId]) => {
+      try {
+        return await loadRecordRowsForView({
+          criterionId,
+          type,
+          label: view.label
+        });
+      } catch (error) {
+        console.warn('Fehlerliste konnte nicht geladen werden.', criterionId, type, error);
+        return [];
+      }
+    }));
+
+    const merged = payloads.reduce((allRows, rows) => mergeRecordItems(allRows, rows), []);
+    state.recordDataMeta = {
+      mode: 'criterion',
+      collectedItems: merged.length,
+      estimatedTotalItems: merged.length,
+      truncated: false
+    };
+    return merged;
   }
 
   async function loadRecordRowsForIssueSelection(criterionId, selectedType = '') {
@@ -3815,9 +3876,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderTopTasks(issueSummary) {
-    const issues = [...issueSummary]
+    const issues = buildTaskRows(issueSummary)
       .filter((issue) => Number(issue.affectedCount || 0) > 0)
-      .sort((a, b) => priorityRank(b.priority) - priorityRank(a.priority) || b.affectedCount - a.affectedCount)
+      .sort((a, b) => impactRank(b.impact) - impactRank(a.impact) || priorityRank(b.priority) - priorityRank(a.priority) || b.affectedCount - a.affectedCount)
       .slice(0, 5);
 
     if (!issues.length) {
