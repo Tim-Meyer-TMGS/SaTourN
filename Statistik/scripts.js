@@ -2383,7 +2383,13 @@ document.addEventListener('DOMContentLoaded', () => {
       query
     });
     const payload = cachedPayload || await fetchJsonCached(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
-    const rows = extractItems(payload).map((item) => normalizeItem(item, view.type));
+    const sourceItems = extractItems(payload);
+    const hasPreEvaluatedRows = sourceItems.some((item) => (
+      Array.isArray(item?.missingCriteria) ||
+      Number.isFinite(Number(item?.qualityScore)) ||
+      Boolean(item?.qualityStatus)
+    ));
+    const rows = sourceItems.map((item) => normalizeItem(item, view.type));
     const pageInfo = payload?.page || {};
     const stats = payload?.stats || {};
     state.recordDataMeta = {
@@ -2392,7 +2398,7 @@ document.addEventListener('DOMContentLoaded', () => {
       estimatedTotalItems: Number(stats.totalMatchedItems || stats.overallcount || extractTotal(payload) || rows.length),
       truncated: !pageInfo.complete
     };
-    return evaluateAllItems(rows);
+    return hasPreEvaluatedRows ? rows : evaluateAllItems(rows);
   }
 
   function buildRecordViewModel(item) {
@@ -3729,7 +3735,13 @@ document.addEventListener('DOMContentLoaded', () => {
       category: qualityHelpers.getCategoryValues(raw)?.[0] || '',
       license: qualityHelpers.getAttributeValue(raw, 'license') || '',
       isOpenData: qualityHelpers.hasValidDatasetLicense(raw),
-      updatedAt: getFirst(raw, ['updatedAt', 'lastModified', 'modified', 'changeDate']) || ''
+      updatedAt: getFirst(raw, ['updatedAt', 'lastModified', 'modified', 'changeDate']) || '',
+      email: getFirst(raw, ['email']) || '',
+      web: getFirst(raw, ['web', 'sourceUrl', 'url']) || '',
+      qualityScore: Number.isFinite(Number(raw?.qualityScore)) ? Number(raw.qualityScore) : null,
+      qualityStatus: textValue(raw?.qualityStatus) || '',
+      missingCriteria: Array.isArray(raw?.missingCriteria) ? raw.missingCriteria.filter(Boolean) : [],
+      recommendations: Array.isArray(raw?.recommendations) ? raw.recommendations.filter(Boolean) : []
     };
   }
 
