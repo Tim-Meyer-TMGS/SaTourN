@@ -24,6 +24,28 @@ function prettySnippet(obj, maxLen = 700) {
   return s.length <= maxLen ? s : `${s.slice(0, maxLen)}\n…`;
 }
 
+function getItemId(item) {
+  if (!item || typeof item !== 'object') return '';
+  if (item.id != null) return String(item.id);
+  if (item.Id != null) return String(item.Id);
+  if (item.ID != null) return String(item.ID);
+  if (item.global_id != null) return String(item.global_id);
+  if (item.globalId != null) return String(item.globalId);
+  return extractId(item);
+}
+
+function getNumericId(id) {
+  const value = String(id || '').trim();
+  if (/^\d+$/.test(value)) return value;
+  return value.match(/^[A-Za-z]+_(\d+)$/)?.[1] || '';
+}
+
+function createSearchUrl(baseUrl, params) {
+  const query = buildParams(params);
+  if (!query) return baseUrl;
+  return `${baseUrl}${String(baseUrl).includes('?') ? '&' : '?'}${query}`;
+}
+
 function downloadResults(results) {
   for (const r of results) {
     downloadText(`${r.id}.json`, JSON.stringify(r.json, null, 2), 'application/json;charset=utf-8');
@@ -80,7 +102,7 @@ async function collectIdsForType({ baseUrl, experience, template, licensekey, ty
     let added = 0;
 
     for (const it of items) {
-      const id = extractId(it);
+      const id = getItemId(it);
       if (id && !ids.has(id)) {
         ids.add(id);
         added++;
@@ -98,22 +120,41 @@ async function collectIdsForType({ baseUrl, experience, template, licensekey, ty
 }
 
 async function fetchDetailById({ baseUrl, experience, template, licensekey, type, id, limiter, abortSignal }) {
-  await rateLimit(limiter.minIntervalMs, limiter.state);
-  const isNumeric = /^\d+$/.test(String(id));
-  const field = isNumeric ? 'id' : 'global_id';
+  const value = String(id || '').trim();
+  const numericId = getNumericId(value);
+  const queries = [
+    numericId ? `id:${numericId}` : '',
+    value && value !== numericId ? `id:${value}` : '',
+    value ? `global_id:${value}` : '',
+    value ? `global_id:"${value}"` : '',
+  ].filter(Boolean);
 
-  const payload = await fetchJson(baseUrl, {
-    experience,
-    template,
-    licensekey,
-    type,
-    q: `${field}:${id}`,
-    limit: 1,
-    offset: 0,
-  }, abortSignal);
+  for (const q of Array.from(new Set(queries))) {
+    await rateLimit(limiter.minIntervalMs, limiter.state);
 
-  const items = extractItems(payload);
-  return items.length ? items[0] : payload;
+    const payload = await fetchJson(baseUrl, {
+      experience,
+      template,
+      licensekey,
+      type,
+      q,
+      limit: 1,
+      offset: 0,
+    }, abortSignal);
+
+    const items = extractItems(payload);
+    if (items.length) {
+      return {
+        item: items[0],
+        query: q,
+      };
+    }
+  }
+
+  return {
+    item: null,
+    query: queries[0] || '',
+  };
 }
 
 function createRow({ type, id, url, jsonSnippet }) {
@@ -247,10 +288,21 @@ async function init() {
         if (seen.has(key)) continue;
         seen.add(key);
 
-        const detail = await fetchDetailById({ baseUrl, experience, template, licensekey, type: entry.type, id: entry.id, limiter, abortSignal: currentAbort.signal });
-        const isNumeric = /^\d+$/.test(String(entry.id));
-        const field = isNumeric ? 'id' : 'global_id';
-        const url = `${baseUrl}?${buildParams({ experience, template, licensekey, type: entry.type, q: `${field}:${entry.id}` })}`;
+        const { item: detail, query } = await fetchDetailById({ baseUrl, experience, template, licensekey, type: entry.type, id: entry.id, limiter, abortSignal: currentAbort.signal });
+        if (!detail) {
+          renderLog(`Warning: no detail found for ${entry.type}:${entry.id}`);
+          continue;
+        }
+
+        const url = createSearchUrl(baseUrl, {
+          experience,
+          template,
+          licensekey,
+          type: entry.type,
+          q: query,
+          limit: 1,
+          offset: 0,
+        });
 
         lastResults.push({ type: entry.type, id: entry.id, url, json: detail });
         createRow({ type: entry.type, id: entry.id, url, jsonSnippet: prettySnippet(detail) });
