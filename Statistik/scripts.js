@@ -23,6 +23,11 @@ import {
   textValue
 } from './record-detail-helpers.js';
 import {
+  renderDetailEmptyState,
+  renderDetailLoadingState,
+  renderRecordDetailPage
+} from './record-detail-ui.js';
+import {
   buildPendingRecordViewMessage,
   filterRecordRows,
   getIdFromGlobalId,
@@ -609,7 +614,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHelpPage() {
     if (els.helpModelSummary) {
-      els.helpModelSummary.textContent = 'Nicht jeder Fehler wirkt gleich stark. Kritische LÃ¼cken schlagen deutlich auf den Score, normale Fehler schwÃ¤chen ihn sichtbar und leichte Optimierungen runden den Datensatz spÃ¤ter ab.';
+      els.helpModelSummary.textContent = 'Nicht jeder Fehler wirkt gleich stark. Kritische Lücken schlagen deutlich auf den Score, normale Fehler schwächen ihn sichtbar und leichte Optimierungen runden den Datensatz später ab.';
     }
     renderHelpSeverityOverview();
     renderHelpTypeOverview();
@@ -631,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
         iconClass: 'red',
         title: 'Kritische Fehler',
         impact: 'Wirken stark auf Score und Nutzbarkeit.',
-        body: 'Diese LÃ¼cken solltest du zuerst schlieÃŸen. Sie betreffen hÃ¤ufig Lizenz, Beschreibung oder andere zentrale Pflichtangaben.',
+        body: 'Diese Lücken solltest du zuerst schließen. Sie betreffen häufig Lizenz, Beschreibung oder andere zentrale Pflichtangaben.',
         action: 'Zuerst bearbeiten'
       },
       {
@@ -639,8 +644,8 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: 'rule',
         iconClass: 'amber',
         title: 'Fehler',
-        impact: 'SchwÃ¤chen den Datensatz klar sichtbar.',
-        body: 'Diese Angaben sind wichtig fÃ¼r VollstÃ¤ndigkeit und VerstÃ¤ndlichkeit. Sie sollten nach den kritischen Punkten nachgezogen werden.',
+        impact: 'Schwächen den Datensatz klar sichtbar.',
+        body: 'Diese Angaben sind wichtig für Vollständigkeit und Verständlichkeit. Sie sollten nach den kritischen Punkten nachgezogen werden.',
         action: 'Danach bearbeiten'
       },
       {
@@ -648,8 +653,8 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: 'auto_fix_high',
         iconClass: 'green',
         title: 'Leichte Optimierungen',
-        impact: 'Verbessern QualitÃ¤t und Feinschliff.',
-        body: 'Diese Angaben machen den Datensatz runder und aussagekrÃ¤ftiger, sind aber nicht so gravierend wie harte LÃ¼cken.',
+        impact: 'Verbessern Qualität und Feinschliff.',
+        body: 'Diese Angaben machen den Datensatz runder und aussagekräftiger, sind aber nicht so gravierend wie harte Lücken.',
         action: 'Zum Schluss optimieren'
       }
     ];
@@ -676,13 +681,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderHelpPrivacySection() {
     const localStorageEntries = [
       'Arbeitskontext: Gebiet, Ort und Datentyp',
-      'Consent-Einstellungen fÃ¼r optionale Kategorien',
-      'Zuletzt berechnete KPI-Vergleichswerte fÃ¼r die Ãœbersicht',
+      'Consent-Einstellungen für optionale Kategorien',
+      'Zuletzt berechnete KPI-Vergleichswerte für die übersicht',
       'Temporare Listen- und Detailnavigation nur in der laufenden Sitzung'
     ];
     const externalServices = Array.isArray(RUNTIME_CONFIG.externalServices) ? RUNTIME_CONFIG.externalServices : [];
     const categoryRows = [
-      ['Essenziell', 'Aktiv fÃ¼r Navigation, Proxy und Kernfunktionen', true],
+      ['Essenziell', 'Aktiv für Navigation, Proxy und Kernfunktionen', true],
       ['Externe UI-Dienste', hasConsent('external_ui') ? 'Vom Nutzer freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('external_ui')],
       ['Automatisierung', hasConsent('automation') ? 'Freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('automation')],
       ['Analytics', hasConsent('analytics') ? 'Freigegeben' : 'Nicht produktiv aktiv', hasConsent('analytics')]
@@ -692,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeOptional = categoryRows.filter(([, , enabled]) => enabled).length - 1;
       els.helpPrivacySummary.textContent = activeOptional > 0
         ? `Essenzielle Funktionen sind aktiv. ${formatNumber(activeOptional)} optionale Kategorie ist derzeit freigegeben.`
-        : 'Essenzielle Funktionen sind aktiv. Optionale Kategorien sind vorbereitet, derzeit aber standardmÃ¤ÃŸig deaktiviert.';
+        : 'Essenzielle Funktionen sind aktiv. Optionale Kategorien sind vorbereitet, derzeit aber standardmäßig deaktiviert.';
     }
     if (els.helpLocalStorageList) {
       els.helpLocalStorageList.innerHTML = localStorageEntries
@@ -732,13 +737,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <header class="help-type-head">
           <div>
             <h3>${escapeHtml(type)}</h3>
-            <p class="data-note">Maximal mÃ¶gliche Gewichtspunkte: ${formatNumber(model.totalWeight)}</p>
+            <p class="data-note">Maximal mögliche Gewichtspunkte: ${formatNumber(model.totalWeight)}</p>
           </div>
-          <span class="help-type-score">${formatNumber(model.threshold)} Punkte fÃ¼r grÃ¼n</span>
+          <span class="help-type-score">${formatNumber(model.threshold)} Punkte für grün</span>
         </header>
         <div class="help-type-columns">
           <section>
-            <h4>Minimal fÃ¼r guten Score</h4>
+            <h4>Minimal für guten Score</h4>
             ${renderHelpCriterionListV2(minimumItems, 'required')}
           </section>
           <section>
@@ -748,7 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <footer class="help-type-footer">
           <span>Fehlende Punkte ziehen den Score direkt ab.</span>
-          <span>${formatNumber(autoCheckedCount)} automatisch geprÃ¼ft, ${formatNumber(pendingCount)} fachlich vorbereitet</span>
+          <span>${formatNumber(autoCheckedCount)} automatisch geprüft, ${formatNumber(pendingCount)} fachlich vorbereitet</span>
         </footer>
       </article>
     `;
@@ -840,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </header>
         <div class="help-type-columns">
           <section>
-            <h4>Mindestens fÃ¼r einen guten Stand</h4>
+            <h4>Mindestens für einen guten Stand</h4>
             ${renderHelpCriterionList(minimumItems, 'required')}
           </section>
           <section>
@@ -850,7 +855,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         ${preparedItems.length ? `
           <section class="help-prepared-section">
-            <h4>Fachlich vorbereitet, spÃ¤ter automatisch prÃ¼fbar</h4>
+            <h4>Fachlich vorbereitet, später automatisch prüfbar</h4>
             ${renderPreparedHelpCriterionList(preparedItems)}
           </section>
         ` : ''}
@@ -896,7 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <strong>${escapeHtml(criterion.label)}</strong>
                 <span class="help-prepared-badge">Vorbereitet</span>
               </div>
-              <small>${escapeHtml(criterion.recommendation || 'Diese PrÃ¼fung ist fachlich hinterlegt und wird spÃ¤ter technisch nachgezogen.')}</small>
+              <small>${escapeHtml(criterion.recommendation || 'Diese Prüfung ist fachlich hinterlegt und wird später technisch nachgezogen.')}</small>
             </div>
           </li>
         `).join('')}
@@ -948,7 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHelpTypeFooterSummary(autoCheckedCount, pendingCount) {
     if (pendingCount > 0) {
-      return `${formatNumber(autoCheckedCount)} Kriterien aktiv, ${formatNumber(pendingCount)} weitere spÃ¤ter mÃ¶glich`;
+      return `${formatNumber(autoCheckedCount)} Kriterien aktiv, ${formatNumber(pendingCount)} weitere später möglich`;
     }
     return `${formatNumber(autoCheckedCount)} Kriterien fliessen aktuell in den Score ein`;
   }
@@ -1005,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function buildOverviewTitle() {
     if (state.context.type) return `${state.context.type}-Monitor`;
-    return 'DatenqualitÃ¤ts-Monitor';
+    return 'Datenqualitäts-Monitor';
   }
 
   function buildOverviewSubtitle({ areaLabel, cityLabel, typeLabel }) {
@@ -1014,9 +1019,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.context.city) scope.push(cityLabel);
     const scopeLabel = scope.join(' - ') || 'Sachsen';
     if (state.context.type) {
-      return `Pflegeaufgaben, QualitÃ¤tsstatus und Open-Data-Quote fÃ¼r ${typeLabel} in ${scopeLabel}.`;
+      return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${typeLabel} in ${scopeLabel}.`;
     }
-    return `Pflegeaufgaben, QualitÃ¤tsstatus und Open-Data-Quote fÃ¼r ${scopeLabel}.`;
+    return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${scopeLabel}.`;
   }
 
   function openContextDialog() {
@@ -1097,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         type: state.context.type || ''
       });
     } catch (error) {
-      console.warn('QualitÃ¤ts-Snapshot konnte nicht aus dem Cache geladen werden.', error);
+      console.warn('Qualitäts-Snapshot konnte nicht aus dem Cache geladen werden.', error);
       return null;
     }
     if (!snapshot?.rows?.length) return null;
@@ -1159,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
     } catch (error) {
       console.error('Startseite konnte nicht geladen werden.', error);
-      showMessage('Die Daten konnten nicht geladen werden. Bitte spÃ¤ter erneut versuchen.');
+      showMessage('Die Daten konnten nicht geladen werden. Bitte später erneut versuchen.');
       renderOverviewEmpty();
     }
   }
@@ -1220,7 +1225,7 @@ document.addEventListener('DOMContentLoaded', () => {
           };
         }
       } else if (!isAbortLikeError(qualityResult.reason)) {
-        console.error('QualitÃ¤tsdaten konnten nicht geladen werden.', qualityResult.reason);
+        console.error('Qualitätsdaten konnten nicht geladen werden.', qualityResult.reason);
       }
 
       renderOverviewCurrent({ saveHistory: true });
@@ -1233,7 +1238,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('Startseite konnte nicht geladen werden.', error);
-      showMessage('Die Daten konnten nicht geladen werden. Bitte spÃ¤ter erneut versuchen.');
+      showMessage('Die Daten konnten nicht geladen werden. Bitte später erneut versuchen.');
       renderOverviewEmpty();
     }
   }
@@ -1372,7 +1377,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         if (!isAbortLikeError(error) && !isStale()) {
           shared.failedTypes += 1;
-          console.warn('Regionaler QualitÃ¤tsscan fehlgeschlagen.', type, error);
+          console.warn('Regionaler Qualitätsscan fehlgeschlagen.', type, error);
         }
       } finally {
         if (!complete && !isStale()) shared.truncated = true;
@@ -1427,7 +1432,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date(snapshot?.generatedAt || startedAt))}`;
       }
     } catch (error) {
-      console.error('Open-Data-Statistik konnte nicht vollstÃ¤ndig geladen werden.', error);
+      console.error('Open-Data-Statistik konnte nicht vollständig geladen werden.', error);
       renderStatsError();
     } finally {
       setStatsLoadingState(false);
@@ -1485,16 +1490,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderStats() {
     const summary = state.statsSummary || computeStatsSummary([]);
     if (!summary.totalRecords) {
-      renderStatsEmpty('FÃ¼r diesen Arbeitskontext wurden keine DatensÃ¤tze gefunden.');
+      renderStatsEmpty('Für diesen Arbeitskontext wurden keine Datensätze gefunden.');
       return;
     }
 
     if (els.statsTotalRecords) els.statsTotalRecords.textContent = formatNumber(summary.totalRecords);
     if (els.statsOpenDataRecords) els.statsOpenDataRecords.textContent = formatNumber(summary.openDataRecords);
-    if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = `${formatPercent(summary.openDataQuote)} aller DatensÃ¤tze`;
+    if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = `${formatPercent(summary.openDataQuote)} aller Datensätze`;
     if (els.statsOpenDataQuote) els.statsOpenDataQuote.textContent = formatPercent(summary.openDataQuote);
     if (els.statsNonOpenDataRecords) els.statsNonOpenDataRecords.textContent = formatNumber(summary.nonOpenDataRecords);
-    if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} aller DatensÃ¤tze`;
+    if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} aller Datensätze`;
     if (els.statsExport) els.statsExport.disabled = !state.statsRows.length;
 
     renderStatsTypeDistribution(summary);
@@ -1602,10 +1607,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderStatsError() {
-    showStatsMessage('Die Statistik konnte nicht vollstÃ¤ndig geladen werden. Bitte erneut aktualisieren.');
-    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Die Statistik konnte nicht vollstÃ¤ndig geladen werden.</td></tr>';
-    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Die Statistik konnte nicht vollstÃ¤ndig geladen werden.</div>';
-    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Die Statistik konnte nicht vollstÃ¤ndig geladen werden.</td></tr>';
+    showStatsMessage('Die Statistik konnte nicht vollständig geladen werden. Bitte erneut aktualisieren.');
+    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
+    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Die Statistik konnte nicht vollständig geladen werden.</div>';
+    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
     if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
     if (els.statsLicenseTaskCount) els.statsLicenseTaskCount.textContent = '-';
     if (els.statsLicenseTaskShare) els.statsLicenseTaskShare.textContent = 'Nicht geladen';
@@ -1650,7 +1655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.statsRows.length || !state.statsSummary) return;
     const summary = state.statsSummary;
     const rows = [
-      ['Datentyp', 'Gesamtzahl', 'Open-Data-fÃ¤hig', 'Open-Data-Quote', 'Nicht Open-Data-fÃ¤hig'],
+      ['Datentyp', 'Gesamtzahl', 'Open-Data-fähig', 'Open-Data-Quote', 'Nicht Open-Data-fähig'],
       ...state.statsRows.map((row) => [
         row.type,
         row.statistikCount,
@@ -1683,7 +1688,7 @@ document.addEventListener('DOMContentLoaded', () => {
         query
       });
     } catch (error) {
-      console.warn('QualitÃ¤tsliste konnte nicht aus dem Cache geladen werden.', error);
+      console.warn('Qualitätsliste konnte nicht aus dem Cache geladen werden.', error);
       return null;
     }
   }
@@ -1759,7 +1764,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         failedCounts += 1;
         emit();
-        console.warn('QualitÃ¤ts-Count fehlgeschlagen.', criterion.id, type, error);
+        console.warn('Qualitäts-Count fehlgeschlagen.', criterion.id, type, error);
       }
     }));
 
@@ -1936,7 +1941,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const visibleRows = rows.slice(start, start + state.taskRowsPerPage);
 
     if (!visibleRows.length) {
-      els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">FÃ¼r diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
+      els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">Für diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
     } else {
       els.taskTableBody.innerHTML = visibleRows.map((task) => `
         <tr>
@@ -1982,13 +1987,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const task = state.selectedTask;
     hidePrimarySystems();
     if (!task) {
-      if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">WÃ¤hle eine Pflegeaufgabe aus der Liste.</p>';
+      if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle eine Pflegeaufgabe aus der Liste.</p>';
       return;
     }
 
     const needsTypeChoice = task.affectedTypes.length > 1 && !state.selectedTaskType;
     const typeChoice = task.affectedTypes.length > 1
-      ? `<label class="detail-type-select">Datentyp fÃ¼r Datensatzliste<select id="task-detail-type">${task.affectedTypes.map((type) => `<option value="${escapeHtml(type)}"${type === state.selectedTaskType ? ' selected' : ''}>${escapeHtml(type)}</option>`).join('')}</select></label>`
+      ? `<label class="detail-type-select">Datentyp für Datensatzliste<select id="task-detail-type">${task.affectedTypes.map((type) => `<option value="${escapeHtml(type)}"${type === state.selectedTaskType ? ' selected' : ''}>${escapeHtml(type)}</option>`).join('')}</select></label>`
       : '';
     const selectedType = state.selectedTaskType || task.affectedTypes[0] || '';
 
@@ -2005,7 +2010,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <dd>${renderTypeChips(task.affectedTypes)}</dd>
       </dl>
       ${typeChoice}
-      <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswÃ¤hlen und DatensÃ¤tze anzeigen' : 'DatensÃ¤tze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
+      <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswählen und Datensätze anzeigen' : 'Datensätze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
     `;
 
     const typeSelect = document.getElementById('task-detail-type');
@@ -2025,12 +2030,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openTaskRecordsOnRecordsPage(task, type) {
     if (!task || !type) {
-      showTaskMessage('Bitte wÃ¤hle zuerst eine konkrete Aufgabe und einen Datentyp.');
+      showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
       return;
     }
     const criterionId = resolveTaskCriterionId(task, type);
     if (!criterionId) {
-      showTaskMessage('FÃ¼r diesen Datentyp konnte kein passendes QualitÃ¤tskriterium bestimmt werden.');
+      showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
       return;
     }
 
@@ -2088,11 +2093,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const type = state.selectedTaskType || task?.affectedTypes?.[0] || '';
     const criterionId = resolveTaskCriterionId(task, type);
     if (!task || !type) {
-      showTaskMessage('Bitte wÃ¤hle zuerst eine konkrete Aufgabe und einen Datentyp.');
+      showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
       return;
     }
     if (!criterionId) {
-      showTaskMessage('FÃ¼r diesen Datentyp konnte kein passendes QualitÃ¤tskriterium bestimmt werden.');
+      showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
       return;
     }
 
@@ -2100,8 +2105,8 @@ document.addEventListener('DOMContentLoaded', () => {
     els.taskRecordsSection.hidden = false;
     els.taskRecordsExport.disabled = true;
     els.taskRecordsTitle.textContent = `${task.label} - ${type}`;
-    els.taskRecordsNote.textContent = 'DatensÃ¤tze werden geladen ...';
-    els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty"><span class="loading-line">DatensÃ¤tze werden geladen ...</span></td></tr>';
+    els.taskRecordsNote.textContent = 'Datensätze werden geladen ...';
+    els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>';
 
     try {
       const params = new URLSearchParams();
@@ -2125,21 +2130,21 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTaskRecords(task, type, rows, payload);
       renderPrimarySystemsForRecords(rows);
     } catch (error) {
-      console.error('DatensÃ¤tze zur Pflegeaufgabe konnten nicht geladen werden.', error);
-      els.taskRecordsNote.textContent = 'Die DatensÃ¤tze konnten nicht geladen werden.';
-      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Die DatensÃ¤tze konnten nicht geladen werden.</td></tr>';
+      console.error('Datensätze zur Pflegeaufgabe konnten nicht geladen werden.', error);
+      els.taskRecordsNote.textContent = 'Die Datensätze konnten nicht geladen werden.';
+      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
     }
   }
 
   function renderTaskRecords(task, type, rows, payload) {
     const page = payload?.page || {};
     const stats = payload?.stats || {};
-    const completeText = page.complete ? 'Liste geladen.' : 'Liste geladen, weitere Treffer kÃ¶nnen spÃ¤ter nachgeladen werden.';
-    els.taskRecordsNote.textContent = `${completeText} ${formatNumber(rows.length)} DatensÃ¤tze angezeigt.`;
+    const completeText = page.complete ? 'Liste geladen.' : 'Liste geladen, weitere Treffer können später nachgeladen werden.';
+    els.taskRecordsNote.textContent = `${completeText} ${formatNumber(rows.length)} Datensätze angezeigt.`;
     els.taskRecordsExport.disabled = !rows.length;
 
     if (!rows.length) {
-      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">FÃ¼r diese Aufgabe wurden keine DatensÃ¤tze gefunden.</td></tr>';
+      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Für diese Aufgabe wurden keine Datensätze gefunden.</td></tr>';
       return;
     }
 
@@ -2150,14 +2155,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${escapeHtml([row.city, row.region].filter(Boolean).join(' / ') || '-')}</td>
         <td>${escapeHtml(task.label)}</td>
         <td>${escapeHtml(task.recommendation)}</td>
-        <td><span class="row-actions"><button class="plain-button" type="button" data-copy-id="${escapeHtml(row.globalId || row.id || '')}">ID kopieren</button><a class="plain-button" href="${escapeHtml(buildRecordDetailUrl(row))}">Detail Ã¶ffnen</a></span></td>
+        <td><span class="row-actions"><button class="plain-button" type="button" data-copy-id="${escapeHtml(row.globalId || row.id || '')}">ID kopieren</button><a class="plain-button" href="${escapeHtml(buildRecordDetailUrl(row))}">Detail öffnen</a></span></td>
       </tr>
     `).join('');
 
     els.taskRecordsBody.querySelectorAll('[data-copy-id]').forEach((button) => {
       button.addEventListener('click', () => copyText(button.dataset.copyId || ''));
     });
-    if (stats.budgetExhausted) console.debug('QualitÃ¤tsscan-Budget ausgeschoepft.', stats);
+    if (stats.budgetExhausted) console.debug('Qualitätsscan-Budget ausgeschoepft.', stats);
   }
 
   function renderTasksLoading() {
@@ -2177,7 +2182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.taskKpiHighDetail) els.taskKpiHighDetail.textContent = '-';
     if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">Noch keine Pflegeaufgaben geladen.</td></tr>';
     if (els.taskTableCount) els.taskTableCount.textContent = '0 Aufgaben';
-    if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">WÃ¤hle einen Arbeitskontext und starte die Abfrage.</p>';
+    if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle einen Arbeitskontext und starte die Abfrage.</p>';
     showTaskMessage(message);
   }
 
@@ -2247,8 +2252,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderPendingRecordViewMessage();
       if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
     } catch (error) {
-      console.error('DatensÃ¤tze konnten nicht geladen werden.', error);
-      renderRecordsEmpty('Die DatensÃ¤tze konnten nicht geladen werden. Bitte versuche es spÃ¤ter erneut.');
+      console.error('Datensätze konnten nicht geladen werden.', error);
+      renderRecordsEmpty('Die Datensätze konnten nicht geladen werden. Bitte versuche es später erneut.');
     }
   }
 
@@ -2484,7 +2489,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = true;
-    if (els.recordAiSearchNote) els.recordAiSearchNote.innerHTML = '<span class="inline-loading">KI-Suche wird ausgefÃ¼hrt ...</span>';
+    if (els.recordAiSearchNote) els.recordAiSearchNote.innerHTML = '<span class="inline-loading">KI-Suche wird ausgeführt ...</span>';
 
     try {
       const aiPayload = await runAiRecordSearch({
@@ -2550,7 +2555,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error('KI-Suche fehlgeschlagen.', error);
       if (els.recordAiSearchNote) {
-        els.recordAiSearchNote.textContent = getErrorMessage(error, 'Die KI-Suche konnte nicht ausgefÃ¼hrt werden.');
+        els.recordAiSearchNote.textContent = getErrorMessage(error, 'Die KI-Suche konnte nicht ausgeführt werden.');
       }
     } finally {
       if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = false;
@@ -2578,7 +2583,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const found = searchResult.items || [];
       if (!found.length) {
         applyRecordFilters();
-        showRecordsMessage('Keine DatensÃ¤tze gefunden.');
+        showRecordsMessage('Keine Datensätze gefunden.');
         return;
       }
       const evaluated = evaluateAllItems(found.map((raw) => normalizeItem(raw.raw || raw, raw.type)));
@@ -2598,7 +2603,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error('Datensatzsuche fehlgeschlagen.', error);
       applyRecordFilters();
-      showRecordsMessage('FÃ¼r diese Suche wurde kein Datensatz gefunden.');
+      showRecordsMessage('Für diese Suche wurde kein Datensatz gefunden.');
     } finally {
       if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen';
     }
@@ -2606,7 +2611,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function handleRecordMailDraft(row, triggerNode) {
     if (!row?.email || !row?.missingCriteria?.length) {
-      showRecordsMessage('FÃ¼r diesen Datensatz kann kein KI-Mailentwurf erzeugt werden.');
+      showRecordsMessage('Für diesen Datensatz kann kein KI-Mailentwurf erzeugt werden.');
       return;
     }
 
@@ -2676,7 +2681,7 @@ document.addEventListener('DOMContentLoaded', () => {
       extractItems,
       extractTotal,
       normalizeItem,
-      onTypeError: (type, error) => console.warn('Volltextsuche konnte nicht fÃ¼r Typ geladen werden.', type, error)
+      onTypeError: (type, error) => console.warn('Volltextsuche konnte nicht für Typ geladen werden.', type, error)
     });
   }
 
@@ -2753,8 +2758,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!visibleRows.length) {
       const emptyText = state.recordRows.length
-        ? 'FÃ¼r diese Filter wurden keine DatensÃ¤tze gefunden.'
-        : 'Noch keine DatensÃ¤tze geladen. WÃ¤hle einen Arbeitskontext oder starte eine Suche.';
+        ? 'Für diese Filter wurden keine Datensätze gefunden.'
+        : 'Noch keine Datensätze geladen. Wähle einen Arbeitskontext oder starte eine Suche.';
       els.recordTableBody.innerHTML = `<tr><td colspan="7" class="table-empty">${emptyText}</td></tr>`;
     } else {
       els.recordTableBody.innerHTML = visibleRows.map((row) => `
@@ -2769,7 +2774,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="row-actions">
               <button class="icon-button" type="button" data-record-mail="${escapeHtml(row.globalId || row.id || '')}" aria-label="E-Mail entwerfen"${row.email && row.missingCriteria.length ? '' : ' disabled'}><span class="material-icons" aria-hidden="true">mail</span></button>
               <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Datensatz ansehen"><span class="material-icons" aria-hidden="true">visibility</span></a>
-              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail Ã¶ffnen"><span class="material-icons" aria-hidden="true">chevron_right</span></a>
+              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail öffnen"><span class="material-icons" aria-hidden="true">chevron_right</span></a>
             </span>
           </td>
         </tr>
@@ -2777,15 +2782,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const end = Math.min(rows.length, start + visibleRows.length);
-    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladenen Treffern` : `${formatNumber(rows.length)} DatensÃ¤tzen`;
+    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladenen Treffern` : `${formatNumber(rows.length)} Datensätzen`;
     if (els.recordPageRange) {
-      els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 DatensÃ¤tze';
+      els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 Datensätze';
     }
     if (els.recordResultSummary) {
       if (state.recordDataMeta.mode === 'ai_search') {
-        els.recordResultSummary.textContent = `KI-Suche: ${formatNumber(rows.length)} DatensÃ¤tze geladen`;
+        els.recordResultSummary.textContent = `KI-Suche: ${formatNumber(rows.length)} Datensätze geladen`;
       } else {
-        els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladene Treffer` : `${formatNumber(rows.length)} DatensÃ¤tze`}`;
+        els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladene Treffer` : `${formatNumber(rows.length)} Datensätze`}`;
       }
     }
     if (els.recordPageStatus) els.recordPageStatus.textContent = `${state.recordPage} / ${totalPages}`;
@@ -2826,7 +2831,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderRecordStatus(status) {
     const cls = status === 'gut' ? 'good' : status === 'kritisch' ? 'critical' : status === 'pruefen' ? 'review' : 'muted';
-    const label = status === 'nicht berechenbar' ? 'nicht bewertbar' : status === 'pruefen' ? 'prÃ¼fen' : status;
+    const label = status === 'nicht berechenbar' ? 'nicht bewertbar' : status === 'pruefen' ? 'prüfen' : status;
     return `<span class="record-status"><i class="status-dot ${cls}"></i>${escapeHtml(label || '-')}</span>`;
   }
 
@@ -2842,16 +2847,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderRecordsLoading() {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty"><span class="loading-line">DatensÃ¤tze werden geladen ...</span></td></tr>';
-    if (els.recordResultSummary) els.recordResultSummary.textContent = 'DatensÃ¤tze werden geladen ...';
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>';
+    if (els.recordResultSummary) els.recordResultSummary.textContent = 'Datensätze werden geladen ...';
     if (els.recordPageRange) els.recordPageRange.textContent = '-';
     if (els.recordExport) els.recordExport.disabled = true;
   }
 
   function renderRecordsEmpty(message) {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Die DatensÃ¤tze konnten nicht geladen werden.</td></tr>';
-    if (els.recordResultSummary) els.recordResultSummary.textContent = '0 DatensÃ¤tze';
-    if (els.recordPageRange) els.recordPageRange.textContent = '0 DatensÃ¤tze';
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
+    if (els.recordResultSummary) els.recordResultSummary.textContent = '0 Datensätze';
+    if (els.recordPageRange) els.recordPageRange.textContent = '0 Datensätze';
     if (els.recordExport) els.recordExport.disabled = true;
     showRecordsMessage(message);
   }
@@ -2888,17 +2893,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderRecordDataNote() {
     if (!els.recordDataNote) return;
     if (state.recordDataMeta.mode === 'empty') {
-      els.recordDataNote.textContent = 'Es wird keine Browser-Stichprobe geladen. WÃ¤hle ein konkretes Problem oder Ã¶ffne eine Pflegeaufgabe, um echte Datensatzlisten per API zu laden.';
+      els.recordDataNote.textContent = 'Es wird keine Browser-Stichprobe geladen. Wähle ein konkretes Problem oder öffne eine Pflegeaufgabe, um echte Datensatzlisten per API zu laden.';
       return;
     }
     if (state.recordDataMeta.mode === 'criterion') {
       els.recordDataNote.textContent = state.recordDataMeta.truncated
-        ? 'Diese Liste basiert auf einem begrenzten QualitÃ¤ts-Scan fÃ¼r die ausgewÃ¤hlte Pflegeaufgabe.'
-        : 'Diese Liste basiert auf einem QualitÃ¤ts-Scan fÃ¼r die ausgewÃ¤hlte Pflegeaufgabe.';
+        ? 'Diese Liste basiert auf einem begrenzten Qualitäts-Scan für die ausgewählte Pflegeaufgabe.'
+        : 'Diese Liste basiert auf einem Qualitäts-Scan für die ausgewählte Pflegeaufgabe.';
       return;
     }
     if (state.recordDataMeta.mode === 'ai_search') {
-      els.recordDataNote.textContent = 'Diese Liste basiert auf einer KI-Suche und anschlieÃŸend geladenen DatensÃ¤tzen per global_id.';
+      els.recordDataNote.textContent = 'Diese Liste basiert auf einer KI-Suche und anschließend geladenen Datensätzen per global_id.';
       return;
     }
     if (state.recordDataMeta.mode === 'snapshot_list') {
@@ -2908,8 +2913,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     els.recordDataNote.textContent = state.recordDataMeta.truncated
-      ? 'Diese Liste basiert auf einem begrenzten API-/Server-Scan. Die QualitÃ¤tsbewertung basiert auf den aktivierten Kriterien und verfÃ¼gbaren Daten.'
-      : 'Die QualitÃ¤tsbewertung basiert auf den aktivierten Kriterien und verfÃ¼gbaren Daten.';
+      ? 'Diese Liste basiert auf einem begrenzten API-/Server-Scan. Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.'
+      : 'Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.';
   }
 
   function resetRecordFilters() {
@@ -2972,7 +2977,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function exportRecordListCsv() {
     if (!state.filteredRecordRows.length) return;
     const rows = [
-      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'QualitÃ¤tsstatus', 'QualitÃ¤ts-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
+      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'Qualitätsstatus', 'Qualitäts-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
       ...state.filteredRecordRows.map((row) => [
         row.title,
         row.type,
@@ -3005,32 +3010,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadRecordDetail() {
     showDetailMessage('');
-    renderDetailLoading();
+    renderDetailLoadingState(els);
     const params = new URLSearchParams(location.search);
     const type = params.get('type') || state.context.type || '';
     const id = params.get('id') || '';
     const globalId = params.get('global_id') || params.get('globalId') || '';
 
     if (!id && !globalId) {
-      renderDetailEmpty('Noch kein Datensatz ausgewÃ¤hlt. Suche in der Datensatzliste nach Titel, ID oder Ort und Ã¶ffne einen Eintrag.');
+      renderDetailEmptyState(els, 'Noch kein Datensatz ausgewählt. Suche in der Datensatzliste nach Titel, ID oder Ort und öffne einen Eintrag.', escapeHtml, showDetailMessage);
       return;
     }
 
     try {
       const raw = await fetchRecordDetailItem({ type, id, globalId });
       if (!raw) {
-        renderDetailEmpty('FÃ¼r diese ID wurde kein Datensatz gefunden. Bitte prÃ¼fe Typ und ID oder kehre zur Datensatzliste zurÃ¼ck.');
+        renderDetailEmptyState(els, 'Für diese ID wurde kein Datensatz gefunden. Bitte prüfe Typ und ID oder kehre zur Datensatzliste zurück.', escapeHtml, showDetailMessage);
         return;
       }
       const normalized = normalizeItem(raw, type || getFirst(raw, ['type', 'typeName']));
       const evaluated = evaluateQualityForItem(normalized);
       state.recordDetailItem = evaluated;
       state.recordDetailViewModel = getRecordDetailViewModel(evaluated);
-      renderRecordDetail(state.recordDetailViewModel);
+      renderRecordDetailPage({
+        els,
+        model: state.recordDetailViewModel,
+        escapeHtml,
+        formatNumber,
+        formatRecordDate,
+        criterionStatusClass,
+        getCriterionDisplayStatus,
+        buildRecordDetailUrl,
+        loadRecordListState,
+        copyText
+      });
       if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date())}`;
     } catch (error) {
       console.error('Datensatz-Detail konnte nicht geladen werden.', error);
-      renderDetailEmpty('Der Datensatz konnte nicht geladen werden.');
+      renderDetailEmptyState(els, 'Der Datensatz konnte nicht geladen werden.', escapeHtml, showDetailMessage);
     }
   }
 
@@ -3099,7 +3115,7 @@ document.addEventListener('DOMContentLoaded', () => {
           id: criterion.id,
           label: criterion.label,
           recommendation: criterion.recommendation,
-          status: missing.has(criterion.id) ? 'fehlt' : fulfilled.has(criterion.id) ? 'erfÃ¼llt' : manual.has(criterion.id) ? 'nicht bewertbar' : 'nicht relevant'
+          status: missing.has(criterion.id) ? 'fehlt' : fulfilled.has(criterion.id) ? 'erfüllt' : manual.has(criterion.id) ? 'nicht bewertbar' : 'nicht relevant'
         })),
         preparedCriteria: domainCriteria
           .filter((criterion) => criterion.status === 'needs_verification')
@@ -3135,7 +3151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         description: getDisplayDescription(raw, qualityHelpers),
         teaser: getTextByRel(raw, 'teaser', qualityHelpers),
         openings: getOpeningHoursSummary(item, qualityHelpers),
-        directions: getTextByRel(raw, 'directions', qualityHelpers) || (qualityHelpers.hasPublicTransportFeature(raw) ? 'Ã–PNV-Information vorhanden.' : 'Keine Ã–PNV-Information vorhanden.'),
+        directions: getTextByRel(raw, 'directions', qualityHelpers) || (qualityHelpers.hasPublicTransportFeature(raw) ? 'ÖPNV-Information vorhanden.' : 'Keine ÖPNV-Information vorhanden.'),
         price: getTextByRel(raw, 'PRICE_INFO', qualityHelpers),
         priceReduced: getTextByRel(raw, 'PRICE_REDUCEDINFO', qualityHelpers),
         seoTitle: getTextByRel(raw, 'WEB_SEO_TITEL', qualityHelpers),
@@ -3235,208 +3251,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ].filter(([, value]) => textValue(value));
   }
 
-  function renderRecordDetail(model) {
-    renderDetailContext(model);
-    renderDetailNavigation(model);
-
-    els.detailHeadCard.innerHTML = `
-      <div class="detail-head-left">
-        <h1 id="record-detail-title">${escapeHtml(model.identity.title)} <span class="type-chip ${model.identity.type.toLowerCase()}">${escapeHtml(model.identity.type || '-')}</span></h1>
-        <p>${escapeHtml([model.identity.city, model.identity.region, model.identity.category].filter(Boolean).join(' - ') || 'Ort und Kategorie nicht angegeben')}</p>
-      </div>
-    `;
-    els.detailHeadCard.querySelectorAll('[data-copy-detail]').forEach((button) => {
-      button.addEventListener('click', () => copyText(button.dataset.copyDetail || ''));
-    });
-
-    els.detailContent.hidden = false;
-    renderDetailIssues(model);
-    renderDetailUsability(model);
-    renderDetailTextCards(model);
-    renderDetailMedia(model);
-    renderDetailInfo(model);
-    renderDetailCriteria(model);
-
-    if (model.details.et4Url && els.detailEt4Link) {
-      els.detailEt4Link.href = model.details.et4Url;
-      els.detailEt4Link.hidden = false;
-    }
-  }
-
-  function renderDetailContext(model) {
-    if (!els.detailBreadcrumb) return;
-    if (model.context.source === 'task' && model.context.label) {
-      els.detailBreadcrumb.innerHTML = `
-        <a href="tasks.html">Pflegeaufgaben</a>
-        <span class="material-icons" aria-hidden="true">chevron_right</span>
-        <a href="records.html">${escapeHtml(model.context.label)}</a>
-        <span class="material-icons" aria-hidden="true">chevron_right</span>
-        <span>Datensatz-Detail</span>
-      `;
-      if (els.detailContextNote) {
-        els.detailContextNote.textContent = `Aus Pflegeaufgabe: ${model.context.label}`;
-        els.detailContextNote.hidden = false;
-      }
-      return;
-    }
-    els.detailBreadcrumb.innerHTML = `
-      <a href="records.html">DatensÃ¤tze</a>
-      <span class="material-icons" aria-hidden="true">chevron_right</span>
-      <span>Datensatz-Detail</span>
-    `;
-    if (els.detailContextNote) els.detailContextNote.hidden = true;
-  }
-
-  function renderDetailNavigation(model) {
-    const listState = loadRecordListState();
-    const currentKey = model.identity.globalId || model.identity.id;
-    const currentIndex = listState.rows.findIndex((row) => (
-      (model.identity.globalId && row.globalId === model.identity.globalId) ||
-      (model.identity.id && row.id === model.identity.id)
-    ));
-    if (els.detailBackLink) els.detailBackLink.href = listState.backUrl || 'records.html';
-
-    const previous = currentIndex > 0 ? listState.rows[currentIndex - 1] : null;
-    const next = currentIndex >= 0 && currentIndex < listState.rows.length - 1 ? listState.rows[currentIndex + 1] : null;
-    wireDetailNavButton(els.detailPrevRecord, previous, currentKey);
-    wireDetailNavButton(els.detailNextRecord, next, currentKey);
-  }
-
-  function wireDetailNavButton(button, target, currentKey) {
-    if (!button) return;
-    button.disabled = !target || !(target.globalId || target.id) || (target.globalId || target.id) === currentKey;
-    button.onclick = null;
-    if (!button.disabled) {
-      button.onclick = () => {
-        location.href = target.detailUrl || buildRecordDetailUrl(target);
-      };
-    }
-  }
-
-  function renderDetailIssues(model) {
-    if (!model.issues.length) {
-      els.detailIssuesList.innerHTML = '<p class="empty-note">Keine priorisierten Baustellen gefunden.</p>';
-      return;
-    }
-    els.detailIssuesList.innerHTML = model.issues.map((criterion) => `
-      <div class="detail-issue-row">
-        <span class="impact-dot ${criterion.priority === 'hoch' ? 'critical' : 'review'}"></span>
-        <span><strong>${escapeHtml(criterion.label)}</strong><small>${escapeHtml(criterion.recommendation)}</small></span>
-        <span class="status-badge ${criterion.priority === 'hoch' ? 'critical' : 'medium'}">${criterion.priority === 'hoch' ? 'hoch' : 'mittel'}</span>
-      </div>
-    `).join('');
-  }
-
-  function renderDetailUsability(model) {
-    els.detailUsability.innerHTML = model.usability.map((entry) => `
-      <div><span>${escapeHtml(entry.label)}</span><strong class="${entry.ok ? 'ok' : entry.relevant === false ? 'muted' : 'bad'}">${escapeHtml(entry.value)}</strong></div>
-    `).join('');
-    els.detailTaxonomy.innerHTML = renderKvRows([
-      ['Kategorie', model.identity.category || 'Nicht angegeben'],
-      ['Gebiet', model.identity.region || 'Nicht angegeben'],
-      ['Ort', model.identity.city || 'Nicht angegeben']
-    ]);
-  }
-
-  function renderDetailTextCards(model) {
-    els.detailDescription.innerHTML = `<p>${escapeHtml(model.texts.description || 'Keine Beschreibung vorhanden.')}</p>${model.texts.teaser ? `<p class="data-note">${escapeHtml(model.texts.teaser)}</p>` : ''}`;
-    els.detailOpenings.innerHTML = `<p>${escapeHtml(model.texts.openings)}</p>`;
-    els.detailTransport.innerHTML = `<p>${escapeHtml(model.texts.directions)}</p>`;
-    if (els.detailPriceCard && els.detailPrice) {
-      const prices = [model.texts.price, model.texts.priceReduced].filter(Boolean);
-      els.detailPriceCard.hidden = !prices.length;
-      els.detailPrice.innerHTML = prices.map((price) => `<p>${escapeHtml(price)}</p>`).join('');
-    }
-  }
-
-  function renderDetailMedia(model) {
-    if (!model.media.images.length) {
-      els.detailMedia.innerHTML = '<p class="empty-note">Keine prÃ¼fbaren Bilder vorhanden.</p>';
-      els.detailMediaNote.textContent = '';
-      return;
-    }
-    els.detailMedia.innerHTML = model.media.images.slice(0, 5).map((image) => `
-      <figure class="detail-media-item">
-        <img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.alt || image.value || '')}" loading="lazy">
-        <figcaption>
-          <strong>${escapeHtml(image.value || 'Bild')}</strong>
-          <span>${escapeHtml(image.copyrightText || 'Urheber fehlt')}</span>
-          <small>Lizenz: ${escapeHtml(image.license || 'nicht angegeben')}</small>
-        </figcaption>
-      </figure>
-    `).join('');
-    els.detailMediaNote.textContent = `${formatNumber(model.media.images.length)} Bilder vorhanden. ${formatNumber(model.media.missingCopyrightCount)} ohne Urheberangabe. ${formatNumber(model.media.missingAltCount)} ohne Alt-Text.`;
-  }
-
-  function renderDetailInfo(model) {
-    const rows = [
-      ['ID', escapeHtml(model.identity.id || '-')],
-      ['global_id', escapeHtml(model.identity.globalId || '-')],
-      ['Pflegesystem', escapeHtml(model.details.primarySystem.name)],
-      ['ET4 pages', model.details.et4Url ? `<a href="${escapeHtml(model.details.et4Url)}" target="_blank" rel="noopener">Ã–ffnen auf et4 pages</a>` : 'Nicht verfÃ¼gbar'],
-      ['Web', model.details.web ? `<a href="${escapeHtml(model.details.web)}" target="_blank" rel="noopener">Datensatz Ã¶ffnen</a>` : 'Nicht angegeben'],
-      ['E-Mail', escapeHtml(model.details.email || 'Nicht angegeben')],
-      ['Telefon', escapeHtml(model.details.phone || 'Nicht angegeben')],
-      ['Adresse', escapeHtml([model.details.street, model.details.zip, model.identity.city].filter(Boolean).join(', ') || 'Nicht angegeben')],
-      ['Lizenz', escapeHtml(model.details.license || 'Lizenz fehlt')],
-      ['Letzte Aktualisierung', escapeHtml(formatRecordDate(model.identity.updatedAt))]
-    ];
-    els.detailInfo.innerHTML = renderKvRows(rows, true);
-    els.detailInfo.querySelectorAll('[data-copy-detail]').forEach((button) => {
-      button.addEventListener('click', () => copyText(button.dataset.copyDetail || ''));
-    });
-  }
-
-  function renderDetailCriteria(model) {
-    if (!els.detailCriteriaCard || !els.detailCriteriaList) return;
-    const automatic = model.quality.criteria || [];
-    const prepared = model.quality.preparedCriteria || [];
-    const manualDomain = model.quality.manualDomainCriteria || [];
-    const sourceGuarded = model.quality.sourceGuardedCriteria || [];
-    const sections = [
-      renderDetailCriteriaSection('Automatisch bewertet', automatic, 'Diese Kriterien fliessen heute bereits in die Datensatzbewertung ein.'),
-      renderDetailCriteriaSection('Fachlich vorbereitet', prepared, 'Diese PrÃ¼fungen sind fÃ¼r diesen Datentyp bereits fachlich vorgesehen, aber technisch noch nicht automatisch angebunden.'),
-      renderDetailCriteriaSection('Manuell zu prÃ¼fen', manualDomain, 'Diese Punkte brauchen weiterhin eine redaktionelle SichtprÃ¼fung.'),
-      renderDetailCriteriaSection('Nicht als normale Pflegeaufgabe', sourceGuarded, 'Diese Punkte sind fachlich relevant, werden aber nicht als normale automatische Pflegeaufgabe behandelt.')
-    ].filter(Boolean);
-    els.detailCriteriaList.innerHTML = sections.join('');
-    els.detailCriteriaCard.hidden = !sections.length;
-  }
-
-  function renderDetailCriteriaSection(title, criteria, note) {
-    if (!Array.isArray(criteria) || !criteria.length) return '';
-    return `
-      <section class="detail-criteria-section">
-        <header class="detail-criteria-head">
-          <h3>${escapeHtml(title)}</h3>
-          <p>${escapeHtml(note)}</p>
-        </header>
-        <div class="detail-criteria-group">
-          ${criteria.map((criterion) => `
-            <span class="criteria-chip ${criterionStatusClass(criterion.status)}">
-              <strong>${escapeHtml(criterion.label)}</strong>
-              <small>${escapeHtml(getCriterionDisplayStatus(criterion.status))}</small>
-            </span>
-          `).join('')}
-        </div>
-      </section>
-    `;
-  }
-
-  function renderDetailLoading() {
-    if (els.detailHeadCard) els.detailHeadCard.innerHTML = '<div class="table-empty"><span class="loading-line">Datensatz wird geladen ...</span></div>';
-    if (els.detailContent) els.detailContent.hidden = true;
-    if (els.detailCriteriaCard) els.detailCriteriaCard.hidden = true;
-    if (els.detailEt4Link) els.detailEt4Link.hidden = true;
-  }
-
-  function renderDetailEmpty(message) {
-    if (els.detailHeadCard) els.detailHeadCard.innerHTML = `<div class="table-empty">${escapeHtml(message)}</div>`;
-    if (els.detailContent) els.detailContent.hidden = true;
-    if (els.detailCriteriaCard) els.detailCriteriaCard.hidden = true;
-    showDetailMessage('');
-  }
-
   function showDetailMessage(message) {
     if (!els.recordDetailMessage) return;
     els.recordDetailMessage.textContent = message || '';
@@ -3446,13 +3260,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function buildVerifiedEt4Url(item) {
     if (item.type !== 'POI' || !item.globalId) return '';
     return `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/${encodeURIComponent(item.globalId)}/x`;
-  }
-
-  function renderKvRows(rows, allowHtml = false) {
-    return rows.map(([key, value]) => `
-      <dt>${escapeHtml(key)}</dt>
-      <dd>${allowHtml ? value : escapeHtml(value)}</dd>
-    `).join('');
   }
 
   function normalizeItem(raw, fallbackType) {
@@ -3581,14 +3388,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const node = document.getElementById(id);
       if (node) node.textContent = '-';
     });
-    if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">FÃ¼r diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
-    setQualityDataNoteText('Keine auswertbaren QualitÃ¤tsdaten geladen.');
+    if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">Für diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
+    setQualityDataNoteText('Keine auswertbaren Qualitätsdaten geladen.');
   }
 
   function setQualityDataNoteLoading() {
     if (!els.qualityDataNote) return;
     els.qualityDataNote.hidden = false;
-    els.qualityDataNote.innerHTML = '<span class="inline-loading" aria-label="QualitÃ¤tsdaten werden geladen"></span>';
+    els.qualityDataNote.innerHTML = '<span class="inline-loading" aria-label="Qualitätsdaten werden geladen"></span>';
   }
 
   function setQualityDataNoteText(text) {
@@ -3610,7 +3417,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .slice(0, 5);
 
     if (!issues.length) {
-      els.topTasksList.innerHTML = '<div class="empty-note">FÃ¼r die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
+      els.topTasksList.innerHTML = '<div class="empty-note">Für die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
       return;
     }
 
@@ -3632,7 +3439,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="task-icon ${statusClass}" aria-hidden="true">${taskIcon(issue.criterionId)}</span>
         <span class="task-copy"><strong>${escapeHtml(issue.label)}</strong><small>${escapeHtml(taskDescription(issue.criterionId))}</small></span>
         <span class="task-count">${formatNumber(issue.affectedCount)}</span>
-        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'PrÃ¼fen'}</span>
+        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'Prüfen'}</span>
         <span class="task-open material-icons" aria-hidden="true">chevron_right</span>
       `;
       return link;
@@ -3670,7 +3477,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rows = [
       ['Gut', good, goodPct, 'good'],
-      ['PrÃ¼fen', review, reviewPct, 'review'],
+      ['Prüfen', review, reviewPct, 'review'],
       ['Kritisch', critical, criticalPct, 'critical']
     ];
     if (unknown > 0) rows.push(['Nicht bewertbar', unknown, percent(unknown, total), 'muted']);
@@ -3702,7 +3509,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       if (state.qualityDataMeta.truncated) {
-        setQualityDataNoteText('Weitere Treffer kÃ¶nnen spÃ¤ter nachgeladen werden.');
+        setQualityDataNoteText('Weitere Treffer können später nachgeladen werden.');
         return;
       }
       hideQualityDataNote();
@@ -3717,10 +3524,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const note = state.qualityDataMeta.truncated
-      ? `Regionale Bewertung geladen. Weitere Treffer kÃ¶nnen spÃ¤ter nachgeladen werden.`
-      : `Basierend auf ${formatNumber(sampleSize)} bewerteten DatensÃ¤tzen.`;
+      ? `Regionale Bewertung geladen. Weitere Treffer können später nachgeladen werden.`
+      : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensätzen.`;
     setQualityDataNoteText(note);
-    if (state.qualityDataMeta.truncated) console.debug('QualitÃ¤tsdaten sind begrenzt.', state.qualityDataMeta);
+    if (state.qualityDataMeta.truncated) console.debug('Qualitätsdaten sind begrenzt.', state.qualityDataMeta);
   }
 
   function renderKpiDeltas(kpis) {
@@ -3730,7 +3537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch {
       previous = null;
     }
-    renderDelta(els.kpiTotalDelta, previous?.totalRecords, kpis.totalRecords, 'DatensÃ¤tze seit dem letzten Besuch');
+    renderDelta(els.kpiTotalDelta, previous?.totalRecords, kpis.totalRecords, 'Datensätze seit dem letzten Besuch');
     renderDelta(els.kpiQualityDelta, previous?.qualityScore, kpis.qualityScore, 'Punkte seit dem letzten Besuch');
   }
 
@@ -3754,7 +3561,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function exportOverviewCsv() {
     if (!state.latestRows.length) {
-      showMessage('FÃ¼r diese Ansicht liegen noch keine exportierbaren Daten vor.');
+      showMessage('Für diese Ansicht liegen noch keine exportierbaren Daten vor.');
       return;
     }
     const rows = [
@@ -3767,7 +3574,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ])
     ];
     const text = rows.map((row) => row.map(csvValue).join(';')).join('\n');
-    downloadText('satourn_startseite_Ã¼bersicht.csv', text, 'text/csv;charset=utf-8');
+    downloadText('satourn_startseite_übersicht.csv', text, 'text/csv;charset=utf-8');
   }
 
   function showMessage(message) {
@@ -3928,7 +3735,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     if (!rowsToExport.length) return;
     const rows = [
-      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Problem', 'NÃ¤chster Schritt', 'ID', 'global_id', 'source_id'],
+      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Problem', 'Nächster Schritt', 'ID', 'global_id', 'source_id'],
       ...rowsToExport.map((row) => [
         row.title,
         row.type,
@@ -3950,7 +3757,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await navigator.clipboard?.writeText(value);
     } catch (error) {
-      console.debug('Kopieren nicht mÃ¶glich.', error);
+      console.debug('Kopieren nicht möglich.', error);
     }
   }
 

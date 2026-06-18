@@ -102,6 +102,8 @@ Wichtige Produktentscheidung:
   `Statistik/records-helpers.js`
 - ausgelagerte Detail-Helfer:
   `Statistik/record-detail-helpers.js`
+- ausgelagerte Detail-UI:
+  `Statistik/record-detail-ui.js`
 - ausgelagerte Frontend-Quality-API-Helfer:
   `Statistik/quality-api.js`
 - ausgelagerte Übersichts-Helfer:
@@ -134,6 +136,7 @@ Wichtige Produktentscheidung:
 - erste Frontend-Record-/OI-Aufrufe aus `scripts.js` in `Statistik/record-api.js` ausgelagert
 - erste reine Records-Helfer aus `scripts.js` in `Statistik/records-helpers.js` ausgelagert
 - erste reine Detail-Helfer aus `scripts.js` in `Statistik/record-detail-helpers.js` ausgelagert
+- erster Detail-Renderer aus `scripts.js` in `Statistik/record-detail-ui.js` ausgelagert
 - erste Frontend-Quality-Request-Helfer aus `scripts.js` in `Statistik/quality-api.js` ausgelagert
 - erste reine Übersichts-Helfer aus `scripts.js` in `Statistik/overview-helpers.js` ausgelagert
 - erste Aufgaben-, Fehler- und Icontexte aus `scripts.js` in `Statistik/task-texts.js` ausgelagert
