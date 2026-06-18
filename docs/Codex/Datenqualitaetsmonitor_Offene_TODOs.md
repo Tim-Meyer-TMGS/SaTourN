@@ -1,20 +1,20 @@
-# Datenqualitätsmonitor – Offene TODOs
+# DatenqualitÃ¤tsmonitor â€“ Offene TODOs
 
 Stand: 2026-06-15
 
 Diese Datei ist die kurze, aktive Arbeitsliste. Abgeschlossene Analysen und
 alte Nachweise liegen im Archiv.
 
-## Priorität A – Als Nächstes
+## PrioritÃ¤t A â€“ Als NÃ¤chstes
 
 ### 1. one.intelligence Mailfunktion produktionsreif machen
 
 Offen:
 
-- Mailtexte gegen echte Datensätze fachlich prüfen
+- Mailtexte gegen echte DatensÃ¤tze fachlich prÃ¼fen
 - Betreffzeilen vereinheitlichen
-- prüfen, ob pro Kontext nur die relevanten Fehler in die Mail gehen
-- optional Fallback vorsehen, falls `mailto:` lokal beim Nutzer nicht sauber öffnet
+- prÃ¼fen, ob pro Kontext nur die relevanten Fehler in die Mail gehen
+- optional Fallback vorsehen, falls `mailto:` lokal beim Nutzer nicht sauber Ã¶ffnet
 
 Betroffene Dateien:
 
@@ -22,14 +22,14 @@ Betroffene Dateien:
 - `routes/oi.js`
 - `docs/Codex/Render_OI_Einrichtung.md`
 
-### 2. KI-Suche im Frontend fachlich gegen echte Suchfälle testen
+### 2. KI-Suche im Frontend fachlich gegen echte SuchfÃ¤lle testen
 
 Offen:
 
 - reale Themenanfragen durchtesten:
   `Museum`, `Wanderwege mit Hund`, `Familienausflug`, `Wellnesshotel`
-- prüfen, ob OI-IDs immer sauber in Datensätze aufgelöst werden
-- leere Ergebnisse, mehrdeutige Suchanfragen und Fehlermeldungen UX-seitig schärfen
+- prÃ¼fen, ob OI-IDs immer sauber in DatensÃ¤tze aufgelÃ¶st werden
+- leere Ergebnisse, mehrdeutige Suchanfragen und Fehlermeldungen UX-seitig schÃ¤rfen
 
 Betroffene Dateien:
 
@@ -41,9 +41,9 @@ Betroffene Dateien:
 
 Offen:
 
-- Hilfeseite an die tatsächlich aktiven Kriterien anpassen
-- Mail- und Sucheinstieg kurz und verständlich dokumentieren
-- spätere 3-Ebenen-Logik weiter fachlich vorbereiten:
+- Hilfeseite an die tatsÃ¤chlich aktiven Kriterien anpassen
+- Mail- und Sucheinstieg kurz und verstÃ¤ndlich dokumentieren
+- spÃ¤tere 3-Ebenen-Logik weiter fachlich vorbereiten:
   `Kritische Fehler`, `Fehler`, `Leichte Optimierungen`
 
 Betroffene Dateien:
@@ -52,15 +52,15 @@ Betroffene Dateien:
 - `Statistik/scripts.js`
 - `docs/Codex/Datenqualitaetsmonitor_Aktueller_Projektstand.md`
 
-## Priorität B – Bewertungslogik erweitern
+## PrioritÃ¤t B â€“ Bewertungslogik erweitern
 
 ### 4. Weitere Kriterien sauber verifizieren und aktivieren
 
 Offen:
 
-- weitere Hotel-, Gastro-, Tour-, Event- und Package-Kriterien gezielt gegen echte Daten prüfen
+- weitere Hotel-, Gastro-, Tour-, Event- und Package-Kriterien gezielt gegen echte Daten prÃ¼fen
 - nur Kriterien aktivieren, die fachlich und technisch belastbar sind
-- Count, Fehlerliste, Detailseite und Score müssen dieselbe Regel nutzen
+- Count, Fehlerliste, Detailseite und Score mÃ¼ssen dieselbe Regel nutzen
 
 Verifikationsregel:
 
@@ -79,23 +79,23 @@ Nachweise:
 
 Offen:
 
-- Preisregel und weitere sichere POI-Ausschlüsse gegen echte Daten absichern
-- Ausschlüsse nur zentral in der Bewertungslogik erweitern, nicht im UI
+- Preisregel und weitere sichere POI-AusschlÃ¼sse gegen echte Daten absichern
+- AusschlÃ¼sse nur zentral in der Bewertungslogik erweitern, nicht im UI
 
 Betroffene Dateien:
 
 - `Statistik/quality.js`
 - `routes/quality.js`
 
-## Priorität C – UI und Betrieb
+## PrioritÃ¤t C â€“ UI und Betrieb
 
-### 6. UI weiter glätten
+### 6. UI weiter glÃ¤tten
 
 Offen:
 
 - Datensatzdetail weiter auf handlungsrelevante Inhalte zuschneiden
 - Statistikseite weiter entschlacken
-- Zustände, Ladeanimationen und Fehlermeldungen vereinheitlichen
+- ZustÃ¤nde, Ladeanimationen und Fehlermeldungen vereinheitlichen
 
 ### 7. Betrieb und Plattform
 
@@ -105,22 +105,22 @@ Offen:
 - Vercel-Migration nur separat behandeln
 - Cache-/Snapshot-Strategie erst wieder anfassen, wenn fachliche Logik stabil ist
 
-## Priorität D – Architektur, Framework und Übergabe
+## PrioritÃ¤t D â€“ Architektur, Framework und Ãœbergabe
 
-### 8. Zielarchitektur für Übergabe und Eigenhosting festziehen
+### 8. Zielarchitektur fÃ¼r Ãœbergabe und Eigenhosting festziehen
 
 Ziel:
 
-- Projekt so strukturieren, dass es sauber an externe Entwickler übergeben werden kann
+- Projekt so strukturieren, dass es sauber an externe Entwickler Ã¼bergeben werden kann
 - Frontend und Backend fachlich und technisch klar trennen
-- späterer Betrieb auf eigenem Server ohne Render-Abhängigkeit vorbereiten
+- spÃ¤terer Betrieb auf eigenem Server ohne Render-AbhÃ¤ngigkeit vorbereiten
 
 Erledigt:
 
-- Ist-Architektur als Systemübersicht dokumentiert
+- Ist-Architektur als SystemÃ¼bersicht dokumentiert
 - Zielarchitektur mit getrenntem Frontend und Backend festgelegt
-- Verantwortlichkeiten für Frontend und Backend beschrieben
-- Hosting-Zielbild für eigenen Server beschrieben
+- Verantwortlichkeiten fÃ¼r Frontend und Backend beschrieben
+- Hosting-Zielbild fÃ¼r eigenen Server beschrieben
 
 Ergebnis:
 
@@ -142,12 +142,12 @@ Empfohlene Richtung:
 - `Vue Router`
 - `Pinia`
 
-Begründung:
+BegrÃ¼ndung:
 
 - gute Passung zur heutigen HTML-/JS-Struktur
 - klarere Komponentenlogik
 - sauberer gemeinsamer State
-- bessere Wartbarkeit bei mehreren Ansichten und vielen Filterzuständen
+- bessere Wartbarkeit bei mehreren Ansichten und vielen FilterzustÃ¤nden
 
 Erledigt:
 
@@ -162,7 +162,7 @@ Ergebnis:
 
 Offen:
 
-- technische Einführung des neuen Frontend-Gerüsts noch nicht begonnen
+- technische EinfÃ¼hrung des neuen Frontend-GerÃ¼sts noch nicht begonnen
 - bestehender Code muss vor der eigentlichen Migration weiter entkoppelt werden
 
 Betroffene Dateien:
@@ -180,80 +180,99 @@ Betroffene Dateien:
 
 Ziel:
 
-- das bestehende Frontend erst fachlich aufräumen, dann migrieren
+- das bestehende Frontend erst fachlich aufrÃ¤umen, dann migrieren
 
 Bereits umgesetzt:
 
 - erster Storage-/View-State-Bereich aus `scripts.js` in
-  `Statistik/state-storage.js` ausgelagert
+  `Statistik/core/state-storage.js` ausgelagert
 - erster API-Builder-Bereich aus `scripts.js` in
-  `Statistik/api-urls.js` ausgelagert
+  `Statistik/core/api-urls.js` ausgelagert
 - erste Frontend-Record-/OI-Aufrufe aus `scripts.js` in
-  `Statistik/record-api.js` ausgelagert
+  `Statistik/records/record-api.js` ausgelagert
 - erste reine Records-Helfer aus `scripts.js` in
-  `Statistik/records-helpers.js` ausgelagert
+  `Statistik/records/records-helpers.js` ausgelagert
+- erste Records-Such-, KI- und Autocomplete-Aktionen aus `scripts.js` in
+  `Statistik/records/records-actions.js` ausgelagert
+- Record-Mailentwurf aus `scripts.js` in
+  `Statistik/records/record-communication.js` zusammengeführt
+- Record-Suchadapter, Datensatz-Normalisierung und Record-View-Model-Bau aus `scripts.js` in
+  `Statistik/records/records-data.js` ausgelagert
+- Record-Filter-, Paginations- und Listensteuerung aus `scripts.js` in
+  `Statistik/records/records-filters.js` ausgelagert
+- erste Records-Steuerung aus `scripts.js` in
+  `Statistik/records/records-controller.js` ausgelagert
+- erste Records-Renderer aus `scripts.js` in
+  `Statistik/records/records-ui.js` ausgelagert
+- erste Suchentscheidungslogik in
+  `Statistik/records/records-search.js` gebÃ¼ndelt
 - erste reine Detail-Helfer aus `scripts.js` in
-  `Statistik/record-detail-helpers.js` ausgelagert
+  `Statistik/detail/record-detail-helpers.js` ausgelagert
 - erster Detail-Renderer aus `scripts.js` in
-  `Statistik/record-detail-ui.js` ausgelagert
+  `Statistik/detail/record-detail-ui.js` ausgelagert
 - erste Frontend-Quality-Request-Helfer aus `scripts.js` in
-  `Statistik/quality-api.js` ausgelagert
-- erste reine Übersichts-Helfer aus `scripts.js` in
-  `Statistik/overview-helpers.js` ausgelagert
-- erster Übersichts-Renderer aus `scripts.js` in
-  `Statistik/overview-ui.js` ausgelagert
+  `Statistik/quality/quality-api.js` ausgelagert
+- erste reine Ãœbersichts-Helfer aus `scripts.js` in
+  `Statistik/overview/overview-helpers.js` ausgelagert
+- erster Ãœbersichts-Renderer aus `scripts.js` in
+  `Statistik/overview/overview-ui.js` ausgelagert
 - erste Aufgaben-Renderer aus `scripts.js` in
-  `Statistik/tasks-ui.js` ausgelagert
+  `Statistik/tasks/tasks-ui.js` ausgelagert
 - erste Aufgaben-, Fehler- und Icontexte aus `scripts.js` in
-  `Statistik/task-texts.js` ausgelagert
+  `Statistik/tasks/task-texts.js` ausgelagert
 
 Offen:
 
 - `scripts.js` weiter in fachliche Teilmodule zerlegen
 - API-Zugriffe von Rendering und Event-Handling trennen
 - globale State-Logik in klar abgegrenzte Bereiche aufteilen
-- Texte, Labels und Hilfemeldungen aus Logikblöcken herauslösen
-- Qualitätslogik in kleinere, lesbare Module überführen, wo dies ohne Fachbruch möglich ist
+- Texte, Labels und Hilfemeldungen aus LogikblÃ¶cken herauslÃ¶sen
+- QualitÃ¤tslogik in kleinere, lesbare Module Ã¼berfÃ¼hren, wo dies ohne Fachbruch mÃ¶glich ist
 
 Technische Leitlinie:
 
 - kein harter Komplettumbau in einem Schritt
-- erst Entkopplung, dann Framework-Einführung
-- bestehende Funktionen müssen während der Umstellung nutzbar bleiben
+- erst Entkopplung, dann Framework-EinfÃ¼hrung
+- bestehende Funktionen mÃ¼ssen wÃ¤hrend der Umstellung nutzbar bleiben
 
 Betroffene Dateien:
 
 - `Statistik/scripts.js`
 - `Statistik/quality.js`
-- `Statistik/task-logic.js`
-- `Statistik/task-families.js`
-- `Statistik/records-search.js`
-- `Statistik/record-communication.js`
-- `Statistik/records-helpers.js`
-- `Statistik/record-detail-helpers.js`
-- `Statistik/record-detail-ui.js`
-- `Statistik/state-storage.js`
-- `Statistik/api-urls.js`
-- `Statistik/record-api.js`
-- `Statistik/quality-api.js`
-- `Statistik/overview-helpers.js`
-- `Statistik/overview-ui.js`
-- `Statistik/tasks-ui.js`
-- `Statistik/task-texts.js`
+- `Statistik/tasks/task-logic.js`
+- `Statistik/tasks/task-families.js`
+- `Statistik/records/records-search.js`
+- `Statistik/records/records-actions.js`
+- `Statistik/records/records-data.js`
+- `Statistik/records/records-filters.js`
+- `Statistik/records/record-communication.js`
+- `Statistik/records/records-controller.js`
+- `Statistik/records/records-helpers.js`
+- `Statistik/records/records-ui.js`
+- `Statistik/detail/record-detail-helpers.js`
+- `Statistik/detail/record-detail-ui.js`
+- `Statistik/core/state-storage.js`
+- `Statistik/core/api-urls.js`
+- `Statistik/records/record-api.js`
+- `Statistik/quality/quality-api.js`
+- `Statistik/overview/overview-helpers.js`
+- `Statistik/overview/overview-ui.js`
+- `Statistik/tasks/tasks-ui.js`
+- `Statistik/tasks/task-texts.js`
 
-### 11. Übergabedokumentation für Entwickler vorbereiten
+### 11. Ãœbergabedokumentation fÃ¼r Entwickler vorbereiten
 
 Ziel:
 
-- ein neuer Entwickler soll das Projekt ohne mündliches Zusatzwissen übernehmen können
+- ein neuer Entwickler soll das Projekt ohne mÃ¼ndliches Zusatzwissen Ã¼bernehmen kÃ¶nnen
 
 Offen:
 
-- Entwicklerdokumentation für lokale Einrichtung ergänzen
-- Dokumentation der Umgebungsvariablen vervollständigen
+- Entwicklerdokumentation fÃ¼r lokale Einrichtung ergÃ¤nzen
+- Dokumentation der Umgebungsvariablen vervollstÃ¤ndigen
 - API-Endpunkte und Verantwortlichkeiten dokumentieren
 - fachliche Bewertungslogik und bekannte Grenzen beschreiben
-- Betriebsdokumentation für späteres Eigenhosting vorbereiten:
+- Betriebsdokumentation fÃ¼r spÃ¤teres Eigenhosting vorbereiten:
   - Build
   - Start
   - Reverse Proxy
@@ -279,9 +298,9 @@ Diese Themen sind aktuell bewusst nachrangig:
 
 ## Zuletzt erledigt
 
-- KI-Suche läuft produktiv über OI-API mit direktem Open-Data-Tool
-- Mailentwurf läuft produktiv über OI-API
-- temporärer OI-Debug-Code wurde wieder entfernt
-- Pflegeaufgaben öffnen Datensatzlisten wieder korrekt auf `records.html`
-- Dropdown-Menüs wurden optisch vereinheitlicht
-- Codex-Dokumentation wurde aufgeräumt und Analysematerial archiviert
+- KI-Suche lÃ¤uft produktiv Ã¼ber OI-API mit direktem Open-Data-Tool
+- Mailentwurf lÃ¤uft produktiv Ã¼ber OI-API
+- temporÃ¤rer OI-Debug-Code wurde wieder entfernt
+- Pflegeaufgaben Ã¶ffnen Datensatzlisten wieder korrekt auf `records.html`
+- Dropdown-MenÃ¼s wurden optisch vereinheitlicht
+- Codex-Dokumentation wurde aufgerÃ¤umt und Analysematerial archiviert

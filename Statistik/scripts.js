@@ -1,22 +1,22 @@
 ﻿import { downloadText, extractId, extractItems, extractTotal, fetchJson as rawFetchJson } from '../lib/browser.js';
 import { evaluateAllItems, evaluateQualityForItem, getQualityAggregations, getQualityScanConfig, qualityCriteria, qualityHelpers } from './quality.js';
-import { getApiConfig } from './api-config.js';
-import { buildSearchApiUrl } from './api-urls.js';
-import { AREAS, REQUEST_CACHE_TTL_MS, STORAGE_KEYS, TYPES } from './app-constants.js';
+import { getApiConfig } from './core/api-config.js';
+import { buildSearchApiUrl } from './core/api-urls.js';
+import { AREAS, REQUEST_CACHE_TTL_MS, STORAGE_KEYS, TYPES } from './core/app-constants.js';
 import {
   buildOverviewQualityMeta,
   computeOverviewSummary,
   normalizeStatisticRow,
   sortStatisticRows,
   upsertStatisticRow as upsertStatisticRowModel
-} from './overview-helpers.js';
+} from './overview/overview-helpers.js';
 import {
   renderOverviewEmptyState,
   renderOverviewLoadingState,
   renderOverviewPage
-} from './overview-ui.js';
-import { buildMailtoUrl, launchMailto } from './record-mail.js';
-import { requestRecordMailDraft, resolveRecordsByIds, runAiRecordSearch } from './record-api.js';
+} from './overview/overview-ui.js';
+import { buildMailtoUrl, launchMailto } from './records/record-mail.js';
+import { requestRecordMailDraft, resolveRecordsByIds, runAiRecordSearch } from './records/record-api.js';
 import {
   criterionStatusClass,
   getCheckableImages,
@@ -26,20 +26,68 @@ import {
   getOpeningHoursSummary,
   getTextByRel,
   textValue
-} from './record-detail-helpers.js';
+} from './detail/record-detail-helpers.js';
 import {
   renderDetailEmptyState,
   renderDetailLoadingState,
   renderRecordDetailPage
-} from './record-detail-ui.js';
+} from './detail/record-detail-ui.js';
 import {
   buildPendingRecordViewMessage,
   filterRecordRows,
   getIdFromGlobalId,
   getPrimaryIssueId,
   uniqueValues
-} from './records-helpers.js';
-import { getTaskDescription, getTaskIcon, getTaskImpactText, getTaskProblem } from './task-texts.js';
+} from './records/records-helpers.js';
+import {
+  loadRecordRowsForIssueSelection as loadRecordRowsForIssueSelectionModel,
+  loadRecordRowsForPendingView as loadRecordRowsForPendingViewModel,
+  loadRecordRowsForView as loadRecordRowsForViewModel,
+  openOverviewIssueOnRecordsPage as openOverviewIssueOnRecordsPageModel,
+  openTaskRecordsOnRecordsPage as openTaskRecordsOnRecordsPageModel,
+  resolveTaskCriterionId as resolveTaskCriterionIdModel
+} from './records/records-controller.js';
+import {
+  buildVerifiedEt4Url as buildVerifiedEt4UrlModel,
+  buildRecordDetailUrl,
+  buildRecordViewModel as buildRecordViewModelModel,
+  getFirst as getFirstModel,
+  getRecordEmail as getRecordEmailModel,
+  getRecordPhone as getRecordPhoneModel,
+  getRecordThumbnailUrl as getRecordThumbnailUrlModel,
+  getRecordWeb as getRecordWebModel,
+  normalizeItem as normalizeItemModel,
+  searchRecordsByText as searchRecordsByTextModel,
+  searchSingleRecordById as searchSingleRecordByIdModel
+} from './records/records-data.js';
+import {
+  handleRecordAiSearchSubmit as handleRecordAiSearchSubmitModel,
+  handleRecordSearchSubmit as handleRecordSearchSubmitModel,
+  hideRecordAutocomplete as hideRecordAutocompleteModel,
+  loadRecordAutocomplete as loadRecordAutocompleteModel,
+  queueRecordAutocomplete as queueRecordAutocompleteModel,
+  renderRecordAutocomplete as renderRecordAutocompleteModel
+} from './records/records-actions.js';
+import {
+  applyPendingRecordViewState,
+  applyQuickRecordFilterState,
+  applyRecordFiltersState,
+  changeRecordPageState,
+  fillRecordDynamicFiltersState,
+  renderPendingRecordViewMessageState,
+  resetRecordFiltersState,
+  setRecordCountText,
+  showRecordsMessageState
+} from './records/records-filters.js';
+import {
+  renderRecordDataNoteState,
+  renderRecordQuickCountsState,
+  renderRecordsEmptyState,
+  renderRecordsLoadingState,
+  renderRecordStatusLegendState,
+  renderRecordTableState
+} from './records/records-ui.js';
+import { getTaskDescription, getTaskIcon, getTaskImpactText, getTaskProblem } from './tasks/task-texts.js';
 import {
   buildQualityCountRequestUrl,
   buildQualityListRequestUrl,
@@ -48,7 +96,7 @@ import {
   fetchCachedQualitySnapshot,
   fetchQualityCount,
   fetchQualityScan
-} from './quality-api.js';
+} from './quality/quality-api.js';
 import {
   clearTaskRecordsState,
   renderTaskDetailState,
@@ -57,24 +105,21 @@ import {
   renderTasksLoadingState,
   renderTaskTableState,
   showTaskMessageState
-} from './tasks-ui.js';
+} from './tasks/tasks-ui.js';
 import {
-  buildRecordMailIssueContext,
-  buildRecordMailIssues,
-  buildRecordMailPayload,
   closeRecordAiSearchDialog,
   extractAiSearchIds,
   getErrorMessage,
+  handleRecordMailDraft as handleRecordMailDraftModel,
   openRecordAiSearchDialog as openRecordAiSearchDialogUi
-} from './record-communication.js';
+} from './records/record-communication.js';
 import {
   getRecordIdentityKey,
   loadRecordAutocompleteSuggestions,
   looksLikeRecordId,
   mergeRecordItems,
-  searchRecordsByText as executeRecordTextSearch,
-  searchSingleRecordById as executeRecordIdSearch
-} from './records-search.js';
+  resolveRecordSearch
+} from './records/records-search.js';
 import {
   csvValue,
   escapeHtml,
@@ -83,7 +128,7 @@ import {
   formatPercent,
   formatRecordDate,
   percent
-} from './format-utils.js';
+} from './core/format-utils.js';
 import {
   buildTaskRows as buildTaskRowsModel,
   computeTaskSummary,
@@ -95,8 +140,8 @@ import {
   resolveTaskTypeByCriterionId as resolveTaskTypeByCriterionIdModel,
   taskMatchesIdentifier as taskMatchesIdentifierModel,
   filterTaskRows as filterTaskRowsModel
-} from './task-logic.js';
-import { createRequestCache } from './request-cache.js';
+} from './tasks/task-logic.js';
+import { createRequestCache } from './core/request-cache.js';
 import {
   clearRecordViewStateStorage,
   loadRecordListStateFromSession,
@@ -105,8 +150,8 @@ import {
   saveRecordListStateToSession,
   saveRecordViewStateToSession,
   saveStoredWorkContext
-} from './state-storage.js';
-import { getTaskFamilyId, getTaskFamilyMeta } from './task-families.js';
+} from './core/state-storage.js';
+import { getTaskFamilyId, getTaskFamilyMeta } from './tasks/task-families.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.querySelector('.statistik[data-page]');
@@ -1992,63 +2037,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function openTaskRecordsOnRecordsPage(task, type) {
-    if (!task || !type) {
-      showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
-      return;
-    }
-    const criterionId = resolveTaskCriterionId(task, type);
-    if (!criterionId) {
-      showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
-      return;
-    }
-
-    saveRecordViewState({
-      criterionId,
-      criterionIds: task.criterionIds || [criterionId],
-      criteriaByType: task.criteriaByType || {},
+    openTaskRecordsOnRecordsPageModel({
+      task,
       type,
-      label: task.label,
-      context: state.context
+      context: state.context,
+      saveRecordViewState,
+      showTaskMessage
     });
-
-    const params = new URLSearchParams();
-    params.set('criterionId', criterionId);
-    params.set('type', type);
-    params.set('from', 'tasks');
-    location.href = `records.html?${params.toString()}`;
   }
 
   function resolveTaskCriterionId(task, type = '') {
-    if (!task) return '';
-    if (type && task.criteriaByType?.[type]) return task.criteriaByType[type];
-    return task.criterionId || task.criterionIds?.[0] || '';
+    return resolveTaskCriterionIdModel(task, type);
   }
 
   function openOverviewIssueOnRecordsPage(issue) {
-    if (!issue?.criterionId) return;
-
-    const preferredType = state.context.type
-      || (issue.affectedTypes?.length === 1 ? issue.affectedTypes[0] : '');
-    const criterionId = resolveTaskCriterionId(issue, preferredType)
-      || issue.criterionId
-      || issue.criterionIds?.[0]
-      || '';
-    if (!criterionId) return;
-
-    saveRecordViewState({
-      criterionId,
-      criterionIds: issue.criterionIds || [criterionId],
-      criteriaByType: issue.criteriaByType || {},
-      type: preferredType,
-      label: issue.label,
-      context: state.context
+    openOverviewIssueOnRecordsPageModel({
+      issue,
+      context: state.context,
+      saveRecordViewState
     });
-
-    const params = new URLSearchParams();
-    params.set('criterionId', criterionId);
-    if (preferredType) params.set('type', preferredType);
-    params.set('from', 'overview');
-    location.href = `records.html?${params.toString()}`;
   }
 
   async function loadTaskRecords() {
@@ -2162,13 +2169,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const usesCriterionView = Boolean(state.pendingRecordView?.criterionId);
       const selectedIssue = els.recordIssueFilter?.value || '';
       const selectedType = els.recordTypeFilter?.value || state.context.type || '';
-      const evaluated = usesCriterionView
+      const result = usesCriterionView
         ? await loadRecordRowsForPendingView(state.pendingRecordView)
         : selectedIssue
           ? await loadRecordRowsForIssueSelection(selectedIssue, selectedType)
-          : [];
-      state.recordItems = evaluated;
-      state.recordRows = evaluated.map(buildRecordViewModel);
+          : { rows: [], meta: null };
+      state.recordItems = result.rows;
+      state.recordRows = result.rows.map(buildRecordViewModel);
       if (!usesCriterionView && !selectedIssue) {
         state.recordDataMeta = {
           mode: 'empty',
@@ -2176,6 +2183,8 @@ document.addEventListener('DOMContentLoaded', () => {
           estimatedTotalItems: 0,
           truncated: false
         };
+      } else if (result.meta) {
+        state.recordDataMeta = result.meta;
       }
       state.recordPage = 1;
       fillRecordDynamicFilters();
@@ -2190,146 +2199,55 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadRecordRowsForPendingView(view) {
-    if (!view?.criterionId) return [];
-
-    if (view.type) {
-      const criterionId = view.criteriaByType?.[view.type] || view.criterionId;
-      return loadRecordRowsForView({
-        ...view,
-        criterionId,
-        type: view.type
-      });
-    }
-
-    const criterionIds = Array.isArray(view.criterionIds) && view.criterionIds.length
-      ? view.criterionIds
-      : [view.criterionId];
-
-    if (criterionIds.length <= 1) {
-      return loadRecordRowsForIssueSelection(view.criterionId, '');
-    }
-
-    const entries = Object.entries(view.criteriaByType || {})
-      .filter(([type, criterionId]) => TYPES.includes(type) && criterionIds.includes(criterionId));
-
-    if (!entries.length) {
-      return loadRecordRowsForIssueSelection(view.criterionId, '');
-    }
-
-    const payloads = await Promise.all(entries.map(async ([type, criterionId]) => {
-      try {
-        return await loadRecordRowsForView({
-          criterionId,
-          type,
-          label: view.label
-        });
-      } catch (error) {
-        console.warn('Fehlerliste konnte nicht geladen werden.', criterionId, type, error);
-        return [];
-      }
-    }));
-
-    const merged = payloads.reduce((allRows, rows) => mergeRecordItems(allRows, rows), []);
-    state.recordDataMeta = {
-      mode: 'criterion',
-      collectedItems: merged.length,
-      estimatedTotalItems: merged.length,
-      truncated: false
-    };
-    return merged;
+    return loadRecordRowsForPendingViewModel({
+      view,
+      types: TYPES,
+      mergeRecordItems,
+      loadRecordRowsForView,
+      loadRecordRowsForIssueSelection
+    });
   }
 
   async function loadRecordRowsForIssueSelection(criterionId, selectedType = '') {
-    const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
-    if (!criterion) return [];
-    const targetTypes = selectedType
-      ? [selectedType]
-      : TYPES.filter((type) => !criterion.types?.length || criterion.types.includes(type));
-    const payloads = await Promise.all(targetTypes.map((type) => loadRecordRowsForView({
+    return loadRecordRowsForIssueSelectionModel({
       criterionId,
-      type,
-      label: criterion.label
-    }).catch((error) => {
-      console.warn('Fehlerliste konnte nicht geladen werden.', criterionId, type, error);
-      return [];
-    })));
-    state.recordDataMeta = {
-      mode: 'criterion',
-      collectedItems: payloads.flat().length,
-      estimatedTotalItems: payloads.flat().length,
-      truncated: false
-    };
-    return payloads.flat();
+      selectedType,
+      qualityCriteria,
+      types: TYPES,
+      loadRecordRowsForView
+    });
   }
 
   async function loadRecordRowsForView(view) {
-    const query = buildQuery(state.context);
-
-    const cachedPayload = await loadCachedQualityList({
-      criterionId: view.criterionId,
-      type: view.type,
-      query
+    return loadRecordRowsForViewModel({
+      view,
+      context: state.context,
+      buildQuery,
+      loadCachedQualityList,
+      extractItems,
+      extractTotal,
+      normalizeItem,
+      evaluateAllItems,
+      fetchQualityScan: (options) => fetchQualityScan({
+        apiBase: QUALITY_SCAN_API_BASE,
+        fetchJson: fetchJsonCached,
+        ...options
+      })
     });
-    const payload = cachedPayload || await fetchQualityScan({
-      apiBase: QUALITY_SCAN_API_BASE,
-      fetchJson: fetchJsonCached,
-      criterionId: view.criterionId,
-      type: view.type,
-      query,
-      limit: 200,
-      scanPageSize: 200,
-      maxPages: 20
-    });
-    const sourceItems = extractItems(payload);
-    const hasPreEvaluatedRows = sourceItems.some((item) => (
-      Array.isArray(item?.missingCriteria) ||
-      Number.isFinite(Number(item?.qualityScore)) ||
-      Boolean(item?.qualityStatus)
-    ));
-    const rows = sourceItems.map((item) => normalizeItem(item, view.type));
-    const pageInfo = payload?.page || {};
-    const stats = payload?.stats || {};
-    state.recordDataMeta = {
-      mode: cachedPayload ? 'snapshot_list' : 'criterion',
-      collectedItems: rows.length,
-      estimatedTotalItems: Number(stats.totalMatchedItems || stats.overallcount || extractTotal(payload) || rows.length),
-      truncated: !pageInfo.complete
-    };
-    return hasPreEvaluatedRows ? rows : evaluateAllItems(rows);
   }
 
   function buildRecordViewModel(item) {
-    const missingCriteria = Array.isArray(item.missingCriteria) ? item.missingCriteria : [];
-    const primaryIssueId = getPrimaryIssueId(item, { qualityCriteria, priorityRank });
-    const primaryCriterion = qualityCriteria.find((criterion) => criterion.id === primaryIssueId);
-    const id = item.id || extractId(item.raw || item);
-    const globalId = item.globalId || getFirst(item, ['global_id', 'globalId', 'raw.global_id', 'raw.globalId']);
-    const raw = item.raw || item;
-    const email = getRecordEmail(raw);
-    const web = getRecordWeb(raw);
-    return {
-      item,
-      id,
-      globalId,
-      title: item.title || 'Ohne Titel',
-      type: item.type || '',
-      thumbnailUrl: getRecordThumbnailUrl(item),
-      city: item.city || '',
-      region: item.region || '',
-      category: item.category || '',
-      qualityStatus: item.qualityStatus || 'nicht berechenbar',
-      qualityScore: Number.isFinite(item.qualityScore) ? item.qualityScore : null,
-      primaryIssueId,
-      primaryIssue: primaryCriterion?.label || '-',
-      recommendation: primaryCriterion?.recommendation || '',
-      missingCriteria,
-      email,
-      web,
-      et4Url: buildVerifiedEt4Url(item),
-      updatedAt: item.updatedAt || '',
-      detailUrl: buildRecordDetailUrl({ id, globalId, type: item.type || '' }),
-      searchText: ''
-    };
+    return buildRecordViewModelModel(item, {
+      extractId,
+      getFirst,
+      getRecordEmail,
+      getRecordWeb,
+      buildVerifiedEt4Url,
+      getPrimaryIssueId,
+      qualityCriteria,
+      priorityRank,
+      getRecordThumbnailUrl
+    });
   }
 
   function fillRecordControls() {
@@ -2344,60 +2262,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function fillRecordDynamicFilters() {
-    if (!els.recordCategoryFilter) return;
-    const current = els.recordCategoryFilter.value;
-    const categories = Array.from(new Set(state.recordRows.map((row) => row.category).filter(Boolean)))
-      .sort((a, b) => a.localeCompare(b, 'de'))
-      .slice(0, 80);
-    els.recordCategoryFilter.replaceChildren(new Option('Kategorie: Alle', ''));
-    categories.forEach((category) => els.recordCategoryFilter.append(new Option(`Kategorie: ${category}`, category)));
-    if (categories.includes(current)) els.recordCategoryFilter.value = current;
+    fillRecordDynamicFiltersState({
+      els,
+      rows: state.recordRows
+    });
   }
 
   function applyPendingRecordView() {
-    const view = state.pendingRecordView;
-    if (!view) return;
-    if (els.recordSearchInput && view.query) els.recordSearchInput.value = view.query;
-    if (els.recordTypeFilter && TYPES.includes(view.type)) els.recordTypeFilter.value = view.type;
-    if (els.recordStatusFilter && view.status) els.recordStatusFilter.value = view.status;
-    const hasGroupedCriteria = Array.isArray(view.criterionIds) && view.criterionIds.length > 1;
-    if (els.recordIssueFilter) {
-      els.recordIssueFilter.value = !hasGroupedCriteria && view.criterionId ? view.criterionId : '';
-    }
-    state.recordPage = 1;
+    applyPendingRecordViewState({
+      els,
+      state,
+      types: TYPES
+    });
   }
 
   function renderPendingRecordViewMessage() {
-    showRecordsMessage(buildPendingRecordViewMessage({
-      recordAiSearchPrompt: state.recordAiSearchPrompt,
-      pendingRecordView: state.pendingRecordView,
-      qualityCriteria
-    }));
+    renderPendingRecordViewMessageState({
+      state,
+      qualityCriteria,
+      buildPendingRecordViewMessage,
+      showRecordsMessage
+    });
   }
 
   function applyRecordFilters() {
-    const query = (els.recordSearchInput?.value || '').trim();
-    const type = els.recordTypeFilter?.value || '';
-    const category = els.recordCategoryFilter?.value || '';
-    const status = els.recordStatusFilter?.value || '';
-    const issue = els.recordIssueFilter?.value || '';
-
-    state.filteredRecordRows = filterRecordRows(state.recordRows, {
-      query,
-      type,
-      category,
-      status,
-      issue,
+    applyRecordFiltersState({
+      state,
+      els,
       qualityCriteria,
       serverSearchKeys: state.recordServerSearchKeys,
-      getIdentityKey: getRecordIdentityKey
+      getIdentityKey: getRecordIdentityKey,
+      filterRecordRows,
+      renderRecordQuickCounts,
+      renderRecordStatusLegend,
+      renderRecordTable,
+      renderRecordDataNote,
+      renderPendingRecordViewMessage
     });
-
-    renderRecordQuickCounts();
-    renderRecordStatusLegend();
-    renderRecordTable();
-    renderRecordDataNote();
-    renderPendingRecordViewMessage();
   }
 
   function openRecordAiSearchDialog() {
@@ -2410,184 +2311,81 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function handleRecordAiSearchSubmit(event) {
-    const submitterValue = event?.submitter?.value || '';
-    if (submitterValue === 'cancel') return;
-    event.preventDefault();
-
-    const prompt = (els.recordAiSearchInput?.value || '').trim();
-    if (!prompt) {
-      if (els.recordAiSearchNote) els.recordAiSearchNote.textContent = 'Bitte gib zuerst eine Suchanfrage ein.';
-      return;
-    }
-
-    if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = true;
-    if (els.recordAiSearchNote) els.recordAiSearchNote.innerHTML = '<span class="inline-loading">KI-Suche wird ausgeführt ...</span>';
-
-    try {
-      const aiPayload = await runAiRecordSearch({
+    await handleRecordAiSearchSubmitModel({
+      event,
+      state,
+      els,
+      extractAiSearchIds,
+      normalizeItem,
+      evaluateAllItems,
+      buildRecordViewModel,
+      fillRecordDynamicFilters,
+      applyRecordFilters,
+      clearRecordViewState,
+      hideRecordAutocomplete,
+      renderRecordsLoading,
+      closeRecordAiSearchDialog,
+      getErrorMessage,
+      contextAreaLabel,
+      showRecordsMessage,
+      selectedType: () => els.recordTypeFilter?.value || state.context.type || '',
+      runAiRecordSearch: ({ prompt, context }) => runAiRecordSearch({
         apiBase: OI_SEARCH_API_BASE,
         fetchJson: fetchJsonCached,
         prompt,
-        context: {
-          area: contextAreaLabel(),
-          city: state.context.city || '',
-          type: els.recordTypeFilter?.value || state.context.type || ''
-        }
-      });
-      const ids = extractAiSearchIds(aiPayload);
-      state.recordAiSearchPrompt = prompt;
-      state.pendingRecordView = null;
-      clearRecordViewState();
-      state.recordServerSearchKeys = new Set();
-      if (els.recordSearchInput) els.recordSearchInput.value = '';
-      if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
-      if (els.recordStatusFilter) els.recordStatusFilter.value = '';
-      if (els.recordIssueFilter) els.recordIssueFilter.value = '';
-      hideRecordAutocomplete();
-
-      if (!ids.length) {
-        state.recordItems = [];
-        state.recordRows = [];
-        state.filteredRecordRows = [];
-        state.recordPage = 1;
-        state.recordDataMeta = {
-          mode: 'ai_search',
-          collectedItems: 0,
-          estimatedTotalItems: 0,
-          truncated: false
-        };
-        fillRecordDynamicFilters();
-        applyRecordFilters();
-        showRecordsMessage(`KI-Suche aktiv: ${prompt}`);
-        return closeRecordAiSearchDialog(els.recordAiSearchDialog);
-      }
-
-      renderRecordsLoading();
-      const recordsPayload = await resolveRecordsByIds({
+        context
+      }),
+      resolveRecordsByIds: ({ ids, type }) => resolveRecordsByIds({
         apiBase: RECORDS_BY_GLOBAL_IDS_API_BASE,
         fetchJson: fetchJsonCached,
         ids,
-        type: els.recordTypeFilter?.value || state.context.type || ''
-      });
-      const resolved = Array.isArray(recordsPayload?.items) ? recordsPayload.items : [];
-      const evaluated = evaluateAllItems(resolved.map((raw) => normalizeItem(raw.raw || raw, raw._resolvedType || raw.type)));
-      state.recordItems = evaluated;
-      state.recordRows = evaluated.map(buildRecordViewModel);
-      state.filteredRecordRows = [];
-      state.recordPage = 1;
-      state.recordDataMeta = {
-        mode: 'ai_search',
-        collectedItems: evaluated.length,
-        estimatedTotalItems: ids.length,
-        truncated: Boolean(aiPayload?.truncated)
-      };
-      fillRecordDynamicFilters();
-      applyRecordFilters();
-      closeRecordAiSearchDialog(els.recordAiSearchDialog);
-    } catch (error) {
-      console.error('KI-Suche fehlgeschlagen.', error);
-      if (els.recordAiSearchNote) {
-        els.recordAiSearchNote.textContent = getErrorMessage(error, 'Die KI-Suche konnte nicht ausgeführt werden.');
-      }
-    } finally {
-      if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = false;
-    }
-  }
-
-  async function handleRecordSearchSubmit() {
-    state.recordPage = 1;
-    state.recordAiSearchPrompt = '';
-    applyRecordFilters();
-    const query = (els.recordSearchInput?.value || '').trim();
-    if (!query || state.filteredRecordRows.length) return;
-
-    if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen ...';
-    renderRecordsLoading();
-    try {
-      const searchResult = looksLikeRecordId(query)
-        ? {
-            items: await searchSingleRecordById(query),
-            estimatedTotalItems: 0,
-            truncated: false,
-            mode: 'id_search'
-          }
-        : await searchRecordsByText(query);
-      const found = searchResult.items || [];
-      if (!found.length) {
-        applyRecordFilters();
-        showRecordsMessage('Keine Datensätze gefunden.');
-        return;
-      }
-      const evaluated = evaluateAllItems(found.map((raw) => normalizeItem(raw.raw || raw, raw.type)));
-      const merged = mergeRecordItems(state.recordItems, evaluated);
-      state.recordItems = merged;
-      state.recordRows = merged.map(buildRecordViewModel);
-      state.recordServerSearchKeys = new Set(evaluated.map(getRecordIdentityKey).filter(Boolean));
-      state.recordDataMeta = {
-        mode: searchResult.mode || 'search',
-        collectedItems: found.length,
-        estimatedTotalItems: searchResult.estimatedTotalItems || found.length,
-        truncated: Boolean(searchResult.truncated)
-      };
-      fillRecordDynamicFilters();
-      applyRecordFilters();
-      showRecordsMessage(searchResult.truncated ? 'Suchtreffer geladen. Verfeinere die Suche bei Bedarf.' : '');
-    } catch (error) {
-      console.error('Datensatzsuche fehlgeschlagen.', error);
-      applyRecordFilters();
-      showRecordsMessage('Für diese Suche wurde kein Datensatz gefunden.');
-    } finally {
-      if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen';
-    }
-  }
-
-  async function handleRecordMailDraft(row, triggerNode) {
-    if (!row?.email || !row?.missingCriteria?.length) {
-      showRecordsMessage('Für diesen Datensatz kann kein KI-Mailentwurf erzeugt werden.');
-      return;
-    }
-
-    if (triggerNode) triggerNode.disabled = true;
-    try {
-      const issueContext = getRecordMailIssueContext(row);
-      const issues = getRecordMailIssues(row, issueContext);
-      const payload = await requestRecordMailDraft({
-        apiBase: OI_MAIL_DRAFT_API_BASE,
-        fetchJson: fetchJsonCached,
-        payload: buildRecordMailPayload({ row, issueContext, issues })
-      });
-      const mailtoUrl = buildMailtoUrl(payload);
-      if (!mailtoUrl) throw new Error('Mailto payload invalid');
-      if (!launchMailto(mailtoUrl)) throw new Error('Mailto launch failed');
-    } catch (error) {
-      console.error('Mail-Entwurf konnte nicht erzeugt werden.', error);
-      showRecordsMessage(getErrorMessage(error, 'Der KI-Mailentwurf konnte nicht erzeugt werden.'));
-    } finally {
-      if (triggerNode) triggerNode.disabled = !(row?.email && row?.missingCriteria?.length);
-    }
-  }
-
-  function getRecordMailIssueContext(row) {
-    return buildRecordMailIssueContext({
-      pendingRecordView: state.pendingRecordView,
-      selectedCriterionId: els.recordIssueFilter?.value || '',
-      qualityCriteria,
-      primaryIssue: row.primaryIssue || ''
+        type
+      })
     });
   }
 
-  function getRecordMailIssues(row, issueContext) {
-    return buildRecordMailIssues({
+  async function handleRecordSearchSubmit() {
+    await handleRecordSearchSubmitModel({
+      state,
+      els,
+      applyRecordFilters,
+      renderRecordsLoading,
+      resolveRecordSearch,
+      looksLikeRecordId,
+      searchSingleRecordById,
+      searchRecordsByText,
+      normalizeItem,
+      evaluateAllItems,
+      mergeRecordItems,
+      getRecordIdentityKey,
+      buildRecordViewModel,
+      fillRecordDynamicFilters,
+      showRecordsMessage
+    });
+  }
+
+  async function handleRecordMailDraft(row, triggerNode) {
+    await handleRecordMailDraftModel({
       row,
-      issueContext,
+      triggerNode,
+      pendingRecordView: state.pendingRecordView,
+      selectedCriterionId: els.recordIssueFilter?.value || '',
       qualityCriteria,
-      taskProblem
+      taskProblem,
+      buildMailtoUrl,
+      launchMailto,
+      getErrorMessage,
+      showRecordsMessage,
+      requestRecordMailDraft: ({ payload }) => requestRecordMailDraft({
+        apiBase: OI_MAIL_DRAFT_API_BASE,
+        fetchJson: fetchJsonCached,
+        payload
+      })
     });
   }
 
   async function searchSingleRecordById(query) {
-    return executeRecordIdSearch({
-      query,
+    return searchSingleRecordByIdModel(query, {
       context: state.context,
       selectedType: state.context.type || '',
       types: TYPES,
@@ -2601,8 +2399,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function searchRecordsByText(query) {
-    return executeRecordTextSearch({
-      query,
+    return searchRecordsByTextModel(query, {
       context: state.context,
       selectedType: els.recordTypeFilter?.value || state.context.type || '',
       types: TYPES,
@@ -2618,124 +2415,60 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function queueRecordAutocomplete() {
-    clearTimeout(state.recordAutocompleteTimer);
-    state.recordAutocompleteRequestId += 1;
-    const query = (els.recordSearchInput?.value || '').trim();
-    if (!els.recordAutocompleteList || query.length < 3 || looksLikeRecordId(query)) {
-      hideRecordAutocomplete();
-      return;
-    }
-    state.recordAutocompleteTimer = setTimeout(() => {
-      void loadRecordAutocomplete(query);
-    }, 260);
+    queueRecordAutocompleteModel({
+      state,
+      els,
+      looksLikeRecordId,
+      hideRecordAutocomplete,
+      loadRecordAutocomplete
+    });
   }
 
   async function loadRecordAutocomplete(query) {
-    const requestId = ++state.recordAutocompleteRequestId;
-    const selectedType = els.recordTypeFilter?.value || state.context.type || '';
-
-    try {
-      const suggestions = await loadRecordAutocompleteSuggestions({
-        query,
+    await loadRecordAutocompleteModel({
+      query,
+      state,
+      renderRecordAutocomplete,
+      hideRecordAutocomplete,
+      selectedType: () => els.recordTypeFilter?.value || state.context.type || '',
+      loadRecordAutocompleteSuggestions: ({ query: term, selectedType }) => loadRecordAutocompleteSuggestions({
+        query: term,
         selectedType,
         autocompleteApiBase: AUTOCOMPLETE_API_BASE,
         fetchJsonCached,
         textValue
-      });
-      if (requestId !== state.recordAutocompleteRequestId) return;
-      renderRecordAutocomplete(suggestions);
-    } catch (error) {
-      console.debug('Autocomplete konnte nicht geladen werden.', error);
-      if (requestId === state.recordAutocompleteRequestId) hideRecordAutocomplete();
-    }
+      })
+    });
   }
 
   function renderRecordAutocomplete(suggestions) {
-    if (!els.recordAutocompleteList) return;
-    if (!suggestions.length) {
-      hideRecordAutocomplete();
-      return;
-    }
-    els.recordAutocompleteList.innerHTML = suggestions.map((suggestion, index) => `
-      <button type="button" role="option" data-autocomplete-value="${escapeHtml(suggestion.value)}" aria-selected="${index === 0 ? 'true' : 'false'}">
-        <span>${escapeHtml(suggestion.label)}</span>
-        ${suggestion.count == null ? '' : `<small>${formatNumber(suggestion.count)}</small>`}
-      </button>
-    `).join('');
-    els.recordAutocompleteList.hidden = false;
-    els.recordAutocompleteList.querySelectorAll('button[data-autocomplete-value]').forEach((button) => {
-      button.addEventListener('mousedown', (event) => event.preventDefault());
-      button.addEventListener('click', () => {
-        if (els.recordSearchInput) els.recordSearchInput.value = button.dataset.autocompleteValue || button.textContent.trim();
-        hideRecordAutocomplete();
-        void handleRecordSearchSubmit();
-      });
+    renderRecordAutocompleteModel({
+      suggestions,
+      els,
+      escapeHtml,
+      formatNumber,
+      hideRecordAutocomplete,
+      onSubmitSuggestion: handleRecordSearchSubmit
     });
   }
 
   function hideRecordAutocomplete() {
-    clearTimeout(state.recordAutocompleteTimer);
-    state.recordAutocompleteRequestId += 1;
-    if (!els.recordAutocompleteList) return;
-    els.recordAutocompleteList.hidden = true;
-    els.recordAutocompleteList.innerHTML = '';
+    hideRecordAutocompleteModel({ state, els });
   }
 
   function renderRecordTable() {
-    const rows = state.filteredRecordRows;
-    const totalPages = Math.max(1, Math.ceil(rows.length / state.recordRowsPerPage));
-    state.recordPage = Math.max(1, Math.min(state.recordPage, totalPages));
-    const start = (state.recordPage - 1) * state.recordRowsPerPage;
-    const visibleRows = rows.slice(start, start + state.recordRowsPerPage);
-
-    if (!visibleRows.length) {
-      const emptyText = state.recordRows.length
-        ? 'Für diese Filter wurden keine Datensätze gefunden.'
-        : 'Noch keine Datensätze geladen. Wähle einen Arbeitskontext oder starte eine Suche.';
-      els.recordTableBody.innerHTML = `<tr><td colspan="7" class="table-empty">${emptyText}</td></tr>`;
-    } else {
-      els.recordTableBody.innerHTML = visibleRows.map((row) => `
-        <tr>
-          <td>${renderRecordTitleCell(row)}</td>
-          <td><span class="type-chip ${row.type.toLowerCase()}">${escapeHtml(row.type || '-')}</span></td>
-          <td>${escapeHtml(row.city || '-')}<small>${escapeHtml(row.region || '')}</small></td>
-          <td>${escapeHtml(row.category || '-')}</td>
-          <td>${escapeHtml(row.primaryIssue)}</td>
-          <td>${escapeHtml(formatRecordDate(row.updatedAt))}</td>
-          <td>
-            <span class="row-actions">
-              <button class="icon-button" type="button" data-record-mail="${escapeHtml(row.globalId || row.id || '')}" aria-label="E-Mail entwerfen"${row.email && row.missingCriteria.length ? '' : ' disabled'}><span class="material-icons" aria-hidden="true">mail</span></button>
-              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Datensatz ansehen"><span class="material-icons" aria-hidden="true">visibility</span></a>
-              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail öffnen"><span class="material-icons" aria-hidden="true">chevron_right</span></a>
-            </span>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    const end = Math.min(rows.length, start + visibleRows.length);
-    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladenen Treffern` : `${formatNumber(rows.length)} Datensätzen`;
-    if (els.recordPageRange) {
-      els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 Datensätze';
-    }
-    if (els.recordResultSummary) {
-      if (state.recordDataMeta.mode === 'ai_search') {
-        els.recordResultSummary.textContent = `KI-Suche: ${formatNumber(rows.length)} Datensätze geladen`;
-      } else {
-        els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladene Treffer` : `${formatNumber(rows.length)} Datensätze`}`;
-      }
-    }
-    if (els.recordPageStatus) els.recordPageStatus.textContent = `${state.recordPage} / ${totalPages}`;
-    if (els.recordPrevPage) els.recordPrevPage.disabled = state.recordPage <= 1;
-    if (els.recordNextPage) els.recordNextPage.disabled = state.recordPage >= totalPages;
-    if (els.recordExport) els.recordExport.disabled = !rows.length;
-    els.recordTableBody.querySelectorAll('[data-record-mail]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const row = rows.find((entry) => (entry.globalId || entry.id) === button.dataset.recordMail);
-        if (row) void handleRecordMailDraft(row, button);
-      });
+    state.recordPage = renderRecordTableState(els, {
+      rows: state.filteredRecordRows,
+      allRows: state.recordRows,
+      recordPage: state.recordPage,
+      recordRowsPerPage: state.recordRowsPerPage,
+      recordDataMeta: state.recordDataMeta,
+      escapeHtml,
+      formatNumber,
+      formatRecordDate,
+      onMailDraft: handleRecordMailDraft,
+      saveRecordListState
     });
-    saveRecordListState(rows);
   }
 
   function saveRecordListState(rows) {
@@ -2748,162 +2481,65 @@ document.addEventListener('DOMContentLoaded', () => {
     return loadRecordListStateFromSession(RECORD_LIST_STATE_KEY);
   }
 
-  function renderRecordTitleCell(row) {
-    const image = row.thumbnailUrl
-      ? `<img src="${escapeHtml(row.thumbnailUrl)}" alt="">`
-      : '<span class="record-thumb-placeholder" aria-hidden="true"></span>';
-    const ids = [row.id ? `ID: ${row.id}` : '', row.globalId || ''].filter(Boolean).join(' - ');
-    return `
-      <span class="record-title-cell">
-        <span class="record-thumb">${image}</span>
-        <span><strong>${escapeHtml(row.title)}</strong><small>${escapeHtml(ids)}</small></span>
-      </span>
-    `;
-  }
-
-  function renderRecordStatus(status) {
-    const cls = status === 'gut' ? 'good' : status === 'kritisch' ? 'critical' : status === 'pruefen' ? 'review' : 'muted';
-    const label = status === 'nicht berechenbar' ? 'nicht bewertbar' : status === 'pruefen' ? 'prüfen' : status;
-    return `<span class="record-status"><i class="status-dot ${cls}"></i>${escapeHtml(label || '-')}</span>`;
-  }
-
-  function renderRecordScore(score) {
-    if (!Number.isFinite(score)) return '-';
-    const cls = score >= 80 ? 'good' : score >= 60 ? 'review' : 'critical';
-    return `
-      <span class="record-score">
-        <strong>${formatNumber(score)} <small>/ 100</small></strong>
-        <span class="score-mini-track"><i class="${cls}" style="width:${Math.max(0, Math.min(100, score))}%"></i></span>
-      </span>
-    `;
-  }
-
   function renderRecordsLoading() {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>';
-    if (els.recordResultSummary) els.recordResultSummary.textContent = 'Datensätze werden geladen ...';
-    if (els.recordPageRange) els.recordPageRange.textContent = '-';
-    if (els.recordExport) els.recordExport.disabled = true;
+    renderRecordsLoadingState(els);
   }
 
   function renderRecordsEmpty(message) {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
-    if (els.recordResultSummary) els.recordResultSummary.textContent = '0 Datensätze';
-    if (els.recordPageRange) els.recordPageRange.textContent = '0 Datensätze';
-    if (els.recordExport) els.recordExport.disabled = true;
-    showRecordsMessage(message);
+    renderRecordsEmptyState(els, message, showRecordsMessage);
   }
 
   function renderRecordQuickCounts() {
-    if (state.recordDataMeta.mode === 'empty') {
-      [els.quickCountCritical, els.quickCountLicense, els.quickCountDescription, els.quickCountImage, els.quickCountOpenings].forEach((node) => {
-        if (node) node.textContent = '-';
-      });
-      return;
-    }
-    const rows = state.recordRows;
-    setText(els.quickCountCritical, rows.filter((row) => row.qualityStatus === 'kritisch').length);
-    setText(els.quickCountLicense, rows.filter((row) => row.missingCriteria.includes('license_missing')).length);
-    setText(els.quickCountDescription, rows.filter((row) => row.missingCriteria.includes('description_missing')).length);
-    setText(els.quickCountImage, rows.filter((row) => row.missingCriteria.includes('image_missing')).length);
-    setText(els.quickCountOpenings, rows.filter((row) => row.missingCriteria.includes('opening_hours_missing')).length);
+    renderRecordQuickCountsState(els, {
+      rows: state.recordRows,
+      mode: state.recordDataMeta.mode,
+      setText
+    });
   }
 
   function renderRecordStatusLegend() {
-    if (state.recordDataMeta.mode === 'empty') {
-      [els.legendGood, els.legendReview, els.legendCritical, els.legendUnknown].forEach((node) => {
-        if (node) node.textContent = '-';
-      });
-      return;
-    }
-    const rows = state.filteredRecordRows;
-    setText(els.legendGood, rows.filter((row) => row.qualityStatus === 'gut').length);
-    setText(els.legendReview, rows.filter((row) => row.qualityStatus === 'pruefen').length);
-    setText(els.legendCritical, rows.filter((row) => row.qualityStatus === 'kritisch').length);
-    setText(els.legendUnknown, rows.filter((row) => row.qualityStatus === 'nicht berechenbar').length);
+    renderRecordStatusLegendState(els, {
+      rows: state.filteredRecordRows,
+      mode: state.recordDataMeta.mode,
+      setText
+    });
   }
 
   function renderRecordDataNote() {
-    if (!els.recordDataNote) return;
-    if (state.recordDataMeta.mode === 'empty') {
-      els.recordDataNote.textContent = 'Es wird keine Browser-Stichprobe geladen. Wähle ein konkretes Problem oder öffne eine Pflegeaufgabe, um echte Datensatzlisten per API zu laden.';
-      return;
-    }
-    if (state.recordDataMeta.mode === 'criterion') {
-      els.recordDataNote.textContent = state.recordDataMeta.truncated
-        ? 'Diese Liste basiert auf einem begrenzten Qualitäts-Scan für die ausgewählte Pflegeaufgabe.'
-        : 'Diese Liste basiert auf einem Qualitäts-Scan für die ausgewählte Pflegeaufgabe.';
-      return;
-    }
-    if (state.recordDataMeta.mode === 'ai_search') {
-      els.recordDataNote.textContent = 'Diese Liste basiert auf einer KI-Suche und anschließend geladenen Datensätzen per global_id.';
-      return;
-    }
-    if (state.recordDataMeta.mode === 'snapshot_list') {
-      els.recordDataNote.textContent = state.recordDataMeta.truncated
-        ? 'Diese Liste stammt aus dem gecachten Nachtlauf und ist auf die gespeicherten Treffer begrenzt.'
-        : 'Diese Liste stammt aus dem gecachten Nachtlauf.';
-      return;
-    }
-    els.recordDataNote.textContent = state.recordDataMeta.truncated
-      ? 'Diese Liste basiert auf einem begrenzten API-/Server-Scan. Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.'
-      : 'Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.';
+    renderRecordDataNoteState(els, state.recordDataMeta);
   }
 
   function resetRecordFilters() {
-    const reloadFullList = state.recordDataMeta.mode === 'criterion' || state.recordDataMeta.mode === 'ai_search';
-    if (els.recordSearchInput) els.recordSearchInput.value = '';
-    if (els.recordAiSearchInput) els.recordAiSearchInput.value = '';
-    if (els.recordTypeFilter) els.recordTypeFilter.value = '';
-    if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
-    if (els.recordStatusFilter) els.recordStatusFilter.value = '';
-    if (els.recordIssueFilter) els.recordIssueFilter.value = '';
-    state.recordServerSearchKeys = new Set();
-    state.recordAiSearchPrompt = '';
-    state.pendingRecordView = null;
-    clearRecordViewState();
-    state.recordPage = 1;
-    if (reloadFullList) {
-      void loadRecordsData();
-      return;
-    }
-    applyRecordFilters();
+    resetRecordFiltersState({
+      state,
+      els,
+      clearRecordViewState,
+      loadRecordsData,
+      applyRecordFilters
+    });
   }
 
   function applyQuickRecordFilter(value) {
-    if (els.recordSearchInput) els.recordSearchInput.value = '';
-    if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
-    if (els.recordStatusFilter) els.recordStatusFilter.value = '';
-    if (els.recordIssueFilter) els.recordIssueFilter.value = '';
-    state.recordServerSearchKeys = new Set();
-    state.pendingRecordView = null;
-    clearRecordViewState();
-    if (value === 'critical' && els.recordStatusFilter) els.recordStatusFilter.value = 'kritisch';
-    if (value !== 'critical' && els.recordIssueFilter) els.recordIssueFilter.value = value;
-    state.recordPage = 1;
-    if (value !== 'critical') {
-      void loadRecordsData();
-      return;
-    }
-    applyRecordFilters();
+    applyQuickRecordFilterState({
+      value,
+      state,
+      els,
+      clearRecordViewState,
+      loadRecordsData,
+      applyRecordFilters
+    });
   }
 
   function changeRecordPage(delta) {
-    state.recordPage += delta;
-    renderRecordTable();
+    changeRecordPageState({
+      state,
+      delta,
+      renderRecordTable
+    });
   }
 
   function getRecordThumbnailUrl(item) {
-    const media = qualityHelpers.getMediaObjects(item.raw || item)
-      .find((entry) => qualityHelpers.isCheckableMediaObject(entry));
-    return getFirst(media, ['url', 'contentUrl', 'previewUrl', 'thumbnailUrl']) || '';
-  }
-
-  function buildRecordDetailUrl(row) {
-    const params = new URLSearchParams();
-    if (row.type) params.set('type', row.type);
-    if (row.globalId) params.set('global_id', row.globalId);
-    else if (row.id) params.set('id', row.id);
-    return `record-detail.html?${params.toString()}`;
+    return getRecordThumbnailUrlModel(item, { qualityHelpers, getFirst });
   }
 
   function exportRecordListCsv() {
@@ -2931,13 +2567,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showRecordsMessage(message) {
-    if (!els.recordsMessage) return;
-    els.recordsMessage.textContent = message || '';
-    els.recordsMessage.hidden = !message;
+    showRecordsMessageState(els, message);
   }
 
   function setText(node, value) {
-    if (node) node.textContent = formatNumber(value);
+    setRecordCountText(node, value, formatNumber);
   }
 
   async function loadRecordDetail() {
@@ -3190,69 +2824,32 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildVerifiedEt4Url(item) {
-    if (item.type !== 'POI' || !item.globalId) return '';
-    return `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/${encodeURIComponent(item.globalId)}/x`;
+    return buildVerifiedEt4UrlModel(item);
   }
 
   function normalizeItem(raw, fallbackType) {
-    const globalId = getFirst(raw, ['global_id', 'globalId']);
-    return {
-      raw,
-      id: extractId(raw),
-      globalId,
-      title: getFirst(raw, ['title', 'name', 'presentation.title']) || 'Ohne Titel',
-      type: getFirst(raw, ['type', 'typeName']) || fallbackType,
-      region: qualityHelpers.getAreaValues(raw)?.[0] || state.context.area || '',
-      city: getFirst(raw, ['city', 'location.city', 'address.city']) || state.context.city || '',
-      category: qualityHelpers.getCategoryValues(raw)?.[0] || '',
-      license: qualityHelpers.getAttributeValue(raw, 'license') || '',
-      isOpenData: qualityHelpers.hasValidDatasetLicense(raw),
-      updatedAt: getFirst(raw, ['updatedAt', 'lastModified', 'modified', 'changeDate']) || '',
-      email: getFirst(raw, ['email']) || '',
-      web: getFirst(raw, ['web', 'sourceUrl', 'url']) || '',
-      qualityScore: Number.isFinite(Number(raw?.qualityScore)) ? Number(raw.qualityScore) : null,
-      qualityStatus: textValue(raw?.qualityStatus) || '',
-      missingCriteria: Array.isArray(raw?.missingCriteria) ? raw.missingCriteria.filter(Boolean) : [],
-      recommendations: Array.isArray(raw?.recommendations) ? raw.recommendations.filter(Boolean) : []
-    };
+    return normalizeItemModel(raw, fallbackType, {
+      extractId,
+      qualityHelpers,
+      textValue,
+      context: state.context
+    });
   }
 
   function getFirst(obj, paths) {
-    for (const path of paths) {
-      const value = qualityHelpers.getNestedValue(obj, path);
-      const text = textValue(value);
-      if (text) return text;
-    }
-    return '';
+    return getFirstModel(obj, paths, { qualityHelpers, textValue });
   }
 
   function getRecordEmail(raw) {
-    return getFirst(raw, [
-      'email',
-      'emailRequest',
-      'address.email',
-      'addresses.email',
-      'addresses_mail.email'
-    ]) || '';
+    return getRecordEmailModel(raw, { qualityHelpers, textValue }) || '';
   }
 
   function getRecordWeb(raw) {
-    return getFirst(raw, [
-      'web',
-      'url',
-      'website',
-      'address.web',
-      'addresses.web'
-    ]) || '';
+    return getRecordWebModel(raw, { qualityHelpers, textValue }) || '';
   }
 
   function getRecordPhone(raw) {
-    return getFirst(raw, [
-      'phone',
-      'phone2',
-      'address.phone',
-      'addresses.phone'
-    ]) || '';
+    return getRecordPhoneModel(raw, { qualityHelpers, textValue }) || '';
   }
 
   function renderOverview(rows, items, options = {}) {

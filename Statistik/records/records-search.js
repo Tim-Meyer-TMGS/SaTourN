@@ -100,6 +100,24 @@ export async function searchRecordsByText({
   return { items, estimatedTotalItems, truncated, mode: 'search' };
 }
 
+export async function resolveRecordSearch({
+  query,
+  looksLikeRecordId,
+  searchSingleRecordById,
+  searchRecordsByText
+}) {
+  if (looksLikeRecordId(query)) {
+    return {
+      items: await searchSingleRecordById(query),
+      estimatedTotalItems: 0,
+      truncated: false,
+      mode: 'id_search'
+    };
+  }
+
+  return searchRecordsByText(query);
+}
+
 export async function loadRecordAutocompleteSuggestions({
   query,
   selectedType,

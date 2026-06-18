@@ -1,4 +1,4 @@
-# Datenqualitätsmonitor – Architektur und Zielbild
+# DatenqualitÃ¤tsmonitor â€“ Architektur und Zielbild
 
 Stand: 2026-06-18
 
@@ -8,11 +8,11 @@ Dieses Dokument beschreibt:
 
 - die aktuelle Systemarchitektur
 - die fachliche und technische Verantwortlichkeit der Hauptteile
-- das Zielbild für eine spätere Übergabe an externe Entwickler
-- das Hosting-Ziel für einen späteren Betrieb auf eigenem Server
+- das Zielbild fÃ¼r eine spÃ¤tere Ãœbergabe an externe Entwickler
+- das Hosting-Ziel fÃ¼r einen spÃ¤teren Betrieb auf eigenem Server
 
 Es ist kein API-Referenzdokument. Es dient als Architektur- und
-Übergabekontext.
+Ãœbergabekontext.
 
 ## Aktuelle Architektur
 
@@ -32,7 +32,7 @@ Wichtige Eigenschaften:
 
 - mehrere HTML-Seiten statt Single-Page-App
 - Vanilla JavaScript
-- zentrales Styling über `Statistik/style.css`
+- zentrales Styling Ã¼ber `Statistik/style.css`
 - Hauptlogik derzeit noch stark in `Statistik/scripts.js`
 - kleinere Hilfsmodule bereits ausgelagert
 
@@ -49,17 +49,17 @@ Wichtige Frontend-Dateien:
 
 - `Statistik/scripts.js`
 - `Statistik/quality.js`
-- `Statistik/task-logic.js`
-- `Statistik/task-families.js`
-- `Statistik/records-search.js`
-- `Statistik/record-communication.js`
-- `Statistik/record-mail.js`
-- `Statistik/api-config.js`
-- `Statistik/app-constants.js`
+- `Statistik/tasks/task-logic.js`
+- `Statistik/tasks/task-families.js`
+- `Statistik/records/records-search.js`
+- `Statistik/records/record-communication.js`
+- `Statistik/records/record-mail.js`
+- `Statistik/core/api-config.js`
+- `Statistik/core/app-constants.js`
 
 ### 3. Backend-Proxy
 
-Das Backend läuft als Node-Service mit Express-artigen Routen.
+Das Backend lÃ¤uft als Node-Service mit Express-artigen Routen.
 
 Einstieg:
 
@@ -85,22 +85,22 @@ Wichtige Backend-Helfer:
 
 #### Frontend
 
-Das Frontend übernimmt aktuell:
+Das Frontend Ã¼bernimmt aktuell:
 
 - Navigation zwischen Ansichten
 - Arbeitskontext
-- Filterzustände
+- FilterzustÃ¤nde
 - Tabellen und Detailansichten
-- Laden von Statistik- und Qualitätsdaten
+- Laden von Statistik- und QualitÃ¤tsdaten
 - AI-Suche im UI
-- Öffnen von Mailentwürfen über `mailto:`
+- Ã–ffnen von MailentwÃ¼rfen Ã¼ber `mailto:`
 
 #### Backend
 
-Das Backend übernimmt aktuell:
+Das Backend Ã¼bernimmt aktuell:
 
 - Proxy-Zugriffe auf Destination.One / Meta
-- serverseitige Qualitätszählungen und Scans
+- serverseitige QualitÃ¤tszÃ¤hlungen und Scans
 - serverseitige one.intelligence-Aufrufe
 - Schutz der API-Keys
 - optionale Cache-Zwischenschichten
@@ -115,7 +115,7 @@ Frontend:
 Backend:
 
 - produktiv auf Render
-- hält Secrets und Integrationslogik
+- hÃ¤lt Secrets und Integrationslogik
 
 Externe Systeme:
 
@@ -126,15 +126,15 @@ Externe Systeme:
 
 ### Frontend-Verantwortung
 
-Das Frontend ist für folgende Aufgaben zuständig:
+Das Frontend ist fÃ¼r folgende Aufgaben zustÃ¤ndig:
 
 - Anzeige der Seiten
 - Interaktionen des Nutzers
-- clientseitige Filterung bereits geladener Datensätze
+- clientseitige Filterung bereits geladener DatensÃ¤tze
 - Pflege des Arbeitskontexts
-- Darstellung von Lade-, Fehler- und Leerzuständen
+- Darstellung von Lade-, Fehler- und LeerzustÃ¤nden
 
-Das Frontend darf nicht zuständig sein für:
+Das Frontend darf nicht zustÃ¤ndig sein fÃ¼r:
 
 - API-Keys
 - direkte OI-Authentifizierung
@@ -143,44 +143,44 @@ Das Frontend darf nicht zuständig sein für:
 
 ### Backend-Verantwortung
 
-Das Backend ist für folgende Aufgaben zuständig:
+Das Backend ist fÃ¼r folgende Aufgaben zustÃ¤ndig:
 
-- geschützte Kommunikation mit externen APIs
+- geschÃ¼tzte Kommunikation mit externen APIs
 - Quality-Endpunkte
 - OI-Endpunkte
-- ID-Auflösung und Such-Proxy
-- Rate-Limits für KI-Funktionen
+- ID-AuflÃ¶sung und Such-Proxy
+- Rate-Limits fÃ¼r KI-Funktionen
 - serverseitige Konfiguration
 
-## Aktuelle Schwächen
+## Aktuelle SchwÃ¤chen
 
-Die aktuelle Architektur ist funktional, aber noch nicht optimal für
-Übergabe und Wartung.
+Die aktuelle Architektur ist funktional, aber noch nicht optimal fÃ¼r
+Ãœbergabe und Wartung.
 
-Wesentliche Schwächen:
+Wesentliche SchwÃ¤chen:
 
-- `Statistik/scripts.js` ist zu groß und bündelt zu viele Verantwortungen
+- `Statistik/scripts.js` ist zu groÃŸ und bÃ¼ndelt zu viele Verantwortungen
 - State, Rendering, Event-Handling und API-Zugriffe liegen zu eng zusammen
 - die Frontend-Seiten sind fachlich getrennt, technisch aber noch nicht
   ausreichend modularisiert
-- Teile der Qualitätslogik sind fachlich stark, aber technisch noch zu wenig
+- Teile der QualitÃ¤tslogik sind fachlich stark, aber technisch noch zu wenig
   in kleinere Module aufgeteilt
-- die Betriebsdokumentation ist noch nicht vollständig genug für eine
-  externe Übergabe
+- die Betriebsdokumentation ist noch nicht vollstÃ¤ndig genug fÃ¼r eine
+  externe Ãœbergabe
 
-## Zielbild für die nächste Architekturstufe
+## Zielbild fÃ¼r die nÃ¤chste Architekturstufe
 
 ### 1. Grundsatz
 
 Das Ziel ist keine reine kosmetische Modernisierung, sondern eine
-übergabefähige Struktur.
+Ã¼bergabefÃ¤hige Struktur.
 
 Das Zielbild trennt:
 
 - Frontend-Anwendung
 - Backend-Proxy
 - Dokumentation
-- später optional Infrastrukturdefinition
+- spÃ¤ter optional Infrastrukturdefinition
 
 ### 2. Zielstruktur
 
@@ -208,7 +208,7 @@ backend/
 docs/
   Codex/
 
-optional später:
+optional spÃ¤ter:
 infra/
 ```
 
@@ -223,7 +223,7 @@ Empfohlener Stack:
 
 Ziel des Frontends:
 
-- komponentisierte Oberflächen
+- komponentisierte OberflÃ¤chen
 - klarer gemeinsamer State
 - URL- und Routing-Logik zentral
 - Services statt direkter `fetch`-Aufrufe in UI-Komponenten
@@ -260,11 +260,11 @@ Ziel:
 - Konfiguration
 - optionale Cache-Layer
 
-## Zielbild für Eigenhosting
+## Zielbild fÃ¼r Eigenhosting
 
 ### 1. Betriebsmodell
 
-Für den späteren Betrieb auf eigenem Server ist folgende Trennung sinnvoll:
+FÃ¼r den spÃ¤teren Betrieb auf eigenem Server ist folgende Trennung sinnvoll:
 
 - Frontend als statische Build-Artefakte
 - Backend als Node-Prozess
@@ -279,8 +279,8 @@ Für den späteren Betrieb auf eigenem Server ist folgende Trennung sinnvoll:
 
 #### Backend-Service
 
-- läuft als eigener Node-Dienst
-- hält alle `LICENSEKEY`- und `OI_*`-Variablen
+- lÃ¤uft als eigener Node-Dienst
+- hÃ¤lt alle `LICENSEKEY`- und `OI_*`-Variablen
 - stellt interne API-Endpunkte bereit
 
 #### Reverse Proxy
@@ -306,32 +306,32 @@ Beispiel:
 - keine API-Keys im Frontend
 - keine OI-Keys in HTML, JavaScript-Bundles oder Runtime-Markup
 - Umgebungsvariablen nur serverseitig
-- Health-Check für Backend separat vorsehen
+- Health-Check fÃ¼r Backend separat vorsehen
 - Logging ohne Secret-Leaks
 
-## Übergaberelevante Leitlinien
+## Ãœbergaberelevante Leitlinien
 
-Ein externer Entwickler muss ohne mündliches Zusatzwissen verstehen können:
+Ein externer Entwickler muss ohne mÃ¼ndliches Zusatzwissen verstehen kÃ¶nnen:
 
 - welche Teile statisch sind
 - welche Teile serverseitig laufen
 - welche Endpunkte intern stabil sind
-- wo Qualitätslogik lebt
+- wo QualitÃ¤tslogik lebt
 - wo KI-Logik lebt
 - welche Grenzen fachlich bewusst gelten
 
-Deshalb gilt für die nächste Ausbaustufe:
+Deshalb gilt fÃ¼r die nÃ¤chste Ausbaustufe:
 
 - Frontend und Backend nicht weiter vermischen
 - `scripts.js` schrittweise zerlegen
 - Fachmodell und UI-Text nicht in einem Monolith pflegen
 - neue Funktionen nur mit klarer Zuordnung zu Frontend oder Backend einbauen
 
-## Nächste konkrete Folgeschritte
+## NÃ¤chste konkrete Folgeschritte
 
-Aus diesem Architekturstand folgen als nächste sinnvolle Schritte:
+Aus diesem Architekturstand folgen als nÃ¤chste sinnvolle Schritte:
 
-1. Frontend weiter entkoppeln, bevor ein Framework eingeführt wird
-2. gemeinsame Zustände und Seitengrenzen als Zielmodule festziehen
-3. Entwicklerdokumentation und Betriebsdokumentation ergänzen
+1. Frontend weiter entkoppeln, bevor ein Framework eingefÃ¼hrt wird
+2. gemeinsame ZustÃ¤nde und Seitengrenzen als Zielmodule festziehen
+3. Entwicklerdokumentation und Betriebsdokumentation ergÃ¤nzen
 4. danach Framework-Migration geplant und seitenweise umsetzen

@@ -3,8 +3,7 @@ import {
   buildQualityListApiUrl,
   buildQualityScanApiUrl,
   buildQualitySnapshotApiUrl
-} from './api-urls.js';
-
+} from '../core/api-urls.js';
 export function buildQualitySnapshotRequestUrl(apiBase, { query = '', type = '' } = {}) {
   return buildQualitySnapshotApiUrl(apiBase, { query, type });
 }

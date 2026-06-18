@@ -89,3 +89,49 @@ export function buildRecordMailPayload({ row, issueContext, issues }) {
     issues
   };
 }
+
+export async function handleRecordMailDraft({
+  row,
+  triggerNode,
+  pendingRecordView,
+  selectedCriterionId,
+  qualityCriteria,
+  taskProblem,
+  requestRecordMailDraft,
+  buildMailtoUrl,
+  launchMailto,
+  getErrorMessage,
+  showRecordsMessage
+}) {
+  if (!row?.email || !row?.missingCriteria?.length) {
+    showRecordsMessage('Für diesen Datensatz kann kein KI-Mailentwurf erzeugt werden.');
+    return;
+  }
+
+  if (triggerNode) triggerNode.disabled = true;
+  try {
+    const issueContext = buildRecordMailIssueContext({
+      pendingRecordView,
+      selectedCriterionId,
+      qualityCriteria,
+      primaryIssue: row.primaryIssue || ''
+    });
+    const issues = buildRecordMailIssues({
+      row,
+      issueContext,
+      qualityCriteria,
+      taskProblem
+    });
+    const payload = await requestRecordMailDraft({
+      payload: buildRecordMailPayload({ row, issueContext, issues })
+    });
+    const mailtoUrl = buildMailtoUrl(payload);
+    if (!mailtoUrl) throw new Error('Mailto payload invalid');
+    if (!launchMailto(mailtoUrl)) throw new Error('Mailto launch failed');
+  } catch (error) {
+    console.error('Mail-Entwurf konnte nicht erzeugt werden.', error);
+    showRecordsMessage(getErrorMessage(error, 'Der KI-Mailentwurf konnte nicht erzeugt werden.'));
+  } finally {
+    if (triggerNode) triggerNode.disabled = !(row?.email && row?.missingCriteria?.length);
+  }
+}
