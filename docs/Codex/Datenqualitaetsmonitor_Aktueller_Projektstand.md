@@ -108,6 +108,10 @@ Wichtige Produktentscheidung:
   `Statistik/quality-api.js`
 - ausgelagerte Übersichts-Helfer:
   `Statistik/overview-helpers.js`
+- ausgelagerte Übersichts-UI:
+  `Statistik/overview-ui.js`
+- ausgelagerte Aufgaben-UI:
+  `Statistik/tasks-ui.js`
 - ausgelagerte Aufgaben- und Fehlertexte:
   `Statistik/task-texts.js`
 - Styling:
@@ -139,4 +143,6 @@ Wichtige Produktentscheidung:
 - erster Detail-Renderer aus `scripts.js` in `Statistik/record-detail-ui.js` ausgelagert
 - erste Frontend-Quality-Request-Helfer aus `scripts.js` in `Statistik/quality-api.js` ausgelagert
 - erste reine Übersichts-Helfer aus `scripts.js` in `Statistik/overview-helpers.js` ausgelagert
+- erster Übersichts-Renderer aus `scripts.js` in `Statistik/overview-ui.js` ausgelagert
+- erste Aufgaben-Renderer aus `scripts.js` in `Statistik/tasks-ui.js` ausgelagert
 - erste Aufgaben-, Fehler- und Icontexte aus `scripts.js` in `Statistik/task-texts.js` ausgelagert

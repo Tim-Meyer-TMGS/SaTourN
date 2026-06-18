@@ -10,6 +10,11 @@ import {
   sortStatisticRows,
   upsertStatisticRow as upsertStatisticRowModel
 } from './overview-helpers.js';
+import {
+  renderOverviewEmptyState,
+  renderOverviewLoadingState,
+  renderOverviewPage
+} from './overview-ui.js';
 import { buildMailtoUrl, launchMailto } from './record-mail.js';
 import { requestRecordMailDraft, resolveRecordsByIds, runAiRecordSearch } from './record-api.js';
 import {
@@ -44,6 +49,15 @@ import {
   fetchQualityCount,
   fetchQualityScan
 } from './quality-api.js';
+import {
+  clearTaskRecordsState,
+  renderTaskDetailState,
+  renderTaskRecordsState,
+  renderTasksEmptyState,
+  renderTasksLoadingState,
+  renderTaskTableState,
+  showTaskMessageState
+} from './tasks-ui.js';
 import {
   buildRecordMailIssueContext,
   buildRecordMailIssues,
@@ -1934,43 +1948,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderTaskTable() {
-    const rows = state.filteredTaskRows;
-    const totalPages = Math.max(1, Math.ceil(rows.length / state.taskRowsPerPage));
-    state.taskPage = Math.max(1, Math.min(state.taskPage, totalPages));
-    const start = (state.taskPage - 1) * state.taskRowsPerPage;
-    const visibleRows = rows.slice(start, start + state.taskRowsPerPage);
-
-    if (!visibleRows.length) {
-      els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">Für diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
-    } else {
-      els.taskTableBody.innerHTML = visibleRows.map((task) => `
-        <tr>
-          <td>
-            <button class="task-table-action ${task === state.selectedTask ? 'active' : ''}" type="button" data-task-id="${escapeHtml(task.taskId)}">
-              <span class="task-icon ${task.priority === 'hoch' ? 'critical' : 'review'}" aria-hidden="true">${taskIcon(task.iconCriterionId || task.criterionId)}</span>
-              <span><strong>${escapeHtml(task.label)}</strong><small>${escapeHtml(task.description)}</small></span>
-            </button>
-          </td>
-          <td>${formatNumber(task.affectedCount)}</td>
-          <td><span class="status-badge ${task.priority === 'hoch' ? 'critical' : 'review'}">${priorityLabel(task.priority)}</span></td>
-          <td>${renderTypeChips(task.affectedTypes)}</td>
-          <td><span class="status-badge ${impactBadgeClass(task.impact)}">${impactLabel(task.impact)}</span></td>
-          <td><button class="row-arrow" type="button" data-task-id="${escapeHtml(task.taskId)}" aria-label="Aufgabe anzeigen"><span class="material-icons" aria-hidden="true">chevron_right</span></button></td>
-        </tr>
-      `).join('');
-    }
-
-    els.taskTableBody.querySelectorAll('[data-task-id]').forEach((button) => {
-      button.addEventListener('click', () => selectTask(button.dataset.taskId));
+    state.taskPage = renderTaskTableState(els, {
+      rows: state.filteredTaskRows,
+      selectedTask: state.selectedTask,
+      taskPage: state.taskPage,
+      taskRowsPerPage: state.taskRowsPerPage,
+      taskIcon,
+      priorityLabel,
+      renderTypeChips,
+      impactBadgeClass,
+      impactLabel,
+      formatNumber,
+      escapeHtml,
+      onSelectTask: selectTask
     });
-
-    const end = Math.min(rows.length, start + visibleRows.length);
-    if (els.taskTableCount) {
-      els.taskTableCount.textContent = rows.length ? `${formatNumber(start + 1)}-${formatNumber(end)} von ${formatNumber(rows.length)} Aufgaben` : '0 Aufgaben';
-    }
-    if (els.taskPageStatus) els.taskPageStatus.textContent = `${state.taskPage} / ${totalPages}`;
-    if (els.taskPrevPage) els.taskPrevPage.disabled = state.taskPage <= 1;
-    if (els.taskNextPage) els.taskNextPage.disabled = state.taskPage >= totalPages;
   }
 
   function selectTask(taskId) {
@@ -1986,46 +1977,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTaskDetail() {
     const task = state.selectedTask;
     hidePrimarySystems();
-    if (!task) {
-      if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle eine Pflegeaufgabe aus der Liste.</p>';
-      return;
-    }
-
-    const needsTypeChoice = task.affectedTypes.length > 1 && !state.selectedTaskType;
-    const typeChoice = task.affectedTypes.length > 1
-      ? `<label class="detail-type-select">Datentyp für Datensatzliste<select id="task-detail-type">${task.affectedTypes.map((type) => `<option value="${escapeHtml(type)}"${type === state.selectedTaskType ? ' selected' : ''}>${escapeHtml(type)}</option>`).join('')}</select></label>`
-      : '';
-    const selectedType = state.selectedTaskType || task.affectedTypes[0] || '';
-
-    els.taskDetailContent.innerHTML = `
-      <h3>${escapeHtml(task.label)}</h3>
-      <dl class="task-detail-list">
-        <dt>Problem</dt>
-        <dd>${escapeHtml(task.problem)}</dd>
-        <dt>Auswirkung</dt>
-        <dd><span class="impact-dot ${impactBadgeClass(task.impact)}"></span>${escapeHtml(impactLabel(task.impact))}. ${escapeHtml(task.impactText || taskImpactText(task.criterionId))}</dd>
-        <dt>Empfohlene Aktion</dt>
-        <dd>${escapeHtml(task.recommendation)}</dd>
-        <dt>Betroffene Typen</dt>
-        <dd>${renderTypeChips(task.affectedTypes)}</dd>
-      </dl>
-      ${typeChoice}
-      <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswählen und Datensätze anzeigen' : 'Datensätze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
-    `;
-
-    const typeSelect = document.getElementById('task-detail-type');
-    if (typeSelect && !state.selectedTaskType) state.selectedTaskType = typeSelect.value;
-    typeSelect?.addEventListener('change', () => {
-      state.selectedTaskType = typeSelect.value;
-      clearTaskRecords();
+    state.selectedTaskType = renderTaskDetailState(els, {
+      task,
+      selectedTaskType: state.selectedTaskType,
+      escapeHtml,
+      renderTypeChips,
+      impactBadgeClass,
+      impactLabel,
+      taskImpactText,
+      clearTaskRecords,
+      openTaskRecordsOnRecordsPage
     });
-    document.getElementById('task-open-records')?.addEventListener('click', () => {
-      const type = typeSelect?.value || selectedType;
-      if (type) state.selectedTaskType = type;
-      openTaskRecordsOnRecordsPage(task, type);
-    });
-
-    renderPrimarySystemsForTask(task);
+    if (task) renderPrimarySystemsForTask(task);
   }
 
   function openTaskRecordsOnRecordsPage(task, type) {
@@ -2137,53 +2100,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderTaskRecords(task, type, rows, payload) {
-    const page = payload?.page || {};
-    const stats = payload?.stats || {};
-    const completeText = page.complete ? 'Liste geladen.' : 'Liste geladen, weitere Treffer können später nachgeladen werden.';
-    els.taskRecordsNote.textContent = `${completeText} ${formatNumber(rows.length)} Datensätze angezeigt.`;
-    els.taskRecordsExport.disabled = !rows.length;
-
-    if (!rows.length) {
-      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Für diese Aufgabe wurden keine Datensätze gefunden.</td></tr>';
-      return;
-    }
-
-    els.taskRecordsBody.innerHTML = rows.map((row) => `
-      <tr>
-        <td><strong>${escapeHtml(row.title)}</strong><small>${escapeHtml(row.globalId || row.id || '')}</small></td>
-        <td>${escapeHtml(row.type || type)}</td>
-        <td>${escapeHtml([row.city, row.region].filter(Boolean).join(' / ') || '-')}</td>
-        <td>${escapeHtml(task.label)}</td>
-        <td>${escapeHtml(task.recommendation)}</td>
-        <td><span class="row-actions"><button class="plain-button" type="button" data-copy-id="${escapeHtml(row.globalId || row.id || '')}">ID kopieren</button><a class="plain-button" href="${escapeHtml(buildRecordDetailUrl(row))}">Detail öffnen</a></span></td>
-      </tr>
-    `).join('');
-
-    els.taskRecordsBody.querySelectorAll('[data-copy-id]').forEach((button) => {
-      button.addEventListener('click', () => copyText(button.dataset.copyId || ''));
+    const stats = renderTaskRecordsState(els, {
+      task,
+      type,
+      rows,
+      payload,
+      formatNumber,
+      escapeHtml,
+      buildRecordDetailUrl,
+      copyText
     });
     if (stats.budgetExhausted) console.debug('Qualitätsscan-Budget ausgeschoepft.', stats);
   }
 
   function renderTasksLoading() {
-    [els.taskKpiOpen, els.taskKpiHigh, els.taskKpiAffected, els.taskKpiOpenData, els.taskKpiPotential].forEach((node) => {
-      if (node) node.textContent = '...';
-    });
-    if (els.taskKpiHighDetail) els.taskKpiHighDetail.textContent = '...';
-    if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty"><span class="loading-line">Pflegeaufgaben werden geladen ...</span></td></tr>';
-    if (els.taskTableCount) els.taskTableCount.textContent = '-';
-    if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Pflegeaufgaben werden geladen ...</p>';
+    renderTasksLoadingState(els);
   }
 
   function renderTasksEmpty(message) {
-    [els.taskKpiOpen, els.taskKpiHigh, els.taskKpiAffected, els.taskKpiOpenData, els.taskKpiPotential].forEach((node) => {
-      if (node) node.textContent = '-';
-    });
-    if (els.taskKpiHighDetail) els.taskKpiHighDetail.textContent = '-';
-    if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">Noch keine Pflegeaufgaben geladen.</td></tr>';
-    if (els.taskTableCount) els.taskTableCount.textContent = '0 Aufgaben';
-    if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle einen Arbeitskontext und starte die Abfrage.</p>';
-    showTaskMessage(message);
+    renderTasksEmptyState(els, message);
   }
 
   function resetTaskFilters() {
@@ -2209,14 +2144,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function clearTaskRecords() {
     state.taskRecordRows = [];
     state.taskRecordMeta = null;
-    if (els.taskRecordsSection) els.taskRecordsSection.hidden = true;
-    if (els.taskRecordsExport) els.taskRecordsExport.disabled = true;
+    clearTaskRecordsState(els);
   }
 
   function showTaskMessage(message) {
-    if (!els.taskMessage) return;
-    els.taskMessage.textContent = message || '';
-    els.taskMessage.hidden = !message;
+    showTaskMessageState(els, message);
   }
 
   async function loadRecordsData() {
@@ -3339,220 +3271,45 @@ document.addEventListener('DOMContentLoaded', () => {
       openDataQuote: summary.openDataQuote
     };
 
-    els.kpiQualityScore.textContent = kpis.qualityScore == null ? '-' : formatNumber(kpis.qualityScore);
-    els.kpiQualityTrack.style.width = `${Math.max(0, Math.min(100, kpis.qualityScore || 0))}%`;
-    els.kpiTotal.textContent = formatNumber(summary.statistikTotal);
-    els.kpiGood.textContent = formatNumber(counts.gut || 0);
-    els.kpiGoodPercent.textContent = formatPercent(percent(counts.gut || 0, assessedTotal));
-    els.kpiReview.textContent = formatNumber(counts.pruefen || 0);
-    els.kpiReviewPercent.textContent = formatPercent(percent(counts.pruefen || 0, assessedTotal));
-    els.kpiCritical.textContent = formatNumber(counts.kritisch || 0);
-    els.kpiCriticalPercent.textContent = formatPercent(percent(counts.kritisch || 0, assessedTotal));
-    els.kpiOpenData.textContent = formatPercent(summary.openDataQuote);
-    els.kpiOpenDataDetail.textContent = `${formatNumber(summary.openDataTotal)} von ${formatNumber(summary.statistikTotal)}`;
-
-    if (
-      state.qualityDataMeta.mode === 'api_counts' ||
-      state.qualityDataMeta.mode === 'sachsen_total' ||
-      (state.qualityDataMeta.mode === 'regional_scan' && !state.qualityDataMeta.collectedItems)
-    ) {
-      els.kpiQualityScore.textContent = '-';
-      els.kpiQualityTrack.style.width = '0%';
-      els.kpiGood.textContent = '-';
-      els.kpiGoodPercent.textContent = 'Nicht berechnet';
-      els.kpiReview.textContent = '-';
-      els.kpiReviewPercent.textContent = 'Nicht berechnet';
-      els.kpiCritical.textContent = '-';
-      els.kpiCriticalPercent.textContent = 'Nicht berechnet';
+    let previousKpis = null;
+    try {
+      previousKpis = JSON.parse(localStorage.getItem(KPI_HISTORY_KEY) || 'null');
+    } catch {
+      previousKpis = null;
     }
 
-    renderKpiDeltas(kpis);
-    renderTopTasks(aggregations.issueSummary || []);
-    renderQualityDistribution(counts, assessedTotal);
-    renderOpenDataStatus(summary.openDataTotal, notOpenData, summary.statistikTotal);
-    renderDataNote(items.length);
-    if (options.saveHistory !== false) saveKpiHistory(kpis);
-  }
-
-  function renderOverviewLoading() {
-    ['kpi-quality-score', 'kpi-total', 'kpi-good', 'kpi-review', 'kpi-critical', 'kpi-open-data'].forEach((id) => {
-      const node = document.getElementById(id);
-      if (node) node.textContent = '...';
-    });
-    if (els.topTasksList) els.topTasksList.innerHTML = '<div class="inline-loading">Pflegeaufgaben werden geladen ...</div>';
-    setQualityDataNoteLoading();
-  }
-
-  function renderOverviewEmpty() {
-    ['kpi-quality-score', 'kpi-total', 'kpi-good', 'kpi-review', 'kpi-critical', 'kpi-open-data'].forEach((id) => {
-      const node = document.getElementById(id);
-      if (node) node.textContent = '-';
-    });
-    if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">Für diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
-    setQualityDataNoteText('Keine auswertbaren Qualitätsdaten geladen.');
-  }
-
-  function setQualityDataNoteLoading() {
-    if (!els.qualityDataNote) return;
-    els.qualityDataNote.hidden = false;
-    els.qualityDataNote.innerHTML = '<span class="inline-loading" aria-label="Qualitätsdaten werden geladen"></span>';
-  }
-
-  function setQualityDataNoteText(text) {
-    if (!els.qualityDataNote) return;
-    els.qualityDataNote.hidden = false;
-    els.qualityDataNote.textContent = text;
-  }
-
-  function hideQualityDataNote() {
-    if (!els.qualityDataNote) return;
-    els.qualityDataNote.hidden = true;
-    els.qualityDataNote.textContent = '';
-  }
-
-  function renderTopTasks(issueSummary) {
-    const issues = buildTaskRows(issueSummary)
+    const issues = buildTaskRows(aggregations.issueSummary || [])
       .filter((issue) => Number(issue.affectedCount || 0) > 0)
       .sort((a, b) => impactRank(b.impact) - impactRank(a.impact) || priorityRank(b.priority) - priorityRank(a.priority) || b.affectedCount - a.affectedCount)
       .slice(0, 5);
 
-    if (!issues.length) {
-      els.topTasksList.innerHTML = '<div class="empty-note">Für die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
-      return;
-    }
-
-    els.topTasksList.replaceChildren(...issues.map((issue) => {
-      const link = document.createElement('a');
-      link.className = 'task-row';
-      const preferredType = state.context.type || (issue.affectedTypes?.length === 1 ? issue.affectedTypes[0] : '');
-      const params = new URLSearchParams();
-      params.set('criterionId', issue.criterionId);
-      if (preferredType) params.set('type', preferredType);
-      params.set('from', 'overview');
-      link.href = `records.html?${params.toString()}`;
-      link.addEventListener('click', (event) => {
-        event.preventDefault();
-        openOverviewIssueOnRecordsPage(issue);
-      });
-      const statusClass = issue.priority === 'hoch' ? 'critical' : 'review';
-      link.innerHTML = `
-        <span class="task-icon ${statusClass}" aria-hidden="true">${taskIcon(issue.criterionId)}</span>
-        <span class="task-copy"><strong>${escapeHtml(issue.label)}</strong><small>${escapeHtml(taskDescription(issue.criterionId))}</small></span>
-        <span class="task-count">${formatNumber(issue.affectedCount)}</span>
-        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'Prüfen'}</span>
-        <span class="task-open material-icons" aria-hidden="true">chevron_right</span>
-      `;
-      return link;
-    }));
+    renderOverviewPage(els, {
+      summary,
+      counts,
+      assessedTotal,
+      notOpenData,
+      kpis,
+      issues,
+      contextType: state.context.type || '',
+      qualityDataMeta: state.qualityDataMeta,
+      sampleSize: items.length,
+      formatNumber,
+      formatPercent,
+      percent,
+      taskIcon,
+      taskDescription,
+      openOverviewIssueOnRecordsPage,
+      previousKpis
+    });
+    if (options.saveHistory !== false) saveKpiHistory(kpis);
   }
 
-  function renderQualityDistribution(counts, total) {
-    if (state.qualityDataMeta.mode === 'regional_scan' && !state.qualityDataMeta.collectedItems) {
-      els.qualityDonut.style.background = 'conic-gradient(#e2e8f0 0 100%)';
-      els.qualityLegend.innerHTML = `
-        <div class="legend-row"><span class="legend-dot muted"></span><span>Wird berechnet</span><strong>-</strong></div>
-      `;
-      return;
-    }
-
-    if ((state.qualityDataMeta.mode === 'sachsen_total' || state.qualityDataMeta.mode === 'api_counts') && !total) {
-      els.qualityDonut.style.background = 'conic-gradient(#e2e8f0 0 100%)';
-      els.qualityLegend.innerHTML = `
-        <div class="legend-row"><span class="legend-dot muted"></span><span>Nicht berechnet</span><strong>-</strong></div>
-      `;
-      return;
-    }
-
-    const good = counts.gut || 0;
-    const review = counts.pruefen || 0;
-    const critical = counts.kritisch || 0;
-    const unknown = counts.nichtBerechenbar || 0;
-    const goodPct = percent(good, total);
-    const reviewPct = percent(review, total);
-    const criticalPct = percent(critical, total);
-
-    els.qualityDonut.style.background = total
-      ? `conic-gradient(#22b46b 0 ${goodPct}%, #f5aa1c ${goodPct}% ${goodPct + reviewPct}%, #ef3f42 ${goodPct + reviewPct}% ${goodPct + reviewPct + criticalPct}%, #98a2b3 ${goodPct + reviewPct + criticalPct}% 100%)`
-      : 'conic-gradient(#e2e8f0 0 100%)';
-
-    const rows = [
-      ['Gut', good, goodPct, 'good'],
-      ['Prüfen', review, reviewPct, 'review'],
-      ['Kritisch', critical, criticalPct, 'critical']
-    ];
-    if (unknown > 0) rows.push(['Nicht bewertbar', unknown, percent(unknown, total), 'muted']);
-    els.qualityLegend.innerHTML = rows.map(([label, count, pctValue, cls]) => `
-      <div class="legend-row"><span class="legend-dot ${cls}"></span><span>${label}</span><strong>${formatPercent(pctValue)} (${formatNumber(count)})</strong></div>
-    `).join('');
+  function renderOverviewLoading() {
+    renderOverviewLoadingState(els);
   }
 
-  function renderOpenDataStatus(capable, missing, total) {
-    const capablePct = percent(capable, total);
-    const missingPct = percent(missing, total);
-    els.openDataCapableBar.style.width = `${capablePct}%`;
-    els.openDataMissingBar.style.width = `${missingPct}%`;
-    els.openDataCapable.textContent = formatNumber(capable);
-    els.openDataCapablePercent.textContent = formatPercent(capablePct);
-    els.openDataMissing.textContent = formatNumber(missing);
-    els.openDataMissingPercent.textContent = formatPercent(missingPct);
-  }
-
-  function renderDataNote(sampleSize) {
-    if (state.qualityDataMeta.mode === 'sachsen_total') {
-      setQualityDataNoteText('F\u00fcr ganz Sachsen wird kein Qualit\u00e4ts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.');
-      return;
-    }
-    if (state.qualityDataMeta.mode === 'regional_scan') {
-      const pending = state.qualityDataMeta.pendingTypes || 0;
-      if (pending) {
-        setQualityDataNoteLoading();
-        return;
-      }
-      if (state.qualityDataMeta.truncated) {
-        setQualityDataNoteText('Weitere Treffer können später nachgeladen werden.');
-        return;
-      }
-      hideQualityDataNote();
-      return;
-    }
-    if (state.qualityDataMeta.mode === 'snapshot') {
-      hideQualityDataNote();
-      return;
-    }
-    if (state.qualityDataMeta.mode === 'api_counts') {
-      setQualityDataNoteLoading();
-      return;
-    }
-    const note = state.qualityDataMeta.truncated
-      ? `Regionale Bewertung geladen. Weitere Treffer können später nachgeladen werden.`
-      : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensätzen.`;
-    setQualityDataNoteText(note);
-    if (state.qualityDataMeta.truncated) console.debug('Qualitätsdaten sind begrenzt.', state.qualityDataMeta);
-  }
-
-  function renderKpiDeltas(kpis) {
-    let previous = null;
-    try {
-      previous = JSON.parse(localStorage.getItem(KPI_HISTORY_KEY) || 'null');
-    } catch {
-      previous = null;
-    }
-    renderDelta(els.kpiTotalDelta, previous?.totalRecords, kpis.totalRecords, 'Datensätze seit dem letzten Besuch');
-    renderDelta(els.kpiQualityDelta, previous?.qualityScore, kpis.qualityScore, 'Punkte seit dem letzten Besuch');
-  }
-
-  function renderDelta(node, previous, current, suffix) {
-    if (!node || !Number.isFinite(previous) || !Number.isFinite(current)) {
-      if (node) node.hidden = true;
-      return;
-    }
-    const delta = current - previous;
-    if (!delta) {
-      node.hidden = true;
-      return;
-    }
-    node.textContent = `${delta > 0 ? '+' : ''}${formatNumber(delta)} ${suffix}`;
-    node.hidden = false;
+  function renderOverviewEmpty() {
+    renderOverviewEmptyState(els);
   }
 
   function saveKpiHistory(kpis) {

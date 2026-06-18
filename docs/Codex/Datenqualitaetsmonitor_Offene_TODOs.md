@@ -200,6 +200,10 @@ Bereits umgesetzt:
   `Statistik/quality-api.js` ausgelagert
 - erste reine Übersichts-Helfer aus `scripts.js` in
   `Statistik/overview-helpers.js` ausgelagert
+- erster Übersichts-Renderer aus `scripts.js` in
+  `Statistik/overview-ui.js` ausgelagert
+- erste Aufgaben-Renderer aus `scripts.js` in
+  `Statistik/tasks-ui.js` ausgelagert
 - erste Aufgaben-, Fehler- und Icontexte aus `scripts.js` in
   `Statistik/task-texts.js` ausgelagert
 
@@ -233,6 +237,8 @@ Betroffene Dateien:
 - `Statistik/record-api.js`
 - `Statistik/quality-api.js`
 - `Statistik/overview-helpers.js`
+- `Statistik/overview-ui.js`
+- `Statistik/tasks-ui.js`
 - `Statistik/task-texts.js`
 
 ### 11. Übergabedokumentation für Entwickler vorbereiten
