@@ -7,10 +7,21 @@ import {
   buildOverviewQualityMeta,
   computeOverviewSummary,
   normalizeStatisticRow,
+  sortStatisticRows,
   upsertStatisticRow as upsertStatisticRowModel
 } from './overview-helpers.js';
 import { buildMailtoUrl, launchMailto } from './record-mail.js';
 import { requestRecordMailDraft, resolveRecordsByIds, runAiRecordSearch } from './record-api.js';
+import {
+  criterionStatusClass,
+  getCheckableImages,
+  getCriterionDisplayStatus,
+  getDetailUsability,
+  getDisplayDescription,
+  getOpeningHoursSummary,
+  getTextByRel,
+  textValue
+} from './record-detail-helpers.js';
 import {
   buildPendingRecordViewMessage,
   filterRecordRows,
@@ -1244,7 +1255,7 @@ document.addEventListener('DOMContentLoaded', () => {
           openDataCount: Number(extractTotal(openDataPayload) || 0)
         };
         rows.push(row);
-        onRow?.(row, sortStatisticRows(rows));
+        onRow?.(row, sortStatisticRows(rows, TYPES));
         return row;
       } catch (error) {
         if (!isAbortLikeError(error)) {
@@ -1254,7 +1265,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }));
 
-    const finalRows = sortStatisticRows(results.filter(Boolean));
+    const finalRows = sortStatisticRows(results.filter(Boolean), TYPES);
     if (!finalRows.length && targetTypes.length) {
       throw new Error('No statistic rows loaded');
     }
@@ -3057,7 +3068,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const missing = new Set(item.missingCriteria || []);
     const fulfilled = new Set(item.fulfilledCriteria || []);
     const manual = new Set(item.manualCriteria || []);
-    const images = getCheckableImages(item);
+    const images = getCheckableImages(item, qualityHelpers);
     const missingCopyright = qualityHelpers.findMissingCopyrightMedia(raw);
     const et4Url = buildVerifiedEt4Url(item);
     const addresses = getAddressSummary(raw);
@@ -3119,16 +3130,16 @@ document.addEventListener('DOMContentLoaded', () => {
         .filter((criterion) => missing.has(criterion.id))
         .sort((a, b) => priorityRank(b.priority) - priorityRank(a.priority))
         .slice(0, 5),
-      usability: getDetailUsability(item, images, missingCopyright),
+      usability: getDetailUsability(item, images, missingCopyright, qualityHelpers),
       texts: {
-        description: getDisplayDescription(raw),
-        teaser: getTextByRel(raw, 'teaser'),
-        openings: getOpeningHoursSummary(item),
-        directions: getTextByRel(raw, 'directions') || (qualityHelpers.hasPublicTransportFeature(raw) ? 'Ã–PNV-Information vorhanden.' : 'Keine Ã–PNV-Information vorhanden.'),
-        price: getTextByRel(raw, 'PRICE_INFO'),
-        priceReduced: getTextByRel(raw, 'PRICE_REDUCEDINFO'),
-        seoTitle: getTextByRel(raw, 'WEB_SEO_TITEL'),
-        seoDescription: getTextByRel(raw, 'WEB_SEO_BESCHREIBUNG')
+        description: getDisplayDescription(raw, qualityHelpers),
+        teaser: getTextByRel(raw, 'teaser', qualityHelpers),
+        openings: getOpeningHoursSummary(item, qualityHelpers),
+        directions: getTextByRel(raw, 'directions', qualityHelpers) || (qualityHelpers.hasPublicTransportFeature(raw) ? 'Ã–PNV-Information vorhanden.' : 'Keine Ã–PNV-Information vorhanden.'),
+        price: getTextByRel(raw, 'PRICE_INFO', qualityHelpers),
+        priceReduced: getTextByRel(raw, 'PRICE_REDUCEDINFO', qualityHelpers),
+        seoTitle: getTextByRel(raw, 'WEB_SEO_TITEL', qualityHelpers),
+        seoDescription: getTextByRel(raw, 'WEB_SEO_BESCHREIBUNG', qualityHelpers)
       },
       media: {
         images,
@@ -3219,8 +3230,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ['changed', getFirst(raw, ['changed'])],
       ['channel', getFirst(raw, ['channel'])],
       ['rating eT4', getFirst(raw, ['ratings.0.value'])],
-      ['SEO-Titel', getTextByRel(raw, 'WEB_SEO_TITEL')],
-      ['SEO-Beschreibung', getTextByRel(raw, 'WEB_SEO_BESCHREIBUNG')]
+      ['SEO-Titel', getTextByRel(raw, 'WEB_SEO_TITEL', qualityHelpers)],
+      ['SEO-Beschreibung', getTextByRel(raw, 'WEB_SEO_BESCHREIBUNG', qualityHelpers)]
     ].filter(([, value]) => textValue(value));
   }
 
@@ -3412,38 +3423,6 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  function normalizeCriterionStatus(status) {
-    if (status === 'erfuellt' || status === 'erfÃ¼llt') return 'erfuellt';
-    return status;
-  }
-
-  function getCriterionDisplayStatus(status) {
-    const normalizedStatus = normalizeCriterionStatus(status);
-    return {
-      erfuellt: 'ErfÃ¼llt',
-      fehlt: 'Fehlt',
-      'nicht bewertbar': 'Nicht bewertbar',
-      'nicht relevant': 'Nicht relevant',
-      vorbereitet: 'Vorbereitet',
-      manuell: 'Manuell',
-      source_guarded: 'Quellseitig abgefangen',
-      not_applicable: 'Nicht erforderlich',
-      excluded_by_category: 'Kategoriebedingt ausgenommen'
-    }[normalizedStatus] || normalizedStatus;
-  }
-
-  function criterionStatusClass(status) {
-    const normalizedStatus = normalizeCriterionStatus(status);
-    if (normalizedStatus === 'erfuellt') return 'erfuellt';
-    if (normalizedStatus === 'vorbereitet' || normalizedStatus === 'manuell') return 'vorbereitet';
-    if (normalizedStatus === 'source_guarded' || normalizedStatus === 'not_applicable' || normalizedStatus === 'excluded_by_category') return 'nicht-bewertbar';
-    return {
-      fehlt: 'fehlt',
-      'nicht bewertbar': 'nicht-bewertbar',
-      'nicht relevant': 'nicht-bewertbar'
-    }[normalizedStatus] || 'nicht-bewertbar';
-  }
-
   function renderDetailLoading() {
     if (els.detailHeadCard) els.detailHeadCard.innerHTML = '<div class="table-empty"><span class="loading-line">Datensatz wird geladen ...</span></div>';
     if (els.detailContent) els.detailContent.hidden = true;
@@ -3462,127 +3441,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!els.recordDetailMessage) return;
     els.recordDetailMessage.textContent = message || '';
     els.recordDetailMessage.hidden = !message;
-  }
-
-  function getDetailUsability(item, images, missingCopyright) {
-    const raw = item.raw || item;
-    const licenseOk = qualityHelpers.hasValidDatasetLicense(raw);
-    const hasDescriptionValue = qualityHelpers.hasDetailsText(raw);
-    const hasOpenings = qualityHelpers.hasOpeningHours(raw);
-    const hasTransport = qualityHelpers.hasPublicTransportFeature(raw);
-    const bookingRelevant = ['Hotel', 'Package'].includes(item.type);
-    return [
-      { label: 'Open Data', value: licenseOk ? 'ja' : 'nein', ok: licenseOk },
-      { label: 'Lizenzstatus', value: licenseOk ? 'gÃ¼ltig' : 'Lizenz fehlt', ok: licenseOk },
-      { label: 'Beschreibung', value: hasDescriptionValue ? 'vorhanden' : 'fehlt', ok: hasDescriptionValue },
-      { label: 'Bilder', value: images.length ? 'vorhanden' : 'fehlt', ok: images.length > 0 },
-      { label: 'Bildrechte', value: missingCopyright.length ? `${missingCopyright.length} ohne Urheber` : 'vorhanden', ok: missingCopyright.length === 0 },
-      { label: 'Ã–PNV-Info', value: hasTransport ? 'vorhanden' : 'nicht vorhanden', ok: hasTransport },
-      { label: 'Buchungslink', value: bookingRelevant ? qualityHelpers.hasBookingLink(raw) ? 'vorhanden' : 'fehlt' : 'nicht relevant', ok: !bookingRelevant || qualityHelpers.hasBookingLink(raw), relevant: bookingRelevant },
-      { label: 'Ã–ffnungszeiten', value: hasOpenings ? 'vorhanden' : 'fehlt', ok: hasOpenings }
-    ];
-  }
-
-  function getDisplayDescription(raw) {
-    return getTextByRel(raw, 'details') || '';
-  }
-
-  function getTextByRel(raw, rel) {
-    const values = qualityHelpers.getTextsByRel(raw, rel)
-      .sort((a, b) => textTypeRank(a?.type) - textTypeRank(b?.type))
-      .map((entry) => htmlToPlainText(textValue(entry.value || entry.text || entry.content || entry)))
-      .filter(Boolean);
-    return values[0] || '';
-  }
-
-  function textTypeRank(type) {
-    const normalized = String(type || '').toLowerCase();
-    if (normalized === 'text/html') return 0;
-    if (normalized === 'text/plain') return 1;
-    return 2;
-  }
-
-  function htmlToPlainText(value) {
-    return String(value || '')
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;|&#160;/gi, ' ')
-      .replace(/&amp;/gi, '&')
-      .replace(/&quot;/gi, '"')
-      .replace(/&#039;|&apos;/gi, "'")
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function getCheckableImages(item) {
-    const raw = item.raw || item;
-    return qualityHelpers.getMediaObjects(raw)
-      .filter((media) => qualityHelpers.isCheckableMediaObject(media))
-      .sort((a, b) => {
-        const relRank = (rel) => rel === 'default' ? 0 : 1;
-        return relRank(a.rel) - relRank(b.rel) || Number(a.prio || 99) - Number(b.prio || 99);
-      })
-      .map((media) => ({
-        ...media,
-        url: textValue(media.url || media.contentUrl),
-        alt: textValue(media.alt),
-        value: textValue(media.value || media.title),
-        description: textValue(media.description),
-        copyrightText: textValue(media.copyrightText),
-        copyrightEmail: textValue(media.copyrightEmail),
-        copyrightWeb: textValue(media.copyrightWeb),
-        license: textValue(media.license),
-        width: textValue(media.width),
-        height: textValue(media.height)
-      }))
-      .filter((media) => media.url);
-  }
-
-  function formatImageSize(image) {
-    return image.width && image.height ? `${image.width} x ${image.height}px` : 'nicht angegeben';
-  }
-
-  function getOpeningHoursSummary(item) {
-    const raw = item.raw || item;
-    if (raw.alwaysOpen === true) return 'Immer geÃ¶ffnet.';
-    const openingText = getTextByRel(raw, 'openings');
-    if (openingText) return openingText;
-    const intervals = raw.timeIntervals || raw.raw?.timeIntervals || [];
-    if (Array.isArray(intervals) && intervals.length) return formatTimeIntervals(intervals);
-    return 'Keine Ã–ffnungszeiten angegeben.';
-  }
-
-  function formatTimeIntervals(intervals) {
-    const rows = intervals
-      .map((interval) => {
-        const days = formatWeekdays(interval.weekdays);
-        const start = formatIntervalTime(interval.start);
-        const end = formatIntervalTime(interval.end);
-        if (!days && !start && !end) return '';
-        return `${days || 'Zeitraum'}: ${[start, end].filter(Boolean).join(' bis ') || 'Zeit vorhanden'}`;
-      })
-      .filter(Boolean)
-      .slice(0, 7);
-    return rows.length ? rows.join('\n') : 'Ã–ffnungszeiten vorhanden.';
-  }
-
-  function formatWeekdays(days) {
-    const map = {
-      Monday: 'Montag',
-      Tuesday: 'Dienstag',
-      Wednesday: 'Mittwoch',
-      Thursday: 'Donnerstag',
-      Friday: 'Freitag',
-      Saturday: 'Samstag',
-      Sunday: 'Sonntag'
-    };
-    return Array.isArray(days) ? days.map((day) => map[day] || day).join(', ') : '';
-  }
-
-  function formatIntervalTime(value) {
-    const match = String(value || '').match(/T(\d{2}):(\d{2})/);
-    return match ? `${match[1]}:${match[2]}` : '';
   }
 
   function buildVerifiedEt4Url(item) {
@@ -3656,19 +3514,6 @@ document.addEventListener('DOMContentLoaded', () => {
       'address.phone',
       'addresses.phone'
     ]) || '';
-  }
-
-  function textValue(value) {
-    if (value == null) return '';
-    if (Array.isArray(value)) return value.map(textValue).find(Boolean) || '';
-    if (typeof value === 'object') {
-      for (const key of ['title', 'name', 'label', 'value', 'text', 'id']) {
-        const nested = textValue(value[key]);
-        if (nested) return nested;
-      }
-      return '';
-    }
-    return String(value).replace(/\s+/g, ' ').trim();
   }
 
   function renderOverview(rows, items, options = {}) {

@@ -192,6 +192,8 @@ Bereits umgesetzt:
   `Statistik/record-api.js` ausgelagert
 - erste reine Records-Helfer aus `scripts.js` in
   `Statistik/records-helpers.js` ausgelagert
+- erste reine Detail-Helfer aus `scripts.js` in
+  `Statistik/record-detail-helpers.js` ausgelagert
 - erste Frontend-Quality-Request-Helfer aus `scripts.js` in
   `Statistik/quality-api.js` ausgelagert
 - erste reine Übersichts-Helfer aus `scripts.js` in
@@ -222,6 +224,7 @@ Betroffene Dateien:
 - `Statistik/records-search.js`
 - `Statistik/record-communication.js`
 - `Statistik/records-helpers.js`
+- `Statistik/record-detail-helpers.js`
 - `Statistik/state-storage.js`
 - `Statistik/api-urls.js`
 - `Statistik/record-api.js`
