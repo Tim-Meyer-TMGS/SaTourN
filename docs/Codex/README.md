@@ -16,6 +16,12 @@ Diese beiden Dateien zuerst lesen:
 
 - `Datenqualitaetsmonitor_Entscheidungen.md`
   Architektur-, API-, UI- und Bewertungsentscheidungen.
+- `Datenqualitaetsmonitor_Architektur_und_Zielbild.md`
+  aktuelle Systemarchitektur, Zielstruktur für Framework-Migration,
+  Übergabe und späteres Eigenhosting.
+- `Datenqualitaetsmonitor_Frontend_Migrationsplan.md`
+  konkrete Zielmodule, Stores, Services und Komponenten für die spätere
+  Frontend-Migration.
 - `Datenqualitaetsmonitor_Pflegeaufgaben_je_Datentyp.md`
   Übersicht, welche Pflegeaufgaben pro Datentyp fachlich vorkommen können.
 - `one_intelligence_Kontext_und_Fehlerbilder.md`

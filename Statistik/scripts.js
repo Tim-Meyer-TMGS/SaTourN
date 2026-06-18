@@ -1,8 +1,33 @@
-import { downloadText, extractId, extractItems, extractTotal, fetchJson as rawFetchJson } from '../lib/browser.js';
+﻿import { downloadText, extractId, extractItems, extractTotal, fetchJson as rawFetchJson } from '../lib/browser.js';
 import { evaluateAllItems, evaluateQualityForItem, getQualityAggregations, getQualityScanConfig, qualityCriteria, qualityHelpers } from './quality.js';
 import { getApiConfig } from './api-config.js';
+import { buildSearchApiUrl } from './api-urls.js';
 import { AREAS, REQUEST_CACHE_TTL_MS, STORAGE_KEYS, TYPES } from './app-constants.js';
+import {
+  buildOverviewQualityMeta,
+  computeOverviewSummary,
+  normalizeStatisticRow,
+  upsertStatisticRow as upsertStatisticRowModel
+} from './overview-helpers.js';
 import { buildMailtoUrl, launchMailto } from './record-mail.js';
+import { requestRecordMailDraft, resolveRecordsByIds, runAiRecordSearch } from './record-api.js';
+import {
+  buildPendingRecordViewMessage,
+  filterRecordRows,
+  getIdFromGlobalId,
+  getPrimaryIssueId,
+  uniqueValues
+} from './records-helpers.js';
+import { getTaskDescription, getTaskIcon, getTaskImpactText, getTaskProblem } from './task-texts.js';
+import {
+  buildQualityCountRequestUrl,
+  buildQualityListRequestUrl,
+  buildQualitySnapshotRequestUrl,
+  fetchCachedQualityList,
+  fetchCachedQualitySnapshot,
+  fetchQualityCount,
+  fetchQualityScan
+} from './quality-api.js';
 import {
   buildRecordMailIssueContext,
   buildRecordMailIssues,
@@ -42,6 +67,15 @@ import {
   filterTaskRows as filterTaskRowsModel
 } from './task-logic.js';
 import { createRequestCache } from './request-cache.js';
+import {
+  clearRecordViewStateStorage,
+  loadRecordListStateFromSession,
+  loadRecordViewStateFromRouteStorage,
+  loadStoredWorkContext,
+  saveRecordListStateToSession,
+  saveRecordViewStateToSession,
+  saveStoredWorkContext
+} from './state-storage.js';
 import { getTaskFamilyId, getTaskFamilyMeta } from './task-families.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -564,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHelpPage() {
     if (els.helpModelSummary) {
-      els.helpModelSummary.textContent = 'Nicht jeder Fehler wirkt gleich stark. Kritische Lücken schlagen deutlich auf den Score, normale Fehler schwächen ihn sichtbar und leichte Optimierungen runden den Datensatz später ab.';
+      els.helpModelSummary.textContent = 'Nicht jeder Fehler wirkt gleich stark. Kritische LÃ¼cken schlagen deutlich auf den Score, normale Fehler schwÃ¤chen ihn sichtbar und leichte Optimierungen runden den Datensatz spÃ¤ter ab.';
     }
     renderHelpSeverityOverview();
     renderHelpTypeOverview();
@@ -586,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
         iconClass: 'red',
         title: 'Kritische Fehler',
         impact: 'Wirken stark auf Score und Nutzbarkeit.',
-        body: 'Diese Lücken solltest du zuerst schließen. Sie betreffen häufig Lizenz, Beschreibung oder andere zentrale Pflichtangaben.',
+        body: 'Diese LÃ¼cken solltest du zuerst schlieÃŸen. Sie betreffen hÃ¤ufig Lizenz, Beschreibung oder andere zentrale Pflichtangaben.',
         action: 'Zuerst bearbeiten'
       },
       {
@@ -594,8 +628,8 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: 'rule',
         iconClass: 'amber',
         title: 'Fehler',
-        impact: 'Schwächen den Datensatz klar sichtbar.',
-        body: 'Diese Angaben sind wichtig für Vollständigkeit und Verständlichkeit. Sie sollten nach den kritischen Punkten nachgezogen werden.',
+        impact: 'SchwÃ¤chen den Datensatz klar sichtbar.',
+        body: 'Diese Angaben sind wichtig fÃ¼r VollstÃ¤ndigkeit und VerstÃ¤ndlichkeit. Sie sollten nach den kritischen Punkten nachgezogen werden.',
         action: 'Danach bearbeiten'
       },
       {
@@ -603,8 +637,8 @@ document.addEventListener('DOMContentLoaded', () => {
         icon: 'auto_fix_high',
         iconClass: 'green',
         title: 'Leichte Optimierungen',
-        impact: 'Verbessern Qualität und Feinschliff.',
-        body: 'Diese Angaben machen den Datensatz runder und aussagekräftiger, sind aber nicht so gravierend wie harte Lücken.',
+        impact: 'Verbessern QualitÃ¤t und Feinschliff.',
+        body: 'Diese Angaben machen den Datensatz runder und aussagekrÃ¤ftiger, sind aber nicht so gravierend wie harte LÃ¼cken.',
         action: 'Zum Schluss optimieren'
       }
     ];
@@ -631,13 +665,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderHelpPrivacySection() {
     const localStorageEntries = [
       'Arbeitskontext: Gebiet, Ort und Datentyp',
-      'Consent-Einstellungen für optionale Kategorien',
-      'Zuletzt berechnete KPI-Vergleichswerte für die Übersicht',
+      'Consent-Einstellungen fÃ¼r optionale Kategorien',
+      'Zuletzt berechnete KPI-Vergleichswerte fÃ¼r die Ãœbersicht',
       'Temporare Listen- und Detailnavigation nur in der laufenden Sitzung'
     ];
     const externalServices = Array.isArray(RUNTIME_CONFIG.externalServices) ? RUNTIME_CONFIG.externalServices : [];
     const categoryRows = [
-      ['Essenziell', 'Aktiv für Navigation, Proxy und Kernfunktionen', true],
+      ['Essenziell', 'Aktiv fÃ¼r Navigation, Proxy und Kernfunktionen', true],
       ['Externe UI-Dienste', hasConsent('external_ui') ? 'Vom Nutzer freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('external_ui')],
       ['Automatisierung', hasConsent('automation') ? 'Freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('automation')],
       ['Analytics', hasConsent('analytics') ? 'Freigegeben' : 'Nicht produktiv aktiv', hasConsent('analytics')]
@@ -647,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const activeOptional = categoryRows.filter(([, , enabled]) => enabled).length - 1;
       els.helpPrivacySummary.textContent = activeOptional > 0
         ? `Essenzielle Funktionen sind aktiv. ${formatNumber(activeOptional)} optionale Kategorie ist derzeit freigegeben.`
-        : 'Essenzielle Funktionen sind aktiv. Optionale Kategorien sind vorbereitet, derzeit aber standardmäßig deaktiviert.';
+        : 'Essenzielle Funktionen sind aktiv. Optionale Kategorien sind vorbereitet, derzeit aber standardmÃ¤ÃŸig deaktiviert.';
     }
     if (els.helpLocalStorageList) {
       els.helpLocalStorageList.innerHTML = localStorageEntries
@@ -687,13 +721,13 @@ document.addEventListener('DOMContentLoaded', () => {
         <header class="help-type-head">
           <div>
             <h3>${escapeHtml(type)}</h3>
-            <p class="data-note">Maximal mögliche Gewichtspunkte: ${formatNumber(model.totalWeight)}</p>
+            <p class="data-note">Maximal mÃ¶gliche Gewichtspunkte: ${formatNumber(model.totalWeight)}</p>
           </div>
-          <span class="help-type-score">${formatNumber(model.threshold)} Punkte für grün</span>
+          <span class="help-type-score">${formatNumber(model.threshold)} Punkte fÃ¼r grÃ¼n</span>
         </header>
         <div class="help-type-columns">
           <section>
-            <h4>Minimal für guten Score</h4>
+            <h4>Minimal fÃ¼r guten Score</h4>
             ${renderHelpCriterionListV2(minimumItems, 'required')}
           </section>
           <section>
@@ -703,7 +737,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <footer class="help-type-footer">
           <span>Fehlende Punkte ziehen den Score direkt ab.</span>
-          <span>${formatNumber(autoCheckedCount)} automatisch geprüft, ${formatNumber(pendingCount)} fachlich vorbereitet</span>
+          <span>${formatNumber(autoCheckedCount)} automatisch geprÃ¼ft, ${formatNumber(pendingCount)} fachlich vorbereitet</span>
         </footer>
       </article>
     `;
@@ -795,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </header>
         <div class="help-type-columns">
           <section>
-            <h4>Mindestens für einen guten Stand</h4>
+            <h4>Mindestens fÃ¼r einen guten Stand</h4>
             ${renderHelpCriterionList(minimumItems, 'required')}
           </section>
           <section>
@@ -805,7 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         ${preparedItems.length ? `
           <section class="help-prepared-section">
-            <h4>Fachlich vorbereitet, später automatisch prüfbar</h4>
+            <h4>Fachlich vorbereitet, spÃ¤ter automatisch prÃ¼fbar</h4>
             ${renderPreparedHelpCriterionList(preparedItems)}
           </section>
         ` : ''}
@@ -851,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <strong>${escapeHtml(criterion.label)}</strong>
                 <span class="help-prepared-badge">Vorbereitet</span>
               </div>
-              <small>${escapeHtml(criterion.recommendation || 'Diese Prüfung ist fachlich hinterlegt und wird später technisch nachgezogen.')}</small>
+              <small>${escapeHtml(criterion.recommendation || 'Diese PrÃ¼fung ist fachlich hinterlegt und wird spÃ¤ter technisch nachgezogen.')}</small>
             </div>
           </li>
         `).join('')}
@@ -903,89 +937,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHelpTypeFooterSummary(autoCheckedCount, pendingCount) {
     if (pendingCount > 0) {
-      return `${formatNumber(autoCheckedCount)} Kriterien aktiv, ${formatNumber(pendingCount)} weitere später möglich`;
+      return `${formatNumber(autoCheckedCount)} Kriterien aktiv, ${formatNumber(pendingCount)} weitere spÃ¤ter mÃ¶glich`;
     }
     return `${formatNumber(autoCheckedCount)} Kriterien fliessen aktuell in den Score ein`;
   }
 
   function loadWorkContext() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(WORK_CONTEXT_KEY) || '{}');
-      return {
-        area: typeof parsed.area === 'string' ? parsed.area : '',
-        city: typeof parsed.city === 'string' ? parsed.city : '',
-        type: TYPES.includes(parsed.type) ? parsed.type : ''
-      };
-    } catch {
-      return { area: '', city: '', type: '' };
-    }
+    return loadStoredWorkContext(WORK_CONTEXT_KEY, TYPES);
   }
 
   function saveWorkContext(context) {
-    state.context = {
-      area: context.area || '',
-      city: context.city || '',
-      type: TYPES.includes(context.type) ? context.type : ''
-    };
-    localStorage.setItem(WORK_CONTEXT_KEY, JSON.stringify(state.context));
+    state.context = saveStoredWorkContext(WORK_CONTEXT_KEY, context, TYPES);
     renderWorkContext();
   }
 
   function saveRecordViewState(viewState) {
-    try {
-      sessionStorage.setItem(RECORD_VIEW_STATE_KEY, JSON.stringify({
-        criterionId: viewState.criterionId || '',
-        criterionIds: Array.isArray(viewState.criterionIds) ? viewState.criterionIds.filter(Boolean) : [],
-        criteriaByType: viewState.criteriaByType && typeof viewState.criteriaByType === 'object' ? viewState.criteriaByType : {},
-        type: TYPES.includes(viewState.type) ? viewState.type : '',
-        status: viewState.status || '',
-        query: viewState.query || '',
-        label: viewState.label || '',
-        context: {
-          area: viewState.context?.area || '',
-          city: viewState.context?.city || '',
-          type: TYPES.includes(viewState.context?.type) ? viewState.context.type : ''
-        },
-        createdAt: Date.now()
-      }));
-    } catch {
-      // sessionStorage may be unavailable in strict privacy contexts.
-    }
+    saveRecordViewStateToSession(RECORD_VIEW_STATE_KEY, viewState, TYPES);
   }
 
   function loadRecordViewStateFromRoute() {
-    const params = new URLSearchParams(location.search);
-    const hasRouteState = ['criterionId', 'type', 'status', 'q'].some((key) => params.has(key));
-    if (!hasRouteState) return null;
-
-    let cached = {};
-    try {
-      cached = JSON.parse(sessionStorage.getItem(RECORD_VIEW_STATE_KEY) || '{}');
-    } catch {
-      cached = {};
-    }
-
-    return {
-      criterionId: params.get('criterionId') || cached.criterionId || '',
-      criterionIds: Array.isArray(cached.criterionIds) ? cached.criterionIds.filter(Boolean) : [],
-      criteriaByType: cached.criteriaByType && typeof cached.criteriaByType === 'object' ? cached.criteriaByType : {},
-      type: params.get('type') || cached.type || '',
-      status: params.get('status') || cached.status || '',
-      query: params.get('q') || cached.query || '',
-      label: cached.label || '',
-      context: cached.context || null
-    };
+    return loadRecordViewStateFromRouteStorage(RECORD_VIEW_STATE_KEY, TYPES);
   }
 
   function clearRecordViewState() {
-    try {
-      sessionStorage.removeItem(RECORD_VIEW_STATE_KEY);
-    } catch {
-      // no-op
-    }
-    if (location.search) {
-      history.replaceState(null, '', 'records.html');
-    }
+    clearRecordViewStateStorage(RECORD_VIEW_STATE_KEY);
   }
 
   function fillContextControls() {
@@ -1019,7 +994,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function buildOverviewTitle() {
     if (state.context.type) return `${state.context.type}-Monitor`;
-    return 'Datenqualitäts-Monitor';
+    return 'DatenqualitÃ¤ts-Monitor';
   }
 
   function buildOverviewSubtitle({ areaLabel, cityLabel, typeLabel }) {
@@ -1028,9 +1003,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.context.city) scope.push(cityLabel);
     const scopeLabel = scope.join(' - ') || 'Sachsen';
     if (state.context.type) {
-      return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${typeLabel} in ${scopeLabel}.`;
+      return `Pflegeaufgaben, QualitÃ¤tsstatus und Open-Data-Quote fÃ¼r ${typeLabel} in ${scopeLabel}.`;
     }
-    return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${scopeLabel}.`;
+    return `Pflegeaufgaben, QualitÃ¤tsstatus und Open-Data-Quote fÃ¼r ${scopeLabel}.`;
   }
 
   function openContextDialog() {
@@ -1079,13 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildUrl(type, query, options = {}) {
-    const params = new URLSearchParams();
-    params.set('type', type);
-    params.set('limit', String(options.limit ?? 1));
-    if (query) params.set('query', query);
-    if (options.isOpenData) params.set('isOpenData', 'true');
-    if (Number.isFinite(options.offset) && options.offset > 0) params.set('offset', String(options.offset));
-    return `${API_BASE}?${params.toString()}`;
+    return buildSearchApiUrl(API_BASE, type, query, options);
   }
 
   async function fetchJsonOptionalUncached(url, options = {}) {
@@ -1097,11 +1066,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildQualitySnapshotUrl() {
-    const params = new URLSearchParams();
     const query = buildQuery(state.context);
-    if (query) params.set('query', query);
-    if (state.context.type) params.set('type', state.context.type);
-    return `${QUALITY_SNAPSHOT_API_BASE}?${params.toString()}`;
+    return buildQualitySnapshotRequestUrl(QUALITY_SNAPSHOT_API_BASE, {
+      query,
+      type: state.context.type || ''
+    });
   }
 
   async function loadCachedQualitySnapshot() {
@@ -1109,9 +1078,15 @@ document.addEventListener('DOMContentLoaded', () => {
     state.qualitySnapshot = null;
     let snapshot = null;
     try {
-      snapshot = await fetchJsonCached(buildQualitySnapshotUrl(), { optional404: true });
+      snapshot = await fetchCachedQualitySnapshot({
+        apiBase: QUALITY_SNAPSHOT_API_BASE,
+        fetchJson: fetchJsonCached,
+        useQualityCache: USE_QUALITY_CACHE,
+        query: buildQuery(state.context),
+        type: state.context.type || ''
+      });
     } catch (error) {
-      console.warn('Qualitäts-Snapshot konnte nicht aus dem Cache geladen werden.', error);
+      console.warn('QualitÃ¤ts-Snapshot konnte nicht aus dem Cache geladen werden.', error);
       return null;
     }
     if (!snapshot?.rows?.length) return null;
@@ -1129,30 +1104,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return snapshot;
   }
 
-  function normalizeStatisticRow(row) {
-    return {
-      type: row.type,
-      statistikCount: Number(row.statistikCount || 0),
-      openDataCount: Number(row.openDataCount || 0)
-    };
-  }
-
   function canCalculateQualityForContext(context = state.context) {
     return Boolean(context.area || context.city);
   }
 
-  function sortStatisticRows(rows) {
-    return [...rows].sort((a, b) => TYPES.indexOf(a.type) - TYPES.indexOf(b.type));
-  }
-
   function upsertStatisticRow(row) {
-    const existingIndex = state.latestRows.findIndex((entry) => entry.type === row.type);
-    if (existingIndex >= 0) {
-      state.latestRows.splice(existingIndex, 1, row);
-    } else {
-      state.latestRows.push(row);
-    }
-    state.latestRows = sortStatisticRows(state.latestRows);
+    state.latestRows = upsertStatisticRowModel(state.latestRows, row, TYPES);
   }
 
   function renderOverviewCurrent(options = {}) {
@@ -1162,25 +1119,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function resetOverviewQualityState() {
     state.normalizedItems = [];
     state.qualityAggregations = buildAggregationsFromIssueSummary([]);
-    state.qualityDataMeta = canCalculateQualityForContext()
-      ? {
-        mode: 'regional_scan',
-        collectedItems: 0,
-        estimatedTotalItems: 0,
-        truncated: false,
-        unsupportedCriteria: [],
-        failedCounts: 0,
-        pendingTypes: state.context.type ? 1 : TYPES.length,
-        completedTypes: 0
-      }
-      : {
-        mode: 'sachsen_total',
-        collectedItems: 0,
-        estimatedTotalItems: 0,
-        truncated: false,
-        unsupportedCriteria: [],
-        failedCounts: 0
-      };
+    state.qualityDataMeta = buildOverviewQualityMeta({
+      canCalculateQuality: canCalculateQualityForContext(),
+      selectedType: state.context.type || '',
+      totalTypes: TYPES.length
+    });
   }
 
   async function loadOverviewData() {
@@ -1205,7 +1148,7 @@ document.addEventListener('DOMContentLoaded', () => {
       els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
     } catch (error) {
       console.error('Startseite konnte nicht geladen werden.', error);
-      showMessage('Die Daten konnten nicht geladen werden. Bitte später erneut versuchen.');
+      showMessage('Die Daten konnten nicht geladen werden. Bitte spÃ¤ter erneut versuchen.');
       renderOverviewEmpty();
     }
   }
@@ -1266,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', () => {
           };
         }
       } else if (!isAbortLikeError(qualityResult.reason)) {
-        console.error('Qualitätsdaten konnten nicht geladen werden.', qualityResult.reason);
+        console.error('QualitÃ¤tsdaten konnten nicht geladen werden.', qualityResult.reason);
       }
 
       renderOverviewCurrent({ saveHistory: true });
@@ -1279,7 +1222,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (error) {
       console.error('Startseite konnte nicht geladen werden.', error);
-      showMessage('Die Daten konnten nicht geladen werden. Bitte später erneut versuchen.');
+      showMessage('Die Daten konnten nicht geladen werden. Bitte spÃ¤ter erneut versuchen.');
       renderOverviewEmpty();
     }
   }
@@ -1418,7 +1361,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         if (!isAbortLikeError(error) && !isStale()) {
           shared.failedTypes += 1;
-          console.warn('Regionaler Qualitätsscan fehlgeschlagen.', type, error);
+          console.warn('Regionaler QualitÃ¤tsscan fehlgeschlagen.', type, error);
         }
       } finally {
         if (!complete && !isStale()) shared.truncated = true;
@@ -1473,7 +1416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date(snapshot?.generatedAt || startedAt))}`;
       }
     } catch (error) {
-      console.error('Open-Data-Statistik konnte nicht vollständig geladen werden.', error);
+      console.error('Open-Data-Statistik konnte nicht vollstÃ¤ndig geladen werden.', error);
       renderStatsError();
     } finally {
       setStatsLoadingState(false);
@@ -1531,16 +1474,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderStats() {
     const summary = state.statsSummary || computeStatsSummary([]);
     if (!summary.totalRecords) {
-      renderStatsEmpty('Für diesen Arbeitskontext wurden keine Datensätze gefunden.');
+      renderStatsEmpty('FÃ¼r diesen Arbeitskontext wurden keine DatensÃ¤tze gefunden.');
       return;
     }
 
     if (els.statsTotalRecords) els.statsTotalRecords.textContent = formatNumber(summary.totalRecords);
     if (els.statsOpenDataRecords) els.statsOpenDataRecords.textContent = formatNumber(summary.openDataRecords);
-    if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = `${formatPercent(summary.openDataQuote)} aller Datensätze`;
+    if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = `${formatPercent(summary.openDataQuote)} aller DatensÃ¤tze`;
     if (els.statsOpenDataQuote) els.statsOpenDataQuote.textContent = formatPercent(summary.openDataQuote);
     if (els.statsNonOpenDataRecords) els.statsNonOpenDataRecords.textContent = formatNumber(summary.nonOpenDataRecords);
-    if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} aller Datensätze`;
+    if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} aller DatensÃ¤tze`;
     if (els.statsExport) els.statsExport.disabled = !state.statsRows.length;
 
     renderStatsTypeDistribution(summary);
@@ -1648,10 +1591,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderStatsError() {
-    showStatsMessage('Die Statistik konnte nicht vollständig geladen werden. Bitte erneut aktualisieren.');
-    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
-    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Die Statistik konnte nicht vollständig geladen werden.</div>';
-    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
+    showStatsMessage('Die Statistik konnte nicht vollstÃ¤ndig geladen werden. Bitte erneut aktualisieren.');
+    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Die Statistik konnte nicht vollstÃ¤ndig geladen werden.</td></tr>';
+    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Die Statistik konnte nicht vollstÃ¤ndig geladen werden.</div>';
+    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Die Statistik konnte nicht vollstÃ¤ndig geladen werden.</td></tr>';
     if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
     if (els.statsLicenseTaskCount) els.statsLicenseTaskCount.textContent = '-';
     if (els.statsLicenseTaskShare) els.statsLicenseTaskShare.textContent = 'Nicht geladen';
@@ -1696,7 +1639,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.statsRows.length || !state.statsSummary) return;
     const summary = state.statsSummary;
     const rows = [
-      ['Datentyp', 'Gesamtzahl', 'Open-Data-fähig', 'Open-Data-Quote', 'Nicht Open-Data-fähig'],
+      ['Datentyp', 'Gesamtzahl', 'Open-Data-fÃ¤hig', 'Open-Data-Quote', 'Nicht Open-Data-fÃ¤hig'],
       ...state.statsRows.map((row) => [
         row.type,
         row.statistikCount,
@@ -1711,27 +1654,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildQualityCountUrl(criterionId, type, query) {
-    const params = new URLSearchParams();
-    params.set('criterionId', criterionId);
-    params.set('type', type);
-    if (query) params.set('query', query);
-    return `${QUALITY_COUNT_API_BASE}?${params.toString()}`;
+    return buildQualityCountRequestUrl(QUALITY_COUNT_API_BASE, criterionId, type, query);
   }
 
   function buildQualityListUrl({ criterionId, type, query }) {
-    const params = new URLSearchParams();
-    params.set('criterionId', criterionId);
-    params.set('type', type);
-    if (query) params.set('query', query);
-    return `${QUALITY_LIST_API_BASE}?${params.toString()}`;
+    return buildQualityListRequestUrl(QUALITY_LIST_API_BASE, { criterionId, type, query });
   }
 
   async function loadCachedQualityList({ criterionId, type, query }) {
-    if (!USE_QUALITY_CACHE) return null;
     try {
-      return await fetchJsonCached(buildQualityListUrl({ criterionId, type, query }), { optional404: true });
+      return await fetchCachedQualityList({
+        apiBase: QUALITY_LIST_API_BASE,
+        fetchJson: fetchJsonCached,
+        useQualityCache: USE_QUALITY_CACHE,
+        criterionId,
+        type,
+        query
+      });
     } catch (error) {
-      console.warn('Qualitätsliste konnte nicht aus dem Cache geladen werden.', error);
+      console.warn('QualitÃ¤tsliste konnte nicht aus dem Cache geladen werden.', error);
       return null;
     }
   }
@@ -1778,7 +1719,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
-        const payload = await fetchJsonCached(buildQualityCountUrl(criterion.id, type, query));
+        const payload = await fetchQualityCount({
+          apiBase: QUALITY_COUNT_API_BASE,
+          fetchJson: fetchJsonCached,
+          criterionId: criterion.id,
+          type,
+          query
+        });
         const count = Number(payload?.count || 0);
         if (!issueMap.has(criterion.id)) {
           issueMap.set(criterion.id, {
@@ -1801,7 +1748,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         failedCounts += 1;
         emit();
-        console.warn('Qualitäts-Count fehlgeschlagen.', criterion.id, type, error);
+        console.warn('QualitÃ¤ts-Count fehlgeschlagen.', criterion.id, type, error);
       }
     }));
 
@@ -1978,7 +1925,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const visibleRows = rows.slice(start, start + state.taskRowsPerPage);
 
     if (!visibleRows.length) {
-      els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">Für diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
+      els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">FÃ¼r diese Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>';
     } else {
       els.taskTableBody.innerHTML = visibleRows.map((task) => `
         <tr>
@@ -2024,13 +1971,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const task = state.selectedTask;
     hidePrimarySystems();
     if (!task) {
-      if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle eine Pflegeaufgabe aus der Liste.</p>';
+      if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">WÃ¤hle eine Pflegeaufgabe aus der Liste.</p>';
       return;
     }
 
     const needsTypeChoice = task.affectedTypes.length > 1 && !state.selectedTaskType;
     const typeChoice = task.affectedTypes.length > 1
-      ? `<label class="detail-type-select">Datentyp für Datensatzliste<select id="task-detail-type">${task.affectedTypes.map((type) => `<option value="${escapeHtml(type)}"${type === state.selectedTaskType ? ' selected' : ''}>${escapeHtml(type)}</option>`).join('')}</select></label>`
+      ? `<label class="detail-type-select">Datentyp fÃ¼r Datensatzliste<select id="task-detail-type">${task.affectedTypes.map((type) => `<option value="${escapeHtml(type)}"${type === state.selectedTaskType ? ' selected' : ''}>${escapeHtml(type)}</option>`).join('')}</select></label>`
       : '';
     const selectedType = state.selectedTaskType || task.affectedTypes[0] || '';
 
@@ -2047,7 +1994,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <dd>${renderTypeChips(task.affectedTypes)}</dd>
       </dl>
       ${typeChoice}
-      <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswählen und Datensätze anzeigen' : 'Datensätze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
+      <button id="task-open-records" class="primary-action" type="button">${needsTypeChoice ? 'Datentyp auswÃ¤hlen und DatensÃ¤tze anzeigen' : 'DatensÃ¤tze anzeigen'}<span class="material-icons" aria-hidden="true">arrow_forward</span></button>
     `;
 
     const typeSelect = document.getElementById('task-detail-type');
@@ -2067,12 +2014,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function openTaskRecordsOnRecordsPage(task, type) {
     if (!task || !type) {
-      showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
+      showTaskMessage('Bitte wÃ¤hle zuerst eine konkrete Aufgabe und einen Datentyp.');
       return;
     }
     const criterionId = resolveTaskCriterionId(task, type);
     if (!criterionId) {
-      showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
+      showTaskMessage('FÃ¼r diesen Datentyp konnte kein passendes QualitÃ¤tskriterium bestimmt werden.');
       return;
     }
 
@@ -2130,11 +2077,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const type = state.selectedTaskType || task?.affectedTypes?.[0] || '';
     const criterionId = resolveTaskCriterionId(task, type);
     if (!task || !type) {
-      showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
+      showTaskMessage('Bitte wÃ¤hle zuerst eine konkrete Aufgabe und einen Datentyp.');
       return;
     }
     if (!criterionId) {
-      showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
+      showTaskMessage('FÃ¼r diesen Datentyp konnte kein passendes QualitÃ¤tskriterium bestimmt werden.');
       return;
     }
 
@@ -2142,8 +2089,8 @@ document.addEventListener('DOMContentLoaded', () => {
     els.taskRecordsSection.hidden = false;
     els.taskRecordsExport.disabled = true;
     els.taskRecordsTitle.textContent = `${task.label} - ${type}`;
-    els.taskRecordsNote.textContent = 'Datensätze werden geladen ...';
-    els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>';
+    els.taskRecordsNote.textContent = 'DatensÃ¤tze werden geladen ...';
+    els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty"><span class="loading-line">DatensÃ¤tze werden geladen ...</span></td></tr>';
 
     try {
       const params = new URLSearchParams();
@@ -2167,21 +2114,21 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTaskRecords(task, type, rows, payload);
       renderPrimarySystemsForRecords(rows);
     } catch (error) {
-      console.error('Datensätze zur Pflegeaufgabe konnten nicht geladen werden.', error);
-      els.taskRecordsNote.textContent = 'Die Datensätze konnten nicht geladen werden.';
-      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
+      console.error('DatensÃ¤tze zur Pflegeaufgabe konnten nicht geladen werden.', error);
+      els.taskRecordsNote.textContent = 'Die DatensÃ¤tze konnten nicht geladen werden.';
+      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Die DatensÃ¤tze konnten nicht geladen werden.</td></tr>';
     }
   }
 
   function renderTaskRecords(task, type, rows, payload) {
     const page = payload?.page || {};
     const stats = payload?.stats || {};
-    const completeText = page.complete ? 'Liste geladen.' : 'Liste geladen, weitere Treffer können später nachgeladen werden.';
-    els.taskRecordsNote.textContent = `${completeText} ${formatNumber(rows.length)} Datensätze angezeigt.`;
+    const completeText = page.complete ? 'Liste geladen.' : 'Liste geladen, weitere Treffer kÃ¶nnen spÃ¤ter nachgeladen werden.';
+    els.taskRecordsNote.textContent = `${completeText} ${formatNumber(rows.length)} DatensÃ¤tze angezeigt.`;
     els.taskRecordsExport.disabled = !rows.length;
 
     if (!rows.length) {
-      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">Für diese Aufgabe wurden keine Datensätze gefunden.</td></tr>';
+      els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty">FÃ¼r diese Aufgabe wurden keine DatensÃ¤tze gefunden.</td></tr>';
       return;
     }
 
@@ -2192,14 +2139,14 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${escapeHtml([row.city, row.region].filter(Boolean).join(' / ') || '-')}</td>
         <td>${escapeHtml(task.label)}</td>
         <td>${escapeHtml(task.recommendation)}</td>
-        <td><span class="row-actions"><button class="plain-button" type="button" data-copy-id="${escapeHtml(row.globalId || row.id || '')}">ID kopieren</button><a class="plain-button" href="${escapeHtml(buildRecordDetailUrl(row))}">Detail öffnen</a></span></td>
+        <td><span class="row-actions"><button class="plain-button" type="button" data-copy-id="${escapeHtml(row.globalId || row.id || '')}">ID kopieren</button><a class="plain-button" href="${escapeHtml(buildRecordDetailUrl(row))}">Detail Ã¶ffnen</a></span></td>
       </tr>
     `).join('');
 
     els.taskRecordsBody.querySelectorAll('[data-copy-id]').forEach((button) => {
       button.addEventListener('click', () => copyText(button.dataset.copyId || ''));
     });
-    if (stats.budgetExhausted) console.debug('Qualitätsscan-Budget ausgeschoepft.', stats);
+    if (stats.budgetExhausted) console.debug('QualitÃ¤tsscan-Budget ausgeschoepft.', stats);
   }
 
   function renderTasksLoading() {
@@ -2219,7 +2166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.taskKpiHighDetail) els.taskKpiHighDetail.textContent = '-';
     if (els.taskTableBody) els.taskTableBody.innerHTML = '<tr><td colspan="6" class="table-empty">Noch keine Pflegeaufgaben geladen.</td></tr>';
     if (els.taskTableCount) els.taskTableCount.textContent = '0 Aufgaben';
-    if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">Wähle einen Arbeitskontext und starte die Abfrage.</p>';
+    if (els.taskDetailContent) els.taskDetailContent.innerHTML = '<p class="empty-note">WÃ¤hle einen Arbeitskontext und starte die Abfrage.</p>';
     showTaskMessage(message);
   }
 
@@ -2289,8 +2236,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderPendingRecordViewMessage();
       if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
     } catch (error) {
-      console.error('Datensätze konnten nicht geladen werden.', error);
-      renderRecordsEmpty('Die Datensätze konnten nicht geladen werden. Bitte versuche es später erneut.');
+      console.error('DatensÃ¤tze konnten nicht geladen werden.', error);
+      renderRecordsEmpty('Die DatensÃ¤tze konnten nicht geladen werden. Bitte versuche es spÃ¤ter erneut.');
     }
   }
 
@@ -2369,20 +2316,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadRecordRowsForView(view) {
     const query = buildQuery(state.context);
-    const params = new URLSearchParams();
-    params.set('criterionId', view.criterionId);
-    params.set('type', view.type);
-    params.set('limit', '200');
-    params.set('scanPageSize', '200');
-    params.set('maxPages', '20');
-    if (query) params.set('query', query);
 
     const cachedPayload = await loadCachedQualityList({
       criterionId: view.criterionId,
       type: view.type,
       query
     });
-    const payload = cachedPayload || await fetchJsonCached(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
+    const payload = cachedPayload || await fetchQualityScan({
+      apiBase: QUALITY_SCAN_API_BASE,
+      fetchJson: fetchJsonCached,
+      criterionId: view.criterionId,
+      type: view.type,
+      query,
+      limit: 200,
+      scanPageSize: 200,
+      maxPages: 20
+    });
     const sourceItems = extractItems(payload);
     const hasPreEvaluatedRows = sourceItems.some((item) => (
       Array.isArray(item?.missingCriteria) ||
@@ -2403,7 +2352,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function buildRecordViewModel(item) {
     const missingCriteria = Array.isArray(item.missingCriteria) ? item.missingCriteria : [];
-    const primaryIssueId = getPrimaryIssueId(item);
+    const primaryIssueId = getPrimaryIssueId(item, { qualityCriteria, priorityRank });
     const primaryCriterion = qualityCriteria.find((criterion) => criterion.id === primaryIssueId);
     const id = item.id || extractId(item.raw || item);
     const globalId = item.globalId || getFirst(item, ['global_id', 'globalId', 'raw.global_id', 'raw.globalId']);
@@ -2471,19 +2420,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderPendingRecordViewMessage() {
-    if (state.recordAiSearchPrompt) {
-      showRecordsMessage(`KI-Suche aktiv: ${state.recordAiSearchPrompt}`);
-      return;
-    }
-    const view = state.pendingRecordView;
-    if (!view) {
-      showRecordsMessage('');
-      return;
-    }
-    const criterion = qualityCriteria.find((entry) => entry.id === view.criterionId);
-    const label = view.label || criterion?.label || view.criterionId;
-    const typeText = view.type ? ` (${view.type})` : '';
-    showRecordsMessage(label ? `Gefiltert nach Pflegeaufgabe: ${label}${typeText}.` : 'Gefiltert nach Pflegeaufgabe.');
+    showRecordsMessage(buildPendingRecordViewMessage({
+      recordAiSearchPrompt: state.recordAiSearchPrompt,
+      pendingRecordView: state.pendingRecordView,
+      qualityCriteria
+    }));
   }
 
   function applyRecordFilters() {
@@ -2493,13 +2434,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = els.recordStatusFilter?.value || '';
     const issue = els.recordIssueFilter?.value || '';
 
-    state.filteredRecordRows = state.recordRows.filter((row) => {
-      if (query && !itemMatchesRecordSearch(row, query) && !state.recordServerSearchKeys.has(getRecordIdentityKey(row))) return false;
-      if (type && row.type !== type) return false;
-      if (category && row.category !== category) return false;
-      if (status && row.qualityStatus !== status) return false;
-      if (issue && !row.missingCriteria.includes(issue)) return false;
-      return true;
+    state.filteredRecordRows = filterRecordRows(state.recordRows, {
+      query,
+      type,
+      category,
+      status,
+      issue,
+      qualityCriteria,
+      serverSearchKeys: state.recordServerSearchKeys,
+      getIdentityKey: getRecordIdentityKey
     });
 
     renderRecordQuickCounts();
@@ -2530,20 +2473,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = true;
-    if (els.recordAiSearchNote) els.recordAiSearchNote.innerHTML = '<span class="inline-loading">KI-Suche wird ausgeführt ...</span>';
+    if (els.recordAiSearchNote) els.recordAiSearchNote.innerHTML = '<span class="inline-loading">KI-Suche wird ausgefÃ¼hrt ...</span>';
 
     try {
-      const aiPayload = await fetchJsonCached(OI_SEARCH_API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt,
-          context: {
-            area: contextAreaLabel(),
-            city: state.context.city || '',
-            type: els.recordTypeFilter?.value || state.context.type || ''
-          }
-        })
+      const aiPayload = await runAiRecordSearch({
+        apiBase: OI_SEARCH_API_BASE,
+        fetchJson: fetchJsonCached,
+        prompt,
+        context: {
+          area: contextAreaLabel(),
+          city: state.context.city || '',
+          type: els.recordTypeFilter?.value || state.context.type || ''
+        }
       });
       const ids = extractAiSearchIds(aiPayload);
       state.recordAiSearchPrompt = prompt;
@@ -2574,13 +2515,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       renderRecordsLoading();
-      const recordsPayload = await fetchJsonCached(RECORDS_BY_GLOBAL_IDS_API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ids,
-          type: els.recordTypeFilter?.value || state.context.type || ''
-        })
+      const recordsPayload = await resolveRecordsByIds({
+        apiBase: RECORDS_BY_GLOBAL_IDS_API_BASE,
+        fetchJson: fetchJsonCached,
+        ids,
+        type: els.recordTypeFilter?.value || state.context.type || ''
       });
       const resolved = Array.isArray(recordsPayload?.items) ? recordsPayload.items : [];
       const evaluated = evaluateAllItems(resolved.map((raw) => normalizeItem(raw.raw || raw, raw._resolvedType || raw.type)));
@@ -2600,7 +2539,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error('KI-Suche fehlgeschlagen.', error);
       if (els.recordAiSearchNote) {
-        els.recordAiSearchNote.textContent = getErrorMessage(error, 'Die KI-Suche konnte nicht ausgeführt werden.');
+        els.recordAiSearchNote.textContent = getErrorMessage(error, 'Die KI-Suche konnte nicht ausgefÃ¼hrt werden.');
       }
     } finally {
       if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = false;
@@ -2628,7 +2567,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const found = searchResult.items || [];
       if (!found.length) {
         applyRecordFilters();
-        showRecordsMessage('Keine Datensätze gefunden.');
+        showRecordsMessage('Keine DatensÃ¤tze gefunden.');
         return;
       }
       const evaluated = evaluateAllItems(found.map((raw) => normalizeItem(raw.raw || raw, raw.type)));
@@ -2648,7 +2587,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       console.error('Datensatzsuche fehlgeschlagen.', error);
       applyRecordFilters();
-      showRecordsMessage('Für diese Suche wurde kein Datensatz gefunden.');
+      showRecordsMessage('FÃ¼r diese Suche wurde kein Datensatz gefunden.');
     } finally {
       if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen';
     }
@@ -2656,7 +2595,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function handleRecordMailDraft(row, triggerNode) {
     if (!row?.email || !row?.missingCriteria?.length) {
-      showRecordsMessage('Für diesen Datensatz kann kein KI-Mailentwurf erzeugt werden.');
+      showRecordsMessage('FÃ¼r diesen Datensatz kann kein KI-Mailentwurf erzeugt werden.');
       return;
     }
 
@@ -2664,10 +2603,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const issueContext = getRecordMailIssueContext(row);
       const issues = getRecordMailIssues(row, issueContext);
-      const payload = await fetchJsonCached(OI_MAIL_DRAFT_API_BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRecordMailPayload({ row, issueContext, issues }))
+      const payload = await requestRecordMailDraft({
+        apiBase: OI_MAIL_DRAFT_API_BASE,
+        fetchJson: fetchJsonCached,
+        payload: buildRecordMailPayload({ row, issueContext, issues })
       });
       const mailtoUrl = buildMailtoUrl(payload);
       if (!mailtoUrl) throw new Error('Mailto payload invalid');
@@ -2726,7 +2665,7 @@ document.addEventListener('DOMContentLoaded', () => {
       extractItems,
       extractTotal,
       normalizeItem,
-      onTypeError: (type, error) => console.warn('Volltextsuche konnte nicht für Typ geladen werden.', type, error)
+      onTypeError: (type, error) => console.warn('Volltextsuche konnte nicht fÃ¼r Typ geladen werden.', type, error)
     });
   }
 
@@ -2803,8 +2742,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!visibleRows.length) {
       const emptyText = state.recordRows.length
-        ? 'Für diese Filter wurden keine Datensätze gefunden.'
-        : 'Noch keine Datensätze geladen. Wähle einen Arbeitskontext oder starte eine Suche.';
+        ? 'FÃ¼r diese Filter wurden keine DatensÃ¤tze gefunden.'
+        : 'Noch keine DatensÃ¤tze geladen. WÃ¤hle einen Arbeitskontext oder starte eine Suche.';
       els.recordTableBody.innerHTML = `<tr><td colspan="7" class="table-empty">${emptyText}</td></tr>`;
     } else {
       els.recordTableBody.innerHTML = visibleRows.map((row) => `
@@ -2819,7 +2758,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="row-actions">
               <button class="icon-button" type="button" data-record-mail="${escapeHtml(row.globalId || row.id || '')}" aria-label="E-Mail entwerfen"${row.email && row.missingCriteria.length ? '' : ' disabled'}><span class="material-icons" aria-hidden="true">mail</span></button>
               <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Datensatz ansehen"><span class="material-icons" aria-hidden="true">visibility</span></a>
-              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail öffnen"><span class="material-icons" aria-hidden="true">chevron_right</span></a>
+              <a class="icon-button" href="${escapeHtml(row.detailUrl)}" aria-label="Detail Ã¶ffnen"><span class="material-icons" aria-hidden="true">chevron_right</span></a>
             </span>
           </td>
         </tr>
@@ -2827,15 +2766,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const end = Math.min(rows.length, start + visibleRows.length);
-    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladenen Treffern` : `${formatNumber(rows.length)} Datensätzen`;
+    const totalText = state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladenen Treffern` : `${formatNumber(rows.length)} DatensÃ¤tzen`;
     if (els.recordPageRange) {
-      els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 Datensätze';
+      els.recordPageRange.textContent = rows.length ? `Zeige ${formatNumber(start + 1)} bis ${formatNumber(end)} von ${totalText}` : '0 DatensÃ¤tze';
     }
     if (els.recordResultSummary) {
       if (state.recordDataMeta.mode === 'ai_search') {
-        els.recordResultSummary.textContent = `KI-Suche: ${formatNumber(rows.length)} Datensätze geladen`;
+        els.recordResultSummary.textContent = `KI-Suche: ${formatNumber(rows.length)} DatensÃ¤tze geladen`;
       } else {
-        els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladene Treffer` : `${formatNumber(rows.length)} Datensätze`}`;
+        els.recordResultSummary.textContent = `Ergebnisse: ${state.recordDataMeta.truncated ? `${formatNumber(rows.length)} geladene Treffer` : `${formatNumber(rows.length)} DatensÃ¤tze`}`;
       }
     }
     if (els.recordPageStatus) els.recordPageStatus.textContent = `${state.recordPage} / ${totalPages}`;
@@ -2852,33 +2791,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function saveRecordListState(rows) {
-    try {
-      sessionStorage.setItem(RECORD_LIST_STATE_KEY, JSON.stringify({
-        backUrl: `records.html${location.search || ''}`,
-        createdAt: Date.now(),
-        rows: rows.slice(0, 250).map((row) => ({
-          id: row.id || '',
-          globalId: row.globalId || '',
-          type: row.type || '',
-          title: row.title || '',
-          detailUrl: row.detailUrl || buildRecordDetailUrl(row)
-        }))
-      }));
-    } catch {
-      // sessionStorage may be unavailable or full.
-    }
+    saveRecordListStateToSession(RECORD_LIST_STATE_KEY, rows, {
+      buildDetailUrl: buildRecordDetailUrl
+    });
   }
 
   function loadRecordListState() {
-    try {
-      const parsed = JSON.parse(sessionStorage.getItem(RECORD_LIST_STATE_KEY) || '{}');
-      return {
-        backUrl: typeof parsed.backUrl === 'string' ? parsed.backUrl : 'records.html',
-        rows: Array.isArray(parsed.rows) ? parsed.rows : []
-      };
-    } catch {
-      return { backUrl: 'records.html', rows: [] };
-    }
+    return loadRecordListStateFromSession(RECORD_LIST_STATE_KEY);
   }
 
   function renderRecordTitleCell(row) {
@@ -2896,7 +2815,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderRecordStatus(status) {
     const cls = status === 'gut' ? 'good' : status === 'kritisch' ? 'critical' : status === 'pruefen' ? 'review' : 'muted';
-    const label = status === 'nicht berechenbar' ? 'nicht bewertbar' : status === 'pruefen' ? 'prüfen' : status;
+    const label = status === 'nicht berechenbar' ? 'nicht bewertbar' : status === 'pruefen' ? 'prÃ¼fen' : status;
     return `<span class="record-status"><i class="status-dot ${cls}"></i>${escapeHtml(label || '-')}</span>`;
   }
 
@@ -2912,16 +2831,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderRecordsLoading() {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>';
-    if (els.recordResultSummary) els.recordResultSummary.textContent = 'Datensätze werden geladen ...';
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty"><span class="loading-line">DatensÃ¤tze werden geladen ...</span></td></tr>';
+    if (els.recordResultSummary) els.recordResultSummary.textContent = 'DatensÃ¤tze werden geladen ...';
     if (els.recordPageRange) els.recordPageRange.textContent = '-';
     if (els.recordExport) els.recordExport.disabled = true;
   }
 
   function renderRecordsEmpty(message) {
-    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Die Datensätze konnten nicht geladen werden.</td></tr>';
-    if (els.recordResultSummary) els.recordResultSummary.textContent = '0 Datensätze';
-    if (els.recordPageRange) els.recordPageRange.textContent = '0 Datensätze';
+    if (els.recordTableBody) els.recordTableBody.innerHTML = '<tr><td colspan="7" class="table-empty">Die DatensÃ¤tze konnten nicht geladen werden.</td></tr>';
+    if (els.recordResultSummary) els.recordResultSummary.textContent = '0 DatensÃ¤tze';
+    if (els.recordPageRange) els.recordPageRange.textContent = '0 DatensÃ¤tze';
     if (els.recordExport) els.recordExport.disabled = true;
     showRecordsMessage(message);
   }
@@ -2958,17 +2877,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderRecordDataNote() {
     if (!els.recordDataNote) return;
     if (state.recordDataMeta.mode === 'empty') {
-      els.recordDataNote.textContent = 'Es wird keine Browser-Stichprobe geladen. Wähle ein konkretes Problem oder öffne eine Pflegeaufgabe, um echte Datensatzlisten per API zu laden.';
+      els.recordDataNote.textContent = 'Es wird keine Browser-Stichprobe geladen. WÃ¤hle ein konkretes Problem oder Ã¶ffne eine Pflegeaufgabe, um echte Datensatzlisten per API zu laden.';
       return;
     }
     if (state.recordDataMeta.mode === 'criterion') {
       els.recordDataNote.textContent = state.recordDataMeta.truncated
-        ? 'Diese Liste basiert auf einem begrenzten Qualitäts-Scan für die ausgewählte Pflegeaufgabe.'
-        : 'Diese Liste basiert auf einem Qualitäts-Scan für die ausgewählte Pflegeaufgabe.';
+        ? 'Diese Liste basiert auf einem begrenzten QualitÃ¤ts-Scan fÃ¼r die ausgewÃ¤hlte Pflegeaufgabe.'
+        : 'Diese Liste basiert auf einem QualitÃ¤ts-Scan fÃ¼r die ausgewÃ¤hlte Pflegeaufgabe.';
       return;
     }
     if (state.recordDataMeta.mode === 'ai_search') {
-      els.recordDataNote.textContent = 'Diese Liste basiert auf einer KI-Suche und anschließend geladenen Datensätzen per global_id.';
+      els.recordDataNote.textContent = 'Diese Liste basiert auf einer KI-Suche und anschlieÃŸend geladenen DatensÃ¤tzen per global_id.';
       return;
     }
     if (state.recordDataMeta.mode === 'snapshot_list') {
@@ -2978,8 +2897,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     els.recordDataNote.textContent = state.recordDataMeta.truncated
-      ? 'Diese Liste basiert auf einem begrenzten API-/Server-Scan. Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.'
-      : 'Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.';
+      ? 'Diese Liste basiert auf einem begrenzten API-/Server-Scan. Die QualitÃ¤tsbewertung basiert auf den aktivierten Kriterien und verfÃ¼gbaren Daten.'
+      : 'Die QualitÃ¤tsbewertung basiert auf den aktivierten Kriterien und verfÃ¼gbaren Daten.';
   }
 
   function resetRecordFilters() {
@@ -3025,41 +2944,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderRecordTable();
   }
 
-  function itemMatchesRecordSearch(row, query) {
-    const needle = query.toLowerCase();
-    return getRecordSearchText(row).includes(needle);
-  }
-
-  function getRecordSearchText(row) {
-    if (!row.searchText) {
-      const issueLabels = row.missingCriteria
-        .map((id) => qualityCriteria.find((criterion) => criterion.id === id)?.label || id)
-        .join(' ');
-      row.searchText = [
-        row.title,
-        row.id,
-        row.globalId,
-        row.city,
-        row.region,
-        row.category,
-        row.type,
-        row.primaryIssue,
-        issueLabels
-      ].join(' ').toLowerCase();
-    }
-    return row.searchText;
-  }
-
-  function getPrimaryIssueId(item) {
-    const missing = Array.isArray(item.missingCriteria) ? item.missingCriteria : [];
-    return [...missing]
-      .sort((a, b) => {
-        const ca = qualityCriteria.find((criterion) => criterion.id === a);
-        const cb = qualityCriteria.find((criterion) => criterion.id === b);
-        return priorityRank(cb?.priority) - priorityRank(ca?.priority);
-      })[0] || '';
-  }
-
   function getRecordThumbnailUrl(item) {
     const media = qualityHelpers.getMediaObjects(item.raw || item)
       .find((entry) => qualityHelpers.isCheckableMediaObject(entry));
@@ -3077,7 +2961,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function exportRecordListCsv() {
     if (!state.filteredRecordRows.length) return;
     const rows = [
-      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'Qualitätsstatus', 'Qualitäts-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
+      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'QualitÃ¤tsstatus', 'QualitÃ¤ts-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
       ...state.filteredRecordRows.map((row) => [
         row.title,
         row.type,
@@ -3117,14 +3001,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const globalId = params.get('global_id') || params.get('globalId') || '';
 
     if (!id && !globalId) {
-      renderDetailEmpty('Noch kein Datensatz ausgewählt. Suche in der Datensatzliste nach Titel, ID oder Ort und öffne einen Eintrag.');
+      renderDetailEmpty('Noch kein Datensatz ausgewÃ¤hlt. Suche in der Datensatzliste nach Titel, ID oder Ort und Ã¶ffne einen Eintrag.');
       return;
     }
 
     try {
       const raw = await fetchRecordDetailItem({ type, id, globalId });
       if (!raw) {
-        renderDetailEmpty('Für diese ID wurde kein Datensatz gefunden. Bitte prüfe Typ und ID oder kehre zur Datensatzliste zurück.');
+        renderDetailEmpty('FÃ¼r diese ID wurde kein Datensatz gefunden. Bitte prÃ¼fe Typ und ID oder kehre zur Datensatzliste zurÃ¼ck.');
         return;
       }
       const normalized = normalizeItem(raw, type || getFirst(raw, ['type', 'typeName']));
@@ -3166,15 +3050,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
-  function getIdFromGlobalId(globalId) {
-    const match = String(globalId || '').trim().match(/^[a-z]+_(\d+)$/i);
-    return match ? match[1] : '';
-  }
-
-  function uniqueValues(values) {
-    return Array.from(new Set(values.filter(Boolean)));
-  }
-
   function getRecordDetailViewModel(item) {
     const raw = item.raw || item;
     const criteria = qualityCriteria.filter((criterion) => !criterion.types?.length || criterion.types.includes(item.type));
@@ -3213,7 +3088,7 @@ document.addEventListener('DOMContentLoaded', () => {
           id: criterion.id,
           label: criterion.label,
           recommendation: criterion.recommendation,
-          status: missing.has(criterion.id) ? 'fehlt' : fulfilled.has(criterion.id) ? 'erfüllt' : manual.has(criterion.id) ? 'nicht bewertbar' : 'nicht relevant'
+          status: missing.has(criterion.id) ? 'fehlt' : fulfilled.has(criterion.id) ? 'erfÃ¼llt' : manual.has(criterion.id) ? 'nicht bewertbar' : 'nicht relevant'
         })),
         preparedCriteria: domainCriteria
           .filter((criterion) => criterion.status === 'needs_verification')
@@ -3249,7 +3124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         description: getDisplayDescription(raw),
         teaser: getTextByRel(raw, 'teaser'),
         openings: getOpeningHoursSummary(item),
-        directions: getTextByRel(raw, 'directions') || (qualityHelpers.hasPublicTransportFeature(raw) ? 'ÖPNV-Information vorhanden.' : 'Keine ÖPNV-Information vorhanden.'),
+        directions: getTextByRel(raw, 'directions') || (qualityHelpers.hasPublicTransportFeature(raw) ? 'Ã–PNV-Information vorhanden.' : 'Keine Ã–PNV-Information vorhanden.'),
         price: getTextByRel(raw, 'PRICE_INFO'),
         priceReduced: getTextByRel(raw, 'PRICE_REDUCEDINFO'),
         seoTitle: getTextByRel(raw, 'WEB_SEO_TITEL'),
@@ -3394,7 +3269,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     els.detailBreadcrumb.innerHTML = `
-      <a href="records.html">Datensätze</a>
+      <a href="records.html">DatensÃ¤tze</a>
       <span class="material-icons" aria-hidden="true">chevron_right</span>
       <span>Datensatz-Detail</span>
     `;
@@ -3465,7 +3340,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderDetailMedia(model) {
     if (!model.media.images.length) {
-      els.detailMedia.innerHTML = '<p class="empty-note">Keine prüfbaren Bilder vorhanden.</p>';
+      els.detailMedia.innerHTML = '<p class="empty-note">Keine prÃ¼fbaren Bilder vorhanden.</p>';
       els.detailMediaNote.textContent = '';
       return;
     }
@@ -3487,8 +3362,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ['ID', escapeHtml(model.identity.id || '-')],
       ['global_id', escapeHtml(model.identity.globalId || '-')],
       ['Pflegesystem', escapeHtml(model.details.primarySystem.name)],
-      ['ET4 pages', model.details.et4Url ? `<a href="${escapeHtml(model.details.et4Url)}" target="_blank" rel="noopener">Öffnen auf et4 pages</a>` : 'Nicht verfügbar'],
-      ['Web', model.details.web ? `<a href="${escapeHtml(model.details.web)}" target="_blank" rel="noopener">Datensatz öffnen</a>` : 'Nicht angegeben'],
+      ['ET4 pages', model.details.et4Url ? `<a href="${escapeHtml(model.details.et4Url)}" target="_blank" rel="noopener">Ã–ffnen auf et4 pages</a>` : 'Nicht verfÃ¼gbar'],
+      ['Web', model.details.web ? `<a href="${escapeHtml(model.details.web)}" target="_blank" rel="noopener">Datensatz Ã¶ffnen</a>` : 'Nicht angegeben'],
       ['E-Mail', escapeHtml(model.details.email || 'Nicht angegeben')],
       ['Telefon', escapeHtml(model.details.phone || 'Nicht angegeben')],
       ['Adresse', escapeHtml([model.details.street, model.details.zip, model.identity.city].filter(Boolean).join(', ') || 'Nicht angegeben')],
@@ -3509,8 +3384,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const sourceGuarded = model.quality.sourceGuardedCriteria || [];
     const sections = [
       renderDetailCriteriaSection('Automatisch bewertet', automatic, 'Diese Kriterien fliessen heute bereits in die Datensatzbewertung ein.'),
-      renderDetailCriteriaSection('Fachlich vorbereitet', prepared, 'Diese Prüfungen sind für diesen Datentyp bereits fachlich vorgesehen, aber technisch noch nicht automatisch angebunden.'),
-      renderDetailCriteriaSection('Manuell zu prüfen', manualDomain, 'Diese Punkte brauchen weiterhin eine redaktionelle Sichtprüfung.'),
+      renderDetailCriteriaSection('Fachlich vorbereitet', prepared, 'Diese PrÃ¼fungen sind fÃ¼r diesen Datentyp bereits fachlich vorgesehen, aber technisch noch nicht automatisch angebunden.'),
+      renderDetailCriteriaSection('Manuell zu prÃ¼fen', manualDomain, 'Diese Punkte brauchen weiterhin eine redaktionelle SichtprÃ¼fung.'),
       renderDetailCriteriaSection('Nicht als normale Pflegeaufgabe', sourceGuarded, 'Diese Punkte sind fachlich relevant, werden aber nicht als normale automatische Pflegeaufgabe behandelt.')
     ].filter(Boolean);
     els.detailCriteriaList.innerHTML = sections.join('');
@@ -3538,14 +3413,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function normalizeCriterionStatus(status) {
-    if (status === 'erfuellt' || status === 'erfüllt') return 'erfuellt';
+    if (status === 'erfuellt' || status === 'erfÃ¼llt') return 'erfuellt';
     return status;
   }
 
   function getCriterionDisplayStatus(status) {
     const normalizedStatus = normalizeCriterionStatus(status);
     return {
-      erfuellt: 'Erfüllt',
+      erfuellt: 'ErfÃ¼llt',
       fehlt: 'Fehlt',
       'nicht bewertbar': 'Nicht bewertbar',
       'nicht relevant': 'Nicht relevant',
@@ -3598,13 +3473,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookingRelevant = ['Hotel', 'Package'].includes(item.type);
     return [
       { label: 'Open Data', value: licenseOk ? 'ja' : 'nein', ok: licenseOk },
-      { label: 'Lizenzstatus', value: licenseOk ? 'gültig' : 'Lizenz fehlt', ok: licenseOk },
+      { label: 'Lizenzstatus', value: licenseOk ? 'gÃ¼ltig' : 'Lizenz fehlt', ok: licenseOk },
       { label: 'Beschreibung', value: hasDescriptionValue ? 'vorhanden' : 'fehlt', ok: hasDescriptionValue },
       { label: 'Bilder', value: images.length ? 'vorhanden' : 'fehlt', ok: images.length > 0 },
       { label: 'Bildrechte', value: missingCopyright.length ? `${missingCopyright.length} ohne Urheber` : 'vorhanden', ok: missingCopyright.length === 0 },
-      { label: 'ÖPNV-Info', value: hasTransport ? 'vorhanden' : 'nicht vorhanden', ok: hasTransport },
+      { label: 'Ã–PNV-Info', value: hasTransport ? 'vorhanden' : 'nicht vorhanden', ok: hasTransport },
       { label: 'Buchungslink', value: bookingRelevant ? qualityHelpers.hasBookingLink(raw) ? 'vorhanden' : 'fehlt' : 'nicht relevant', ok: !bookingRelevant || qualityHelpers.hasBookingLink(raw), relevant: bookingRelevant },
-      { label: 'Öffnungszeiten', value: hasOpenings ? 'vorhanden' : 'fehlt', ok: hasOpenings }
+      { label: 'Ã–ffnungszeiten', value: hasOpenings ? 'vorhanden' : 'fehlt', ok: hasOpenings }
     ];
   }
 
@@ -3670,12 +3545,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getOpeningHoursSummary(item) {
     const raw = item.raw || item;
-    if (raw.alwaysOpen === true) return 'Immer geöffnet.';
+    if (raw.alwaysOpen === true) return 'Immer geÃ¶ffnet.';
     const openingText = getTextByRel(raw, 'openings');
     if (openingText) return openingText;
     const intervals = raw.timeIntervals || raw.raw?.timeIntervals || [];
     if (Array.isArray(intervals) && intervals.length) return formatTimeIntervals(intervals);
-    return 'Keine Öffnungszeiten angegeben.';
+    return 'Keine Ã–ffnungszeiten angegeben.';
   }
 
   function formatTimeIntervals(intervals) {
@@ -3689,7 +3564,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .filter(Boolean)
       .slice(0, 7);
-    return rows.length ? rows.join('\n') : 'Öffnungszeiten vorhanden.';
+    return rows.length ? rows.join('\n') : 'Ã–ffnungszeiten vorhanden.';
   }
 
   function formatWeekdays(days) {
@@ -3797,7 +3672,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderOverview(rows, items, options = {}) {
-    const summary = computeSummary(rows);
+    const summary = computeOverviewSummary(rows);
     const aggregations = state.qualityAggregations;
     const counts = aggregations.qualityStatusCounts || {};
     const assessedTotal = sumStatusCounts(counts);
@@ -3861,14 +3736,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const node = document.getElementById(id);
       if (node) node.textContent = '-';
     });
-    if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">Für diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
-    setQualityDataNoteText('Keine auswertbaren Qualitätsdaten geladen.');
+    if (els.topTasksList) els.topTasksList.innerHTML = '<div class="empty-note">FÃ¼r diese Auswahl wurden keine Pflegeaufgaben geladen.</div>';
+    setQualityDataNoteText('Keine auswertbaren QualitÃ¤tsdaten geladen.');
   }
 
   function setQualityDataNoteLoading() {
     if (!els.qualityDataNote) return;
     els.qualityDataNote.hidden = false;
-    els.qualityDataNote.innerHTML = '<span class="inline-loading" aria-label="Qualitätsdaten werden geladen"></span>';
+    els.qualityDataNote.innerHTML = '<span class="inline-loading" aria-label="QualitÃ¤tsdaten werden geladen"></span>';
   }
 
   function setQualityDataNoteText(text) {
@@ -3883,13 +3758,6 @@ document.addEventListener('DOMContentLoaded', () => {
     els.qualityDataNote.textContent = '';
   }
 
-  function computeSummary(rows) {
-    const statistikTotal = rows.reduce((sum, row) => sum + row.statistikCount, 0);
-    const openDataTotal = rows.reduce((sum, row) => sum + row.openDataCount, 0);
-    const openDataQuote = statistikTotal ? (openDataTotal / statistikTotal) * 100 : 0;
-    return { statistikTotal, openDataTotal, openDataQuote };
-  }
-
   function renderTopTasks(issueSummary) {
     const issues = buildTaskRows(issueSummary)
       .filter((issue) => Number(issue.affectedCount || 0) > 0)
@@ -3897,7 +3765,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .slice(0, 5);
 
     if (!issues.length) {
-      els.topTasksList.innerHTML = '<div class="empty-note">Für die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
+      els.topTasksList.innerHTML = '<div class="empty-note">FÃ¼r die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>';
       return;
     }
 
@@ -3919,7 +3787,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span class="task-icon ${statusClass}" aria-hidden="true">${taskIcon(issue.criterionId)}</span>
         <span class="task-copy"><strong>${escapeHtml(issue.label)}</strong><small>${escapeHtml(taskDescription(issue.criterionId))}</small></span>
         <span class="task-count">${formatNumber(issue.affectedCount)}</span>
-        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'Prüfen'}</span>
+        <span class="status-badge ${statusClass}">${issue.priority === 'hoch' ? 'Kritisch' : 'PrÃ¼fen'}</span>
         <span class="task-open material-icons" aria-hidden="true">chevron_right</span>
       `;
       return link;
@@ -3957,7 +3825,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rows = [
       ['Gut', good, goodPct, 'good'],
-      ['Prüfen', review, reviewPct, 'review'],
+      ['PrÃ¼fen', review, reviewPct, 'review'],
       ['Kritisch', critical, criticalPct, 'critical']
     ];
     if (unknown > 0) rows.push(['Nicht bewertbar', unknown, percent(unknown, total), 'muted']);
@@ -3989,7 +3857,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       if (state.qualityDataMeta.truncated) {
-        setQualityDataNoteText('Weitere Treffer können später nachgeladen werden.');
+        setQualityDataNoteText('Weitere Treffer kÃ¶nnen spÃ¤ter nachgeladen werden.');
         return;
       }
       hideQualityDataNote();
@@ -4004,10 +3872,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const note = state.qualityDataMeta.truncated
-      ? `Regionale Bewertung geladen. Weitere Treffer können später nachgeladen werden.`
-      : `Basierend auf ${formatNumber(sampleSize)} bewerteten Datensätzen.`;
+      ? `Regionale Bewertung geladen. Weitere Treffer kÃ¶nnen spÃ¤ter nachgeladen werden.`
+      : `Basierend auf ${formatNumber(sampleSize)} bewerteten DatensÃ¤tzen.`;
     setQualityDataNoteText(note);
-    if (state.qualityDataMeta.truncated) console.debug('Qualitätsdaten sind begrenzt.', state.qualityDataMeta);
+    if (state.qualityDataMeta.truncated) console.debug('QualitÃ¤tsdaten sind begrenzt.', state.qualityDataMeta);
   }
 
   function renderKpiDeltas(kpis) {
@@ -4017,7 +3885,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch {
       previous = null;
     }
-    renderDelta(els.kpiTotalDelta, previous?.totalRecords, kpis.totalRecords, 'Datensätze seit dem letzten Besuch');
+    renderDelta(els.kpiTotalDelta, previous?.totalRecords, kpis.totalRecords, 'DatensÃ¤tze seit dem letzten Besuch');
     renderDelta(els.kpiQualityDelta, previous?.qualityScore, kpis.qualityScore, 'Punkte seit dem letzten Besuch');
   }
 
@@ -4041,7 +3909,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function exportOverviewCsv() {
     if (!state.latestRows.length) {
-      showMessage('Für diese Ansicht liegen noch keine exportierbaren Daten vor.');
+      showMessage('FÃ¼r diese Ansicht liegen noch keine exportierbaren Daten vor.');
       return;
     }
     const rows = [
@@ -4054,7 +3922,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ])
     ];
     const text = rows.map((row) => row.map(csvValue).join(';')).join('\n');
-    downloadText('satourn_startseite_übersicht.csv', text, 'text/csv;charset=utf-8');
+    downloadText('satourn_startseite_Ã¼bersicht.csv', text, 'text/csv;charset=utf-8');
   }
 
   function showMessage(message) {
@@ -4076,67 +3944,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function taskProblem(id) {
-    if (id === 'poi_street_missing') return 'Fuer diese POI fehlt eine belastbare Strassen- oder Anschriftsangabe.';
-    if (id === 'poi_teaser_missing') return 'Fuer diese POI fehlt ein kurzer Teaser-Text.';
-    if (id === 'poi_email_missing') return 'Fuer diese POI fehlt eine E-Mail-Adresse.';
-    if (id === 'poi_website_missing') return 'Fuer diese POI fehlt eine Webseite.';
-    if (id === 'poi_phone_missing') return 'Fuer diese POI fehlt eine Telefonnummer.';
-    if (id === 'poi_price_missing') return 'Fuer diese POI fehlt eine Preis-, Eintritts- oder Kosteninformation.';
-    if (id === 'tour_season_missing') return 'Fuer diese Tour fehlt eine belastbare Saison- oder Eignungsangabe.';
-    if (id === 'tour_parking_missing') return 'Für diese Tour fehlt eine belastbare Parkinformation.';
-    const problems = {
-      license_missing: 'Für diese Datensätze ist keine gültige Lizenzangabe hinterlegt.',
-      image_author_missing: 'Bildmaterial ist vorhanden, aber der Urheberhinweis fehlt.',
-      description_missing: 'Für diese Datensätze fehlt eine belastbare Beschreibung mit Details.',
-      opening_hours_missing: 'Es sind keine Öffnungszeiten oder vergleichbare Zeitinformationen hinterlegt.',
-      public_transport_missing: 'Informationen zur Anreise mit dem ÖPNV fehlen.',
-      booking_link_missing: 'Es ist kein Buchungs-, Reservierungs- oder Ticketlink hinterlegt.',
-      image_missing: 'Für diese Datensätze ist kein prüfbares Bildmaterial vorhanden.',
-      poi_parking_feature_missing: 'Das Merkmal "Parkplätze vorhanden" fehlt.',
-      poi_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
-      poi_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
-      poi_suitability_missing: 'Keine der geprüften Eignungsangaben ist als Merkmal hinterlegt.',
-      hotel_language_english_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
-      hotel_payment_cash_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
-      hotel_parking_feature_missing: 'Keine der geprüften Parkinformationen ist als Merkmal hinterlegt.',
-      gastro_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
-      gastro_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
-      gastro_parking_feature_missing: 'Das Merkmal "PKW-Parkplatz am Haus" fehlt.',
-      gastro_cuisine_category_missing: 'Keine der geprüften Küchenarten ist als Kategorie hinterlegt.'
-    };
-    return problems[id] || 'Für diese Datensätze fehlt eine für die Datenpflege relevante Angabe.';
+    return getTaskProblem(id);
   }
 
   function taskImpactText(id) {
-    if (id === 'poi_street_missing') return 'Fehlende Anschriften erschweren Orientierung, Routing und redaktionelle Pflege.';
-    if (id === 'poi_teaser_missing') return 'Fehlende Teaser schwächen Kurzansicht, Auffindbarkeit und Erstverständnis.';
-    if (id === 'poi_email_missing') return 'Fehlende E-Mail-Adressen erschweren Rückfragen und Kontaktaufnahme.';
-    if (id === 'poi_website_missing') return 'Fehlende Webseiten schwächen Weiterleitung zu vertiefenden Informationen.';
-    if (id === 'poi_phone_missing') return 'Fehlende Telefonnummern erschweren direkte Rückfragen und Kontaktaufnahme.';
-    if (id === 'poi_price_missing') return 'Fehlende Preis- oder Eintrittshinweise erschweren Erwartungsmanagement und Besuchsplanung.';
-    if (id === 'tour_season_missing') return 'Fehlende Saisonangaben erschweren Einordnung, Planung und passende Nutzung der Tour.';
-    if (id === 'tour_parking_missing') return 'Fehlende Parkhinweise erschweren die Anreiseplanung für Touren mit Startpunkt vor Ort.';
-    const impacts = {
-      license_missing: 'Ohne Lizenz sind Daten nicht Open-Data-fähig und nur eingeschränkt weiterverwendbar.',
-      image_author_missing: 'Ohne Urheberangabe ist die Weitergabe von Bildmaterial rechtlich eingeschränkt.',
-      description_missing: 'Fehlende Beschreibungen reduzieren Auffindbarkeit, Verständlichkeit und Nutzbarkeit.',
-      opening_hours_missing: 'Fehlende Öffnungszeiten erschweren Planung und Ausspielung in Portalen.',
-      public_transport_missing: 'Fehlende ÖPNV-Hinweise schwächen nachhaltige Anreiseinformationen.',
-      booking_link_missing: 'Ohne Buchungslink können Nutzer Angebote schwerer direkt abschließen.',
-      image_missing: 'Ohne Bilder wirken Einträge weniger attraktiv und sind in vielen Kanälen schwächer.',
-      poi_parking_feature_missing: 'Fehlende Parkangaben erschweren Anreiseplanung mit dem Auto.',
-      poi_payment_options_missing: 'Fehlende Zahlungsarten schwächen Nutzbarkeit und Vorbereitung vor Ort.',
-      poi_languages_missing: 'Fehlende Sprachangaben reduzieren Zugänglichkeit für internationale Gäste.',
-      poi_suitability_missing: 'Fehlende Eignungsangaben erschweren Zielgruppenansprache und Orientierung.',
-      hotel_language_english_missing: 'Fehlende Sprachangaben reduzieren die Zugänglichkeit für internationale Gäste.',
-      hotel_payment_cash_missing: 'Fehlende Zahlungsarten erschweren Nutzung und Erwartungsmanagement vor Ort.',
-      hotel_parking_feature_missing: 'Fehlende Parkhinweise erschweren Anreiseplanung und Erwartungsmanagement vor Ort.',
-      gastro_payment_options_missing: 'Fehlende Zahlungsarten erschweren die Nutzung und Vorbereitung für Gäste.',
-      gastro_languages_missing: 'Fehlende Sprachangaben reduzieren Zugänglichkeit für internationale Gäste.',
-      gastro_parking_feature_missing: 'Fehlende Parkangaben erschweren die Anreiseplanung für Gäste.',
-      gastro_cuisine_category_missing: 'Fehlende Küchenarten schwächen Auffindbarkeit und thematische Einordnung.'
-    };
-    return impacts[id] || 'Die fehlende Information reduziert die praktische Nutzbarkeit der Daten.';
+    return getTaskImpactText(id);
   }
 
   function renderPrimarySystemsForTask(task) {
@@ -4271,7 +4083,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
     if (!rowsToExport.length) return;
     const rows = [
-      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Problem', 'Nächster Schritt', 'ID', 'global_id', 'source_id'],
+      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Problem', 'NÃ¤chster Schritt', 'ID', 'global_id', 'source_id'],
       ...rowsToExport.map((row) => [
         row.title,
         row.type,
@@ -4293,65 +4105,16 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await navigator.clipboard?.writeText(value);
     } catch (error) {
-      console.debug('Kopieren nicht möglich.', error);
+      console.debug('Kopieren nicht mÃ¶glich.', error);
     }
   }
 
   function taskIcon(id) {
-    if (id === 'poi_street_missing') return 'pin_drop';
-    if (id === 'poi_teaser_missing') return 'notes';
-    if (id === 'poi_email_missing') return 'mail';
-    if (id === 'poi_website_missing') return 'language';
-    if (id === 'poi_phone_missing') return 'call';
-    if (id === 'poi_price_missing') return 'sell';
-    if (id === 'license_missing') return 'description';
-    if (id === 'image_author_missing' || id === 'image_missing') return 'image';
-    if (id === 'opening_hours_missing') return 'schedule';
-    if (id === 'public_transport_missing') return 'directions_transit';
-    if (id === 'booking_link_missing') return 'link';
-    if (id === 'poi_parking_feature_missing' || id === 'gastro_parking_feature_missing') return 'local_parking';
-    if (id === 'poi_payment_options_missing' || id === 'gastro_payment_options_missing') return 'payments';
-    if (id === 'poi_languages_missing' || id === 'gastro_languages_missing') return 'translate';
-    if (id === 'poi_suitability_missing') return 'groups';
-    if (id === 'hotel_language_english_missing') return 'translate';
-    if (id === 'hotel_payment_cash_missing') return 'payments';
-    if (id === 'hotel_parking_feature_missing') return 'local_parking';
-    if (id === 'tour_season_missing') return 'event';
-    if (id === 'tour_parking_missing') return 'local_parking';
-    if (id === 'gastro_cuisine_category_missing') return 'restaurant_menu';
-    return 'warning';
+    return getTaskIcon(id);
   }
 
   function taskDescription(id) {
-    if (id === 'poi_street_missing') return 'Keine Strasse oder Anschrift hinterlegt';
-    if (id === 'poi_teaser_missing') return 'Kein Teaser-Text vorhanden';
-    if (id === 'poi_email_missing') return 'Keine E-Mail-Adresse vorhanden';
-    if (id === 'poi_website_missing') return 'Keine Webseite vorhanden';
-    if (id === 'poi_phone_missing') return 'Keine Telefonnummer vorhanden';
-    if (id === 'poi_price_missing') return 'Keine Preisinformation vorhanden';
-    if (id === 'tour_season_missing') return 'Keine Saisonangabe vorhanden';
-    if (id === 'tour_parking_missing') return 'Keine Parkinformation vorhanden';
-    const descriptions = {
-      license_missing: 'Datensätze ohne Lizenzangabe',
-      image_author_missing: 'Bilder ohne Urheberangabe',
-      description_missing: 'Keine Beschreibung oder Details',
-      opening_hours_missing: 'Keine Öffnungszeiten hinterlegt',
-      public_transport_missing: 'Keine ÖPNV-Information vorhanden',
-      booking_link_missing: 'Kein Buchungs- oder Reservierungslink',
-      image_missing: 'Kein Bildmaterial vorhanden',
-      poi_parking_feature_missing: 'Merkmal "Parkplätze vorhanden" fehlt',
-      poi_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
-      poi_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
-      poi_suitability_missing: 'Keine geprüfte Eignungsangabe vorhanden',
-      hotel_language_english_missing: 'Keine geprüfte Fremdsprache vorhanden',
-      hotel_payment_cash_missing: 'Keine geprüfte Zahlungsart vorhanden',
-      hotel_parking_feature_missing: 'Keine geprüfte Parkinformation vorhanden',
-      gastro_payment_options_missing: 'Keine geprüfte Zahlungsart vorhanden',
-      gastro_languages_missing: 'Keine geprüfte Fremdsprache vorhanden',
-      gastro_parking_feature_missing: 'Merkmal "PKW-Parkplatz am Haus" fehlt',
-      gastro_cuisine_category_missing: 'Keine geprüfte Küchenart vorhanden'
-    };
-    return descriptions[id] || 'Ergänzung empfohlen';
+    return getTaskDescription(id);
   }
 
   function priorityRank(priority) {

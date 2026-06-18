@@ -1,12 +1,24 @@
 # Datenqualitätsmonitor – Aktueller Projektstand
 
-Stand: 2026-06-15
+Stand: 2026-06-18
 
 ## Kurzfassung
 
 `Statistik/` ist ein statisches Frontend mit Vanilla JavaScript. Geschützte
 oder modellgestützte Zugriffe laufen serverseitig über den Render-Proxy.
 Secrets liegen nicht im Frontend.
+
+Neu dokumentiert:
+
+- die aktuelle Systemarchitektur
+- das Zielbild für spätere Framework-Migration
+- die Zieltrennung für Übergabe und Eigenhosting
+- die konkrete Frontend-Zielstruktur mit Modulen, Stores und Services
+
+Siehe:
+
+- `docs/Codex/Datenqualitaetsmonitor_Architektur_und_Zielbild.md`
+- `docs/Codex/Datenqualitaetsmonitor_Frontend_Migrationsplan.md`
 
 ## Aktive Seiten
 
@@ -80,12 +92,30 @@ Wichtige Produktentscheidung:
   `record-detail.html`, `stats.html`, `help.html`
 - Frontend-Logik:
   `Statistik/scripts.js`, `Statistik/quality.js`, `Statistik/main.js`
+- ausgelagerte State-/Storage-Helfer:
+  `Statistik/state-storage.js`
+- ausgelagerte API-URL-Helfer:
+  `Statistik/api-urls.js`
+- ausgelagerte Frontend-Record-API-Helfer:
+  `Statistik/record-api.js`
+- ausgelagerte reine Records-Helfer:
+  `Statistik/records-helpers.js`
+- ausgelagerte Frontend-Quality-API-Helfer:
+  `Statistik/quality-api.js`
+- ausgelagerte Übersichts-Helfer:
+  `Statistik/overview-helpers.js`
+- ausgelagerte Aufgaben- und Fehlertexte:
+  `Statistik/task-texts.js`
 - Styling:
   `Statistik/style.css`
 - Proxy:
   `routes/search.js`, `routes/quality.js`, `routes/records.js`, `routes/oi.js`
 - OI-Konfiguration:
   `lib/oi-config.js`
+- Architektur-Zielbild:
+  `docs/Codex/Datenqualitaetsmonitor_Architektur_und_Zielbild.md`
+- Frontend-Migrationsplan:
+  `docs/Codex/Datenqualitaetsmonitor_Frontend_Migrationsplan.md`
 
 ## Zuletzt umgesetzt
 
@@ -95,3 +125,12 @@ Wichtige Produktentscheidung:
 - Pflegeaufgaben-Link zurück auf `records.html` korrigiert
 - Dropdown-Design vereinheitlicht
 - Codex-Dokumentation verkleinert und Analysematerial archiviert
+- Systemarchitektur und Zielbild für Übergabe/Eigenhosting dokumentiert
+- Frontend-Zielmodule, Stores und Komponenten für spätere Migration dokumentiert
+- erster Storage-/View-State-Bereich aus `scripts.js` in `Statistik/state-storage.js` ausgelagert
+- erster API-Builder-Bereich aus `scripts.js` in `Statistik/api-urls.js` ausgelagert
+- erste Frontend-Record-/OI-Aufrufe aus `scripts.js` in `Statistik/record-api.js` ausgelagert
+- erste reine Records-Helfer aus `scripts.js` in `Statistik/records-helpers.js` ausgelagert
+- erste Frontend-Quality-Request-Helfer aus `scripts.js` in `Statistik/quality-api.js` ausgelagert
+- erste reine Übersichts-Helfer aus `scripts.js` in `Statistik/overview-helpers.js` ausgelagert
+- erste Aufgaben-, Fehler- und Icontexte aus `scripts.js` in `Statistik/task-texts.js` ausgelagert
