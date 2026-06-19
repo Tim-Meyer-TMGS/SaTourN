@@ -26,6 +26,30 @@ import {
   renderOverviewLoadingState,
   renderOverviewPage
 } from './overview/overview-ui.js';
+import {
+  canCalculateQualityForContext as canCalculateQualityForContextBindingsModel,
+  renderOverview as renderOverviewBindingsModel,
+  renderOverviewCurrent as renderOverviewCurrentBindingsModel,
+  renderOverviewEmpty as renderOverviewEmptyBindingsModel,
+  renderOverviewLoading as renderOverviewLoadingBindingsModel,
+  resetOverviewQualityState as resetOverviewQualityStateBindingsModel,
+  upsertStatisticRow as upsertStatisticRowBindingsModel
+} from './overview/overview-page-bindings.js';
+import {
+  applyStatsFiltersAndLoad as applyStatsFiltersAndLoadPageModel,
+  computeStatsSummary as computeStatsSummaryPageModel,
+  exportStatsCsv as exportStatsCsvPageModel,
+  fillStatsFilters as fillStatsFiltersPageModel,
+  loadStatsData as loadStatsDataPageModel,
+  loadStatsDataAsync as loadStatsDataAsyncPageModel,
+  renderStats as renderStatsPageModel,
+  renderStatsEmpty as renderStatsEmptyPageModel,
+  renderStatsError as renderStatsErrorPageModel,
+  renderStatsLoading as renderStatsLoadingPageModel,
+  resetStatsFilters as resetStatsFiltersPageModel,
+  setStatsLoadingState as setStatsLoadingStatePageModel,
+  showStatsMessage as showStatsMessagePageModel
+} from './stats/stats-page.js';
 import { buildMailtoUrl, launchMailto } from './records/record-mail.js';
 import { requestRecordMailDraft, resolveRecordsByIds, runAiRecordSearch } from './records/record-api.js';
 import {
@@ -83,6 +107,75 @@ import {
   searchSingleRecordById as searchSingleRecordByIdModel
 } from './records/records-data.js';
 import {
+  buildVerifiedEt4Url as buildVerifiedEt4UrlPageModel,
+  getFirst as getFirstPageModel,
+  getRecordEmail as getRecordEmailPageModel,
+  getRecordPhone as getRecordPhonePageModel,
+  getRecordThumbnailUrl as getRecordThumbnailUrlPageModel,
+  getRecordWeb as getRecordWebPageModel,
+  normalizeItem as normalizeItemPageModel,
+  searchRecordsByText as searchRecordsByTextDataPageModel,
+  searchSingleRecordById as searchSingleRecordByIdDataPageModel
+} from './records/records-page-data.js';
+import {
+  applyPendingRecordView as applyPendingRecordViewPageModel,
+  applyRecordFilters as applyRecordFiltersPageModel,
+  buildRecordViewModel as buildRecordViewModelPageModel,
+  fillRecordControls as fillRecordControlsPageModel,
+  fillRecordDynamicFilters as fillRecordDynamicFiltersPageModel,
+  renderPendingRecordViewMessage as renderPendingRecordViewMessagePageModel,
+  renderRecordDataNote as renderRecordDataNotePageModel,
+  renderRecordQuickCounts as renderRecordQuickCountsPageModel,
+  renderRecordsEmpty as renderRecordsEmptyPageModel,
+  renderRecordsLoading as renderRecordsLoadingPageModel,
+  renderRecordStatusLegend as renderRecordStatusLegendPageModel,
+  renderRecordTable as renderRecordTablePageModel
+} from './records/records-page-view.js';
+import {
+  applyPendingRecordView as applyPendingRecordViewBindingsModel,
+  applyRecordFilters as applyRecordFiltersBindingsModel,
+  buildRecordViewModel as buildRecordViewModelBindingsModel,
+  fillRecordControls as fillRecordControlsBindingsModel,
+  fillRecordDynamicFilters as fillRecordDynamicFiltersBindingsModel,
+  getRecordThumbnailUrl as getRecordThumbnailUrlBindingsModel,
+  loadRecordListState as loadRecordListStateBindingsModel,
+  openRecordAiSearchDialog as openRecordAiSearchDialogBindingsModel,
+  renderPendingRecordViewMessage as renderPendingRecordViewMessageBindingsModel,
+  renderRecordDataNote as renderRecordDataNoteBindingsModel,
+  renderRecordQuickCounts as renderRecordQuickCountsBindingsModel,
+  renderRecordsEmpty as renderRecordsEmptyBindingsModel,
+  renderRecordsLoading as renderRecordsLoadingBindingsModel,
+  renderRecordStatusLegend as renderRecordStatusLegendBindingsModel,
+  renderRecordTable as renderRecordTableBindingsModel,
+  saveRecordListState as saveRecordListStateBindingsModel,
+  setText as setTextBindingsModel,
+  showRecordsMessage as showRecordsMessageBindingsModel
+} from './records/records-page-bindings.js';
+import {
+  fetchRecordDetailItem as fetchRecordDetailItemPageModel,
+  getAddressSummary as getAddressSummaryPageModel,
+  getCoordinates as getCoordinatesPageModel,
+  getExternalSystemIds as getExternalSystemIdsPageModel,
+  getRawExcerpt as getRawExcerptPageModel,
+  getRecordDetailContext as getRecordDetailContextPageModel,
+  getRecordDetailViewModel as getRecordDetailViewModelPageModel
+} from './detail/record-detail-bindings.js';
+import {
+  buildVerifiedEt4Url as buildVerifiedEt4UrlBindingsModel,
+  getAddressSummary as getAddressSummaryBindingsModel,
+  getCoordinates as getCoordinatesBindingsModel,
+  getExternalSystemIds as getExternalSystemIdsBindingsModel,
+  getFirst as getFirstBindingsModel,
+  getRawExcerpt as getRawExcerptBindingsModel,
+  getRecordDetailContext as getRecordDetailContextBindingsModel,
+  getRecordDetailViewModel as getRecordDetailViewModelBindingsModel,
+  getRecordEmail as getRecordEmailBindingsModel,
+  getRecordPhone as getRecordPhoneBindingsModel,
+  getRecordWeb as getRecordWebBindingsModel,
+  normalizeItem as normalizeItemBindingsModel,
+  showDetailMessage as showDetailMessageBindingsModel
+} from './detail/record-detail-page-bindings.js';
+import {
   handleRecordAiSearchSubmit as handleRecordAiSearchSubmitModel,
   handleRecordSearchSubmit as handleRecordSearchSubmitModel,
   hideRecordAutocomplete as hideRecordAutocompleteModel,
@@ -90,6 +183,27 @@ import {
   queueRecordAutocomplete as queueRecordAutocompleteModel,
   renderRecordAutocomplete as renderRecordAutocompleteModel
 } from './records/records-actions.js';
+import {
+  handleRecordAiSearchSubmit as handleRecordAiSearchSubmitPageModel,
+  handleRecordMailDraft as handleRecordMailDraftPageModel,
+  handleRecordSearchSubmit as handleRecordSearchSubmitPageModel,
+  hideRecordAutocomplete as hideRecordAutocompletePageModel,
+  loadRecordAutocomplete as loadRecordAutocompletePageModel,
+  openRecordAiSearchDialog as openRecordAiSearchDialogPageModel,
+  queueRecordAutocomplete as queueRecordAutocompletePageModel,
+  renderRecordAutocomplete as renderRecordAutocompletePageModel
+} from './records/records-page-interactions.js';
+import {
+  handleRecordAiSearchSubmit as handleRecordAiSearchSubmitBindingsModel,
+  handleRecordMailDraft as handleRecordMailDraftBindingsModel,
+  handleRecordSearchSubmit as handleRecordSearchSubmitBindingsModel,
+  hideRecordAutocomplete as hideRecordAutocompleteBindingsModel,
+  loadRecordAutocomplete as loadRecordAutocompleteBindingsModel,
+  queueRecordAutocomplete as queueRecordAutocompleteBindingsModel,
+  renderRecordAutocomplete as renderRecordAutocompleteBindingsModel,
+  searchRecordsByText as searchRecordsByTextBindingsModel,
+  searchSingleRecordById as searchSingleRecordByIdBindingsModel
+} from './records/records-page-search-bindings.js';
 import {
   applyPendingRecordViewState,
   applyQuickRecordFilterState,
@@ -134,6 +248,23 @@ import {
   showTaskMessageState
 } from './tasks/tasks-ui.js';
 import {
+  changeTaskPage as changeTaskPageBindingsModel,
+  clearTaskRecords as clearTaskRecordsBindingsModel,
+  fillTaskTypeFilter as fillTaskTypeFilterBindingsModel,
+  openOverviewIssueOnRecordsPage as openOverviewIssueOnRecordsPageBindingsModel,
+  openTaskRecordsOnRecordsPage as openTaskRecordsOnRecordsPageBindingsModel,
+  renderTaskDetail as renderTaskDetailBindingsModel,
+  renderTaskKpis as renderTaskKpisBindingsModel,
+  renderTaskRecords as renderTaskRecordsBindingsModel,
+  renderTasksEmpty as renderTasksEmptyBindingsModel,
+  renderTasksLoading as renderTasksLoadingBindingsModel,
+  renderTaskTable as renderTaskTableBindingsModel,
+  resetTaskFilters as resetTaskFiltersBindingsModel,
+  resolveTaskCriterionId as resolveTaskCriterionIdBindingsModel,
+  selectTask as selectTaskBindingsModel,
+  showTaskMessage as showTaskMessageBindingsModel
+} from './tasks/task-page-bindings.js';
+import {
   closeRecordAiSearchDialog,
   extractAiSearchIds,
   getErrorMessage,
@@ -177,7 +308,6 @@ import {
   clearTransientRequestCache as clearTransientRequestCacheModel,
   createForceFreshController,
   fetchJsonCached as fetchJsonCachedModel,
-  hasConsent as hasConsentModel,
   interceptQuickAiConsent as interceptQuickAiConsentModel,
   isAbortLikeError as isAbortLikeErrorModel,
   loadConsentState as loadConsentStateModel,
@@ -186,6 +316,15 @@ import {
   saveConsentState as saveConsentStateModel,
   syncConsentControls as syncConsentControlsModel
 } from './core/runtime-helpers.js';
+import { renderHelpPage as renderHelpPageModel } from './help/help-page.js';
+import {
+  handleConsentSubmit as handleConsentSubmitPageModel,
+  interceptQuickAiConsent as interceptQuickAiConsentPageModel,
+  loadConsentState as loadConsentStatePageModel,
+  openConsentDialog as openConsentDialogPageModel,
+  saveConsentState as saveConsentStatePageModel,
+  syncConsentControls as syncConsentControlsPageModel
+} from './core/consent-ui.js';
 import {
   fillContextControls as fillContextControlsModel,
   initSharedShell as initSharedShellModel,
@@ -193,6 +332,29 @@ import {
   openContextDialog as openContextDialogModel,
   renderWorkContext as renderWorkContextModel
 } from './core/page-shell.js';
+import {
+  initSharedShell as initSharedShellPageModel,
+  initializePage as initializePagePageModel
+} from './core/page-bootstrap.js';
+import {
+  initHelp as initHelpPageModel,
+  initOverview as initOverviewPageModel,
+  initRecordDetail as initRecordDetailPageModel,
+  initRecords as initRecordsPageModel,
+  initStats as initStatsPageModel,
+  initTasks as initTasksPageModel
+} from './core/page-initializers.js';
+import {
+  clearRecordViewState as clearRecordViewStatePageModel,
+  fillContextControls as fillContextControlsPageModel,
+  handleContextSubmit as handleContextSubmitPageModel,
+  loadRecordViewStateFromRoute as loadRecordViewStateFromRoutePageModel,
+  loadWorkContext as loadWorkContextPageModel,
+  openContextDialog as openContextDialogPageModel,
+  renderWorkContext as renderWorkContextPageModel,
+  saveRecordViewState as saveRecordViewStatePageModel,
+  saveWorkContext as saveWorkContextPageModel
+} from './core/context-shell-controller.js';
 import {
   collectPrimarySystems as collectPrimarySystemsModel,
   getKeywordValues as getKeywordValuesModel,
@@ -209,7 +371,49 @@ import {
   saveRecordViewStateToSession,
   saveStoredWorkContext
 } from './core/state-storage.js';
+import {
+  loadRecordListState as loadRecordListStatePageModel,
+  saveRecordListState as saveRecordListStatePageModel,
+  setRecordCount as setRecordCountPageModel,
+  showDetailMessage as showDetailMessagePageModel,
+  showRecordsMessage as showRecordsMessagePageModel
+} from './records/records-page-state.js';
+import {
+  hidePrimarySystems as hidePrimarySystemsPageModel,
+  renderPrimarySystemLogo as renderPrimarySystemLogoPageModel,
+  renderPrimarySystemsForRecords as renderPrimarySystemsForRecordsPageModel,
+  renderPrimarySystemsForTask as renderPrimarySystemsForTaskPageModel
+} from './core/source-systems-ui.js';
+import {
+  collectPrimarySystems as collectPrimarySystemsBindingsModel,
+  exportTaskRecordsCsv as exportTaskRecordsCsvBindingsModel,
+  getKeywordValues as getKeywordValuesBindingsModel,
+  getPrimarySystem as getPrimarySystemBindingsModel,
+  getSourceId as getSourceIdBindingsModel,
+  hidePrimarySystems as hidePrimarySystemsBindingsModel,
+  renderPrimarySystemLogo as renderPrimarySystemLogoBindingsModel,
+  renderPrimarySystemsForRecords as renderPrimarySystemsForRecordsBindingsModel,
+  renderPrimarySystemsForTask as renderPrimarySystemsForTaskBindingsModel,
+  safeKeywordArray as safeKeywordArrayBindingsModel
+} from './core/source-systems-page-bindings.js';
 import { getTaskFamilyId, getTaskFamilyMeta } from './tasks/task-families.js';
+import {
+  openOverviewIssueOnRecordsPage as openOverviewIssueOnRecordsPagePageModel,
+  openTaskRecordsOnRecordsPage as openTaskRecordsOnRecordsPagePageModel,
+  resolveTaskCriterionId as resolveTaskCriterionIdPageModel
+} from './tasks/task-record-links.js';
+import {
+  loadRecordRowsForIssueSelection as loadRecordRowsForIssueSelectionPageModel,
+  loadRecordRowsForPendingView as loadRecordRowsForPendingViewPageModel,
+  loadRecordRowsForView as loadRecordRowsForViewPageModel
+} from './records/records-page-queries.js';
+import {
+  collectPrimarySystems as collectPrimarySystemsPageModel,
+  getKeywordValues as getKeywordValuesPageModel,
+  getPrimarySystem as getPrimarySystemPageModel,
+  getSourceId as getSourceIdPageModel,
+  safeKeywordArray as safeKeywordArrayPageModel
+} from './core/source-systems-bindings.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const root = document.querySelector('.statistik[data-page]');
@@ -403,7 +607,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   const forceFreshController = createForceFreshController();
-  let consentState = loadConsentState();
+  let consentState = loadConsentStatePageModel({
+    consentStorageKey: CONSENT_STORAGE_KEY,
+    runtimeConfig: RUNTIME_CONFIG,
+    loadConsentStateModel
+  });
   const requestCache = createRequestCache({
     fetchJson: rawFetchJson,
     fetchJsonOptional: fetchJsonOptionalUncached,
@@ -420,160 +628,115 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   initSharedShell();
-  initializePageModel(page, {
+  initializePagePageModel({
+    page,
     initOverview,
     initTasks,
     initRecords,
     initRecordDetail,
     initStats,
-    initHelp
+    initHelp,
+    initializePageModel
   });
 
   function initSharedShell() {
-    initSharedShellModel({
+    initSharedShellPageModel({
       els,
-      fillControls: fillContextControls,
-      renderContext: renderWorkContext,
+      fillContextControls,
+      renderWorkContext,
       syncConsentControls,
       openContextDialog,
       handleContextSubmit,
       openConsentDialog,
       handleConsentSubmit,
-      markForceFresh
+      markForceFresh,
+      initSharedShellModel
     });
   }
 
   function initOverview() {
-    renderOverviewLoading();
-    els.refreshButton?.addEventListener('click', () => {
-      clearTransientRequestCache();
-      void loadOverviewDataAsync();
+    initOverviewPageModel({
+      els,
+      clearTransientRequestCache,
+      loadOverviewDataAsync,
+      renderOverviewLoading,
+      exportOverviewCsv,
+      interceptQuickAiConsent,
+      showMessage
     });
-    els.quickExport?.addEventListener('click', exportOverviewCsv);
-    els.quickAi?.addEventListener('click', interceptQuickAiConsent, { capture: true });
-    els.quickAi?.addEventListener('click', () => showMessage('Die KI-Analyse wird als dezente Aktion in einem spaeteren Schritt angebunden.'));
-    void loadOverviewDataAsync();
   }
 
   function initTasks() {
-    const params = new URLSearchParams(location.search);
-    state.pendingTaskId = params.get('task') || params.get('criterionId') || '';
-    fillTaskTypeFilter();
-    renderTasksLoading();
-    els.refreshButton?.addEventListener('click', () => loadTasksData());
-    els.taskSearchInput?.addEventListener('input', () => {
-      state.taskPage = 1;
-      applyTaskFilters();
+    initTasksPageModel({
+      els,
+      state,
+      locationObject: location,
+      fillTaskTypeFilter,
+      renderTasksLoading,
+      loadTasksData,
+      applyTaskFilters,
+      resetTaskFilters,
+      changeTaskPage,
+      exportTaskRecordsCsv
     });
-    [els.taskPriorityFilter, els.taskTypeFilter, els.taskCheckFilter, els.taskImpactFilter].forEach((node) => {
-      node?.addEventListener('change', () => {
-        state.taskPage = 1;
-        applyTaskFilters();
-      });
-    });
-    els.taskResetFilters?.addEventListener('click', resetTaskFilters);
-    els.taskPrevPage?.addEventListener('click', () => changeTaskPage(-1));
-    els.taskNextPage?.addEventListener('click', () => changeTaskPage(1));
-    els.taskRecordsExport?.addEventListener('click', exportTaskRecordsCsv);
-    void loadTasksData();
   }
 
   function initRecords() {
-    fillRecordControls();
-    renderRecordsLoading();
-    els.refreshButton?.addEventListener('click', () => loadRecordsData());
-    els.recordAiSearchButton?.addEventListener('click', openRecordAiSearchDialog);
-    els.recordAiSearchForm?.addEventListener('submit', handleRecordAiSearchSubmit);
-    els.recordSearchInput?.addEventListener('input', () => {
-      state.recordServerSearchKeys = new Set();
-      state.recordAiSearchPrompt = '';
-      clearTimeout(state.recordSearchTimer);
-      state.recordSearchTimer = setTimeout(() => {
-        state.recordPage = 1;
-        applyRecordFilters();
-      }, 180);
-      queueRecordAutocomplete();
+    initRecordsPageModel({
+      els,
+      state,
+      documentObject: document,
+      fillRecordControls,
+      renderRecordsLoading,
+      loadRecordsData,
+      openRecordAiSearchDialog,
+      handleRecordAiSearchSubmit,
+      applyRecordFilters,
+      queueRecordAutocomplete,
+      hideRecordAutocomplete,
+      handleRecordSearchSubmit,
+      resetRecordFilters,
+      renderRecordTable,
+      changeRecordPage,
+      exportRecordListCsv,
+      applyQuickRecordFilter
     });
-    els.recordSearchInput?.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        hideRecordAutocomplete();
-        void handleRecordSearchSubmit();
-      } else if (event.key === 'Escape') {
-        hideRecordAutocomplete();
-      }
-    });
-    els.recordSearchInput?.addEventListener('focus', queueRecordAutocomplete);
-    els.recordSearchButton?.addEventListener('click', () => {
-      hideRecordAutocomplete();
-      void handleRecordSearchSubmit();
-    });
-    els.recordSearchClear?.addEventListener('click', () => {
-      if (els.recordSearchInput) els.recordSearchInput.value = '';
-      hideRecordAutocomplete();
-      state.recordAiSearchPrompt = '';
-      state.recordPage = 1;
-      applyRecordFilters();
-    });
-    document.addEventListener('click', (event) => {
-      if (!event.target.closest?.('.record-search-block')) hideRecordAutocomplete();
-    });
-    [els.recordTypeFilter, els.recordCategoryFilter, els.recordStatusFilter, els.recordIssueFilter].forEach((node) => {
-      node?.addEventListener('change', () => {
-        state.recordPage = 1;
-        if ((node === els.recordIssueFilter || node === els.recordTypeFilter) && els.recordIssueFilter?.value) {
-          void loadRecordsData();
-          return;
-        }
-        applyRecordFilters();
-      });
-    });
-    els.recordResetFilters?.addEventListener('click', resetRecordFilters);
-    els.recordPageSize?.addEventListener('change', () => {
-      state.recordRowsPerPage = Number(els.recordPageSize.value || 25);
-      state.recordPage = 1;
-      renderRecordTable();
-    });
-    els.recordPrevPage?.addEventListener('click', () => changeRecordPage(-1));
-    els.recordNextPage?.addEventListener('click', () => changeRecordPage(1));
-    els.recordExport?.addEventListener('click', exportRecordListCsv);
-    document.querySelectorAll('[data-record-quick]').forEach((button) => {
-      button.addEventListener('click', () => applyQuickRecordFilter(button.dataset.recordQuick || ''));
-    });
-    void loadRecordsData();
   }
 
   function initRecordDetail() {
-    els.refreshButton?.addEventListener('click', () => loadRecordDetail());
-    els.detailCopyLink?.addEventListener('click', () => copyText(location.href));
-    els.detailCopyId?.addEventListener('click', () => copyText(state.recordDetailViewModel?.identity.id || ''));
-    els.detailCopyGlobalId?.addEventListener('click', () => copyText(state.recordDetailViewModel?.identity.globalId || ''));
-    void loadRecordDetail();
+    initRecordDetailPageModel({
+      els,
+      state,
+      locationObject: location,
+      loadRecordDetail,
+      copyText
+    });
   }
 
   function initStats() {
-    fillStatsFilters();
-    renderStatsLoading();
-    els.refreshButton?.addEventListener('click', () => loadStatsDataAsync());
-    els.statsRefresh?.addEventListener('click', markForceFresh, { capture: true });
-    els.statsRefresh?.addEventListener('click', applyStatsFiltersAndLoad);
-    els.statsExport?.addEventListener('click', exportStatsCsv);
-    els.statsResetFilters?.addEventListener('click', resetStatsFilters);
-    [els.statsAreaFilter, els.statsTypeFilter].forEach((node) => {
-      node?.addEventListener('change', () => {
-        applyStatsFiltersAndLoad();
-      });
+    initStatsPageModel({
+      els,
+      fillStatsFilters,
+      renderStatsLoading,
+      loadStatsDataAsync,
+      markForceFresh,
+      applyStatsFiltersAndLoad,
+      exportStatsCsv,
+      resetStatsFilters
     });
-    els.statsCityFilter?.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter') return;
-      event.preventDefault();
-      applyStatsFiltersAndLoad();
-    });
-    void loadStatsDataAsync();
   }
 
   function initHelp() {
-    renderHelpPage();
+    initHelpPageModel({
+      els,
+      types: TYPES,
+      qualityCriteria,
+      qualityHelpers,
+      escapeHtml,
+      formatNumber,
+      priorityRank,
+      renderHelpPageModel
+    });
   }
 
   function markForceFresh() {
@@ -596,437 +759,134 @@ document.addEventListener('DOMContentLoaded', () => {
     return isAbortLikeErrorModel(error);
   }
 
-  function loadConsentState() {
-    return loadConsentStateModel(CONSENT_STORAGE_KEY, RUNTIME_CONFIG);
-  }
-
-  function saveConsentState() {
-    consentState = saveConsentStateModel(consentState, CONSENT_STORAGE_KEY);
-  }
-
-  function hasConsent(category) {
-    return hasConsentModel(consentState, category);
-  }
-
   function syncConsentControls() {
-    syncConsentControlsModel(els, consentState);
+    syncConsentControlsPageModel({
+      els,
+      consentState,
+      syncConsentControlsModel
+    });
   }
 
   function openConsentDialog() {
-    openConsentDialogModel(els, syncConsentControls);
+    openConsentDialogPageModel({
+      els,
+      syncConsentControls,
+      openConsentDialogModel
+    });
   }
 
   function handleConsentSubmit(event) {
-    if (event.submitter?.value === 'cancel') return;
-    event.preventDefault();
-    consentState = readConsentFormState(els, consentState);
-    saveConsentState();
-    renderHelpPrivacySection();
-    els.consentDialog?.close?.();
+    consentState = handleConsentSubmitPageModel({
+      event,
+      els,
+      consentState,
+      readConsentFormState,
+      saveConsentState: (nextState) => saveConsentStatePageModel({
+        consentState: nextState,
+        consentStorageKey: CONSENT_STORAGE_KEY,
+        saveConsentStateModel
+      }),
+      onSaved: (nextState) => {
+        consentState = nextState;
+      }
+    });
   }
 
   function interceptQuickAiConsent(event) {
-    interceptQuickAiConsentModel(consentState, event, showMessage);
-  }
-
-  function renderHelpPage() {
-    if (els.helpModelSummary) {
-      els.helpModelSummary.textContent = 'Nicht jeder Fehler wirkt gleich stark. Kritische Lücken schlagen deutlich auf den Score, normale Fehler schwächen ihn sichtbar und leichte Optimierungen runden den Datensatz später ab.';
-    }
-    renderHelpSeverityOverview();
-    renderHelpTypeOverview();
-  }
-
-  function renderHelpTypeOverview() {
-    if (!els.helpTypeGrid) return;
-    const cards = TYPES.map((type) => buildHelpTypeCard(type)).join('');
-    els.helpTypeGrid.innerHTML = cards;
-  }
-
-  function renderHelpSeverityOverview() {
-    if (!els.helpSeverityGrid) return;
-
-    const groups = [
-      {
-        key: 'critical',
-        icon: 'error',
-        iconClass: 'red',
-        title: 'Kritische Fehler',
-        impact: 'Wirken stark auf Score und Nutzbarkeit.',
-        body: 'Diese Lücken solltest du zuerst schließen. Sie betreffen häufig Lizenz, Beschreibung oder andere zentrale Pflichtangaben.',
-        action: 'Zuerst bearbeiten'
-      },
-      {
-        key: 'error',
-        icon: 'rule',
-        iconClass: 'amber',
-        title: 'Fehler',
-        impact: 'Schwächen den Datensatz klar sichtbar.',
-        body: 'Diese Angaben sind wichtig für Vollständigkeit und Verständlichkeit. Sie sollten nach den kritischen Punkten nachgezogen werden.',
-        action: 'Danach bearbeiten'
-      },
-      {
-        key: 'optimization',
-        icon: 'auto_fix_high',
-        iconClass: 'green',
-        title: 'Leichte Optimierungen',
-        impact: 'Verbessern Qualität und Feinschliff.',
-        body: 'Diese Angaben machen den Datensatz runder und aussagekräftiger, sind aber nicht so gravierend wie harte Lücken.',
-        action: 'Zum Schluss optimieren'
-      }
-    ];
-
-    els.helpSeverityGrid.innerHTML = groups.map((group) => {
-      const examples = getHelpSeverityExamples(group.key);
-      return `
-        <article class="panel-card help-score-card help-severity-card">
-          <span class="help-score-icon ${group.iconClass} material-icons" aria-hidden="true">${group.icon}</span>
-          <div>
-            <h2>${escapeHtml(group.title)}</h2>
-            <p><strong>${escapeHtml(group.impact)}</strong></p>
-            <p>${escapeHtml(group.body)}</p>
-            <div class="help-severity-examples">
-              <span class="help-severity-action">${escapeHtml(group.action)}</span>
-              <p>${escapeHtml(examples)}</p>
-            </div>
-          </div>
-        </article>
-      `;
-    }).join('');
-  }
-
-  function renderHelpPrivacySection() {
-    const localStorageEntries = [
-      'Arbeitskontext: Gebiet, Ort und Datentyp',
-      'Consent-Einstellungen für optionale Kategorien',
-      'Zuletzt berechnete KPI-Vergleichswerte für die übersicht',
-      'Temporare Listen- und Detailnavigation nur in der laufenden Sitzung'
-    ];
-    const externalServices = Array.isArray(RUNTIME_CONFIG.externalServices) ? RUNTIME_CONFIG.externalServices : [];
-    const categoryRows = [
-      ['Essenziell', 'Aktiv für Navigation, Proxy und Kernfunktionen', true],
-      ['Externe UI-Dienste', hasConsent('external_ui') ? 'Vom Nutzer freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('external_ui')],
-      ['Automatisierung', hasConsent('automation') ? 'Freigegeben' : 'Vorbereitet, aktuell nicht freigegeben', hasConsent('automation')],
-      ['Analytics', hasConsent('analytics') ? 'Freigegeben' : 'Nicht produktiv aktiv', hasConsent('analytics')]
-    ];
-
-    if (els.helpPrivacySummary) {
-      const activeOptional = categoryRows.filter(([, , enabled]) => enabled).length - 1;
-      els.helpPrivacySummary.textContent = activeOptional > 0
-        ? `Essenzielle Funktionen sind aktiv. ${formatNumber(activeOptional)} optionale Kategorie ist derzeit freigegeben.`
-        : 'Essenzielle Funktionen sind aktiv. Optionale Kategorien sind vorbereitet, derzeit aber standardmäßig deaktiviert.';
-    }
-    if (els.helpLocalStorageList) {
-      els.helpLocalStorageList.innerHTML = localStorageEntries
-        .map((entry) => `<li>${escapeHtml(entry)}</li>`)
-        .join('');
-    }
-    if (els.helpExternalServicesList) {
-      els.helpExternalServicesList.innerHTML = externalServices.length
-        ? externalServices.map((service) => `<li><strong>${escapeHtml(service.host || service.id)}</strong><br><small>${escapeHtml(service.purpose || '')}</small></li>`).join('')
-        : '<li>Keine externen Dienste hinterlegt.</li>';
-    }
-    if (els.helpConsentCategoryList) {
-      els.helpConsentCategoryList.innerHTML = categoryRows
-        .map(([label, text, enabled]) => `<li><strong>${escapeHtml(label)}</strong><br><small>${escapeHtml(text)}</small><span class="status-badge ${enabled ? 'good' : 'muted'}">${enabled ? 'Aktiv' : 'Aus'}</span></li>`)
-        .join('');
-    }
-  }
-
-  function buildHelpTypeCardV2(type) {
-    const criteria = qualityCriteria
-      .filter((criterion) => (criterion.types || []).includes(type))
-      .sort((a, b) => (
-        priorityRank(b.priority) - priorityRank(a.priority) ||
-        Number(b.weight || 0) - Number(a.weight || 0) ||
-        a.label.localeCompare(b.label, 'de')
-      ));
-    const domainCriteria = qualityHelpers.getDomainCriteriaForType(type);
-    const autoCheckedCount = criteria.length;
-    const pendingCount = domainCriteria.filter((criterion) => criterion.status === 'needs_verification').length;
-    const model = buildHelpTypeScoreModel(criteria);
-    const minimumItems = model.minimumCriteria.length
-      ? model.minimumCriteria
-      : criteria.slice(0, 1);
-    const extraItems = criteria.filter((criterion) => !model.minimumIds.has(criterion.id));
-    return `
-      <article class="panel-card help-type-card">
-        <header class="help-type-head">
-          <div>
-            <h3>${escapeHtml(type)}</h3>
-            <p class="data-note">Maximal mögliche Gewichtspunkte: ${formatNumber(model.totalWeight)}</p>
-          </div>
-          <span class="help-type-score">${formatNumber(model.threshold)} Punkte für grün</span>
-        </header>
-        <div class="help-type-columns">
-          <section>
-            <h4>Minimal für guten Score</h4>
-            ${renderHelpCriterionListV2(minimumItems, 'required')}
-          </section>
-          <section>
-            <h4>Optimal gepflegt</h4>
-            ${renderHelpCriterionListV2(extraItems, 'optional')}
-          </section>
-        </div>
-        <footer class="help-type-footer">
-          <span>Fehlende Punkte ziehen den Score direkt ab.</span>
-          <span>${formatNumber(autoCheckedCount)} automatisch geprüft, ${formatNumber(pendingCount)} fachlich vorbereitet</span>
-        </footer>
-      </article>
-    `;
-  }
-
-  function buildHelpTypeScoreModel(criteria) {
-    const totalWeight = criteria.reduce((sum, criterion) => sum + Number(criterion.weight || 0), 0);
-    const threshold = Math.ceil(totalWeight * 0.8);
-    const subsets = [];
-    const count = criteria.length;
-
-    for (let mask = 1; mask < (1 << count); mask += 1) {
-      const selected = [];
-      let weight = 0;
-      for (let index = 0; index < count; index += 1) {
-        if ((mask & (1 << index)) === 0) continue;
-        const criterion = criteria[index];
-        selected.push(criterion);
-        weight += Number(criterion.weight || 0);
-      }
-      if (weight >= threshold) {
-        subsets.push({ selected, weight });
-      }
-    }
-
-    subsets.sort((a, b) => (
-      a.selected.length - b.selected.length ||
-      a.weight - b.weight
-    ));
-
-    const best = subsets[0] || { selected: criteria, weight: totalWeight };
-    return {
-      totalWeight,
-      threshold,
-      minimumCriteria: best.selected,
-      minimumIds: new Set(best.selected.map((criterion) => criterion.id))
-    };
-  }
-
-  function renderHelpCriterionListV2(criteria, tone) {
-    if (!criteria.length) {
-      return '<p class="help-empty-state">Keine weiteren Kriterien.</p>';
-    }
-    return `
-      <ul class="help-checklist">
-        ${criteria.map((criterion) => `
-          <li class="help-checkitem ${tone}">
-            <span class="help-checkweight">${formatNumber(criterion.weight || 0)}</span>
-            <div>
-              <strong>${escapeHtml(criterion.label)}</strong>
-              <small>${escapeHtml(criterion.recommendation || '')}</small>
-            </div>
-          </li>
-        `).join('')}
-      </ul>
-    `;
-  }
-
-  function buildHelpTypeCard(type) {
-    const criteria = qualityCriteria
-      .filter((criterion) => (criterion.types || []).includes(type))
-      .sort((a, b) => (
-        priorityRank(b.priority) - priorityRank(a.priority) ||
-        Number(b.weight || 0) - Number(a.weight || 0) ||
-        a.label.localeCompare(b.label, 'de')
-      ));
-    const domainCriteria = qualityHelpers.getDomainCriteriaForType(type);
-    const autoCheckedCount = criteria.length;
-    const pendingCount = domainCriteria.filter((criterion) => criterion.status === 'needs_verification').length;
-    const preparedItems = domainCriteria
-      .filter((criterion) => criterion.status === 'needs_verification')
-      .sort((a, b) => (
-        priorityRank(b.uiPriority) - priorityRank(a.uiPriority) ||
-        a.label.localeCompare(b.label, 'de')
-      ));
-    const model = buildHelpTypeScoreModel(criteria);
-    const minimumItems = model.minimumCriteria.length
-      ? model.minimumCriteria
-      : criteria.slice(0, 1);
-    const extraItems = criteria.filter((criterion) => !model.minimumIds.has(criterion.id));
-    return `
-      <article class="panel-card help-type-card">
-        <header class="help-type-head">
-          <div>
-            <h3>${escapeHtml(type)}</h3>
-            <p class="data-note">Ab ${formatNumber(model.threshold)} Punkten liegt dieser Typ im guten Bereich.</p>
-          </div>
-          <span class="help-type-score">Ab ${formatNumber(model.threshold)} Punkten gut</span>
-        </header>
-        <div class="help-type-columns">
-          <section>
-            <h4>Mindestens für einen guten Stand</h4>
-            ${renderHelpCriterionList(minimumItems, 'required')}
-          </section>
-          <section>
-            <h4>Danach sinnvoll optimieren</h4>
-            ${renderHelpCriterionList(extraItems, 'optional')}
-          </section>
-        </div>
-        ${preparedItems.length ? `
-          <section class="help-prepared-section">
-            <h4>Fachlich vorbereitet, später automatisch prüfbar</h4>
-            ${renderPreparedHelpCriterionList(preparedItems)}
-          </section>
-        ` : ''}
-        <footer class="help-type-footer">
-          <span>Fehlende Angaben ziehen den Score direkt ab.</span>
-          <span>${renderHelpTypeFooterSummary(autoCheckedCount, pendingCount)}</span>
-        </footer>
-      </article>
-    `;
-  }
-
-  function renderHelpCriterionList(criteria, tone) {
-    if (!criteria.length) {
-      return '<p class="help-empty-state">Keine weiteren Angaben in diesem Block.</p>';
-    }
-    return `
-      <ul class="help-checklist">
-        ${criteria.map((criterion) => `
-          <li class="help-checkitem ${tone}">
-            <span class="help-checkweight">${formatNumber(criterion.weight || 0)}</span>
-            <div>
-              <div class="help-checkheadline">
-                <strong>${escapeHtml(criterion.label)}</strong>
-                <span class="help-severity-badge ${getHelpSeverityClass(criterion)}">${escapeHtml(getHelpSeverityLabel(criterion))}</span>
-              </div>
-              <small>${escapeHtml(criterion.recommendation || '')}</small>
-            </div>
-          </li>
-        `).join('')}
-      </ul>
-    `;
-  }
-
-  function renderPreparedHelpCriterionList(criteria) {
-    if (!criteria.length) return '';
-    return `
-      <ul class="help-checklist prepared">
-        ${criteria.map((criterion) => `
-          <li class="help-checkitem prepared">
-            <span class="help-checkweight muted">Spaeter</span>
-            <div>
-              <div class="help-checkheadline">
-                <strong>${escapeHtml(criterion.label)}</strong>
-                <span class="help-prepared-badge">Vorbereitet</span>
-              </div>
-              <small>${escapeHtml(criterion.recommendation || 'Diese Prüfung ist fachlich hinterlegt und wird später technisch nachgezogen.')}</small>
-            </div>
-          </li>
-        `).join('')}
-      </ul>
-    `;
-  }
-
-  function getHelpSeverityClass(criterion) {
-    const severity = getHelpCriterionSeverity(criterion);
-    if (severity === 'critical') return 'critical';
-    if (severity === 'error') return 'error';
-    return 'optimization';
-  }
-
-  function getHelpSeverityLabel(criterion) {
-    const severity = getHelpCriterionSeverity(criterion);
-    if (severity === 'critical') return 'Kritischer Fehler';
-    if (severity === 'error') return 'Fehler';
-    return 'Leichte Optimierung';
-  }
-
-  function getHelpCriterionSeverity(criterion) {
-    if (!criterion) return 'optimization';
-    if (criterion.severity === 'critical' || criterion.severity === 'error' || criterion.severity === 'optimization') {
-      return criterion.severity;
-    }
-
-    const priority = criterion.priority || '';
-    const weight = Number(criterion.weight || 0);
-    if (priority === 'hoch' || weight >= 8) return 'critical';
-    if (priority === 'mittel' || weight >= 4) return 'error';
-    return 'optimization';
-  }
-
-  function getHelpSeverityExamples(severity) {
-    const labels = qualityCriteria
-      .filter((criterion) => getHelpCriterionSeverity(criterion) === severity)
-      .sort((a, b) => (
-        Number(b.weight || 0) - Number(a.weight || 0) ||
-        a.label.localeCompare(b.label, 'de')
-      ))
-      .map((criterion) => criterion.label)
-      .filter((label, index, all) => all.indexOf(label) === index)
-      .slice(0, 3);
-
-    if (!labels.length) return 'Beispiele werden mit den aktiven Kriterien nachgezogen.';
-    return `Beispiele: ${labels.join(', ')}`;
-  }
-
-  function renderHelpTypeFooterSummary(autoCheckedCount, pendingCount) {
-    if (pendingCount > 0) {
-      return `${formatNumber(autoCheckedCount)} Kriterien aktiv, ${formatNumber(pendingCount)} weitere später möglich`;
-    }
-    return `${formatNumber(autoCheckedCount)} Kriterien fliessen aktuell in den Score ein`;
+    interceptQuickAiConsentPageModel({
+      consentState,
+      event,
+      showMessage,
+      interceptQuickAiConsentModel
+    });
   }
 
   function loadWorkContext() {
-    return loadStoredWorkContext(WORK_CONTEXT_KEY, TYPES);
+    return loadWorkContextPageModel({
+      workContextKey: WORK_CONTEXT_KEY,
+      types: TYPES,
+      loadStoredWorkContext
+    });
   }
 
   function saveWorkContext(context) {
-    state.context = saveStoredWorkContext(WORK_CONTEXT_KEY, context, TYPES);
-    renderWorkContext();
+    return saveWorkContextPageModel({
+      state,
+      context,
+      workContextKey: WORK_CONTEXT_KEY,
+      types: TYPES,
+      saveStoredWorkContext,
+      renderWorkContext
+    });
   }
 
   function saveRecordViewState(viewState) {
-    saveRecordViewStateToSession(RECORD_VIEW_STATE_KEY, viewState, TYPES);
+    saveRecordViewStatePageModel({
+      recordViewStateKey: RECORD_VIEW_STATE_KEY,
+      viewState,
+      types: TYPES,
+      saveRecordViewStateToSession
+    });
   }
 
   function loadRecordViewStateFromRoute() {
-    return loadRecordViewStateFromRouteStorage(RECORD_VIEW_STATE_KEY, TYPES);
+    return loadRecordViewStateFromRoutePageModel({
+      recordViewStateKey: RECORD_VIEW_STATE_KEY,
+      types: TYPES,
+      loadRecordViewStateFromRouteStorage
+    });
   }
 
   function clearRecordViewState() {
-    clearRecordViewStateStorage(RECORD_VIEW_STATE_KEY);
+    clearRecordViewStatePageModel({
+      recordViewStateKey: RECORD_VIEW_STATE_KEY,
+      clearRecordViewStateStorage
+    });
   }
 
   function fillContextControls() {
-    fillContextControlsModel(els, AREAS, TYPES);
+    fillContextControlsPageModel({
+      els,
+      areas: AREAS,
+      types: TYPES,
+      fillContextControlsModel
+    });
   }
 
   function renderWorkContext() {
-    renderWorkContextModel(els, state.context, AREAS);
+    renderWorkContextPageModel({
+      els,
+      context: state.context,
+      areas: AREAS,
+      renderWorkContextModel
+    });
   }
 
   function openContextDialog() {
-    openContextDialogModel(els, state.context, fillContextControls);
+    openContextDialogPageModel({
+      els,
+      context: state.context,
+      fillContextControls,
+      openContextDialogModel
+    });
   }
 
   function handleContextSubmit(event) {
-    if (event.submitter?.value === 'cancel') return;
-    event.preventDefault();
-    clearTransientRequestCache();
-    markForceFresh();
-    saveWorkContext({
-      area: els.contextArea?.value || '',
-      city: els.contextCity?.value.trim() || '',
-      type: els.contextType?.value || ''
+    handleContextSubmitPageModel({
+      event,
+      els,
+      page,
+      state,
+      clearTransientRequestCache,
+      markForceFresh,
+      saveWorkContext,
+      fillStatsFilters,
+      loadOverviewDataAsync,
+      loadTasksData,
+      loadRecordsData,
+      loadRecordDetail,
+      loadStatsDataAsync
     });
-    els.contextDialog?.close?.();
-    if (page === 'overview') void loadOverviewDataAsync();
-    if (page === 'tasks') void loadTasksData();
-    if (page === 'records') void loadRecordsData();
-    if (page === 'record-detail') void loadRecordDetail();
-    if (page === 'stats') {
-      fillStatsFilters();
-      void loadStatsDataAsync();
-    }
   }
 
   function buildQuery({ area, city }) {
@@ -1092,24 +952,37 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function canCalculateQualityForContext(context = state.context) {
-    return canCalculateQualityForContextModel(context);
+    return canCalculateQualityForContextBindingsModel({
+      context,
+      canCalculateQualityForContextModel
+    });
   }
 
   function upsertStatisticRow(row) {
-    state.latestRows = upsertStatisticRowModel(state.latestRows, row, TYPES);
+    return upsertStatisticRowBindingsModel({
+      state,
+      row,
+      types: TYPES,
+      upsertStatisticRowModel
+    });
   }
 
   function renderOverviewCurrent(options = {}) {
-    renderOverview(state.latestRows, state.normalizedItems, options);
+    renderOverviewCurrentBindingsModel({
+      state,
+      renderOverview,
+      options
+    });
   }
 
   function resetOverviewQualityState() {
-    resetOverviewQualityStateModel({
+    resetOverviewQualityStateBindingsModel({
       state,
       buildAggregationsFromIssueSummary,
       buildOverviewQualityMeta,
       canCalculateQualityForContext,
-      types: TYPES
+      types: TYPES,
+      resetOverviewQualityStateModel
     });
   }
 
@@ -1181,279 +1054,108 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function fillStatsFilters() {
-    if (els.statsAreaFilter && !els.statsAreaFilter.options.length) {
-      AREAS.forEach(([label, value]) => els.statsAreaFilter.append(new Option(label, value)));
-    }
-    if (els.statsTypeFilter && !els.statsTypeFilter.options.length) {
-      els.statsTypeFilter.append(new Option('Alle Datentypen', ''));
-      TYPES.forEach((type) => els.statsTypeFilter.append(new Option(type, type)));
-    }
-    if (els.statsAreaFilter) els.statsAreaFilter.value = state.context.area || '';
-    if (els.statsCityFilter) els.statsCityFilter.value = state.context.city || '';
-    if (els.statsTypeFilter) els.statsTypeFilter.value = state.context.type || '';
+    fillStatsFiltersPageModel({
+      els,
+      areas: AREAS,
+      types: TYPES,
+      context: state.context
+    });
   }
 
   async function loadStatsData() {
-    const startedAt = new Date();
-    showStatsMessage('');
-    renderStatsLoading();
-    setStatsLoadingState(true);
-
-    try {
-      const snapshot = await loadCachedQualitySnapshot();
-      const rows = snapshot
-        ? state.latestRows
-        : await loadStatisticRows();
-      state.statsRows = rows.map((row) => ({
-        ...row,
-        nonOpenDataCount: Math.max(0, row.statistikCount - row.openDataCount),
-        openDataQuote: percent(row.openDataCount, row.statistikCount),
-        inventoryShare: 0
-      }));
-      state.statsSummary = computeStatsSummary(state.statsRows);
-      state.statsRows.forEach((row) => {
-        row.inventoryShare = percent(row.statistikCount, state.statsSummary.totalRecords);
-      });
-      renderStats();
-      if (els.lastUpdated) {
-        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date(snapshot?.generatedAt || startedAt))}`;
-      }
-    } catch (error) {
-      console.error('Open-Data-Statistik konnte nicht vollständig geladen werden.', error);
-      renderStatsError();
-    } finally {
-      setStatsLoadingState(false);
-    }
+    return loadStatsDataPageModel({
+      state,
+      els,
+      formatDateTime,
+      percent,
+      showStatsMessage,
+      renderStatsLoading,
+      setStatsLoadingState,
+      loadCachedQualitySnapshot,
+      loadStatisticRows,
+      computeStatsSummary,
+      renderStats,
+      renderStatsError
+    });
   }
 
   async function loadStatsDataAsync() {
-    const startedAt = new Date();
-    showStatsMessage('');
-    renderStatsLoading();
-    setStatsLoadingState(true);
-
-    const applyStatsRows = (rows) => {
-      state.statsRows = rows.map((row) => ({
-        ...row,
-        nonOpenDataCount: Math.max(0, row.statistikCount - row.openDataCount),
-        openDataQuote: percent(row.openDataCount, row.statistikCount),
-        inventoryShare: 0
-      }));
-      state.statsSummary = computeStatsSummary(state.statsRows);
-      state.statsRows.forEach((row) => {
-        row.inventoryShare = percent(row.statistikCount, state.statsSummary.totalRecords);
-      });
-      renderStats();
-    };
-
-    try {
-      const rows = await loadStatisticRowsIncremental((row, partialRows) => {
-        applyStatsRows(partialRows);
-      });
-      applyStatsRows(rows);
-      if (els.lastUpdated) {
-        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
-      }
-    } catch (error) {
-      console.error('Open-Data-Statistik konnte nicht geladen werden.', error);
-      renderStatsError();
-    } finally {
-      setStatsLoadingState(false);
-    }
+    return loadStatsDataAsyncPageModel({
+      state,
+      els,
+      formatDateTime,
+      percent,
+      showStatsMessage,
+      renderStatsLoading,
+      setStatsLoadingState,
+      loadStatisticRowsIncremental,
+      computeStatsSummary,
+      renderStats,
+      renderStatsError
+    });
   }
 
   function computeStatsSummary(rows) {
-    const totalRecords = rows.reduce((sum, row) => sum + row.statistikCount, 0);
-    const openDataRecords = rows.reduce((sum, row) => sum + row.openDataCount, 0);
-    const nonOpenDataRecords = Math.max(0, totalRecords - openDataRecords);
-    return {
-      totalRecords,
-      openDataRecords,
-      nonOpenDataRecords,
-      openDataQuote: percent(openDataRecords, totalRecords)
-    };
+    return computeStatsSummaryPageModel(rows, percent);
   }
 
   function renderStats() {
-    const summary = state.statsSummary || computeStatsSummary([]);
-    if (!summary.totalRecords) {
-      renderStatsEmpty('Für diesen Arbeitskontext wurden keine Datensätze gefunden.');
-      return;
-    }
-
-    if (els.statsTotalRecords) els.statsTotalRecords.textContent = formatNumber(summary.totalRecords);
-    if (els.statsOpenDataRecords) els.statsOpenDataRecords.textContent = formatNumber(summary.openDataRecords);
-    if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = `${formatPercent(summary.openDataQuote)} aller Datensätze`;
-    if (els.statsOpenDataQuote) els.statsOpenDataQuote.textContent = formatPercent(summary.openDataQuote);
-    if (els.statsNonOpenDataRecords) els.statsNonOpenDataRecords.textContent = formatNumber(summary.nonOpenDataRecords);
-    if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} aller Datensätze`;
-    if (els.statsExport) els.statsExport.disabled = !state.statsRows.length;
-
-    renderStatsTypeDistribution(summary);
-    renderStatsQuoteBars();
-    renderStatsLicenseTask(summary);
-  }
-
-  function renderStatsTypeDistribution(summary) {
-    const palette = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9'];
-    let cursor = 0;
-    const segments = state.statsRows.map((row, index) => {
-      const start = cursor;
-      const end = cursor + row.inventoryShare;
-      cursor = end;
-      return `${palette[index % palette.length]} ${start}% ${end}%`;
-    }).join(', ');
-
-    if (els.statsTypeDonut) {
-      els.statsTypeDonut.style.background = summary.totalRecords
-        ? `conic-gradient(${segments})`
-        : 'conic-gradient(#e2e8f0 0 100%)';
-    }
-    if (els.statsTypeDonutTotal) els.statsTypeDonutTotal.textContent = formatNumber(summary.totalRecords);
-    if (els.statsTypeDistributionBody) {
-      els.statsTypeDistributionBody.innerHTML = state.statsRows.map((row, index) => `
-        <tr>
-          <td><span class="legend-dot" style="background:${palette[index % palette.length]}"></span>${escapeHtml(row.type)}</td>
-          <td>${formatNumber(row.statistikCount)}</td>
-          <td>${formatPercent(row.inventoryShare)}</td>
-        </tr>
-      `).join('');
-    }
-  }
-
-  function renderStatsQuoteBars() {
-    if (!els.statsQuoteBars) return;
-    els.statsQuoteBars.innerHTML = state.statsRows.map((row) => `
-      <div class="stats-quote-row">
-        <span>${escapeHtml(row.type)}</span>
-        <div class="stats-quote-track"><i style="width:${Math.max(0, Math.min(100, row.openDataQuote))}%"></i></div>
-        <strong>${formatPercent(row.openDataQuote)}</strong>
-      </div>
-    `).join('');
-  }
-
-  function renderStatsLicenseTask(summary) {
-    const hasLicenseTask = summary.nonOpenDataRecords > 0;
-    if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = !hasLicenseTask;
-    if (!hasLicenseTask) return;
-    if (els.statsLicenseTaskCount) {
-      els.statsLicenseTaskCount.textContent = formatNumber(summary.nonOpenDataRecords);
-    }
-    if (els.statsLicenseTaskShare) {
-      els.statsLicenseTaskShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} nicht Open-Data-f\u00e4hig`;
-    }
-  }
-
-  function renderStatsTypeTable(summary) {
-    if (!els.statsTypeTableBody) return;
-    const rows = state.statsRows.map((row) => `
-      <tr>
-        <td>${escapeHtml(row.type)}</td>
-        <td>${formatNumber(row.statistikCount)}</td>
-        <td>${formatNumber(row.openDataCount)}</td>
-        <td><span class="stats-table-quote"><strong>${formatPercent(row.openDataQuote)}</strong><span><i style="width:${Math.max(0, Math.min(100, row.openDataQuote))}%"></i></span></span></td>
-        <td>${formatNumber(row.nonOpenDataCount)}</td>
-      </tr>
-    `).join('');
-    els.statsTypeTableBody.innerHTML = `${rows}
-      <tr class="stats-total-row">
-        <td>Gesamt</td>
-        <td>${formatNumber(summary.totalRecords)}</td>
-        <td>${formatNumber(summary.openDataRecords)}</td>
-        <td><span class="stats-table-quote"><strong>${formatPercent(summary.openDataQuote)}</strong><span><i style="width:${Math.max(0, Math.min(100, summary.openDataQuote))}%"></i></span></span></td>
-        <td>${formatNumber(summary.nonOpenDataRecords)}</td>
-      </tr>`;
+    renderStatsPageModel({
+      els,
+      state,
+      computeStatsSummary,
+      renderStatsEmpty,
+      escapeHtml,
+      formatNumber,
+      formatPercent,
+      percent
+    });
   }
 
   function renderStatsLoading() {
-    ['stats-total-records', 'stats-open-data-records', 'stats-open-data-quote', 'stats-non-open-data-records'].forEach((id) => {
-      const node = document.getElementById(id);
-      if (node) node.textContent = '...';
-    });
-    if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = '...';
-    if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = '...';
-    if (els.statsTypeDonutTotal) els.statsTypeDonutTotal.textContent = '...';
-    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty"><span class="loading-line">Statistik wird geladen ...</span></td></tr>';
-    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="inline-loading">Statistik wird geladen ...</div>';
-    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Statistik wird geladen ...</td></tr>';
-    if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
-    if (els.statsLicenseTaskCount) els.statsLicenseTaskCount.textContent = '...';
-    if (els.statsLicenseTaskShare) els.statsLicenseTaskShare.textContent = '...';
-    if (els.statsExport) els.statsExport.disabled = true;
+    renderStatsLoadingPageModel({ els });
   }
 
   function renderStatsEmpty(message) {
-    showStatsMessage(message);
-    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Keine Daten gefunden.</td></tr>';
-    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Keine Daten gefunden.</div>';
-    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Keine Daten gefunden.</td></tr>';
-    if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
-    if (els.statsLicenseTaskCount) els.statsLicenseTaskCount.textContent = '-';
-    if (els.statsLicenseTaskShare) els.statsLicenseTaskShare.textContent = 'Keine Datens\u00e4tze';
-    if (els.statsExport) els.statsExport.disabled = true;
+    renderStatsEmptyPageModel({ els, message, showStatsMessage });
   }
 
   function renderStatsError() {
-    showStatsMessage('Die Statistik konnte nicht vollständig geladen werden. Bitte erneut aktualisieren.');
-    if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
-    if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Die Statistik konnte nicht vollständig geladen werden.</div>';
-    if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
-    if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = true;
-    if (els.statsLicenseTaskCount) els.statsLicenseTaskCount.textContent = '-';
-    if (els.statsLicenseTaskShare) els.statsLicenseTaskShare.textContent = 'Nicht geladen';
-    if (els.statsExport) els.statsExport.disabled = true;
+    renderStatsErrorPageModel({ els, showStatsMessage });
   }
 
   function showStatsMessage(message) {
-    if (!els.statsMessage) return;
-    els.statsMessage.textContent = message || '';
-    els.statsMessage.hidden = !message;
+    showStatsMessagePageModel(els, message);
   }
 
   function setStatsLoadingState(isLoading) {
-    [els.statsRefresh, els.refreshButton].forEach((button) => {
-      if (!button) return;
-      button.disabled = isLoading;
-    });
-    if (els.statsRefresh) {
-      els.statsRefresh.innerHTML = isLoading
-        ? '<span class="material-icons" aria-hidden="true">hourglass_top</span>Aktualisieren ...'
-        : '<span class="material-icons" aria-hidden="true">refresh</span>Aktualisieren';
-    }
+    setStatsLoadingStatePageModel({ els, isLoading });
   }
 
   function resetStatsFilters() {
-    saveWorkContext({ area: '', city: '', type: '' });
-    fillStatsFilters();
-    void loadStatsDataAsync();
+    resetStatsFiltersPageModel({
+      saveWorkContext,
+      fillStatsFilters,
+      loadStatsDataAsync
+    });
   }
 
   function applyStatsFiltersAndLoad() {
-    saveWorkContext({
-      area: els.statsAreaFilter?.value || '',
-      city: els.statsCityFilter?.value.trim() || '',
-      type: els.statsTypeFilter?.value || ''
+    applyStatsFiltersAndLoadPageModel({
+      els,
+      saveWorkContext,
+      fillStatsFilters,
+      loadStatsDataAsync
     });
-    fillStatsFilters();
-    void loadStatsDataAsync();
   }
 
   function exportStatsCsv() {
-    if (!state.statsRows.length || !state.statsSummary) return;
-    const summary = state.statsSummary;
-    const rows = [
-      ['Datentyp', 'Gesamtzahl', 'Open-Data-fähig', 'Open-Data-Quote', 'Nicht Open-Data-fähig'],
-      ...state.statsRows.map((row) => [
-        row.type,
-        row.statistikCount,
-        row.openDataCount,
-        formatPercent(row.openDataQuote),
-        row.nonOpenDataCount
-      ]),
-      ['Gesamt', summary.totalRecords, summary.openDataRecords, formatPercent(summary.openDataQuote), summary.nonOpenDataRecords]
-    ];
-    const text = rows.map((row) => row.map(csvValue).join(';')).join('\n');
-    downloadText('satourn_open_data_statistik.csv', text, 'text/csv;charset=utf-8');
+    exportStatsCsvPageModel({
+      state,
+      csvValue,
+      formatPercent,
+      downloadText
+    });
   }
 
   function buildQualityCountUrl(criterionId, type, query) {
@@ -1595,42 +1297,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderTaskKpis(tasks) {
-    const {
-      totalTasks,
-      highTasks,
-      affectedHits,
-      openDataHits,
-      potential
-    } = computeTaskSummary(tasks);
-
-    if (els.taskKpiOpen) els.taskKpiOpen.textContent = formatNumber(totalTasks);
-    if (els.taskKpiHigh) els.taskKpiHigh.textContent = formatNumber(highTasks);
-    if (els.taskKpiHighDetail) els.taskKpiHighDetail.textContent = totalTasks ? `${formatPercent(percent(highTasks, totalTasks))} aller Aufgaben` : '-';
-    if (els.taskKpiAffected) els.taskKpiAffected.textContent = formatNumber(affectedHits);
-    if (els.taskKpiOpenData) els.taskKpiOpenData.textContent = formatPercent(percent(openDataHits, affectedHits));
-    if (els.taskKpiPotential) els.taskKpiPotential.textContent = potential;
-    if (els.taskListTitle) els.taskListTitle.textContent = `Alle Pflegeaufgaben (${formatNumber(totalTasks)})`;
-    if (els.taskDataNote) {
-      if (state.qualityDataMeta.mode === 'snapshot') {
-        els.taskDataNote.textContent = state.qualityDataMeta.truncated
-          ? 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf. Der Lauf war begrenzt; einzelne Listen können weiter live nachgeladen werden.'
-          : 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf und basieren auf vollständig gescannten Datensätzen.';
-        return;
-      }
-      const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
-      const failedText = state.qualityDataMeta.failedCounts ? ` ${formatNumber(state.qualityDataMeta.failedCounts)} Count-Abfragen konnten nicht geladen werden.` : '';
-      els.taskDataNote.textContent = unsupportedCount || failedText
-        ? `Einzelne Aufgaben werden bei Bedarf live nachgeladen.${failedText}`
-        : 'Pflegeaufgaben sind geladen.';
-    }
+    state.filteredTaskRows = tasks;
+    renderTaskKpisBindingsModel({
+      els,
+      state,
+      computeTaskSummary,
+      formatNumber,
+      formatPercent,
+      percent
+    });
   }
 
   function renderTaskTable() {
-    state.taskPage = renderTaskTableState(els, {
-      rows: state.filteredTaskRows,
-      selectedTask: state.selectedTask,
-      taskPage: state.taskPage,
-      taskRowsPerPage: state.taskRowsPerPage,
+    renderTaskTableBindingsModel({
+      state,
+      els,
       taskIcon,
       priorityLabel,
       renderTypeChips,
@@ -1638,56 +1319,67 @@ document.addEventListener('DOMContentLoaded', () => {
       impactLabel,
       formatNumber,
       escapeHtml,
-      onSelectTask: selectTask
+      selectTask,
+      renderTaskTableState
     });
   }
 
   function selectTask(taskId) {
-    state.selectedTask = findTaskById(state.filteredTaskRows, taskId)
-      || findTaskById(state.taskRows, taskId)
-      || null;
-    state.selectedTaskType = '';
-    clearTaskRecords();
-    renderTaskTable();
-    renderTaskDetail();
+    selectTaskBindingsModel({
+      taskId,
+      state,
+      findTaskById,
+      clearTaskRecords,
+      renderTaskTable,
+      renderTaskDetail
+    });
   }
 
   function renderTaskDetail() {
-    const task = state.selectedTask;
-    hidePrimarySystems();
-    state.selectedTaskType = renderTaskDetailState(els, {
-      task,
-      selectedTaskType: state.selectedTaskType,
+    renderTaskDetailBindingsModel({
+      state,
+      els,
       escapeHtml,
       renderTypeChips,
       impactBadgeClass,
       impactLabel,
       taskImpactText,
       clearTaskRecords,
-      openTaskRecordsOnRecordsPage
+      openTaskRecordsOnRecordsPage,
+      hidePrimarySystems,
+      renderPrimarySystemsForTask,
+      renderTaskDetailState
     });
-    if (task) renderPrimarySystemsForTask(task);
   }
 
   function openTaskRecordsOnRecordsPage(task, type) {
-    openTaskRecordsOnRecordsPageModel({
+    openTaskRecordsOnRecordsPageBindingsModel({
       task,
       type,
       context: state.context,
       saveRecordViewState,
-      showTaskMessage
+      showTaskMessage,
+      openTaskRecordsOnRecordsPageModel,
+      openTaskRecordsOnRecordsPagePageModel
     });
   }
 
   function resolveTaskCriterionId(task, type = '') {
-    return resolveTaskCriterionIdModel(task, type);
+    return resolveTaskCriterionIdBindingsModel({
+      task,
+      type,
+      resolveTaskCriterionIdModel,
+      resolveTaskCriterionIdPageModel
+    });
   }
 
   function openOverviewIssueOnRecordsPage(issue) {
-    openOverviewIssueOnRecordsPageModel({
+    openOverviewIssueOnRecordsPageBindingsModel({
       issue,
       context: state.context,
-      saveRecordViewState
+      saveRecordViewState,
+      openOverviewIssueOnRecordsPageModel,
+      openOverviewIssueOnRecordsPagePageModel
     });
   }
 
@@ -1737,7 +1429,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderTaskRecords(task, type, rows, payload) {
-    const stats = renderTaskRecordsState(els, {
+    renderTaskRecordsBindingsModel({
+      els,
       task,
       type,
       rows,
@@ -1745,47 +1438,56 @@ document.addEventListener('DOMContentLoaded', () => {
       formatNumber,
       escapeHtml,
       buildRecordDetailUrl,
-      copyText
+      copyText,
+      renderTaskRecordsState
     });
-    if (stats.budgetExhausted) console.debug('Qualitätsscan-Budget ausgeschöpft.', stats);
   }
 
   function renderTasksLoading() {
-    renderTasksLoadingState(els);
+    renderTasksLoadingBindingsModel({ els, renderTasksLoadingState });
   }
 
   function renderTasksEmpty(message) {
-    renderTasksEmptyState(els, message);
+    renderTasksEmptyBindingsModel({ els, message, renderTasksEmptyState });
   }
 
   function resetTaskFilters() {
-    if (els.taskSearchInput) els.taskSearchInput.value = '';
-    if (els.taskPriorityFilter) els.taskPriorityFilter.value = '';
-    if (els.taskTypeFilter) els.taskTypeFilter.value = '';
-    if (els.taskCheckFilter) els.taskCheckFilter.value = '';
-    if (els.taskImpactFilter) els.taskImpactFilter.value = '';
-    state.taskPage = 1;
-    applyTaskFilters();
+    resetTaskFiltersBindingsModel({
+      els,
+      state,
+      applyTaskFilters
+    });
   }
 
   function changeTaskPage(delta) {
-    state.taskPage += delta;
-    renderTaskTable();
+    changeTaskPageBindingsModel({
+      state,
+      delta,
+      renderTaskTable
+    });
   }
 
   function fillTaskTypeFilter() {
-    if (!els.taskTypeFilter || els.taskTypeFilter.options.length > 1) return;
-    TYPES.forEach((type) => els.taskTypeFilter.append(new Option(`Datentyp: ${type}`, type)));
+    fillTaskTypeFilterBindingsModel({
+      els,
+      types: TYPES
+    });
   }
 
   function clearTaskRecords() {
-    state.taskRecordRows = [];
-    state.taskRecordMeta = null;
-    clearTaskRecordsState(els);
+    clearTaskRecordsBindingsModel({
+      state,
+      els,
+      clearTaskRecordsState
+    });
   }
 
   function showTaskMessage(message) {
-    showTaskMessageState(els, message);
+    showTaskMessageBindingsModel({
+      els,
+      message,
+      showTaskMessageState
+    });
   }
 
   async function loadRecordsData() {
@@ -1808,27 +1510,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadRecordRowsForPendingView(view) {
-    return loadRecordRowsForPendingViewModel({
+    return loadRecordRowsForPendingViewPageModel({
       view,
       types: TYPES,
       mergeRecordItems,
       loadRecordRowsForView,
-      loadRecordRowsForIssueSelection
+      loadRecordRowsForIssueSelection,
+      loadRecordRowsForPendingViewModel
     });
   }
 
   async function loadRecordRowsForIssueSelection(criterionId, selectedType = '') {
-    return loadRecordRowsForIssueSelectionModel({
+    return loadRecordRowsForIssueSelectionPageModel({
       criterionId,
       selectedType,
       qualityCriteria,
       types: TYPES,
-      loadRecordRowsForView
+      loadRecordRowsForView,
+      loadRecordRowsForIssueSelectionModel
     });
   }
 
   async function loadRecordRowsForView(view) {
-    return loadRecordRowsForViewModel({
+    return loadRecordRowsForViewPageModel({
       view,
       context: state.context,
       buildQuery,
@@ -1841,12 +1545,14 @@ document.addEventListener('DOMContentLoaded', () => {
         apiBase: QUALITY_SCAN_API_BASE,
         fetchJson: fetchJsonCached,
         ...options
-      })
+      }),
+      loadRecordRowsForViewModel
     });
   }
 
   function buildRecordViewModel(item) {
-    return buildRecordViewModelModel(item, {
+    return buildRecordViewModelBindingsModel({
+      item,
       extractId,
       getFirst,
       getRecordEmail,
@@ -1855,47 +1561,53 @@ document.addEventListener('DOMContentLoaded', () => {
       getPrimaryIssueId,
       qualityCriteria,
       priorityRank,
-      getRecordThumbnailUrl
+      getRecordThumbnailUrl,
+      buildRecordViewModelModel
     });
   }
 
   function fillRecordControls() {
-    if (els.recordTypeFilter && els.recordTypeFilter.options.length <= 1) {
-      TYPES.forEach((type) => els.recordTypeFilter.append(new Option(`Typ: ${type}`, type)));
-    }
-    if (els.recordIssueFilter && els.recordIssueFilter.options.length <= 1) {
-      qualityCriteria
-        .filter((criterion) => isActiveCriterion(criterion.id))
-        .forEach((criterion) => els.recordIssueFilter.append(new Option(`Problem: ${criterion.label}`, criterion.id)));
-    }
+    fillRecordControlsBindingsModel({
+      els,
+      types: TYPES,
+      qualityCriteria,
+      isActiveCriterion,
+      fillRecordControlsPageModel
+    });
   }
 
   function fillRecordDynamicFilters() {
-    fillRecordDynamicFiltersState({
+    fillRecordDynamicFiltersBindingsModel({
       els,
-      rows: state.recordRows
+      rows: state.recordRows,
+      fillRecordDynamicFiltersState,
+      fillRecordDynamicFiltersPageModel
     });
   }
 
   function applyPendingRecordView() {
-    applyPendingRecordViewState({
+    applyPendingRecordViewBindingsModel({
       els,
       state,
-      types: TYPES
+      types: TYPES,
+      applyPendingRecordViewState,
+      applyPendingRecordViewPageModel
     });
   }
 
   function renderPendingRecordViewMessage() {
-    renderPendingRecordViewMessageState({
+    renderPendingRecordViewMessageBindingsModel({
       state,
       qualityCriteria,
       buildPendingRecordViewMessage,
-      showRecordsMessage
+      showRecordsMessage,
+      renderPendingRecordViewMessageState,
+      renderPendingRecordViewMessagePageModel
     });
   }
 
   function applyRecordFilters() {
-    applyRecordFiltersState({
+    applyRecordFiltersBindingsModel({
       state,
       els,
       qualityCriteria,
@@ -1906,21 +1618,25 @@ document.addEventListener('DOMContentLoaded', () => {
       renderRecordStatusLegend,
       renderRecordTable,
       renderRecordDataNote,
-      renderPendingRecordViewMessage
+      renderPendingRecordViewMessage,
+      applyRecordFiltersState,
+      applyRecordFiltersPageModel
     });
   }
 
   function openRecordAiSearchDialog() {
-    openRecordAiSearchDialogUi({
+    openRecordAiSearchDialogBindingsModel({
       dialog: els.recordAiSearchDialog,
       input: els.recordAiSearchInput,
       note: els.recordAiSearchNote,
-      prompt: state.recordAiSearchPrompt
+      prompt: state.recordAiSearchPrompt,
+      openRecordAiSearchDialogUi,
+      openRecordAiSearchDialogPageModel
     });
   }
 
   async function handleRecordAiSearchSubmit(event) {
-    await handleRecordAiSearchSubmitModel({
+    await handleRecordAiSearchSubmitBindingsModel({
       event,
       state,
       els,
@@ -1949,12 +1665,14 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchJson: fetchJsonCached,
         ids,
         type
-      })
+      }),
+      handleRecordAiSearchSubmitModel,
+      handleRecordAiSearchSubmitPageModel
     });
   }
 
   async function handleRecordSearchSubmit() {
-    await handleRecordSearchSubmitModel({
+    await handleRecordSearchSubmitBindingsModel({
       state,
       els,
       applyRecordFilters,
@@ -1969,12 +1687,14 @@ document.addEventListener('DOMContentLoaded', () => {
       getRecordIdentityKey,
       buildRecordViewModel,
       fillRecordDynamicFilters,
-      showRecordsMessage
+      showRecordsMessage,
+      handleRecordSearchSubmitModel,
+      handleRecordSearchSubmitPageModel
     });
   }
 
   async function handleRecordMailDraft(row, triggerNode) {
-    await handleRecordMailDraftModel({
+    await handleRecordMailDraftBindingsModel({
       row,
       triggerNode,
       pendingRecordView: state.pendingRecordView,
@@ -1989,12 +1709,15 @@ document.addEventListener('DOMContentLoaded', () => {
         apiBase: OI_MAIL_DRAFT_API_BASE,
         fetchJson: fetchJsonCached,
         payload
-      })
+      }),
+      handleRecordMailDraftModel,
+      handleRecordMailDraftPageModel
     });
   }
 
   async function searchSingleRecordById(query) {
-    return searchSingleRecordByIdModel(query, {
+    return searchSingleRecordByIdBindingsModel({
+      query,
       context: state.context,
       selectedType: state.context.type || '',
       types: TYPES,
@@ -2003,12 +1726,15 @@ document.addEventListener('DOMContentLoaded', () => {
       buildUrl,
       fetchJsonCached,
       extractItems,
-      normalizeItem
+      normalizeItem,
+      searchSingleRecordByIdModel,
+      searchSingleRecordByIdDataPageModel
     });
   }
 
   async function searchRecordsByText(query) {
-    return searchRecordsByTextModel(query, {
+    return searchRecordsByTextBindingsModel({
+      query,
       context: state.context,
       selectedType: els.recordTypeFilter?.value || state.context.type || '',
       types: TYPES,
@@ -2019,22 +1745,26 @@ document.addEventListener('DOMContentLoaded', () => {
       extractItems,
       extractTotal,
       normalizeItem,
-      onTypeError: (type, error) => console.warn('Volltextsuche konnte nicht für Typ geladen werden.', type, error)
+      onTypeError: (type, error) => console.warn('Volltextsuche konnte nicht für Typ geladen werden.', type, error),
+      searchRecordsByTextModel,
+      searchRecordsByTextDataPageModel
     });
   }
 
   function queueRecordAutocomplete() {
-    queueRecordAutocompleteModel({
+    queueRecordAutocompleteBindingsModel({
       state,
       els,
       looksLikeRecordId,
       hideRecordAutocomplete,
-      loadRecordAutocomplete
+      loadRecordAutocomplete,
+      queueRecordAutocompleteModel,
+      queueRecordAutocompletePageModel
     });
   }
 
   async function loadRecordAutocomplete(query) {
-    await loadRecordAutocompleteModel({
+    await loadRecordAutocompleteBindingsModel({
       query,
       state,
       renderRecordAutocomplete,
@@ -2046,76 +1776,113 @@ document.addEventListener('DOMContentLoaded', () => {
         autocompleteApiBase: AUTOCOMPLETE_API_BASE,
         fetchJsonCached,
         textValue
-      })
+      }),
+      loadRecordAutocompleteModel,
+      loadRecordAutocompletePageModel
     });
   }
 
   function renderRecordAutocomplete(suggestions) {
-    renderRecordAutocompleteModel({
+    renderRecordAutocompleteBindingsModel({
       suggestions,
       els,
       escapeHtml,
       formatNumber,
       hideRecordAutocomplete,
-      onSubmitSuggestion: handleRecordSearchSubmit
+      onSubmitSuggestion: handleRecordSearchSubmit,
+      renderRecordAutocompleteModel,
+      renderRecordAutocompletePageModel
     });
   }
 
   function hideRecordAutocomplete() {
-    hideRecordAutocompleteModel({ state, els });
+    hideRecordAutocompleteBindingsModel({
+      state,
+      els,
+      hideRecordAutocompleteModel,
+      hideRecordAutocompletePageModel
+    });
   }
 
   function renderRecordTable() {
-    state.recordPage = renderRecordTableState(els, {
-      rows: state.filteredRecordRows,
-      allRows: state.recordRows,
-      recordPage: state.recordPage,
-      recordRowsPerPage: state.recordRowsPerPage,
-      recordDataMeta: state.recordDataMeta,
+    renderRecordTableBindingsModel({
+      state,
+      els,
       escapeHtml,
       formatNumber,
       formatRecordDate,
       onMailDraft: handleRecordMailDraft,
-      saveRecordListState
+      saveRecordListState,
+      renderRecordTableState,
+      renderRecordTablePageModel
     });
   }
 
   function saveRecordListState(rows) {
-    saveRecordListStateToSession(RECORD_LIST_STATE_KEY, rows, {
-      buildDetailUrl: buildRecordDetailUrl
+    saveRecordListStateBindingsModel({
+      rows,
+      storageKey: RECORD_LIST_STATE_KEY,
+      buildDetailUrl: buildRecordDetailUrl,
+      saveRecordListStateToSession,
+      saveRecordListStatePageModel
     });
   }
 
   function loadRecordListState() {
-    return loadRecordListStateFromSession(RECORD_LIST_STATE_KEY);
+    return loadRecordListStateBindingsModel({
+      storageKey: RECORD_LIST_STATE_KEY,
+      loadRecordListStateFromSession,
+      loadRecordListStatePageModel
+    });
   }
 
   function renderRecordsLoading() {
-    renderRecordsLoadingState(els);
+    renderRecordsLoadingBindingsModel({
+      els,
+      renderRecordsLoadingState,
+      renderRecordsLoadingPageModel
+    });
   }
 
   function renderRecordsEmpty(message) {
-    renderRecordsEmptyState(els, message, showRecordsMessage);
+    renderRecordsEmptyBindingsModel({
+      els,
+      message,
+      showRecordsMessage,
+      renderRecordsEmptyState,
+      renderRecordsEmptyPageModel
+    });
   }
 
   function renderRecordQuickCounts() {
-    renderRecordQuickCountsState(els, {
+    renderRecordQuickCountsBindingsModel({
+      els,
       rows: state.recordRows,
       mode: state.recordDataMeta.mode,
-      setText
+      setText,
+      renderRecordQuickCountsState,
+      renderRecordQuickCountsPageModel
     });
   }
 
   function renderRecordStatusLegend() {
-    renderRecordStatusLegendState(els, {
+    renderRecordStatusLegendBindingsModel({
+      els,
       rows: state.filteredRecordRows,
       mode: state.recordDataMeta.mode,
-      setText
+      setText,
+      renderRecordStatusLegendState,
+      renderRecordStatusLegendPageModel
     });
   }
 
   function renderRecordDataNote() {
-    renderRecordDataNoteState(els, state.recordDataMeta);
+    renderRecordDataNoteBindingsModel({
+      els,
+      recordDataMeta: state.recordDataMeta,
+      renderRecordDataNoteState,
+      renderRecordDataNotePageModel
+    });
   }
 
   function resetRecordFilters() {
@@ -2148,7 +1915,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getRecordThumbnailUrl(item) {
-    return getRecordThumbnailUrlModel(item, { qualityHelpers, getFirst });
+    return getRecordThumbnailUrlBindingsModel({
+      item,
+      qualityHelpers,
+      getFirst,
+      getRecordThumbnailUrlModel,
+      getRecordThumbnailUrlPageModel
+    });
   }
 
   function exportRecordListCsv() {
@@ -2176,11 +1949,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showRecordsMessage(message) {
-    showRecordsMessageState(els, message);
+    showRecordsMessageBindingsModel({
+      els,
+      message,
+      showRecordsMessageState,
+      showRecordsMessagePageModel
+    });
   }
 
   function setText(node, value) {
-    setRecordCountText(node, value, formatNumber);
+    setTextBindingsModel({
+      node,
+      value,
+      formatNumber,
+      setRecordCountText,
+      setRecordCountPageModel
+    });
   }
 
   async function loadRecordDetail() {
@@ -2210,24 +1994,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function fetchRecordDetailItem({ type, id, globalId }) {
-    return fetchRecordDetailItemModel(
-      { type, id, globalId },
-      {
-        types: TYPES,
-        cleanQueryValue,
-        getIdFromGlobalId,
-        uniqueValues,
-        buildUrl,
-        fetchJsonCached,
-        extractItems,
-        extractId,
-        getFirst
-      }
-    );
+    return fetchRecordDetailItemPageModel({
+      type,
+      id,
+      globalId,
+      types: TYPES,
+      cleanQueryValue,
+      getIdFromGlobalId,
+      uniqueValues,
+      buildUrl,
+      fetchJsonCached,
+      extractItems,
+      extractId,
+      getFirst,
+      fetchRecordDetailItemModel
+    });
   }
 
   function getRecordDetailViewModel(item) {
-    return getRecordDetailViewModelModel(item, {
+    return getRecordDetailViewModelBindingsModel({
+      item,
       qualityCriteria,
       qualityHelpers,
       priorityRank,
@@ -2247,120 +2033,165 @@ document.addEventListener('DOMContentLoaded', () => {
       getCoordinates,
       getRawExcerpt,
       getPrimarySystem,
-      getRecordDetailContext
+      getRecordDetailContext,
+      getRecordDetailViewModelModel,
+      getRecordDetailViewModelPageModel
     });
   }
 
   function getRecordDetailContext() {
-    return getRecordDetailContextModel(RECORD_VIEW_STATE_KEY, qualityCriteria);
+    return getRecordDetailContextBindingsModel({
+      storageKey: RECORD_VIEW_STATE_KEY,
+      qualityCriteria,
+      getRecordDetailContextModel,
+      getRecordDetailContextPageModel
+    });
   }
 
   function getExternalSystemIds(raw) {
-    return getExternalSystemIdsModel(raw, { qualityHelpers, getFirst, textValue });
+    return getExternalSystemIdsBindingsModel({
+      raw,
+      qualityHelpers,
+      getFirst,
+      textValue,
+      getExternalSystemIdsModel,
+      getExternalSystemIdsPageModel
+    });
   }
 
   function getAddressSummary(raw) {
-    return getAddressSummaryModel(raw, textValue);
+    return getAddressSummaryBindingsModel({
+      raw,
+      textValue,
+      getAddressSummaryModel,
+      getAddressSummaryPageModel
+    });
   }
 
   function getCoordinates(raw) {
-    return getCoordinatesModel(raw, getFirst);
+    return getCoordinatesBindingsModel({
+      raw,
+      getFirst,
+      getCoordinatesModel,
+      getCoordinatesPageModel
+    });
   }
 
   function getRawExcerpt(raw) {
-    return getRawExcerptModel(raw, { getFirst, getTextByRel, qualityHelpers, textValue });
+    return getRawExcerptBindingsModel({
+      raw,
+      getFirst,
+      getTextByRel,
+      qualityHelpers,
+      textValue,
+      getRawExcerptModel,
+      getRawExcerptPageModel
+    });
   }
 
   function showDetailMessage(message) {
-    if (!els.recordDetailMessage) return;
-    els.recordDetailMessage.textContent = message || '';
-    els.recordDetailMessage.hidden = !message;
+    showDetailMessageBindingsModel({
+      els,
+      message,
+      showDetailMessagePageModel
+    });
   }
 
   function buildVerifiedEt4Url(item) {
-    return buildVerifiedEt4UrlModel(item);
+    return buildVerifiedEt4UrlBindingsModel({
+      item,
+      buildVerifiedEt4UrlModel,
+      buildVerifiedEt4UrlPageModel
+    });
   }
 
   function normalizeItem(raw, fallbackType) {
-    return normalizeItemModel(raw, fallbackType, {
+    return normalizeItemBindingsModel({
+      raw,
+      fallbackType,
       extractId,
       qualityHelpers,
       textValue,
-      context: state.context
+      context: state.context,
+      normalizeItemModel,
+      normalizeItemPageModel
     });
   }
 
   function getFirst(obj, paths) {
-    return getFirstModel(obj, paths, { qualityHelpers, textValue });
+    return getFirstBindingsModel({
+      obj,
+      paths,
+      qualityHelpers,
+      textValue,
+      getFirstModel,
+      getFirstPageModel
+    });
   }
 
   function getRecordEmail(raw) {
-    return getRecordEmailModel(raw, { qualityHelpers, textValue }) || '';
+    return getRecordEmailBindingsModel({
+      raw,
+      qualityHelpers,
+      textValue,
+      getRecordEmailModel,
+      getRecordEmailPageModel
+    });
   }
 
   function getRecordWeb(raw) {
-    return getRecordWebModel(raw, { qualityHelpers, textValue }) || '';
+    return getRecordWebBindingsModel({
+      raw,
+      qualityHelpers,
+      textValue,
+      getRecordWebModel,
+      getRecordWebPageModel
+    });
   }
 
   function getRecordPhone(raw) {
-    return getRecordPhoneModel(raw, { qualityHelpers, textValue }) || '';
+    return getRecordPhoneBindingsModel({
+      raw,
+      qualityHelpers,
+      textValue,
+      getRecordPhoneModel,
+      getRecordPhonePageModel
+    });
   }
 
   function renderOverview(rows, items, options = {}) {
-    const summary = computeOverviewSummary(rows);
-    const aggregations = state.qualityAggregations;
-    const counts = aggregations.qualityStatusCounts || {};
-    const assessedTotal = sumStatusCounts(counts);
-    const notOpenData = Math.max(0, summary.statistikTotal - summary.openDataTotal);
-    const kpis = {
-      timestamp: new Date().toISOString(),
-      qualityScore: Number.isFinite(aggregations.averageQualityScore) ? aggregations.averageQualityScore : null,
-      totalRecords: summary.statistikTotal,
-      goodRecords: counts.gut || 0,
-      recordsToReview: counts.pruefen || 0,
-      criticalRecords: counts.kritisch || 0,
-      openDataQuote: summary.openDataQuote
-    };
-
-    let previousKpis = null;
-    try {
-      previousKpis = JSON.parse(localStorage.getItem(KPI_HISTORY_KEY) || 'null');
-    } catch {
-      previousKpis = null;
-    }
-
-    const issues = buildTaskRows(aggregations.issueSummary || [])
-      .filter((issue) => Number(issue.affectedCount || 0) > 0)
-      .sort((a, b) => impactRank(b.impact) - impactRank(a.impact) || priorityRank(b.priority) - priorityRank(a.priority) || b.affectedCount - a.affectedCount)
-      .slice(0, 5);
-
-    renderOverviewPage(els, {
-      summary,
-      counts,
-      assessedTotal,
-      notOpenData,
-      kpis,
-      issues,
-      contextType: state.context.type || '',
-      qualityDataMeta: state.qualityDataMeta,
-      sampleSize: items.length,
+    renderOverviewBindingsModel({
+      state: { ...state, kpiHistoryKey: KPI_HISTORY_KEY },
+      els,
+      rows,
+      items,
+      options,
+      computeOverviewSummary,
+      sumStatusCounts,
+      buildTaskRows,
+      impactRank,
+      priorityRank,
       formatNumber,
       formatPercent,
       percent,
       taskIcon,
       taskDescription,
       openOverviewIssueOnRecordsPage,
-      previousKpis
+      renderOverviewPage,
+      saveKpiHistory
     });
-    if (options.saveHistory !== false) saveKpiHistory(kpis);
   }
 
   function renderOverviewLoading() {
-    renderOverviewLoadingState(els);
+    renderOverviewLoadingBindingsModel({
+      renderOverviewLoadingState: () => renderOverviewLoadingState(els)
+    });
   }
 
   function renderOverviewEmpty() {
-    renderOverviewEmptyState(els);
+    renderOverviewEmptyBindingsModel({
+      renderOverviewEmptyState: () => renderOverviewEmptyState(els)
+    });
   }
 
   function saveKpiHistory(kpis) {
@@ -2412,106 +2243,100 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderPrimarySystemsForTask(task) {
-    const criterionIds = new Set(task?.criterionIds?.length ? task.criterionIds : [task?.criterionId].filter(Boolean));
-    const relevantItems = state.taskItems.filter((item) => item.missingCriteria?.some((criterionId) => criterionIds.has(criterionId)));
-    renderPrimarySystemsForRecords(relevantItems);
+    renderPrimarySystemsForTaskBindingsModel({
+      task,
+      taskItems: state.taskItems,
+      renderPrimarySystemsForRecords,
+      renderPrimarySystemsForTaskPageModel
+    });
   }
 
   function renderPrimarySystemsForRecords(rows) {
-    const systems = collectPrimarySystems(rows);
-    if (!systems.length) {
-      hidePrimarySystems();
-      return;
-    }
-    els.primarySystemCard.hidden = false;
-    els.primarySystemList.innerHTML = systems.map((system) => `
-      <div class="primary-system-row">
-        ${renderPrimarySystemLogo(system)}
-        <span><strong>${escapeHtml(system.name)} (${formatNumber(system.count)})</strong><small>${escapeHtml(system.note)}</small></span>
-        <button class="plain-button" type="button" data-system-action="${escapeHtml(system.action)}" data-system-id="${escapeHtml(system.id)}">${escapeHtml(system.actionLabel)}</button>
-      </div>
-    `).join('');
-    els.primarySystemList.querySelectorAll('[data-system-action]').forEach((button) => {
-      button.addEventListener('click', () => {
-        const systemRows = rows.filter((row) => getPrimarySystem(row).id === button.dataset.systemId);
-        if (button.dataset.systemAction === 'export') exportTaskRecordsCsv(systemRows);
-        if (button.dataset.systemAction === 'copy-source-id') {
-          const firstSourceId = systemRows.map(getSourceId).find(Boolean);
-          if (firstSourceId) copyText(firstSourceId);
-        }
-      });
+    renderPrimarySystemsForRecordsBindingsModel({
+      rows,
+      els,
+      collectPrimarySystems,
+      renderPrimarySystemLogo,
+      escapeHtml,
+      formatNumber,
+      getPrimarySystem,
+      getSourceId,
+      exportTaskRecordsCsv,
+      copyText,
+      hidePrimarySystems,
+      renderPrimarySystemsForRecordsPageModel
     });
   }
 
   function renderPrimarySystemLogo(system) {
-    if (system.logoImage) {
-      return `
-        <span class="primary-system-logo primary-system-logo-image">
-          <img src="${escapeHtml(system.logoImage)}" alt="${escapeHtml(system.name)}">
-        </span>
-      `;
-    }
-    return `
-      <span class="primary-system-logo primary-system-logo-${escapeHtml(system.id)}">
-        <span class="primary-system-wordmark">${escapeHtml(system.logoText || system.short)}</span>
-      </span>
-    `;
+    return renderPrimarySystemLogoBindingsModel({
+      system,
+      escapeHtml,
+      renderPrimarySystemLogoPageModel
+    });
   }
 
   function collectPrimarySystems(rows) {
-    return collectPrimarySystemsModel(rows, { getPrimarySystem });
+    return collectPrimarySystemsBindingsModel({
+      rows,
+      getPrimarySystem,
+      collectPrimarySystemsModel,
+      collectPrimarySystemsPageModel
+    });
   }
 
   function hidePrimarySystems() {
-    if (els.primarySystemCard) els.primarySystemCard.hidden = true;
-    if (els.primarySystemList) els.primarySystemList.replaceChildren();
+    hidePrimarySystemsBindingsModel({
+      els,
+      hidePrimarySystemsPageModel
+    });
   }
 
   function getSourceId(item) {
-    return getSourceIdModel(item, { getFirst, textValue });
+    return getSourceIdBindingsModel({
+      item,
+      getFirst,
+      textValue,
+      getSourceIdModel,
+      getSourceIdPageModel
+    });
   }
 
   function getPrimarySystem(item) {
-    return getPrimarySystemModel(item, textValue);
+    return getPrimarySystemBindingsModel({
+      item,
+      textValue,
+      getPrimarySystemModel,
+      getPrimarySystemPageModel
+    });
   }
 
   function getKeywordValues(item) {
-    return getKeywordValuesModel(item, textValue);
+    return getKeywordValuesBindingsModel({
+      item,
+      textValue,
+      getKeywordValuesModel,
+      getKeywordValuesPageModel
+    });
   }
 
   function safeKeywordArray(value) {
-    return safeKeywordArrayModel(value, textValue);
-  }
-
-  function normalizeTypeName(type) {
-    return String(type || '').trim().toLowerCase();
+    return safeKeywordArrayBindingsModel({
+      value,
+      textValue,
+      safeKeywordArrayModel,
+      safeKeywordArrayPageModel
+    });
   }
 
   function exportTaskRecordsCsv(forcedRows = null) {
-    if (!state.selectedTask) return;
-    const scopedRows = Array.isArray(forcedRows) ? forcedRows : null;
-    const rowsToExport = scopedRows || (
-      state.taskRecordRows.length
-        ? state.taskRecordRows
-        : state.taskItems.filter((item) => item.missingCriteria?.includes(state.selectedTask.criterionId))
-    );
-    if (!rowsToExport.length) return;
-    const rows = [
-      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Problem', 'Nächster Schritt', 'ID', 'global_id', 'source_id'],
-      ...rowsToExport.map((row) => [
-        row.title,
-        row.type,
-        row.city,
-        row.region,
-        state.selectedTask.label,
-        state.selectedTask.recommendation,
-        row.id,
-        row.globalId,
-        getSourceId(row)
-      ])
-    ];
-    const text = rows.map((row) => row.map(csvValue).join(';')).join('\n');
-    downloadText('satourn_pflegeaufgabe_datensaetze.csv', text, 'text/csv;charset=utf-8');
+    exportTaskRecordsCsvBindingsModel({
+      state,
+      forcedRows,
+      getSourceId,
+      csvValue,
+      downloadText
+    });
   }
 
   async function copyText(value) {

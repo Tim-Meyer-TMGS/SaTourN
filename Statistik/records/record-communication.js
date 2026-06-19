@@ -9,7 +9,9 @@ export function getErrorMessage(error, fallback) {
 export function openRecordAiSearchDialog({ dialog, input, note, prompt }) {
   if (!dialog) return;
   if (input) input.value = prompt || '';
-  if (note) note.textContent = 'Die KI liefert passende Datensatz-IDs. Diese Datensätze werden anschließend direkt geladen.';
+  if (note) {
+    note.textContent = 'Die KI liefert passende Datensatz-IDs. Diese Datensätze werden anschließend direkt geladen.';
+  }
   if (typeof dialog.showModal === 'function') {
     dialog.showModal();
   } else {

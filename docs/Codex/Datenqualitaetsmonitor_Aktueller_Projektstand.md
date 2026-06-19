@@ -64,7 +64,7 @@ Wichtige Produktentscheidung:
 
 - Pflegeaufgaben mit `0` Treffern bleiben unsichtbar
 - Open-Data-Status wird binär dargestellt
-- Pflegeaufgaben springen wieder korrekt auf `records.html`
+- Pflegeaufgaben springen korrekt auf `records.html`
 - Dropdown-Menüs wurden global an das übrige Design angepasst
 - Mailto-Links werden Outlook-tauglich als `%20`-kodierte URLs erzeugt
 
@@ -89,38 +89,62 @@ Wichtige Produktentscheidung:
   `Statistik/core/api-urls.js`,
   `Statistik/core/app-constants.js`,
   `Statistik/core/app-state.js`,
+  `Statistik/core/consent-ui.js`,
+  `Statistik/core/context-shell-controller.js`,
+  `Statistik/core/page-bootstrap.js`,
+  `Statistik/core/page-initializers.js`,
   `Statistik/core/page-shell.js`,
+  `Statistik/core/request-cache.js`,
   `Statistik/core/runtime-helpers.js`,
   `Statistik/core/source-systems.js`,
+  `Statistik/core/source-systems-bindings.js`,
+  `Statistik/core/source-systems-page-bindings.js`,
+  `Statistik/core/source-systems-ui.js`,
   `Statistik/core/state-storage.js`
-- Records:
-  `Statistik/records/record-api.js`,
-  `Statistik/records/record-communication.js`,
-  `Statistik/records/records-actions.js`,
-  `Statistik/records/records-controller.js`,
-  `Statistik/records/records-page-controller.js`,
-  `Statistik/records/records-data.js`,
-  `Statistik/records/records-filters.js`,
-  `Statistik/records/records-helpers.js`,
-  `Statistik/records/records-search.js`,
-  `Statistik/records/records-ui.js`
-- Detail:
-  `Statistik/detail/record-detail-controller.js`,
-  `Statistik/detail/record-detail-data.js`,
-  `Statistik/detail/record-detail-helpers.js`,
-  `Statistik/detail/record-detail-ui.js`
 - Übersicht:
   `Statistik/overview/overview-controller.js`,
   `Statistik/overview/overview-data.js`,
   `Statistik/overview/overview-helpers.js`,
+  `Statistik/overview/overview-page-bindings.js`,
   `Statistik/overview/overview-ui.js`
 - Aufgaben:
   `Statistik/tasks/task-controller.js`,
   `Statistik/tasks/task-data.js`,
   `Statistik/tasks/task-families.js`,
   `Statistik/tasks/task-logic.js`,
+  `Statistik/tasks/task-page-bindings.js`,
+  `Statistik/tasks/task-record-links.js`,
   `Statistik/tasks/task-texts.js`,
   `Statistik/tasks/tasks-ui.js`
+- Records:
+  `Statistik/records/record-api.js`,
+  `Statistik/records/record-communication.js`,
+  `Statistik/records/records-actions.js`,
+  `Statistik/records/records-controller.js`,
+  `Statistik/records/records-page-bindings.js`,
+  `Statistik/records/records-page-controller.js`,
+  `Statistik/records/records-page-data.js`,
+  `Statistik/records/records-page-interactions.js`,
+  `Statistik/records/records-page-queries.js`,
+  `Statistik/records/records-page-search-bindings.js`,
+  `Statistik/records/records-page-state.js`,
+  `Statistik/records/records-page-view.js`,
+  `Statistik/records/records-data.js`,
+  `Statistik/records/records-filters.js`,
+  `Statistik/records/records-helpers.js`,
+  `Statistik/records/records-search.js`,
+  `Statistik/records/records-ui.js`
+- Detail:
+  `Statistik/detail/record-detail-bindings.js`,
+  `Statistik/detail/record-detail-page-bindings.js`,
+  `Statistik/detail/record-detail-controller.js`,
+  `Statistik/detail/record-detail-data.js`,
+  `Statistik/detail/record-detail-helpers.js`,
+  `Statistik/detail/record-detail-ui.js`
+- Help:
+  `Statistik/help/help-page.js`
+- Statistik:
+  `Statistik/stats/stats-page.js`
 - Quality:
   `Statistik/quality/quality-api.js`
 - Proxy:
@@ -130,11 +154,33 @@ Wichtige Produktentscheidung:
 
 ## Zuletzt umgesetzt
 
-- Records-Seitenlauf aus `scripts.js` in
-  `Statistik/records/records-page-controller.js` ausgelagert
-- Detail-Seitenlauf aus `scripts.js` in
-  `Statistik/detail/record-detail-controller.js` ausgelagert
-- `Statistik/detail/record-detail-data.js` sauber in UTF-8 neu aufgebaut
+- gemeinsame Shell-Initialisierung und Seitenstart-Verdrahtung aus
+  `scripts.js` in `Statistik/core/page-bootstrap.js` weiter reduziert
+- Seiteninitialisierung für Overview, Tasks, Records, Detail, Statistik und
+  Hilfe aus `scripts.js` in `Statistik/core/page-initializers.js`
+  weiter reduziert
+- Arbeitskontext-, View-State- und Shell-Submit-Verdrahtung aus `scripts.js`
+  in `Statistik/core/context-shell-controller.js` weiter reduziert
+- Statistik-Filter-, Render- und Exportlogik aus `scripts.js` in
+  `Statistik/stats/stats-page.js` ausgelagert
+- Overview-Bindings aus `scripts.js` in
+  `Statistik/overview/overview-page-bindings.js` weiter reduziert
+- Records-View-/UI-Bindings aus `scripts.js` in
+  `Statistik/records/records-page-bindings.js` weiter reduziert
+- Records-Such-/Autocomplete-/Mail-Bindings aus `scripts.js` in
+  `Statistik/records/records-page-search-bindings.js` weiter reduziert
+- Task-UI-/Paging-/Detail-Bindings aus `scripts.js` in
+  `Statistik/tasks/task-page-bindings.js` weiter reduziert
+- Detail-Hilfs-/View-Bindings aus `scripts.js` in
+  `Statistik/detail/record-detail-page-bindings.js` weiter reduziert
+- Quellsystem-/Export-Bindings aus `scripts.js` in
+  `Statistik/core/source-systems-page-bindings.js` weiter reduziert
 - `Statistik/README.md` auf die aktuelle Modulstruktur nachgezogen
-- zuvor bereits ausgelagerte Overview-, Task-, Core- und Record-Module bleiben
-  die fachlichen Zielorte für neue Logik
+
+## Technische Richtung
+
+- `scripts.js` ist weiterhin der Orchestrator
+- neue Fachlogik soll nicht mehr direkt in `scripts.js` landen
+- die nächste Stufe ist das Entfernen toter Wrapper und doppelter Delegationen
+- danach kann die eigentliche Framework-Migration auf sauber getrennten Modulen
+  aufsetzen

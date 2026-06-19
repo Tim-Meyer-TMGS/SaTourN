@@ -147,21 +147,35 @@ Ziel:
 Bereits umgesetzt:
 
 - Core-Helfer für State und API-URLs aus `scripts.js` ausgelagert
-- Records-API, Records-Helfer, Records-Aktionen, Records-Steuerung,
-  Records-Datenadapter, Records-Filter und Records-UI ausgelagert
+- gemeinsame Shell-Initialisierung und Seitenstart-Verdrahtung in
+  `core/page-bootstrap.js` ausgelagert
+- Seiteninitialisierung in `core/page-initializers.js` ausgelagert
+- Arbeitskontext-, View-State- und Shell-Submit-Verdrahtung in
+  `core/context-shell-controller.js` ausgelagert
+- Consent-UI in `core/consent-ui.js` ausgelagert
+- Statistik-Filter-, Render- und Exportlogik in `stats/stats-page.js`
+  ausgelagert
+- Overview-Bindings in `overview/overview-page-bindings.js` ausgelagert
+- Records-View-/UI-Bindings in `records/records-page-bindings.js`
+  ausgelagert
+- Records-Such-/Autocomplete-/Mail-Bindings in
+  `records/records-page-search-bindings.js` ausgelagert
+- Task-UI-/Paging-/Detail-Bindings in `tasks/task-page-bindings.js`
+  ausgelagert
+- Detail-Hilfs-/View-Bindings in
+  `detail/record-detail-page-bindings.js` ausgelagert
+- Quellsystem-/Export-Bindings in
+  `core/source-systems-page-bindings.js` ausgelagert
 - Records-Seitenlauf in `records-page-controller.js` ausgelagert
-- Detail-Helfer, Detail-Datenaufbereitung, Detail-UI und Detail-Seitenlauf ausgelagert
+- Detail-Seitenlauf in `record-detail-controller.js` ausgelagert
 - Overview-Datenlogik, Overview-Helfer, Overview-UI und Overview-Controller ausgelagert
 - Task-Datenlogik, Task-Logik, Task-Texte, Task-UI und Task-Controller ausgelagert
-- Quellsystem-/Pflegesystem-Logik in gemeinsames Core-Modul ausgelagert
-- gemeinsame Shell-Initialisierung und Arbeitskontext-Helfer in Core-Modul ausgelagert
-- gemeinsamer Startzustand und seitenabhängige State-Vorbelegung in Core-Modul ausgelagert
-- Consent-, Refresh- und Cache-Grundverdrahtung in Core-Modul ausgelagert
+- Detail-Helfer, Detail-Datenaufbereitung, Detail-UI und Detail-Bindings ausgelagert
 - `Statistik/README.md` auf die neue Ordnerstruktur aktualisiert
 
 Offen:
 
-- `scripts.js` weiter in fachliche Teilmodule zerlegen
+- `scripts.js` auf tote Wrapper und doppelte Delegationen bereinigen
 - API-Zugriffe von Rendering und Event-Handling weiter trennen
 - globale State-Logik in klar abgegrenzte Bereiche aufteilen
 - Texte, Labels und Hilfemeldungen weiter aus Logikblöcken herauslösen
@@ -170,9 +184,8 @@ Offen:
 
 Nächste sinnvolle Entkopplung:
 
-- verbleibende Records-Such- und Interaktionsverdrahtung weiter reduzieren
-- verbleibende Help-/Consent-Speziallogik vom Kern entkoppeln
-- gemeinsame Seiteninitialisierung und Seitennavigation weiter aus `scripts.js` ziehen
+- verbleibende Overview-/Task-/Detail-Orchestrierung weiter zusammenziehen
+- danach `scripts.js` auf reinen Seiten-Bootstrap reduzieren
 
 Betroffene Dateien:
 
@@ -213,7 +226,5 @@ Diese Themen sind aktuell bewusst nachrangig:
 
 ## Zuletzt erledigt
 
-- Records-Seitenlauf aus `scripts.js` in `Statistik/records/records-page-controller.js` ausgelagert
-- Detail-Seitenlauf aus `scripts.js` in `Statistik/detail/record-detail-controller.js` ausgelagert
-- `Statistik/detail/record-detail-data.js` sauber in UTF-8 neu aufgebaut
 - `Statistik/README.md` und die aktiven Codex-Dokumente auf die neue Struktur nachgezogen
+- Overview-, Task-, Record-, Detail- und Quellsystem-Bindings weiter aus `scripts.js` ausgelagert

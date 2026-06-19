@@ -25,12 +25,16 @@ export async function handleRecordAiSearchSubmit({
 
   const prompt = (els.recordAiSearchInput?.value || '').trim();
   if (!prompt) {
-    if (els.recordAiSearchNote) els.recordAiSearchNote.textContent = 'Bitte gib zuerst eine Suchanfrage ein.';
+    if (els.recordAiSearchNote) {
+      els.recordAiSearchNote.textContent = 'Bitte gib zuerst eine Suchanfrage ein.';
+    }
     return;
   }
 
   if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = true;
-  if (els.recordAiSearchNote) els.recordAiSearchNote.innerHTML = '<span class="inline-loading">KI-Suche wird ausgeführt ...</span>';
+  if (els.recordAiSearchNote) {
+    els.recordAiSearchNote.innerHTML = '<span class="inline-loading">KI-Suche wird ausgeführt ...</span>';
+  }
 
   try {
     const aiPayload = await runAiRecordSearch({
@@ -46,6 +50,7 @@ export async function handleRecordAiSearchSubmit({
     state.pendingRecordView = null;
     clearRecordViewState();
     state.recordServerSearchKeys = new Set();
+
     if (els.recordSearchInput) els.recordSearchInput.value = '';
     if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
     if (els.recordStatusFilter) els.recordStatusFilter.value = '';
@@ -76,7 +81,10 @@ export async function handleRecordAiSearchSubmit({
       type: selectedType()
     });
     const resolved = Array.isArray(recordsPayload?.items) ? recordsPayload.items : [];
-    const evaluated = evaluateAllItems(resolved.map((raw) => normalizeItem(raw.raw || raw, raw._resolvedType || raw.type)));
+    const evaluated = evaluateAllItems(
+      resolved.map((raw) => normalizeItem(raw.raw || raw, raw._resolvedType || raw.type))
+    );
+
     state.recordItems = evaluated;
     state.recordRows = evaluated.map(buildRecordViewModel);
     state.filteredRecordRows = [];
@@ -87,13 +95,17 @@ export async function handleRecordAiSearchSubmit({
       estimatedTotalItems: ids.length,
       truncated: Boolean(aiPayload?.truncated)
     };
+
     fillRecordDynamicFilters();
     applyRecordFilters();
     closeRecordAiSearchDialog(els.recordAiSearchDialog);
   } catch (error) {
     console.error('KI-Suche fehlgeschlagen.', error);
     if (els.recordAiSearchNote) {
-      els.recordAiSearchNote.textContent = getErrorMessage(error, 'Die KI-Suche konnte nicht ausgeführt werden.');
+      els.recordAiSearchNote.textContent = getErrorMessage(
+        error,
+        'Die KI-Suche konnte nicht ausgeführt werden.'
+      );
     }
   } finally {
     if (els.recordAiSearchSubmit) els.recordAiSearchSubmit.disabled = false;
@@ -120,11 +132,13 @@ export async function handleRecordSearchSubmit({
   state.recordPage = 1;
   state.recordAiSearchPrompt = '';
   applyRecordFilters();
+
   const query = (els.recordSearchInput?.value || '').trim();
   if (!query || state.filteredRecordRows.length) return;
 
   if (els.recordSearchButton) els.recordSearchButton.textContent = 'Suchen ...';
   renderRecordsLoading();
+
   try {
     const searchResult = await resolveRecordSearch({
       query,
@@ -133,11 +147,13 @@ export async function handleRecordSearchSubmit({
       searchRecordsByText
     });
     const found = searchResult.items || [];
+
     if (!found.length) {
       applyRecordFilters();
       showRecordsMessage('Keine Datensätze gefunden.');
       return;
     }
+
     const evaluated = evaluateAllItems(found.map((raw) => normalizeItem(raw.raw || raw, raw.type)));
     const merged = mergeRecordItems(state.recordItems, evaluated);
     state.recordItems = merged;
@@ -149,6 +165,7 @@ export async function handleRecordSearchSubmit({
       estimatedTotalItems: searchResult.estimatedTotalItems || found.length,
       truncated: Boolean(searchResult.truncated)
     };
+
     fillRecordDynamicFilters();
     applyRecordFilters();
     showRecordsMessage(searchResult.truncated ? 'Suchtreffer geladen. Verfeinere die Suche bei Bedarf.' : '');
@@ -171,10 +188,12 @@ export function queueRecordAutocomplete({
   clearTimeout(state.recordAutocompleteTimer);
   state.recordAutocompleteRequestId += 1;
   const query = (els.recordSearchInput?.value || '').trim();
+
   if (!els.recordAutocompleteList || query.length < 3 || looksLikeRecordId(query)) {
     hideRecordAutocomplete();
     return;
   }
+
   state.recordAutocompleteTimer = setTimeout(() => {
     void loadRecordAutocomplete(query);
   }, 260);
@@ -216,6 +235,7 @@ export function renderRecordAutocomplete({
     hideRecordAutocomplete();
     return;
   }
+
   els.recordAutocompleteList.innerHTML = suggestions.map((suggestion, index) => `
     <button type="button" role="option" data-autocomplete-value="${escapeHtml(suggestion.value)}" aria-selected="${index === 0 ? 'true' : 'false'}">
       <span>${escapeHtml(suggestion.label)}</span>
@@ -223,10 +243,13 @@ export function renderRecordAutocomplete({
     </button>
   `).join('');
   els.recordAutocompleteList.hidden = false;
+
   els.recordAutocompleteList.querySelectorAll('button[data-autocomplete-value]').forEach((button) => {
     button.addEventListener('mousedown', (event) => event.preventDefault());
     button.addEventListener('click', () => {
-      if (els.recordSearchInput) els.recordSearchInput.value = button.dataset.autocompleteValue || button.textContent.trim();
+      if (els.recordSearchInput) {
+        els.recordSearchInput.value = button.dataset.autocompleteValue || button.textContent.trim();
+      }
       hideRecordAutocomplete();
       void onSubmitSuggestion();
     });
