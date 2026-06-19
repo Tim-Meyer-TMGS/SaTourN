@@ -39,16 +39,23 @@ export function getDetailUsability(item, images, missingCopyright, qualityHelper
   const hasOpenings = qualityHelpers.hasOpeningHours(raw);
   const hasTransport = qualityHelpers.hasPublicTransportFeature(raw);
   const bookingRelevant = ['Hotel', 'Package'].includes(item.type);
+
   return [
     { label: 'Open Data', value: licenseOk ? 'ja' : 'nein', ok: licenseOk },
     { label: 'Lizenzstatus', value: licenseOk ? 'gültig' : 'Lizenz fehlt', ok: licenseOk },
     { label: 'Beschreibung', value: hasDescriptionValue ? 'vorhanden' : 'fehlt', ok: hasDescriptionValue },
     { label: 'Bilder', value: images.length ? 'vorhanden' : 'fehlt', ok: images.length > 0 },
-    { label: 'Bildrechte', value: missingCopyright.length ? `${missingCopyright.length} ohne Urheber` : 'vorhanden', ok: missingCopyright.length === 0 },
+    {
+      label: 'Bildrechte',
+      value: missingCopyright.length ? `${missingCopyright.length} ohne Urheber` : 'vorhanden',
+      ok: missingCopyright.length === 0
+    },
     { label: 'ÖPNV-Info', value: hasTransport ? 'vorhanden' : 'nicht vorhanden', ok: hasTransport },
     {
       label: 'Buchungslink',
-      value: bookingRelevant ? qualityHelpers.hasBookingLink(raw) ? 'vorhanden' : 'fehlt' : 'nicht relevant',
+      value: bookingRelevant
+        ? (qualityHelpers.hasBookingLink(raw) ? 'vorhanden' : 'fehlt')
+        : 'nicht relevant',
       ok: !bookingRelevant || qualityHelpers.hasBookingLink(raw),
       relevant: bookingRelevant
     },
@@ -93,7 +100,7 @@ export function getCheckableImages(item, qualityHelpers) {
   return qualityHelpers.getMediaObjects(raw)
     .filter((media) => qualityHelpers.isCheckableMediaObject(media))
     .sort((a, b) => {
-      const relRank = (rel) => rel === 'default' ? 0 : 1;
+      const relRank = (rel) => (rel === 'default' ? 0 : 1);
       return relRank(a.rel) - relRank(b.rel) || Number(a.prio || 99) - Number(b.prio || 99);
     })
     .map((media) => ({
@@ -119,10 +126,13 @@ export function formatImageSize(image) {
 export function getOpeningHoursSummary(item, qualityHelpers) {
   const raw = item.raw || item;
   if (raw.alwaysOpen === true) return 'Immer geöffnet.';
+
   const openingText = getTextByRel(raw, 'openings', qualityHelpers);
   if (openingText) return openingText;
+
   const intervals = raw.timeIntervals || raw.raw?.timeIntervals || [];
   if (Array.isArray(intervals) && intervals.length) return formatTimeIntervals(intervals);
+
   return 'Keine Öffnungszeiten angegeben.';
 }
 
@@ -137,6 +147,7 @@ export function formatTimeIntervals(intervals) {
     })
     .filter(Boolean)
     .slice(0, 7);
+
   return rows.length ? rows.join('\n') : 'Öffnungszeiten vorhanden.';
 }
 

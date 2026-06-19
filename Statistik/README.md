@@ -4,23 +4,38 @@
 
 - `core/`
   Gemeinsame Basisbausteine wie Konfiguration, URL-Builder, Formatierung,
-  Request-Cache und Session-/View-State.
-
-- `records/`
-  Datensatzliste, Suche, KI-Suche, Mailentwurf und Navigation zwischen
-  Pflegeaufgaben, Übersicht und Datensatzansicht.
+  Request-Cache, Session-/View-State und gemeinsame Quellsystem-Logik.
   Wichtige Module:
-  `records-actions.js`, `records-controller.js`, `records-data.js`,
-  `records-filters.js`, `records-ui.js`.
-
-- `detail/`
-  Hilfs- und UI-Logik für die Datensatz-Detailseite.
+  `api-config.js`, `api-urls.js`, `app-constants.js`, `app-state.js`,
+  `page-shell.js`, `request-cache.js`, `runtime-helpers.js`,
+  `source-systems.js`, `state-storage.js`.
 
 - `overview/`
-  Hilfs- und UI-Logik für die Übersichtsseite.
+  Hilfs-, Daten-, UI- und Controller-Logik für die Übersichtsseite.
+  Wichtige Module:
+  `overview-controller.js`, `overview-data.js`, `overview-helpers.js`,
+  `overview-ui.js`.
 
 - `tasks/`
-  Aufgabenlogik, Aufgabenfamilien, UI und zugehörige Texte.
+  Aufgabenlogik, Aufgabenfamilien, Datenzugriffe, UI und zugehörige Texte.
+  Wichtige Module:
+  `task-controller.js`, `task-data.js`, `task-families.js`,
+  `task-logic.js`, `task-texts.js`, `tasks-ui.js`.
+
+- `records/`
+  Datensatzliste, Suche, KI-Suche, Mailentwurf, Filter und Seitennavigation.
+  Wichtige Module:
+  `record-api.js`, `record-communication.js`, `record-mail.js`,
+  `records-actions.js`, `records-controller.js`,
+  `records-page-controller.js`, `records-data.js`,
+  `records-filters.js`, `records-helpers.js`, `records-search.js`,
+  `records-ui.js`.
+
+- `detail/`
+  Daten-, Hilfs-, UI- und Controller-Logik für die Datensatz-Detailseite.
+  Wichtige Module:
+  `record-detail-controller.js`, `record-detail-data.js`,
+  `record-detail-helpers.js`, `record-detail-ui.js`.
 
 - `quality/`
   Frontend-Helfer für Qualitäts-API-Aufrufe.
@@ -31,14 +46,13 @@
   lädt das Frontend.
 
 - `scripts.js`
-  bleibt vorerst der Seiten-Orchestrator und bindet die Module zusammen.
+  bleibt vorerst der Seiten-Orchestrator und verdrahtet die Fachmodule.
 
 - `quality.js`
   enthält das fachliche Qualitätsmodell und die Bewertungslogik.
 
 ## Leitlinie
 
-Neue Hilfslogik soll nicht mehr direkt in `scripts.js` landen, wenn sie klar zu
-einem Fachbereich gehört. Neue Module werden im passenden Unterordner
-angelegt und nur noch über `scripts.js` oder andere zuständige Module
+Neue Fachlogik soll nicht mehr direkt in `scripts.js` landen. Neue Bausteine
+werden im passenden Unterordner angelegt und nur noch über den Orchestrator
 verdrahtet.

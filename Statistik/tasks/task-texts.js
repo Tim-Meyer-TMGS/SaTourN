@@ -1,11 +1,11 @@
 export function getTaskProblem(id) {
-  if (id === 'poi_street_missing') return 'Fuer diese POI fehlt eine belastbare Strassen- oder Anschriftsangabe.';
-  if (id === 'poi_teaser_missing') return 'Fuer diese POI fehlt ein kurzer Teaser-Text.';
-  if (id === 'poi_email_missing') return 'Fuer diese POI fehlt eine E-Mail-Adresse.';
-  if (id === 'poi_website_missing') return 'Fuer diese POI fehlt eine Webseite.';
-  if (id === 'poi_phone_missing') return 'Fuer diese POI fehlt eine Telefonnummer.';
-  if (id === 'poi_price_missing') return 'Fuer diese POI fehlt eine Preis-, Eintritts- oder Kosteninformation.';
-  if (id === 'tour_season_missing') return 'Fuer diese Tour fehlt eine belastbare Saison- oder Eignungsangabe.';
+  if (id === 'poi_street_missing') return 'Für diese POI fehlt eine belastbare Straßen- oder Anschriftsangabe.';
+  if (id === 'poi_teaser_missing') return 'Für diese POI fehlt ein kurzer Teaser-Text.';
+  if (id === 'poi_email_missing') return 'Für diese POI fehlt eine E-Mail-Adresse.';
+  if (id === 'poi_website_missing') return 'Für diese POI fehlt eine Webseite.';
+  if (id === 'poi_phone_missing') return 'Für diese POI fehlt eine Telefonnummer.';
+  if (id === 'poi_price_missing') return 'Für diese POI fehlt eine Preis-, Eintritts- oder Kosteninformation.';
+  if (id === 'tour_season_missing') return 'Für diese Tour fehlt eine belastbare Saison- oder Eignungsangabe.';
   if (id === 'tour_parking_missing') return 'Für diese Tour fehlt eine belastbare Parkinformation.';
 
   const problems = {
@@ -92,7 +92,7 @@ export function getTaskIcon(id) {
 }
 
 export function getTaskDescription(id) {
-  if (id === 'poi_street_missing') return 'Keine Strasse oder Anschrift hinterlegt';
+  if (id === 'poi_street_missing') return 'Keine Straße oder Anschrift hinterlegt';
   if (id === 'poi_teaser_missing') return 'Kein Teaser-Text vorhanden';
   if (id === 'poi_email_missing') return 'Keine E-Mail-Adresse vorhanden';
   if (id === 'poi_website_missing') return 'Keine Webseite vorhanden';

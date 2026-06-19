@@ -11,6 +11,17 @@ import {
   upsertStatisticRow as upsertStatisticRowModel
 } from './overview/overview-helpers.js';
 import {
+  canCalculateQualityForContext as canCalculateQualityForContextModel,
+  loadQualityCountSummary as loadQualityCountSummaryModel,
+  loadRegionalQualityEvaluation as loadRegionalQualityEvaluationModel,
+  loadStatisticRows as loadStatisticRowsModel,
+  loadStatisticRowsIncremental as loadStatisticRowsIncrementalModel
+} from './overview/overview-data.js';
+import {
+  loadOverviewDataAsync as loadOverviewDataAsyncModel,
+  resetOverviewQualityState as resetOverviewQualityStateModel
+} from './overview/overview-controller.js';
+import {
   renderOverviewEmptyState,
   renderOverviewLoadingState,
   renderOverviewPage
@@ -27,6 +38,16 @@ import {
   getTextByRel,
   textValue
 } from './detail/record-detail-helpers.js';
+import {
+  fetchRecordDetailItem as fetchRecordDetailItemModel,
+  getAddressSummary as getAddressSummaryModel,
+  getCoordinates as getCoordinatesModel,
+  getExternalSystemIds as getExternalSystemIdsModel,
+  getRawExcerpt as getRawExcerptModel,
+  getRecordDetailContext as getRecordDetailContextModel,
+  getRecordDetailViewModel as getRecordDetailViewModelModel
+} from './detail/record-detail-data.js';
+import { loadRecordDetail as loadRecordDetailModel } from './detail/record-detail-controller.js';
 import {
   renderDetailEmptyState,
   renderDetailLoadingState,
@@ -47,6 +68,7 @@ import {
   openTaskRecordsOnRecordsPage as openTaskRecordsOnRecordsPageModel,
   resolveTaskCriterionId as resolveTaskCriterionIdModel
 } from './records/records-controller.js';
+import { loadRecordsData as loadRecordsDataPageModel } from './records/records-page-controller.js';
 import {
   buildVerifiedEt4Url as buildVerifiedEt4UrlModel,
   buildRecordDetailUrl,
@@ -89,6 +111,11 @@ import {
 } from './records/records-ui.js';
 import { getTaskDescription, getTaskIcon, getTaskImpactText, getTaskProblem } from './tasks/task-texts.js';
 import {
+  loadTaskIssueSummary as loadTaskIssueSummaryModel,
+  loadTaskRecordRows as loadTaskRecordRowsModel
+} from './tasks/task-data.js';
+import { loadTasksData as loadTasksDataModel } from './tasks/task-controller.js';
+import {
   buildQualityCountRequestUrl,
   buildQualityListRequestUrl,
   buildQualitySnapshotRequestUrl,
@@ -130,6 +157,10 @@ import {
   percent
 } from './core/format-utils.js';
 import {
+  createInitialState as createInitialStateModel,
+  initializeStateForPage as initializeStateForPageModel
+} from './core/app-state.js';
+import {
   buildTaskRows as buildTaskRowsModel,
   computeTaskSummary,
   findTaskById as findTaskByIdModel,
@@ -142,6 +173,33 @@ import {
   filterTaskRows as filterTaskRowsModel
 } from './tasks/task-logic.js';
 import { createRequestCache } from './core/request-cache.js';
+import {
+  clearTransientRequestCache as clearTransientRequestCacheModel,
+  createForceFreshController,
+  fetchJsonCached as fetchJsonCachedModel,
+  hasConsent as hasConsentModel,
+  interceptQuickAiConsent as interceptQuickAiConsentModel,
+  isAbortLikeError as isAbortLikeErrorModel,
+  loadConsentState as loadConsentStateModel,
+  openConsentDialog as openConsentDialogModel,
+  readConsentFormState,
+  saveConsentState as saveConsentStateModel,
+  syncConsentControls as syncConsentControlsModel
+} from './core/runtime-helpers.js';
+import {
+  fillContextControls as fillContextControlsModel,
+  initSharedShell as initSharedShellModel,
+  initializePage as initializePageModel,
+  openContextDialog as openContextDialogModel,
+  renderWorkContext as renderWorkContextModel
+} from './core/page-shell.js';
+import {
+  collectPrimarySystems as collectPrimarySystemsModel,
+  getKeywordValues as getKeywordValuesModel,
+  getPrimarySystem as getPrimarySystemModel,
+  getSourceId as getSourceIdModel,
+  safeKeywordArray as safeKeywordArrayModel
+} from './core/source-systems.js';
 import {
   clearRecordViewStateStorage,
   loadRecordListStateFromSession,
@@ -339,56 +397,12 @@ document.addEventListener('DOMContentLoaded', () => {
     consentAnalytics: document.getElementById('consent-analytics')
   };
 
-  let state = {
-    context: loadWorkContext(),
-    latestRows: [],
-    qualitySnapshot: null,
-    normalizedItems: [],
-    qualityAggregations: getQualityAggregations([]),
-    qualityDataMeta: {
-      mode: 'api_counts',
-      collectedItems: 0,
-      estimatedTotalItems: 0,
-      truncated: false,
-      unsupportedCriteria: [],
-      failedCounts: 0
-    },
-    lastKpis: null,
-    taskItems: [],
-    taskRows: [],
-    filteredTaskRows: [],
-    selectedTask: null,
-    selectedTaskType: '',
-    pendingTaskId: '',
-    taskPage: 1,
-    taskRowsPerPage: 7,
-    taskRecordRows: [],
-    taskRecordMeta: null,
-    recordItems: [],
-    recordRows: [],
-    filteredRecordRows: [],
-    recordPage: 1,
-    recordRowsPerPage: 25,
-    recordSearchTimer: null,
-    recordAutocompleteTimer: null,
-    recordAutocompleteRequestId: 0,
-    recordServerSearchKeys: new Set(),
-    recordAiSearchPrompt: '',
-    recordDataMeta: {
-      mode: 'empty',
-      collectedItems: 0,
-      estimatedTotalItems: 0,
-      truncated: false
-    },
-    statsRows: [],
-    statsSummary: null,
-    pendingRecordView: null,
-    recordDetailItem: null,
-    recordDetailViewModel: null,
-    overviewLoadId: 0,
-    taskLoadId: 0
-  };
+  let state = createInitialStateModel({
+    loadWorkContext,
+    getQualityAggregations
+  });
 
+  const forceFreshController = createForceFreshController();
   let consentState = loadConsentState();
   const requestCache = createRequestCache({
     fetchJson: rawFetchJson,
@@ -398,32 +412,35 @@ document.addEventListener('DOMContentLoaded', () => {
     ttlConfig: REQUEST_CACHE_TTL_MS
   });
 
-  if (page === 'records') {
-    state.pendingRecordView = loadRecordViewStateFromRoute();
-    if (state.pendingRecordView?.context) {
-      saveWorkContext(state.pendingRecordView.context);
-    }
-  }
+  initializeStateForPageModel({
+    page,
+    state,
+    loadRecordViewStateFromRoute,
+    saveWorkContext
+  });
 
   initSharedShell();
-  if (page === 'overview') initOverview();
-  if (page === 'tasks') initTasks();
-  if (page === 'records') initRecords();
-  if (page === 'record-detail') initRecordDetail();
-  if (page === 'stats') initStats();
-  if (page === 'help') initHelp();
+  initializePageModel(page, {
+    initOverview,
+    initTasks,
+    initRecords,
+    initRecordDetail,
+    initStats,
+    initHelp
+  });
 
   function initSharedShell() {
-    fillContextControls();
-    renderWorkContext();
-    syncConsentControls();
-
-    els.contextSummary?.addEventListener('click', openContextDialog);
-    els.contextEdit?.addEventListener('click', openContextDialog);
-    els.contextForm?.addEventListener('submit', handleContextSubmit);
-    els.consentSettingsButton?.addEventListener('click', openConsentDialog);
-    els.consentForm?.addEventListener('submit', handleConsentSubmit);
-    els.refreshButton?.addEventListener('click', markForceFresh, { capture: true });
+    initSharedShellModel({
+      els,
+      fillControls: fillContextControls,
+      renderContext: renderWorkContext,
+      syncConsentControls,
+      openContextDialog,
+      handleContextSubmit,
+      openConsentDialog,
+      handleConsentSubmit,
+      markForceFresh
+    });
   }
 
   function initOverview() {
@@ -560,115 +577,56 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function markForceFresh() {
-    state.forceFreshUntil = Date.now() + 1500;
+    forceFreshController.markForceFresh();
   }
 
   function shouldForceFresh() {
-    return Number(state.forceFreshUntil || 0) > Date.now();
+    return forceFreshController.shouldForceFresh();
   }
 
   function clearTransientRequestCache() {
-    requestCache.clear();
+    clearTransientRequestCacheModel(requestCache);
   }
 
   async function fetchJsonCached(url, options = {}) {
-    return requestCache.fetch(url, options);
+    return fetchJsonCachedModel(requestCache, url, options);
   }
 
   function isAbortLikeError(error) {
-    const message = String(error?.message || error || '');
-    return error?.name === 'AbortError' || /aborted|abort|timeout/i.test(message);
-  }
-
-  function getConsentDefaults() {
-    const defaults = RUNTIME_CONFIG.consent?.optionalDefaults || {};
-    return {
-      essential: true,
-      external_ui: Boolean(defaults.external_ui),
-      automation: Boolean(defaults.automation),
-      analytics: Boolean(defaults.analytics)
-    };
+    return isAbortLikeErrorModel(error);
   }
 
   function loadConsentState() {
-    const defaults = getConsentDefaults();
-    try {
-      const parsed = JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) || '{}');
-      return {
-        essential: true,
-        external_ui: parsed.external_ui ?? defaults.external_ui,
-        automation: parsed.automation ?? defaults.automation,
-        analytics: parsed.analytics ?? defaults.analytics,
-        updatedAt: parsed.updatedAt || ''
-      };
-    } catch {
-      return {
-        essential: true,
-        external_ui: defaults.external_ui,
-        automation: defaults.automation,
-        analytics: defaults.analytics,
-        updatedAt: ''
-      };
-    }
+    return loadConsentStateModel(CONSENT_STORAGE_KEY, RUNTIME_CONFIG);
   }
 
   function saveConsentState() {
-    const payload = {
-      external_ui: Boolean(consentState.external_ui),
-      automation: Boolean(consentState.automation),
-      analytics: Boolean(consentState.analytics),
-      updatedAt: new Date().toISOString()
-    };
-    consentState = {
-      essential: true,
-      ...payload
-    };
-    try {
-      localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // localStorage may be unavailable in strict privacy contexts.
-    }
-    window.dispatchEvent(new CustomEvent('satourn:consent-change', {
-      detail: { ...consentState }
-    }));
+    consentState = saveConsentStateModel(consentState, CONSENT_STORAGE_KEY);
   }
 
   function hasConsent(category) {
-    if (!category || category === 'essential') return true;
-    return Boolean(consentState?.[category]);
+    return hasConsentModel(consentState, category);
   }
 
   function syncConsentControls() {
-    if (els.consentExternalUi) els.consentExternalUi.checked = hasConsent('external_ui');
-    if (els.consentAutomation) els.consentAutomation.checked = hasConsent('automation');
-    if (els.consentAnalytics) els.consentAnalytics.checked = hasConsent('analytics');
+    syncConsentControlsModel(els, consentState);
   }
 
   function openConsentDialog() {
-    syncConsentControls();
-    if (typeof els.consentDialog?.showModal === 'function') {
-      els.consentDialog.showModal();
-    } else {
-      els.consentDialog?.setAttribute('open', '');
-    }
+    openConsentDialogModel(els, syncConsentControls);
   }
 
   function handleConsentSubmit(event) {
     if (event.submitter?.value === 'cancel') return;
     event.preventDefault();
-    consentState.external_ui = Boolean(els.consentExternalUi?.checked);
-    consentState.automation = Boolean(els.consentAutomation?.checked);
-    consentState.analytics = Boolean(els.consentAnalytics?.checked);
+    consentState = readConsentFormState(els, consentState);
     saveConsentState();
     renderHelpPrivacySection();
     els.consentDialog?.close?.();
   }
 
   function interceptQuickAiConsent(event) {
-    if (hasConsent('automation')) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    showMessage('Optionale Automatisierung ist derzeit nicht freigegeben.');
+    interceptQuickAiConsentModel(consentState, event, showMessage);
   }
 
   function renderHelpPage() {
@@ -1039,61 +997,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function fillContextControls() {
-    if (els.contextArea && !els.contextArea.options.length) {
-      AREAS.forEach(([label, value]) => els.contextArea.append(new Option(label, value)));
-    }
-    if (els.contextType && !els.contextType.options.length) {
-      els.contextType.append(new Option('Alle Datentypen', ''));
-      TYPES.forEach((type) => els.contextType.append(new Option(type, type)));
-    }
-  }
-
-  function contextAreaLabel(areaValue = state.context.area) {
-    return AREAS.find(([, value]) => value === areaValue)?.[0] || 'Sachsen';
+    fillContextControlsModel(els, AREAS, TYPES);
   }
 
   function renderWorkContext() {
-    const areaLabel = contextAreaLabel();
-    const cityLabel = state.context.city || 'Alle Orte';
-    const typeLabel = state.context.type || 'Alle Datentypen';
-    if (els.contextSummary) {
-      els.contextSummary.textContent = `${areaLabel} - ${cityLabel} - ${typeLabel}`;
-    }
-    if (els.overviewTitle) {
-      els.overviewTitle.textContent = buildOverviewTitle();
-    }
-    if (els.overviewSubtitle) {
-      els.overviewSubtitle.textContent = buildOverviewSubtitle({ areaLabel, cityLabel, typeLabel });
-    }
-  }
-
-  function buildOverviewTitle() {
-    if (state.context.type) return `${state.context.type}-Monitor`;
-    return 'Datenqualitäts-Monitor';
-  }
-
-  function buildOverviewSubtitle({ areaLabel, cityLabel, typeLabel }) {
-    const scope = [];
-    if (areaLabel) scope.push(areaLabel);
-    if (state.context.city) scope.push(cityLabel);
-    const scopeLabel = scope.join(' - ') || 'Sachsen';
-    if (state.context.type) {
-      return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${typeLabel} in ${scopeLabel}.`;
-    }
-    return `Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für ${scopeLabel}.`;
+    renderWorkContextModel(els, state.context, AREAS);
   }
 
   function openContextDialog() {
-    if (!els.contextDialog) return;
-    fillContextControls();
-    els.contextArea.value = state.context.area || '';
-    els.contextCity.value = state.context.city || '';
-    els.contextType.value = state.context.type || '';
-    if (typeof els.contextDialog.showModal === 'function') {
-      els.contextDialog.showModal();
-    } else {
-      els.contextDialog.setAttribute('open', '');
-    }
+    openContextDialogModel(els, state.context, fillContextControls);
   }
 
   function handleContextSubmit(event) {
@@ -1180,7 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function canCalculateQualityForContext(context = state.context) {
-    return Boolean(context.area || context.city);
+    return canCalculateQualityForContextModel(context);
   }
 
   function upsertStatisticRow(row) {
@@ -1192,264 +1104,80 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function resetOverviewQualityState() {
-    state.normalizedItems = [];
-    state.qualityAggregations = buildAggregationsFromIssueSummary([]);
-    state.qualityDataMeta = buildOverviewQualityMeta({
-      canCalculateQuality: canCalculateQualityForContext(),
-      selectedType: state.context.type || '',
-      totalTypes: TYPES.length
+    resetOverviewQualityStateModel({
+      state,
+      buildAggregationsFromIssueSummary,
+      buildOverviewQualityMeta,
+      canCalculateQualityForContext,
+      types: TYPES
     });
-  }
-
-  async function loadOverviewData() {
-    const startedAt = new Date();
-    showMessage('');
-    renderOverviewLoading();
-
-    try {
-      const snapshot = await loadCachedQualitySnapshot();
-      if (snapshot) {
-        renderOverview(state.latestRows, []);
-        if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date(snapshot.generatedAt || startedAt))}`;
-        return;
-      }
-
-      const rows = await loadStatisticRows();
-      const issueSummary = await loadQualityCountSummary();
-      state.latestRows = rows;
-      state.normalizedItems = [];
-      state.qualityAggregations = buildAggregationsFromIssueSummary(issueSummary);
-      renderOverview(rows, []);
-      els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
-    } catch (error) {
-      console.error('Startseite konnte nicht geladen werden.', error);
-      showMessage('Die Daten konnten nicht geladen werden. Bitte später erneut versuchen.');
-      renderOverviewEmpty();
-    }
   }
 
   async function loadOverviewDataAsync() {
-    const startedAt = new Date();
-    const loadId = ++state.overviewLoadId;
-    showMessage('');
-    renderOverviewLoading();
-    state.latestRows = [];
-    resetOverviewQualityState();
-    renderOverviewCurrent({ saveHistory: false });
-
-    const isStale = () => loadId !== state.overviewLoadId;
-    const statisticPromise = loadStatisticRowsIncremental((row) => {
-      if (isStale()) return;
-      upsertStatisticRow(row);
-      renderOverviewCurrent({ saveHistory: false });
+    return loadOverviewDataAsyncModel({
+      state,
+      els,
+      formatDateTime,
+      showMessage,
+      renderOverviewLoading,
+      renderOverviewCurrent,
+      renderOverviewEmpty,
+      resetOverviewQualityState,
+      loadStatisticRowsIncremental,
+      loadRegionalQualityEvaluation,
+      loadQualityCountSummary,
+      canCalculateQualityForContext,
+      buildAggregationsFromIssueSummary,
+      isAbortLikeError
     });
-
-    const qualityPromise = canCalculateQualityForContext()
-      ? loadRegionalQualityEvaluation({
-        isStale,
-        onUpdate: () => renderOverviewCurrent({ saveHistory: false })
-      })
-      : loadQualityCountSummary({
-        onUpdate: (issueSummary, meta) => {
-          if (isStale()) return;
-          state.qualityAggregations = buildAggregationsFromIssueSummary(issueSummary);
-          state.qualityDataMeta = {
-            ...meta,
-            mode: 'sachsen_total'
-          };
-          renderOverviewCurrent({ saveHistory: false });
-        }
-      });
-
-    try {
-      const [statisticResult, qualityResult] = await Promise.allSettled([statisticPromise, qualityPromise]);
-      if (isStale()) return;
-
-      if (statisticResult.status === 'fulfilled') {
-        state.latestRows = statisticResult.value;
-      } else if (!isAbortLikeError(statisticResult.reason)) {
-        console.error('Statistik-Counts konnten nicht geladen werden.', statisticResult.reason);
-      }
-
-      if (qualityResult.status === 'fulfilled') {
-        if (canCalculateQualityForContext()) {
-          state.normalizedItems = qualityResult.value.items;
-          state.qualityAggregations = qualityResult.value.aggregations;
-          state.qualityDataMeta = qualityResult.value.meta;
-        } else {
-          state.qualityAggregations = buildAggregationsFromIssueSummary(qualityResult.value);
-          state.qualityDataMeta = {
-            ...state.qualityDataMeta,
-            mode: 'sachsen_total'
-          };
-        }
-      } else if (!isAbortLikeError(qualityResult.reason)) {
-        console.error('Qualitätsdaten konnten nicht geladen werden.', qualityResult.reason);
-      }
-
-      renderOverviewCurrent({ saveHistory: true });
-      if (els.lastUpdated) {
-        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
-      }
-
-      if (statisticResult.status === 'rejected' && qualityResult.status === 'rejected') {
-        throw statisticResult.reason || qualityResult.reason;
-      }
-    } catch (error) {
-      console.error('Startseite konnte nicht geladen werden.', error);
-      showMessage('Die Daten konnten nicht geladen werden. Bitte später erneut versuchen.');
-      renderOverviewEmpty();
-    }
   }
 
   async function loadStatisticRowsIncremental(onRow = null) {
-    const query = buildQuery(state.context);
-    const targetTypes = state.context.type ? [state.context.type] : TYPES;
-    const rows = [];
-
-    const results = await Promise.all(targetTypes.map(async (type) => {
-      try {
-        const [totalPayload, openDataPayload] = await Promise.all([
-          fetchJsonCached(buildUrl(type, query, { limit: 1 })),
-          fetchJsonCached(buildUrl(type, query, { limit: 1, isOpenData: true }))
-        ]);
-        const row = {
-          type,
-          statistikCount: Number(extractTotal(totalPayload) || 0),
-          openDataCount: Number(extractTotal(openDataPayload) || 0)
-        };
-        rows.push(row);
-        onRow?.(row, sortStatisticRows(rows, TYPES));
-        return row;
-      } catch (error) {
-        if (!isAbortLikeError(error)) {
-          console.warn('Statistik-Count fehlgeschlagen.', type, error);
-        }
-        return null;
-      }
-    }));
-
-    const finalRows = sortStatisticRows(results.filter(Boolean), TYPES);
-    if (!finalRows.length && targetTypes.length) {
-      throw new Error('No statistic rows loaded');
-    }
-    return finalRows;
+    return loadStatisticRowsIncrementalModel({
+      context: state.context,
+      types: TYPES,
+      buildQuery,
+      buildUrl,
+      fetchJsonCached,
+      extractTotal,
+      onRow,
+      isAbortLikeError
+    });
   }
 
   async function loadStatisticRows() {
-    const query = buildQuery(state.context);
-    const targetTypes = state.context.type ? [state.context.type] : TYPES;
-    return Promise.all(targetTypes.map(async (type) => {
-      const [totalPayload, openDataPayload] = await Promise.all([
-        fetchJsonCached(buildUrl(type, query, { limit: 1 })),
-        fetchJsonCached(buildUrl(type, query, { limit: 1, isOpenData: true }))
-      ]);
-      return {
-        type,
-        statistikCount: Number(extractTotal(totalPayload) || 0),
-        openDataCount: Number(extractTotal(openDataPayload) || 0)
-      };
-    }));
-  }
-
-  function getRegionalScanPageSize() {
-    const value = Number(window.SATOURN_REGION_QUALITY_PAGE_SIZE || 200);
-    return Number.isFinite(value) ? Math.max(1, Math.min(200, value)) : 200;
-  }
-
-  function getRegionalScanMaxPages() {
-    const value = Number(window.SATOURN_REGION_QUALITY_MAX_PAGES || 50);
-    return Number.isFinite(value) ? Math.max(1, Math.min(250, value)) : 50;
-  }
-
-  function getQualityScanMeta(shared) {
-    const estimatedTotalItems = Object.values(shared.estimatedByType)
-      .filter(Number.isFinite)
-      .reduce((sum, value) => sum + value, 0);
-    return {
-      mode: 'regional_scan',
-      collectedItems: shared.items.length,
-      estimatedTotalItems,
-      truncated: shared.truncated,
-      unsupportedCriteria: [],
-      failedCounts: shared.failedTypes,
-      pendingTypes: Math.max(0, shared.totalTypes - shared.completedTypes),
-      completedTypes: shared.completedTypes
-    };
-  }
-
-  function emitRegionalQualityUpdate(shared, onUpdate) {
-    state.normalizedItems = [...shared.items];
-    state.qualityAggregations = getQualityAggregations(state.normalizedItems);
-    state.qualityDataMeta = getQualityScanMeta(shared);
-    onUpdate?.(state.qualityAggregations, state.qualityDataMeta, state.normalizedItems);
+    return loadStatisticRowsModel({
+      context: state.context,
+      types: TYPES,
+      buildQuery,
+      buildUrl,
+      fetchJsonCached,
+      extractTotal
+    });
   }
 
   async function loadRegionalQualityEvaluation({ isStale = () => false, onUpdate = null } = {}) {
-    const query = buildQuery(state.context);
-    const targetTypes = state.context.type ? [state.context.type] : TYPES;
-    const pageSize = getRegionalScanPageSize();
-    const maxPages = getRegionalScanMaxPages();
-    const shared = {
-      items: [],
-      estimatedByType: {},
-      completedTypes: 0,
-      failedTypes: 0,
-      totalTypes: targetTypes.length,
-      truncated: false
-    };
-
-    emitRegionalQualityUpdate(shared, onUpdate);
-
-    await Promise.all(targetTypes.map(async (type) => {
-      const seenIds = new Set();
-      let offset = 0;
-      let pages = 0;
-      let complete = false;
-
-      try {
-        while (!isStale() && pages < maxPages) {
-          const payload = await fetchJsonCached(buildUrl(type, query, { limit: pageSize, offset }));
-          const pageItems = extractItems(payload);
-          const pageTotal = extractTotal(payload);
-          if (Number.isFinite(pageTotal)) shared.estimatedByType[type] = pageTotal;
-          pages += 1;
-
-          const normalized = pageItems
-            .filter((rawItem) => {
-              const itemId = extractId(rawItem) || `${type}:${offset}:${seenIds.size}`;
-              if (seenIds.has(itemId)) return false;
-              seenIds.add(itemId);
-              return true;
-            })
-            .map((rawItem) => normalizeItem(rawItem, type));
-          const evaluated = evaluateAllItems(normalized);
-          shared.items.push(...evaluated);
-          emitRegionalQualityUpdate(shared, onUpdate);
-
-          offset += pageItems.length;
-          if (!pageItems.length || pageItems.length < pageSize || (Number.isFinite(pageTotal) && offset >= pageTotal)) {
-            complete = true;
-            break;
-          }
-        }
-      } catch (error) {
-        if (!isAbortLikeError(error) && !isStale()) {
-          shared.failedTypes += 1;
-          console.warn('Regionaler Qualitätsscan fehlgeschlagen.', type, error);
-        }
-      } finally {
-        if (!complete && !isStale()) shared.truncated = true;
-        shared.completedTypes += 1;
-        emitRegionalQualityUpdate(shared, onUpdate);
+    return loadRegionalQualityEvaluationModel({
+      context: state.context,
+      types: TYPES,
+      buildQuery,
+      buildUrl,
+      fetchJsonCached,
+      extractItems,
+      extractTotal,
+      extractId,
+      normalizeItem,
+      evaluateAllItems,
+      getQualityAggregations,
+      isAbortLikeError,
+      isStale,
+      onUpdate: ({ items, aggregations, meta }) => {
+        state.normalizedItems = items;
+        state.qualityAggregations = aggregations;
+        state.qualityDataMeta = meta;
+        onUpdate?.(aggregations, meta, items);
       }
-    }));
-
-    return {
-      items: [...shared.items],
-      aggregations: getQualityAggregations(shared.items),
-      meta: getQualityScanMeta(shared)
-    };
+    });
   }
 
   function fillStatsFilters() {
@@ -1753,92 +1481,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadQualityCountSummary({ onUpdate = null } = {}) {
-    const query = buildQuery(state.context);
-    const targetTypes = state.context.type ? [state.context.type] : TYPES;
-    const activeCriteria = qualityCriteria.filter((criterion) => isActiveCriterion(criterion.id));
-    const issueMap = new Map();
-    const unsupported = [];
-    let failedCounts = 0;
-
-    const buildIssues = () => Array.from(issueMap.values()).map((issue) => ({
-      ...issue,
-      affectedTypes: issue.affectedTypes.sort((a, b) => a.localeCompare(b, 'de'))
-    }));
-
-    const emit = () => {
-      const issues = buildIssues();
-      const meta = {
-        mode: 'api_counts',
-        collectedItems: 0,
-        estimatedTotalItems: issues.reduce((sum, issue) => sum + issue.affectedCount, 0),
-        truncated: false,
-        unsupportedCriteria: unsupported,
-        failedCounts
-      };
-      state.qualityDataMeta = meta;
-      onUpdate?.(issues, meta);
-      return issues;
-    };
-
-    const jobs = activeCriteria.flatMap((criterion) => (
-      targetTypes
-        .filter((type) => !criterion.types?.length || criterion.types.includes(type))
-        .map((type) => ({ criterion, type, scanConfig: getQualityScanConfig(criterion, type) }))
-    ));
-
-    await Promise.all(jobs.map(async ({ criterion, type, scanConfig }) => {
-      if (scanConfig.method !== 'api_pushdown' || !scanConfig.verified || !scanConfig.missingQuery) {
-        unsupported.push({ criterionId: criterion.id, type, method: scanConfig.method });
-        emit();
-        return;
+    const issues = await loadQualityCountSummaryModel({
+      context: state.context,
+      types: TYPES,
+      qualityCriteria,
+      isActiveCriterion,
+      getQualityScanConfig,
+      fetchQualityCount: ({ criterionId, type, query }) => fetchQualityCount({
+        apiBase: QUALITY_COUNT_API_BASE,
+        fetchJson: fetchJsonCached,
+        criterionId,
+        type,
+        query
+      }),
+      buildAggregationsFromIssueSummary,
+      buildQuery,
+      onUpdate: (partialIssues, meta) => {
+        state.qualityDataMeta = meta;
+        onUpdate?.(partialIssues, meta);
       }
-
-      try {
-        const payload = await fetchQualityCount({
-          apiBase: QUALITY_COUNT_API_BASE,
-          fetchJson: fetchJsonCached,
-          criterionId: criterion.id,
-          type,
-          query
-        });
-        const count = Number(payload?.count || 0);
-        if (!issueMap.has(criterion.id)) {
-          issueMap.set(criterion.id, {
-            criterionId: criterion.id,
-            label: criterion.label,
-            affectedCount: 0,
-            affectedTypes: [],
-            typeCounts: {},
-            priority: criterion.priority,
-            autoCheck: criterion.autoCheck !== false,
-            recommendation: criterion.recommendation,
-            countMode: 'api_count'
-          });
-        }
-        const issue = issueMap.get(criterion.id);
-        issue.affectedCount += count;
-        issue.typeCounts[type] = count;
-        if (count > 0 && !issue.affectedTypes.includes(type)) issue.affectedTypes.push(type);
-        emit();
-      } catch (error) {
-        failedCounts += 1;
-        emit();
-        console.warn('Qualitäts-Count fehlgeschlagen.', criterion.id, type, error);
-      }
-    }));
-
-    const issues = Array.from(issueMap.values()).map((issue) => ({
-      ...issue,
-      affectedTypes: issue.affectedTypes.sort((a, b) => a.localeCompare(b, 'de'))
-    }));
+    });
 
     state.qualityDataMeta = {
+      ...state.qualityDataMeta,
       mode: 'api_counts',
-      collectedItems: 0,
-      estimatedTotalItems: issues.reduce((sum, issue) => sum + issue.affectedCount, 0),
-      truncated: false,
-      unsupportedCriteria: unsupported,
-      failedCounts
+      estimatedTotalItems: issues.reduce((sum, issue) => sum + issue.affectedCount, 0)
     };
 
     return issues;
@@ -1854,62 +1521,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadTasksData() {
-    const startedAt = new Date();
-    const loadId = ++state.taskLoadId;
-    showTaskMessage('');
-    renderTasksLoading();
-    hidePrimarySystems();
-    clearTaskRecords();
-
-    const applyIssueSummary = (issueSummary) => {
-      if (loadId !== state.taskLoadId) return;
-      const selectedId = state.selectedTask?.taskId || state.selectedTask?.criterionId || state.pendingTaskId || '';
-      state.taskItems = [];
-      state.taskRows = buildTaskRows(issueSummary);
-      state.selectedTask = findTaskById(state.taskRows, selectedId)
-        || state.taskRows[0]
-        || null;
-      if (state.selectedTask && taskMatchesIdentifier(state.selectedTask, state.pendingTaskId)) state.pendingTaskId = '';
-      const preferredTaskType = resolveTaskTypeByCriterionId(state.selectedTask, selectedId);
-      state.selectedTaskType = preferredTaskType
-        || (state.selectedTask?.affectedTypes?.includes(state.selectedTaskType) ? state.selectedTaskType : '');
-      state.taskPage = Math.min(state.taskPage || 1, Math.max(1, Math.ceil(state.taskRows.length / state.taskRowsPerPage)));
-      applyTaskFilters();
-      renderTaskDetail();
-    };
-
-    try {
-      const issueSummary = canCalculateQualityForContext()
-        ? await loadRegionalQualityEvaluation({
-          isStale: () => loadId !== state.taskLoadId,
-          onUpdate: (aggregations, meta, items) => {
-            if (loadId !== state.taskLoadId) return;
-            state.taskItems = items || [];
-            state.qualityAggregations = aggregations;
-            state.qualityDataMeta = meta;
-            applyIssueSummary(aggregations?.issueSummary || []);
-          }
-        }).then((result) => {
-          state.taskItems = result.items || [];
-          state.qualityAggregations = result.aggregations;
-          state.qualityDataMeta = result.meta;
-          return result.aggregations?.issueSummary || [];
-        })
-        : await loadQualityCountSummary({
-          onUpdate: (partialIssueSummary) => applyIssueSummary(partialIssueSummary)
-        });
-      if (loadId !== state.taskLoadId) return;
-      applyIssueSummary(issueSummary);
-      state.taskPage = 1;
-      applyTaskFilters();
-      renderTaskDetail();
-      if (els.lastUpdated) {
-        els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
-      }
-    } catch (error) {
-      console.error('Pflegeaufgaben konnten nicht geladen werden.', error);
-      renderTasksEmpty('Die Pflegeaufgaben konnten nicht geladen werden.');
-    }
+    return loadTasksDataModel({
+      state,
+      els,
+      formatDateTime,
+      showTaskMessage,
+      renderTasksLoading,
+      hidePrimarySystems,
+      clearTaskRecords,
+      canCalculateQualityForContext,
+      loadTaskIssueSummary: (options) => loadTaskIssueSummaryModel({
+        ...options,
+        loadRegionalQualityEvaluation,
+        loadQualityCountSummary
+      }),
+      buildTaskRows,
+      findTaskById,
+      taskMatchesIdentifier,
+      resolveTaskTypeByCriterionId,
+      applyTaskFilters,
+      renderTaskDetail,
+      renderTasksEmpty
+    });
   }
 
   function buildTaskRows(issueSummary) {
@@ -1980,8 +1613,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (els.taskDataNote) {
       if (state.qualityDataMeta.mode === 'snapshot') {
         els.taskDataNote.textContent = state.qualityDataMeta.truncated
-          ? 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf. Der Lauf war begrenzt; einzelne Listen koennen weiter live nachgeladen werden.'
-          : 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf und basieren auf vollstaendig gescannten Datensaetzen.';
+          ? 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf. Der Lauf war begrenzt; einzelne Listen können weiter live nachgeladen werden.'
+          : 'Die Pflegeaufgaben stammen aus dem gecachten Nachtlauf und basieren auf vollständig gescannten Datensätzen.';
         return;
       }
       const unsupportedCount = state.qualityDataMeta.unsupportedCriteria?.length || 0;
@@ -2061,13 +1694,8 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadTaskRecords() {
     const task = state.selectedTask;
     const type = state.selectedTaskType || task?.affectedTypes?.[0] || '';
-    const criterionId = resolveTaskCriterionId(task, type);
     if (!task || !type) {
       showTaskMessage('Bitte wähle zuerst eine konkrete Aufgabe und einen Datentyp.');
-      return;
-    }
-    if (!criterionId) {
-      showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
       return;
     }
 
@@ -2079,22 +1707,24 @@ document.addEventListener('DOMContentLoaded', () => {
     els.taskRecordsBody.innerHTML = '<tr><td colspan="6" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>';
 
     try {
-      const params = new URLSearchParams();
-      params.set('criterionId', criterionId);
-      params.set('type', type);
-      params.set('limit', '200');
-      params.set('scanPageSize', '200');
-      params.set('maxPages', '20');
-      const query = buildQuery(state.context);
-      if (query) params.set('query', query);
-
-      const cachedPayload = await loadCachedQualityList({
-        criterionId,
+      const result = await loadTaskRecordRowsModel({
+        task,
         type,
-        query
+        context: state.context,
+        resolveTaskCriterionId,
+        buildQuery,
+        loadCachedQualityList,
+        fetchJsonCached,
+        qualityScanApiBase: QUALITY_SCAN_API_BASE,
+        extractItems,
+        normalizeItem
       });
-      const payload = cachedPayload || await fetchJsonCached(`${QUALITY_SCAN_API_BASE}?${params.toString()}`);
-      const rows = extractItems(payload).map((item) => normalizeItem(item, type));
+      if (!result.criterionId) {
+        showTaskMessage('Für diesen Datentyp konnte kein passendes Qualitätskriterium bestimmt werden.');
+        clearTaskRecords();
+        return;
+      }
+      const { rows, payload } = result;
       state.taskRecordRows = rows;
       state.taskRecordMeta = payload;
       renderTaskRecords(task, type, rows, payload);
@@ -2117,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', () => {
       buildRecordDetailUrl,
       copyText
     });
-    if (stats.budgetExhausted) console.debug('Qualitätsscan-Budget ausgeschoepft.', stats);
+    if (stats.budgetExhausted) console.debug('Qualitätsscan-Budget ausgeschöpft.', stats);
   }
 
   function renderTasksLoading() {
@@ -2159,43 +1789,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadRecordsData() {
-    const startedAt = new Date();
-    state.recordServerSearchKeys = new Set();
-    state.recordAiSearchPrompt = '';
-    showRecordsMessage('');
-    renderRecordsLoading();
-
-    try {
-      const usesCriterionView = Boolean(state.pendingRecordView?.criterionId);
-      const selectedIssue = els.recordIssueFilter?.value || '';
-      const selectedType = els.recordTypeFilter?.value || state.context.type || '';
-      const result = usesCriterionView
-        ? await loadRecordRowsForPendingView(state.pendingRecordView)
-        : selectedIssue
-          ? await loadRecordRowsForIssueSelection(selectedIssue, selectedType)
-          : { rows: [], meta: null };
-      state.recordItems = result.rows;
-      state.recordRows = result.rows.map(buildRecordViewModel);
-      if (!usesCriterionView && !selectedIssue) {
-        state.recordDataMeta = {
-          mode: 'empty',
-          collectedItems: 0,
-          estimatedTotalItems: 0,
-          truncated: false
-        };
-      } else if (result.meta) {
-        state.recordDataMeta = result.meta;
-      }
-      state.recordPage = 1;
-      fillRecordDynamicFilters();
-      applyPendingRecordView();
-      applyRecordFilters();
-      renderPendingRecordViewMessage();
-      if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(startedAt)}`;
-    } catch (error) {
-      console.error('Datensätze konnten nicht geladen werden.', error);
-      renderRecordsEmpty('Die Datensätze konnten nicht geladen werden. Bitte versuche es später erneut.');
-    }
+    await loadRecordsDataPageModel({
+      state,
+      els,
+      context: state.context,
+      formatDateTime,
+      showRecordsMessage,
+      renderRecordsLoading,
+      renderRecordsEmpty,
+      loadRecordRowsForPendingView,
+      loadRecordRowsForIssueSelection,
+      buildRecordViewModel,
+      fillRecordDynamicFilters,
+      applyPendingRecordView,
+      applyRecordFilters,
+      renderPendingRecordViewMessage
+    });
   }
 
   async function loadRecordRowsForPendingView(view) {
@@ -2575,246 +2184,91 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadRecordDetail() {
-    showDetailMessage('');
-    renderDetailLoadingState(els);
-    const params = new URLSearchParams(location.search);
-    const type = params.get('type') || state.context.type || '';
-    const id = params.get('id') || '';
-    const globalId = params.get('global_id') || params.get('globalId') || '';
-
-    if (!id && !globalId) {
-      renderDetailEmptyState(els, 'Noch kein Datensatz ausgewählt. Suche in der Datensatzliste nach Titel, ID oder Ort und öffne einen Eintrag.', escapeHtml, showDetailMessage);
-      return;
-    }
-
-    try {
-      const raw = await fetchRecordDetailItem({ type, id, globalId });
-      if (!raw) {
-        renderDetailEmptyState(els, 'Für diese ID wurde kein Datensatz gefunden. Bitte prüfe Typ und ID oder kehre zur Datensatzliste zurück.', escapeHtml, showDetailMessage);
-        return;
-      }
-      const normalized = normalizeItem(raw, type || getFirst(raw, ['type', 'typeName']));
-      const evaluated = evaluateQualityForItem(normalized);
-      state.recordDetailItem = evaluated;
-      state.recordDetailViewModel = getRecordDetailViewModel(evaluated);
-      renderRecordDetailPage({
-        els,
-        model: state.recordDetailViewModel,
-        escapeHtml,
-        formatNumber,
-        formatRecordDate,
-        criterionStatusClass,
-        getCriterionDisplayStatus,
-        buildRecordDetailUrl,
-        loadRecordListState,
-        copyText
-      });
-      if (els.lastUpdated) els.lastUpdated.textContent = `Letzte Aktualisierung: ${formatDateTime(new Date())}`;
-    } catch (error) {
-      console.error('Datensatz-Detail konnte nicht geladen werden.', error);
-      renderDetailEmptyState(els, 'Der Datensatz konnte nicht geladen werden.', escapeHtml, showDetailMessage);
-    }
+    await loadRecordDetailModel({
+      state,
+      els,
+      locationObject: location,
+      escapeHtml,
+      formatDateTime,
+      formatNumber,
+      formatRecordDate,
+      evaluateQualityForItem,
+      renderDetailLoadingState,
+      renderDetailEmptyState,
+      renderRecordDetailPage,
+      criterionStatusClass,
+      getCriterionDisplayStatus,
+      buildRecordDetailUrl,
+      loadRecordListState,
+      copyText,
+      showDetailMessage,
+      fetchRecordDetailItem,
+      normalizeItem,
+      getFirst,
+      getRecordDetailViewModel
+    });
   }
 
   async function fetchRecordDetailItem({ type, id, globalId }) {
-    const targetTypes = type ? [type] : TYPES;
-    const identifier = cleanQueryValue(globalId || id);
-    const derivedId = getIdFromGlobalId(globalId);
-    const variants = globalId
-      ? uniqueValues([
-        `global_id:"${identifier}"`,
-        identifier,
-        derivedId ? `id:"${derivedId}"` : '',
-        derivedId
-      ])
-      : [`id:"${identifier}"`, identifier];
-
-    for (const targetType of targetTypes) {
-      for (const variant of variants) {
-        const payload = await fetchJsonCached(buildUrl(targetType, variant, { limit: 5 }));
-        const item = extractItems(payload).find((entry) => {
-          const entryId = String(extractId(entry) || '');
-          const entryGlobalId = String(getFirst(entry, ['global_id', 'globalId']) || '');
-          return (id && entryId === String(id)) || (globalId && entryGlobalId === String(globalId)) || entryId === identifier || entryGlobalId === identifier;
-        }) || extractItems(payload)[0];
-        if (item) return item;
+    return fetchRecordDetailItemModel(
+      { type, id, globalId },
+      {
+        types: TYPES,
+        cleanQueryValue,
+        getIdFromGlobalId,
+        uniqueValues,
+        buildUrl,
+        fetchJsonCached,
+        extractItems,
+        extractId,
+        getFirst
       }
-    }
-    return null;
+    );
   }
 
   function getRecordDetailViewModel(item) {
-    const raw = item.raw || item;
-    const criteria = qualityCriteria.filter((criterion) => !criterion.types?.length || criterion.types.includes(item.type));
-    const domainCriteria = qualityHelpers.getDomainCriteriaForType(item.type);
-    const missing = new Set(item.missingCriteria || []);
-    const fulfilled = new Set(item.fulfilledCriteria || []);
-    const manual = new Set(item.manualCriteria || []);
-    const images = getCheckableImages(item, qualityHelpers);
-    const missingCopyright = qualityHelpers.findMissingCopyrightMedia(raw);
-    const et4Url = buildVerifiedEt4Url(item);
-    const addresses = getAddressSummary(raw);
-    const externalIds = getExternalSystemIds(raw);
-    const primarySystem = getPrimarySystem(item);
-    const context = getRecordDetailContext();
-
-    return {
-      context,
-      identity: {
-        title: item.title || 'Ohne Titel',
-        type: item.type || '',
-        id: item.id || '',
-        globalId: item.globalId || '',
-        category: item.category || '',
-        city: item.city || '',
-        region: item.region || '',
-        updatedAt: item.updatedAt || getFirst(raw, ['changed', 'updatedAt', 'lastModified'])
-      },
-      quality: {
-        status: item.qualityStatus || 'nicht berechenbar',
-        score: Number.isFinite(item.qualityScore) ? item.qualityScore : null,
-        fulfilledCount: criteria.filter((criterion) => fulfilled.has(criterion.id)).length,
-        missingCount: criteria.filter((criterion) => missing.has(criterion.id)).length,
-        manualCount: criteria.filter((criterion) => manual.has(criterion.id)).length,
-        preparedCount: domainCriteria.filter((criterion) => criterion.status === 'needs_verification').length,
-        criteria: criteria.map((criterion) => ({
-          id: criterion.id,
-          label: criterion.label,
-          recommendation: criterion.recommendation,
-          status: missing.has(criterion.id) ? 'fehlt' : fulfilled.has(criterion.id) ? 'erfüllt' : manual.has(criterion.id) ? 'nicht bewertbar' : 'nicht relevant'
-        })),
-        preparedCriteria: domainCriteria
-          .filter((criterion) => criterion.status === 'needs_verification')
-          .map((criterion) => ({
-            id: criterion.id,
-            label: criterion.label,
-            recommendation: criterion.recommendation,
-            status: 'vorbereitet'
-          })),
-        manualDomainCriteria: domainCriteria
-          .filter((criterion) => criterion.status === 'manual_review')
-          .map((criterion) => ({
-            id: criterion.id,
-            label: criterion.label,
-            recommendation: criterion.recommendation,
-            status: 'manuell'
-          })),
-        sourceGuardedCriteria: domainCriteria
-          .filter((criterion) => criterion.status === 'source_guarded' || criterion.status === 'not_applicable' || criterion.status === 'excluded_by_category')
-          .map((criterion) => ({
-            id: criterion.id,
-            label: criterion.label,
-            recommendation: criterion.recommendation,
-            status: criterion.status
-          }))
-      },
-      issues: criteria
-        .filter((criterion) => missing.has(criterion.id))
-        .sort((a, b) => priorityRank(b.priority) - priorityRank(a.priority))
-        .slice(0, 5),
-      usability: getDetailUsability(item, images, missingCopyright, qualityHelpers),
-      texts: {
-        description: getDisplayDescription(raw, qualityHelpers),
-        teaser: getTextByRel(raw, 'teaser', qualityHelpers),
-        openings: getOpeningHoursSummary(item, qualityHelpers),
-        directions: getTextByRel(raw, 'directions', qualityHelpers) || (qualityHelpers.hasPublicTransportFeature(raw) ? 'ÖPNV-Information vorhanden.' : 'Keine ÖPNV-Information vorhanden.'),
-        price: getTextByRel(raw, 'PRICE_INFO', qualityHelpers),
-        priceReduced: getTextByRel(raw, 'PRICE_REDUCEDINFO', qualityHelpers),
-        seoTitle: getTextByRel(raw, 'WEB_SEO_TITEL', qualityHelpers),
-        seoDescription: getTextByRel(raw, 'WEB_SEO_BESCHREIBUNG', qualityHelpers)
-      },
-      media: {
-        images,
-        missingCopyrightCount: missingCopyright.length,
-        missingAltCount: images.filter((image) => !textValue(image.alt)).length
-      },
-      details: {
-        license: qualityHelpers.getAttributeValue(raw, 'license') || '',
-        licenseUrl: qualityHelpers.getAttributeValue(raw, 'licenseurl') || '',
-        source: getFirst(raw, ['source', 'provider', 'channel']) || 'Destination.One',
-        sourceUrl: getFirst(raw, ['source.url', 'raw.source.url']) || '',
-        web: getRecordWeb(raw),
-        email: getRecordEmail(raw),
-        phone: getRecordPhone(raw),
-        street: getFirst(raw, ['street', 'address.street']) || '',
-        zip: getFirst(raw, ['zip', 'address.zip']) || '',
-        coordinates: getCoordinates(raw),
-        addresses,
-        externalIds,
-        primarySystem,
-        et4Url
-      },
-      rawExcerpt: getRawExcerpt(raw)
-    };
+    return getRecordDetailViewModelModel(item, {
+      qualityCriteria,
+      qualityHelpers,
+      priorityRank,
+      getCheckableImages,
+      getDetailUsability,
+      getDisplayDescription,
+      getOpeningHoursSummary,
+      getTextByRel,
+      textValue,
+      buildVerifiedEt4Url,
+      getFirst,
+      getRecordWeb,
+      getRecordEmail,
+      getRecordPhone,
+      getExternalSystemIds,
+      getAddressSummary,
+      getCoordinates,
+      getRawExcerpt,
+      getPrimarySystem,
+      getRecordDetailContext
+    });
   }
 
   function getRecordDetailContext() {
-    let recordView = {};
-    try {
-      recordView = JSON.parse(sessionStorage.getItem(RECORD_VIEW_STATE_KEY) || '{}');
-    } catch {
-      recordView = {};
-    }
-    const criterion = qualityCriteria.find((entry) => entry.id === recordView.criterionId);
-    return {
-      source: recordView.criterionId ? 'task' : 'records',
-      label: recordView.label || criterion?.label || '',
-      criterionId: recordView.criterionId || '',
-      type: recordView.type || ''
-    };
+    return getRecordDetailContextModel(RECORD_VIEW_STATE_KEY, qualityCriteria);
   }
 
   function getExternalSystemIds(raw) {
-    return [
-      ['Outdooractive-ID', qualityHelpers.getAttributeValue(raw, 'SYSTEMID_outdooractive')],
-      ['Google-Places-ID', qualityHelpers.getAttributeValue(raw, 'SYSTEMID_GOOGLEPLACES')],
-      ['source_id', getFirst(raw, ['source_id', 'sourceId'])]
-    ].filter(([, value]) => textValue(value));
+    return getExternalSystemIdsModel(raw, { qualityHelpers, getFirst, textValue });
   }
 
   function getAddressSummary(raw) {
-    const addresses = Array.isArray(raw.addresses) ? raw.addresses : [];
-    return ['author', 'organisation', 'copyright', 'contact_person']
-      .map((rel) => {
-        const entry = addresses.find((address) => address?.rel === rel);
-        if (!entry) return null;
-        const contact = [
-          textValue(entry.name),
-          textValue(entry.street),
-          [textValue(entry.zip), textValue(entry.city)].filter(Boolean).join(' '),
-          textValue(entry.web),
-          textValue(entry.email),
-          textValue(entry.phone)
-        ].filter(Boolean).join(' | ');
-        return contact ? [addressRelLabel(rel), contact] : null;
-      })
-      .filter(Boolean);
-  }
-
-  function addressRelLabel(rel) {
-    return {
-      author: 'Autor',
-      organisation: 'Organisation',
-      copyright: 'Copyright',
-      contact_person: 'Kontaktperson'
-    }[rel] || rel;
+    return getAddressSummaryModel(raw, textValue);
   }
 
   function getCoordinates(raw) {
-    const lat = getFirst(raw, ['geo.main.latitude', 'latitude']);
-    const lon = getFirst(raw, ['geo.main.longitude', 'longitude']);
-    return lat && lon ? `${lat}, ${lon}` : '';
+    return getCoordinatesModel(raw, getFirst);
   }
 
   function getRawExcerpt(raw) {
-    return [
-      ['created', getFirst(raw, ['created'])],
-      ['changed', getFirst(raw, ['changed'])],
-      ['channel', getFirst(raw, ['channel'])],
-      ['rating eT4', getFirst(raw, ['ratings.0.value'])],
-      ['SEO-Titel', getTextByRel(raw, 'WEB_SEO_TITEL', qualityHelpers)],
-      ['SEO-Beschreibung', getTextByRel(raw, 'WEB_SEO_BESCHREIBUNG', qualityHelpers)]
-    ].filter(([, value]) => textValue(value));
+    return getRawExcerptModel(raw, { getFirst, getTextByRel, qualityHelpers, textValue });
   }
 
   function showDetailMessage(message) {
@@ -3005,12 +2459,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function collectPrimarySystems(rows) {
-    const map = new Map();
-    rows.map(getPrimarySystem).filter((system) => system.id !== 'satourn').forEach((system) => {
-      if (!map.has(system.id)) map.set(system.id, { ...system, count: 0 });
-      map.get(system.id).count += 1;
-    });
-    return Array.from(map.values());
+    return collectPrimarySystemsModel(rows, { getPrimarySystem });
   }
 
   function hidePrimarySystems() {
@@ -3019,60 +2468,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getSourceId(item) {
-    const direct = getFirst(item, ['source_id', 'sourceId', 'raw.source_id', 'raw.sourceId']);
-    if (direct) return direct;
-    const sourceKeyword = getKeywordValues(item).find((keyword) => keyword.toLowerCase().startsWith('import_sourceid_'));
-    return sourceKeyword ? sourceKeyword.replace(/^import_sourceid_/i, '') : '';
+    return getSourceIdModel(item, { getFirst, textValue });
   }
 
   function getPrimarySystem(item) {
-    const keywords = getKeywordValues(item).map((keyword) => keyword.toLowerCase());
-    if (keywords.includes('import_source_feratel') || keywords.includes('hassystemid_feratel')) {
-      return {
-        id: 'feratel',
-        short: 'FD',
-        logoImage: './assets/logos/feratel.png',
-        name: 'feratel',
-        note: 'Datensatz mit import_source_feratel oder HasSystemId_Feratel.',
-        action: 'export',
-        actionLabel: 'Liste exportieren'
-      };
-    }
-    if (keywords.includes('import_source_outdooractive')) {
-      return {
-        id: 'outdooractive',
-        short: 'OA',
-        logoImage: './assets/logos/outdooractive.png',
-        name: 'outdooractive',
-        note: 'Datensatz mit import_source_outdooractive.',
-        action: 'copy-source-id',
-        actionLabel: 'ID kopieren'
-      };
-    }
-    return {
-      id: 'satourn',
-      short: 'ST',
-      logoImage: '../SaTourN-RGB.png',
-      name: 'SaTourN',
-      note: 'Kein externes Importsystem in keywords_old/keywords erkannt.',
-      action: 'export',
-      actionLabel: 'Liste exportieren'
-    };
+    return getPrimarySystemModel(item, textValue);
   }
 
   function getKeywordValues(item) {
-    const raw = item?.raw || item || {};
-    return [
-      ...safeKeywordArray(raw.keywords_old),
-      ...safeKeywordArray(raw.keywords),
-      ...safeKeywordArray(item?.keywords_old),
-      ...safeKeywordArray(item?.keywords)
-    ].filter(Boolean);
+    return getKeywordValuesModel(item, textValue);
   }
 
   function safeKeywordArray(value) {
-    if (!Array.isArray(value)) return [];
-    return value.map((entry) => textValue(entry));
+    return safeKeywordArrayModel(value, textValue);
   }
 
   function normalizeTypeName(type) {

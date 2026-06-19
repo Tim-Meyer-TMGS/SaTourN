@@ -38,6 +38,7 @@ function renderDetailCriteriaSection(title, criteria, note, escapeHtml, criterio
 
 function renderDetailContext(els, model) {
   if (!els.detailBreadcrumb) return;
+
   if (model.context.source === 'task' && model.context.label) {
     els.detailBreadcrumb.innerHTML = `
       <a href="tasks.html">Pflegeaufgaben</a>
@@ -52,6 +53,7 @@ function renderDetailContext(els, model) {
     }
     return;
   }
+
   els.detailBreadcrumb.innerHTML = `
     <a href="records.html">Datensätze</a>
     <span class="material-icons" aria-hidden="true">chevron_right</span>
@@ -67,6 +69,7 @@ function renderDetailNavigation(els, model, loadRecordListState, buildRecordDeta
     (model.identity.globalId && row.globalId === model.identity.globalId) ||
     (model.identity.id && row.id === model.identity.id)
   ));
+
   if (els.detailBackLink) els.detailBackLink.href = listState.backUrl || 'records.html';
 
   const previous = currentIndex > 0 ? listState.rows[currentIndex - 1] : null;
@@ -80,6 +83,7 @@ function renderDetailIssues(els, model, escapeHtml) {
     els.detailIssuesList.innerHTML = '<p class="empty-note">Keine priorisierten Baustellen gefunden.</p>';
     return;
   }
+
   els.detailIssuesList.innerHTML = model.issues.map((criterion) => `
     <div class="detail-issue-row">
       <span class="impact-dot ${criterion.priority === 'hoch' ? 'critical' : 'review'}"></span>
@@ -93,6 +97,7 @@ function renderDetailUsability(els, model, escapeHtml) {
   els.detailUsability.innerHTML = model.usability.map((entry) => `
     <div><span>${escapeHtml(entry.label)}</span><strong class="${entry.ok ? 'ok' : entry.relevant === false ? 'muted' : 'bad'}">${escapeHtml(entry.value)}</strong></div>
   `).join('');
+
   els.detailTaxonomy.innerHTML = renderKvRows([
     ['Kategorie', model.identity.category || 'Nicht angegeben'],
     ['Gebiet', model.identity.region || 'Nicht angegeben'],
@@ -104,6 +109,7 @@ function renderDetailTextCards(els, model, escapeHtml) {
   els.detailDescription.innerHTML = `<p>${escapeHtml(model.texts.description || 'Keine Beschreibung vorhanden.')}</p>${model.texts.teaser ? `<p class="data-note">${escapeHtml(model.texts.teaser)}</p>` : ''}`;
   els.detailOpenings.innerHTML = `<p>${escapeHtml(model.texts.openings)}</p>`;
   els.detailTransport.innerHTML = `<p>${escapeHtml(model.texts.directions)}</p>`;
+
   if (els.detailPriceCard && els.detailPrice) {
     const prices = [model.texts.price, model.texts.priceReduced].filter(Boolean);
     els.detailPriceCard.hidden = !prices.length;
@@ -117,6 +123,7 @@ function renderDetailMedia(els, model, escapeHtml, formatNumber) {
     els.detailMediaNote.textContent = '';
     return;
   }
+
   els.detailMedia.innerHTML = model.media.images.slice(0, 5).map((image) => `
     <figure class="detail-media-item">
       <img src="${escapeHtml(image.url)}" alt="${escapeHtml(image.alt || image.value || '')}" loading="lazy">
@@ -127,6 +134,7 @@ function renderDetailMedia(els, model, escapeHtml, formatNumber) {
       </figcaption>
     </figure>
   `).join('');
+
   els.detailMediaNote.textContent = `${formatNumber(model.media.images.length)} Bilder vorhanden. ${formatNumber(model.media.missingCopyrightCount)} ohne Urheberangabe. ${formatNumber(model.media.missingAltCount)} ohne Alt-Text.`;
 }
 
@@ -143,6 +151,7 @@ function renderDetailInfo(els, model, escapeHtml, formatRecordDate, copyText) {
     ['Lizenz', escapeHtml(model.details.license || 'Lizenz fehlt')],
     ['Letzte Aktualisierung', escapeHtml(formatRecordDate(model.identity.updatedAt))]
   ];
+
   els.detailInfo.innerHTML = renderKvRows(rows, escapeHtml, true);
   els.detailInfo.querySelectorAll('[data-copy-detail]').forEach((button) => {
     button.addEventListener('click', () => copyText(button.dataset.copyDetail || ''));
@@ -151,16 +160,46 @@ function renderDetailInfo(els, model, escapeHtml, formatRecordDate, copyText) {
 
 function renderDetailCriteria(els, model, escapeHtml, criterionStatusClass, getCriterionDisplayStatus) {
   if (!els.detailCriteriaCard || !els.detailCriteriaList) return;
+
   const automatic = model.quality.criteria || [];
   const prepared = model.quality.preparedCriteria || [];
   const manualDomain = model.quality.manualDomainCriteria || [];
   const sourceGuarded = model.quality.sourceGuardedCriteria || [];
   const sections = [
-    renderDetailCriteriaSection('Automatisch bewertet', automatic, 'Diese Kriterien fliessen heute bereits in die Datensatzbewertung ein.', escapeHtml, criterionStatusClass, getCriterionDisplayStatus),
-    renderDetailCriteriaSection('Fachlich vorbereitet', prepared, 'Diese Prüfungen sind für diesen Datentyp bereits fachlich vorgesehen, aber technisch noch nicht automatisch angebunden.', escapeHtml, criterionStatusClass, getCriterionDisplayStatus),
-    renderDetailCriteriaSection('Manuell zu prüfen', manualDomain, 'Diese Punkte brauchen weiterhin eine redaktionelle Sichtprüfung.', escapeHtml, criterionStatusClass, getCriterionDisplayStatus),
-    renderDetailCriteriaSection('Nicht als normale Pflegeaufgabe', sourceGuarded, 'Diese Punkte sind fachlich relevant, werden aber nicht als normale automatische Pflegeaufgabe behandelt.', escapeHtml, criterionStatusClass, getCriterionDisplayStatus)
+    renderDetailCriteriaSection(
+      'Automatisch bewertet',
+      automatic,
+      'Diese Kriterien fliessen heute bereits in die Datensatzbewertung ein.',
+      escapeHtml,
+      criterionStatusClass,
+      getCriterionDisplayStatus
+    ),
+    renderDetailCriteriaSection(
+      'Fachlich vorbereitet',
+      prepared,
+      'Diese Prüfungen sind für diesen Datentyp bereits fachlich vorgesehen, aber technisch noch nicht automatisch angebunden.',
+      escapeHtml,
+      criterionStatusClass,
+      getCriterionDisplayStatus
+    ),
+    renderDetailCriteriaSection(
+      'Manuell zu prüfen',
+      manualDomain,
+      'Diese Punkte brauchen weiterhin eine redaktionelle Sichtprüfung.',
+      escapeHtml,
+      criterionStatusClass,
+      getCriterionDisplayStatus
+    ),
+    renderDetailCriteriaSection(
+      'Nicht als normale Pflegeaufgabe',
+      sourceGuarded,
+      'Diese Punkte sind fachlich relevant, werden aber nicht als normale automatische Pflegeaufgabe behandelt.',
+      escapeHtml,
+      criterionStatusClass,
+      getCriterionDisplayStatus
+    )
   ].filter(Boolean);
+
   els.detailCriteriaList.innerHTML = sections.join('');
   els.detailCriteriaCard.hidden = !sections.length;
 }
@@ -186,6 +225,7 @@ export function renderRecordDetailPage({
       <p>${escapeHtml([model.identity.city, model.identity.region, model.identity.category].filter(Boolean).join(' - ') || 'Ort und Kategorie nicht angegeben')}</p>
     </div>
   `;
+
   els.detailHeadCard.querySelectorAll('[data-copy-detail]').forEach((button) => {
     button.addEventListener('click', () => copyText(button.dataset.copyDetail || ''));
   });

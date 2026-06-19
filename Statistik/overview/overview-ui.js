@@ -122,7 +122,7 @@ function renderDataNote(els, {
   qualityDataMeta
 }) {
   if (mode === 'sachsen_total') {
-    setQualityDataNoteText(els, 'Für ganz Sachsen wird kein Qualitäts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.');
+    setQualityDataNoteText(els, 'Für ganz Sachsen wird kein Qualitätsscore angezeigt. Pflegeaufgaben laden im Hintergrund.');
     return;
   }
   if (mode === 'regional_scan') {
