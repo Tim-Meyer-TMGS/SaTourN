@@ -1,6 +1,6 @@
 # Codex-Dokumentation
 
-Stand: 2026-06-15
+Stand: 2026-06-22
 
 Diese Datei beschreibt, welche Codex-Dokumente aktiv genutzt werden und was
 nur noch als Archivmaterial vorliegt.
@@ -20,8 +20,8 @@ Diese beiden Dateien zuerst lesen:
   aktuelle Systemarchitektur, Zielstruktur für Framework-Migration,
   Übergabe und späteres Eigenhosting.
 - `Datenqualitaetsmonitor_Frontend_Migrationsplan.md`
-  konkrete Zielmodule, Stores, Services und Komponenten für die spätere
-  Frontend-Migration.
+  konkrete Zielarchitektur für `React + Vite + TypeScript`, Migrationsreihenfolge,
+  Frontend-Grenzen und Pilotmigration.
 - `Datenqualitaetsmonitor_Pflegeaufgaben_je_Datentyp.md`
   Übersicht, welche Pflegeaufgaben pro Datentyp fachlich vorkommen können.
 - `one_intelligence_Kontext_und_Fehlerbilder.md`

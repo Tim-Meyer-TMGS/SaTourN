@@ -1,6 +1,6 @@
-# DatenqualitÃ¤tsmonitor â€“ Architektur und Zielbild
+# Datenqualitätsmonitor – Architektur und Zielbild
 
-Stand: 2026-06-18
+Stand: 2026-06-22
 
 ## Zweck dieses Dokuments
 
@@ -8,11 +8,11 @@ Dieses Dokument beschreibt:
 
 - die aktuelle Systemarchitektur
 - die fachliche und technische Verantwortlichkeit der Hauptteile
-- das Zielbild fÃ¼r eine spÃ¤tere Ãœbergabe an externe Entwickler
-- das Hosting-Ziel fÃ¼r einen spÃ¤teren Betrieb auf eigenem Server
+- das Zielbild für eine spätere Übergabe an externe Entwickler
+- das Hosting-Ziel für einen späteren Betrieb auf eigenem Server
 
 Es ist kein API-Referenzdokument. Es dient als Architektur- und
-Ãœbergabekontext.
+Übergabekontext.
 
 ## Aktuelle Architektur
 
@@ -32,7 +32,7 @@ Wichtige Eigenschaften:
 
 - mehrere HTML-Seiten statt Single-Page-App
 - Vanilla JavaScript
-- zentrales Styling Ã¼ber `Statistik/style.css`
+- zentrales Styling über `Statistik/style.css`
 - Hauptlogik derzeit noch stark in `Statistik/scripts.js`
 - kleinere Hilfsmodule bereits ausgelagert
 
@@ -45,21 +45,9 @@ Aktive Seiten:
 - `Statistik/stats.html`
 - `Statistik/help.html`
 
-Wichtige Frontend-Dateien:
-
-- `Statistik/scripts.js`
-- `Statistik/quality.js`
-- `Statistik/tasks/task-logic.js`
-- `Statistik/tasks/task-families.js`
-- `Statistik/records/records-search.js`
-- `Statistik/records/record-communication.js`
-- `Statistik/records/record-mail.js`
-- `Statistik/core/api-config.js`
-- `Statistik/core/app-constants.js`
-
 ### 3. Backend-Proxy
 
-Das Backend lÃ¤uft als Node-Service mit Express-artigen Routen.
+Das Backend läuft als Node-Service mit Express-artigen Routen.
 
 Einstieg:
 
@@ -72,35 +60,26 @@ Wichtige Routen:
 - `routes/quality.js`
 - `routes/oi.js`
 
-Wichtige Backend-Helfer:
-
-- `lib/config.js`
-- `lib/oi-config.js`
-- `lib/cache.js`
-- `lib/kv-store.js`
-- `lib/quality-cache.js`
-- `lib/search-utils.js`
-
 ### 4. Aktueller Datenfluss
 
 #### Frontend
 
-Das Frontend Ã¼bernimmt aktuell:
+Das Frontend übernimmt aktuell:
 
 - Navigation zwischen Ansichten
 - Arbeitskontext
-- FilterzustÃ¤nde
+- Filterzustände
 - Tabellen und Detailansichten
-- Laden von Statistik- und QualitÃ¤tsdaten
+- Laden von Statistik- und Qualitätsdaten
 - AI-Suche im UI
-- Ã–ffnen von MailentwÃ¼rfen Ã¼ber `mailto:`
+- Öffnen von Mailentwürfen über `mailto:`
 
 #### Backend
 
-Das Backend Ã¼bernimmt aktuell:
+Das Backend übernimmt aktuell:
 
 - Proxy-Zugriffe auf Destination.One / Meta
-- serverseitige QualitÃ¤tszÃ¤hlungen und Scans
+- serverseitige Qualitätszählungen und Scans
 - serverseitige one.intelligence-Aufrufe
 - Schutz der API-Keys
 - optionale Cache-Zwischenschichten
@@ -115,7 +94,7 @@ Frontend:
 Backend:
 
 - produktiv auf Render
-- hÃ¤lt Secrets und Integrationslogik
+- hält Secrets und Integrationslogik
 
 Externe Systeme:
 
@@ -126,15 +105,15 @@ Externe Systeme:
 
 ### Frontend-Verantwortung
 
-Das Frontend ist fÃ¼r folgende Aufgaben zustÃ¤ndig:
+Das Frontend ist zuständig für:
 
 - Anzeige der Seiten
 - Interaktionen des Nutzers
-- clientseitige Filterung bereits geladener DatensÃ¤tze
+- clientseitige Filterung bereits geladener Datensätze
 - Pflege des Arbeitskontexts
-- Darstellung von Lade-, Fehler- und LeerzustÃ¤nden
+- Darstellung von Lade-, Fehler- und Leerzuständen
 
-Das Frontend darf nicht zustÃ¤ndig sein fÃ¼r:
+Das Frontend ist nicht zuständig für:
 
 - API-Keys
 - direkte OI-Authentifizierung
@@ -143,44 +122,44 @@ Das Frontend darf nicht zustÃ¤ndig sein fÃ¼r:
 
 ### Backend-Verantwortung
 
-Das Backend ist fÃ¼r folgende Aufgaben zustÃ¤ndig:
+Das Backend ist zuständig für:
 
-- geschÃ¼tzte Kommunikation mit externen APIs
+- geschützte Kommunikation mit externen APIs
 - Quality-Endpunkte
 - OI-Endpunkte
-- ID-AuflÃ¶sung und Such-Proxy
-- Rate-Limits fÃ¼r KI-Funktionen
+- ID-Auflösung und Such-Proxy
+- Rate-Limits für KI-Funktionen
 - serverseitige Konfiguration
 
-## Aktuelle SchwÃ¤chen
+## Aktuelle Schwächen
 
-Die aktuelle Architektur ist funktional, aber noch nicht optimal fÃ¼r
-Ãœbergabe und Wartung.
+Die aktuelle Architektur ist funktional, aber noch nicht optimal für
+Übergabe und Wartung.
 
-Wesentliche SchwÃ¤chen:
+Wesentliche Schwächen:
 
-- `Statistik/scripts.js` ist zu groÃŸ und bÃ¼ndelt zu viele Verantwortungen
+- `Statistik/scripts.js` ist zu groß und bündelt zu viele Verantwortungen
 - State, Rendering, Event-Handling und API-Zugriffe liegen zu eng zusammen
 - die Frontend-Seiten sind fachlich getrennt, technisch aber noch nicht
   ausreichend modularisiert
-- Teile der QualitÃ¤tslogik sind fachlich stark, aber technisch noch zu wenig
+- Teile der Qualitätslogik sind fachlich stark, aber technisch noch zu wenig
   in kleinere Module aufgeteilt
-- die Betriebsdokumentation ist noch nicht vollstÃ¤ndig genug fÃ¼r eine
-  externe Ãœbergabe
+- die Betriebsdokumentation ist noch nicht vollständig genug für eine
+  externe Übergabe
 
-## Zielbild fÃ¼r die nÃ¤chste Architekturstufe
+## Zielbild für die nächste Architekturstufe
 
 ### 1. Grundsatz
 
-Das Ziel ist keine reine kosmetische Modernisierung, sondern eine
-Ã¼bergabefÃ¤hige Struktur.
+Das Ziel ist keine kosmetische Modernisierung, sondern eine
+übergabefähige Struktur.
 
 Das Zielbild trennt:
 
 - Frontend-Anwendung
 - Backend-Proxy
 - Dokumentation
-- spÃ¤ter optional Infrastrukturdefinition
+- später optional Infrastrukturdefinition
 
 ### 2. Zielstruktur
 
@@ -190,12 +169,9 @@ Empfohlene Zielstruktur:
 frontend/
   src/
     app/
-    pages/
-    components/
-    stores/
-    services/
-    content/
-    utils/
+    features/
+    shared/
+    styles/
   public/
 
 backend/
@@ -208,7 +184,7 @@ backend/
 docs/
   Codex/
 
-optional spÃ¤ter:
+optional später:
 infra/
 ```
 
@@ -216,122 +192,80 @@ infra/
 
 Empfohlener Stack:
 
-- `Vue 3`
+- `React`
 - `Vite`
-- `Vue Router`
-- `Pinia`
+- `TypeScript`
+- `React Router`
+- `Zustand`
 
-Ziel des Frontends:
+Begründung:
 
-- komponentisierte OberflÃ¤chen
-- klarer gemeinsamer State
-- URL- und Routing-Logik zentral
-- Services statt direkter `fetch`-Aufrufe in UI-Komponenten
-- wiederverwendbare UI-Bausteine
+- hohe Entwicklerverfügbarkeit
+- gute Übergabefähigkeit
+- klarer Komponenten- und Hook-Schnitt
+- einfacher Parallelbetrieb neben dem bestehenden Frontend
+- später problemlos auf eigenem Server betreibbar
 
 ### 4. Backend-Zielbild
 
-Das Backend bleibt ein eigener Service.
+Das Backend bleibt zunächst ein eigenständiger Proxy-Service.
 
-Ziel:
+Es soll mittelfristig klarer getrennt werden in:
 
-- alle Secrets bleiben serverseitig
-- externe Integrationen bleiben im Backend
-- Frontend spricht nur mit stabilen internen API-Endpunkten
-- Search-, Quality- und OI-Logik bleiben getrennt kapselbar
+- `routes/`
+- `clients/`
+- `services/`
+- `config/`
+- `utils/`
 
-### 5. Verantwortlichkeit im Zielbild
+Das Backend bleibt verantwortlich für:
 
-#### Frontend
+- Secrets
+- API-Auth
+- OI-Zugriffe
+- Qualitätsabfragen
+- serverseitige Schutzmechanismen
 
-- Routing
-- UI-Komponenten
-- State
-- Darstellung
-- Nutzerinteraktion
-- lokale Validierung
+## Ziel für die Übergabe an externe Entwickler
 
-#### Backend
+Ein externer Entwickler soll das Projekt verstehen können, ohne die Historie
+der Codex-Sitzungen zu kennen.
 
-- API-Proxy
-- OI-Proxy
-- Rate-Limiting
-- Quality-Berechnung und Quality-Scans
-- Konfiguration
-- optionale Cache-Layer
+Dafür braucht das Projekt:
 
-## Zielbild fÃ¼r Eigenhosting
+- klare Frontend-Ordnerstruktur
+- saubere Seiten- und Feature-Grenzen
+- dokumentierte Umgebungsvariablen
+- dokumentierte API-Endpunkte
+- nachvollziehbare Qualitätslogik
+- dokumentiertes Hosting- und Startverfahren
 
-### 1. Betriebsmodell
+## Ziel für späteres Eigenhosting
 
-FÃ¼r den spÃ¤teren Betrieb auf eigenem Server ist folgende Trennung sinnvoll:
+Der Datenqualitätsmonitor soll perspektivisch auf einem eigenen Server
+betrieben werden können.
 
-- Frontend als statische Build-Artefakte
-- Backend als Node-Prozess
-- Reverse Proxy davor, zum Beispiel Nginx
+Dafür bleibt wichtig:
 
-### 2. Empfohlene Serverrollen
+- Frontend und Backend getrennt deploybar
+- Secrets nur serverseitig
+- kein direkter OI- oder Meta-Key im Browser
+- klarer Build- und Startprozess
+- Reverse-Proxy-fähige Struktur
 
-#### Frontend-Auslieferung
+## Konkrete nächste Architekturschritte
 
-- liefert gebaute statische Dateien aus
-- kennt keine Secrets
+1. bestehenden Vanilla-Bestand weiter entkoppeln
+2. `scripts.js` weiter auf Seiten-Bootstrap reduzieren
+3. neues `frontend/`-Grundgerüst mit `React + Vite + TypeScript` parallel anlegen
+4. `Datensätze` als erste Pilotseite im neuen Frontend aufbauen
+5. danach weitere Seiten kontrolliert migrieren
 
-#### Backend-Service
+## Verbindliche Arbeitsannahme
 
-- lÃ¤uft als eigener Node-Dienst
-- hÃ¤lt alle `LICENSEKEY`- und `OI_*`-Variablen
-- stellt interne API-Endpunkte bereit
+Für die weitere Planung gilt:
 
-#### Reverse Proxy
-
-- TLS
-- Routing
-- Weiterleitung von `/api/*` an das Backend
-- Auslieferung des Frontends
-
-### 3. Zielhafte URL-Struktur
-
-Beispiel:
-
-- `/` Frontend
-- `/tasks` Frontend-Route
-- `/records` Frontend-Route
-- `/api/search` Backend
-- `/api/quality/*` Backend
-- `/api/oi/*` Backend
-
-### 4. Wichtige Betriebsregeln
-
-- keine API-Keys im Frontend
-- keine OI-Keys in HTML, JavaScript-Bundles oder Runtime-Markup
-- Umgebungsvariablen nur serverseitig
-- Health-Check fÃ¼r Backend separat vorsehen
-- Logging ohne Secret-Leaks
-
-## Ãœbergaberelevante Leitlinien
-
-Ein externer Entwickler muss ohne mÃ¼ndliches Zusatzwissen verstehen kÃ¶nnen:
-
-- welche Teile statisch sind
-- welche Teile serverseitig laufen
-- welche Endpunkte intern stabil sind
-- wo QualitÃ¤tslogik lebt
-- wo KI-Logik lebt
-- welche Grenzen fachlich bewusst gelten
-
-Deshalb gilt fÃ¼r die nÃ¤chste Ausbaustufe:
-
-- Frontend und Backend nicht weiter vermischen
-- `scripts.js` schrittweise zerlegen
-- Fachmodell und UI-Text nicht in einem Monolith pflegen
-- neue Funktionen nur mit klarer Zuordnung zu Frontend oder Backend einbauen
-
-## NÃ¤chste konkrete Folgeschritte
-
-Aus diesem Architekturstand folgen als nÃ¤chste sinnvolle Schritte:
-
-1. Frontend weiter entkoppeln, bevor ein Framework eingefÃ¼hrt wird
-2. gemeinsame ZustÃ¤nde und Seitengrenzen als Zielmodule festziehen
-3. Entwicklerdokumentation und Betriebsdokumentation ergÃ¤nzen
-4. danach Framework-Migration geplant und seitenweise umsetzen
+- das Backend auf Render bleibt vorerst stabil
+- das Frontend-Ziel ist `React + Vite + TypeScript`
+- die Qualitätslogik bleibt fachlich führend
+- die Migration erfolgt schrittweise im Parallelbetrieb

@@ -1995,6 +1995,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function fetchRecordDetailItem({ type, id, globalId }) {
+    const identifier = String(globalId || id || '').trim();
+
+    if (identifier) {
+      try {
+        const resolvedPayload = await resolveRecordsByIds({
+          apiBase: RECORDS_BY_GLOBAL_IDS_API_BASE,
+          fetchJson: fetchJsonCached,
+          ids: [identifier],
+          type
+        });
+        const resolvedItems = Array.isArray(resolvedPayload?.items) ? resolvedPayload.items : [];
+        const resolvedEntry = resolvedItems[0];
+
+        if (resolvedEntry) {
+          if (resolvedEntry && typeof resolvedEntry === 'object' && 'raw' in resolvedEntry) {
+            return resolvedEntry.raw || resolvedEntry;
+          }
+          return resolvedEntry;
+        }
+      } catch (error) {
+        console.warn('Direkte Datensatz-Auflösung für Detailseite fehlgeschlagen. Fallback auf Search-Lookup.', error);
+      }
+    }
+
     return fetchRecordDetailItemPageModel({
       type,
       id,

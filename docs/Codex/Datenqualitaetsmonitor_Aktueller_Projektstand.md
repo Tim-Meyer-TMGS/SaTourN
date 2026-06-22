@@ -1,18 +1,18 @@
 # Datenqualitätsmonitor – Aktueller Projektstand
 
-Stand: 2026-06-19
+Stand: 2026-06-22
 
 ## Kurzfassung
 
-`Statistik/` bleibt aktuell ein statisches Frontend mit Vanilla JavaScript.
+`Statistik/` bleibt aktuell das produktive Frontend mit Vanilla JavaScript.
 Geschützte oder modellgestützte Zugriffe laufen serverseitig über den
 Render-Proxy. Secrets liegen nicht im Frontend.
 
-Parallel läuft die fachliche und technische Entkopplung des Bestands, damit das
-Projekt sauber an Entwickler übergeben und später auf ein Framework migriert
-werden kann.
+Parallel wurde jetzt ein neues Frontend-Grundgerüst unter `frontend/` angelegt.
+Es dient als Migrationspfad für `React + Vite + TypeScript`, ohne den
+laufenden Produktstand zu gefährden.
 
-## Aktive Seiten
+## Aktive Seiten im Bestandsfrontend
 
 - `Statistik/index.html`
   Übersicht mit Arbeitskontext, KPIs, Pflegeaufgaben und Open-Data-Status
@@ -27,9 +27,47 @@ werden kann.
 - `Statistik/help.html`
   reduzierte Hilfeseite für Score, Datentypen und Pflegeverständnis
 
+## Neues Frontend-Gerüst
+
+Neu angelegt:
+
+- `frontend/package.json`
+- `frontend/vite.config.ts`
+- `frontend/src/app/`
+- `frontend/src/features/`
+- `frontend/src/shared/`
+- `frontend/src/styles/`
+
+Aktueller Stand des neuen Frontends:
+
+- React-/Vite-/TypeScript-Basis steht
+- Router steht
+- Shell und Navigation stehen
+- Arbeitskontext-Store steht
+- Runtime-API-Konfiguration steht
+- HTTP-Client-Basis steht
+- Platzhalterseiten für alle aktuellen Fachbereiche stehen
+- `Datensätze` hat bereits eine erste echte Pilotimplementierung mit:
+  - Arbeitskontext-Steuerung
+  - Suche gegen `/api/search`
+  - KI-Suche gegen `/api/oi/search-records`
+  - ID-Auflösung über `/api/records/by-global-ids`
+  - clientseitiger Qualitätsauswertung auf Basis des bestehenden Qualitätsmodells
+  - lokalen Filtern für Status, Kategorie und Problem
+  - Paginierung im Frontend
+  - Detailverlinkung im neuen Routing
+  - Mailentwurf über `/api/oi/mail-draft`
+
+Noch nicht umgesetzt:
+
+- fachliche Migration der übrigen Produktseiten
+- vollständige Übernahme der Detailseite in React
+- UI-Feinschliff auf 1:1-Produktniveau des bestehenden Frontends
+- Export, Schnellfilter und Autocomplete im neuen Frontend
+
 ## Produktiver Betrieb
 
-- GitHub Pages liefert das Frontend aus
+- GitHub Pages liefert das bestehende Frontend aus
 - Render bleibt der produktive Node-/Express-Proxy
 - aktuell keine Cronjobs, keine produktiven Snapshots, kein serverseitiger Cache
 - ein kurzer Browser-In-Memory-Cache für wiederholte GET-Anfragen ist aktiv
@@ -40,6 +78,8 @@ werden kann.
 - `/api/autocomplete`
 - `/api/quality/count`
 - `/api/quality/scan`
+- `/api/quality/list`
+- `/api/quality/snapshot`
 - `/api/records/by-global-ids`
 - `/api/oi/status`
 - `/api/oi/tools`
@@ -76,111 +116,50 @@ Wichtige Produktentscheidung:
   sind nicht scorewirksam
 - generische Wildcard-Pushdowns bleiben fachlich ausgeschlossen
 - erste produktive POI-Ausschlusslogik ist zentral verankert
+- KI-Suchergebnisse werden wieder gegen die Prüfkriterien ausgewertet
 
 ## Wichtige Dateien
 
-- Frontend:
-  `Statistik/index.html`, `tasks.html`, `records.html`,
-  `record-detail.html`, `stats.html`, `help.html`
-- Frontend-Logik:
-  `Statistik/scripts.js`, `Statistik/quality.js`, `Statistik/main.js`
-- Core:
-  `Statistik/core/api-config.js`,
-  `Statistik/core/api-urls.js`,
-  `Statistik/core/app-constants.js`,
-  `Statistik/core/app-state.js`,
-  `Statistik/core/consent-ui.js`,
-  `Statistik/core/context-shell-controller.js`,
-  `Statistik/core/page-bootstrap.js`,
-  `Statistik/core/page-initializers.js`,
-  `Statistik/core/page-shell.js`,
-  `Statistik/core/request-cache.js`,
-  `Statistik/core/runtime-helpers.js`,
-  `Statistik/core/source-systems.js`,
-  `Statistik/core/source-systems-bindings.js`,
-  `Statistik/core/source-systems-page-bindings.js`,
-  `Statistik/core/source-systems-ui.js`,
-  `Statistik/core/state-storage.js`
-- Übersicht:
-  `Statistik/overview/overview-controller.js`,
-  `Statistik/overview/overview-data.js`,
-  `Statistik/overview/overview-helpers.js`,
-  `Statistik/overview/overview-page-bindings.js`,
-  `Statistik/overview/overview-ui.js`
-- Aufgaben:
-  `Statistik/tasks/task-controller.js`,
-  `Statistik/tasks/task-data.js`,
-  `Statistik/tasks/task-families.js`,
-  `Statistik/tasks/task-logic.js`,
-  `Statistik/tasks/task-page-bindings.js`,
-  `Statistik/tasks/task-record-links.js`,
-  `Statistik/tasks/task-texts.js`,
-  `Statistik/tasks/tasks-ui.js`
-- Records:
-  `Statistik/records/record-api.js`,
-  `Statistik/records/record-communication.js`,
-  `Statistik/records/records-actions.js`,
-  `Statistik/records/records-controller.js`,
-  `Statistik/records/records-page-bindings.js`,
-  `Statistik/records/records-page-controller.js`,
-  `Statistik/records/records-page-data.js`,
-  `Statistik/records/records-page-interactions.js`,
-  `Statistik/records/records-page-queries.js`,
-  `Statistik/records/records-page-search-bindings.js`,
-  `Statistik/records/records-page-state.js`,
-  `Statistik/records/records-page-view.js`,
-  `Statistik/records/records-data.js`,
-  `Statistik/records/records-filters.js`,
-  `Statistik/records/records-helpers.js`,
-  `Statistik/records/records-search.js`,
-  `Statistik/records/records-ui.js`
-- Detail:
-  `Statistik/detail/record-detail-bindings.js`,
-  `Statistik/detail/record-detail-page-bindings.js`,
-  `Statistik/detail/record-detail-controller.js`,
-  `Statistik/detail/record-detail-data.js`,
-  `Statistik/detail/record-detail-helpers.js`,
-  `Statistik/detail/record-detail-ui.js`
-- Help:
-  `Statistik/help/help-page.js`
-- Statistik:
-  `Statistik/stats/stats-page.js`
-- Quality:
-  `Statistik/quality/quality-api.js`
-- Proxy:
-  `routes/search.js`, `routes/quality.js`, `routes/records.js`, `routes/oi.js`
-- OI-Konfiguration:
-  `lib/oi-config.js`
+### Bestandsfrontend
+
+- `Statistik/scripts.js`
+- `Statistik/quality.js`
+- `Statistik/main.js`
+- `Statistik/core/`
+- `Statistik/overview/`
+- `Statistik/tasks/`
+- `Statistik/records/`
+- `Statistik/detail/`
+- `Statistik/stats/`
+- `Statistik/help/`
+
+### Neues Frontend
+
+- `frontend/src/app/`
+- `frontend/src/features/`
+- `frontend/src/shared/`
+- `frontend/src/styles/global.css`
+
+### Proxy
+
+- `routes/search.js`
+- `routes/quality.js`
+- `routes/records.js`
+- `routes/oi.js`
+- `lib/oi-config.js`
 
 ## Zuletzt umgesetzt
 
-- gemeinsame Shell-Initialisierung und Seitenstart-Verdrahtung aus
-  `scripts.js` in `Statistik/core/page-bootstrap.js` weiter reduziert
-- Seiteninitialisierung für Overview, Tasks, Records, Detail, Statistik und
-  Hilfe aus `scripts.js` in `Statistik/core/page-initializers.js`
-  weiter reduziert
-- Arbeitskontext-, View-State- und Shell-Submit-Verdrahtung aus `scripts.js`
-  in `Statistik/core/context-shell-controller.js` weiter reduziert
-- Statistik-Filter-, Render- und Exportlogik aus `scripts.js` in
-  `Statistik/stats/stats-page.js` ausgelagert
-- Overview-Bindings aus `scripts.js` in
-  `Statistik/overview/overview-page-bindings.js` weiter reduziert
-- Records-View-/UI-Bindings aus `scripts.js` in
-  `Statistik/records/records-page-bindings.js` weiter reduziert
-- Records-Such-/Autocomplete-/Mail-Bindings aus `scripts.js` in
-  `Statistik/records/records-page-search-bindings.js` weiter reduziert
-- Task-UI-/Paging-/Detail-Bindings aus `scripts.js` in
-  `Statistik/tasks/task-page-bindings.js` weiter reduziert
-- Detail-Hilfs-/View-Bindings aus `scripts.js` in
-  `Statistik/detail/record-detail-page-bindings.js` weiter reduziert
-- Quellsystem-/Export-Bindings aus `scripts.js` in
-  `Statistik/core/source-systems-page-bindings.js` weiter reduziert
-- `Statistik/README.md` auf die aktuelle Modulstruktur nachgezogen
+- React-/Vite-/TypeScript-Frontend als paralleles Grundgerüst angelegt
+- Router, Shell, Runtime-Konfiguration und Context-Store vorbereitet
+- `Datensätze` als erste Pilotseite im neuen Frontend mit Suche, KI-Suche, Filtern, Paging und Mailentwurf erweitert
+- KI-Suche auf korrekten Qualitätsdurchlauf nach Typauflösung nachgezogen
+- OI-Timeouts für Suche und Mailentwurf erhöht
 
 ## Technische Richtung
 
-- `scripts.js` ist weiterhin der Orchestrator
+- `scripts.js` bleibt vorerst Orchestrator des Bestandsfrontends
 - neue Fachlogik soll nicht mehr direkt in `scripts.js` landen
-- die nächste Stufe ist das Entfernen toter Wrapper und doppelter Delegationen
-- danach kann die eigentliche Framework-Migration auf sauber getrennten Modulen
-  aufsetzen
+- das neue `frontend/` ist der Migrationspfad
+- der nächste echte Umsetzungsschritt ist die fachliche Migration der Seite
+  `Datensätze`

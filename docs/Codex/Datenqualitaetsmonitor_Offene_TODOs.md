@@ -1,6 +1,6 @@
 # Datenqualitätsmonitor – Offene TODOs
 
-Stand: 2026-06-19
+Stand: 2026-06-22
 
 Diese Datei ist die kurze, aktive Arbeitsliste. Abgeschlossene Analysen und
 alte Nachweise liegen im Archiv.
@@ -29,12 +29,14 @@ Offen:
 - reale Themenanfragen durchtesten:
   `Museum`, `Wanderwege mit Hund`, `Familienausflug`, `Wellnesshotel`
 - prüfen, ob OI-IDs immer sauber in Datensätze aufgelöst werden
+- prüfen, ob KI-Treffer in allen Fällen sauber durch die Prüfkriterien laufen
 - leere Ergebnisse, mehrdeutige Suchanfragen und Fehlermeldungen UX-seitig schärfen
 
 Betroffene Dateien:
 
 - `Statistik/records.html`
 - `Statistik/records/records-actions.js`
+- `Statistik/records/records-data.js`
 - `routes/oi.js`
 
 ### 3. Hilfeseite und KI-Texte auf den aktuellen Produktstand ziehen
@@ -122,17 +124,20 @@ Ergebnis:
 
 ### 9. Frontend-Migration auf Framework vorbereiten
 
-Empfohlene Richtung:
+Festgelegte Zielrichtung:
 
-- `Vue 3`
+- `React`
 - `Vite`
-- `Vue Router`
-- `Pinia`
+- `TypeScript`
+- `React Router`
+- `Zustand`
 
-Offen:
+Erledigt:
 
-- technische Einführung des neuen Frontend-Gerüsts noch nicht begonnen
-- bestehender Code muss vor der eigentlichen Migration weiter entkoppelt werden
+- Zielstack für die Frontend-Migration festgelegt
+- Zielstruktur für `frontend/src/app`, `features` und `shared` beschrieben
+- Pilotseite `Datensätze` als erster Migrationskandidat festgelegt
+- Migrationsreihenfolge für den Parallelbetrieb dokumentiert
 
 Ergebnis:
 
@@ -197,7 +202,41 @@ Betroffene Dateien:
 - `Statistik/tasks/`
 - `Statistik/core/`
 
-### 11. Übergabedokumentation für Entwickler vorbereiten
+### 11. Framework-Übergang konkret vorbereiten
+
+Bereits umgesetzt:
+
+- neues `frontend/`-Grundgerüst parallel zum Bestand angelegt
+- Routing, Shell und Arbeitskontext im neuen Frontend vorbereitet
+- gemeinsamer API-Client-Grundrahmen für Search, Quality, Records und OI vorbereitet
+- Platzhalterseiten für alle heutigen Hauptbereiche angelegt
+
+Nächste Umsetzungsschritte:
+
+1. `Datensätze` als erste Pilotseite vollständig migrieren
+2. danach `Datensatz-Detail`, `Pflegeaufgaben`, `Übersicht`, `Open-Data-Statistik`, `Hilfe`
+3. Alt-Frontend erst nach fachlicher Gleichheit kontrolliert ablösen
+
+Aktueller Teilstand zu `Datensätze`:
+
+- neue React-Seite kann bereits gegen den bestehenden Proxy suchen
+- KI-Suche ist im neuen Frontend ansprechbar
+- Datensätze werden im neuen Frontend bereits gegen das bestehende Qualitätsmodell ausgewertet
+- Detailverlinkung, lokale Filter, Paging und Mailentwurf sind im neuen Frontend vorbereitet
+- es fehlen noch:
+  - UI-Angleichung an den Produktstand
+  - CSV-Export
+  - Schnellfilter
+  - Autocomplete
+  - vollständige React-Detailseite
+
+Wichtig:
+
+- Alt-Frontend bleibt bis zur fachlichen Gleichheit produktiv
+- Backend-Routen und Render-Konfiguration bleiben zunächst unverändert
+- Qualitätslogik bleibt fachlich führend
+
+### 12. Übergabedokumentation für Entwickler vorbereiten
 
 Offen:
 
@@ -226,5 +265,7 @@ Diese Themen sind aktuell bewusst nachrangig:
 
 ## Zuletzt erledigt
 
-- `Statistik/README.md` und die aktiven Codex-Dokumente auf die neue Struktur nachgezogen
-- Overview-, Task-, Record-, Detail- und Quellsystem-Bindings weiter aus `scripts.js` ausgelagert
+- Frontend-Migrationsziel auf `React + Vite + TypeScript` festgezogen
+- Migrationsplan für Parallelbetrieb und Pilotseite `Datensätze` dokumentiert
+- aktive Codex-Dokumente bereinigt und auf den neuen Stand gehoben
+- paralleles `frontend/`-Grundgerüst mit Router, Shell, Context-Store und API-Basis angelegt

@@ -1,59 +1,67 @@
-# DatenqualitÃ¤tsmonitor â€“ Frontend-Migrationsplan
+# Datenqualitätsmonitor – Frontend-Migrationsplan
 
-Stand: 2026-06-18
+Stand: 2026-06-22
 
 ## Zweck dieses Dokuments
 
-Dieses Dokument beschreibt die konkrete Frontend-Zielstruktur fÃ¼r den
-DatenqualitÃ¤tsmonitor.
+Dieses Dokument beschreibt die verbindliche Zielrichtung für den Übergang des
+Statistik-Frontends auf ein Framework.
 
-Es beantwortet fÃ¼r dieses Repository:
+Es beantwortet für dieses Repository:
 
-- welche Seiten in welche Module Ã¼berfÃ¼hrt werden sollen
-- welche gemeinsamen ZustÃ¤nde kÃ¼nftig zentral verwaltet werden
-- welche Services vom UI getrennt werden sollen
-- welche wiederverwendbaren Komponenten gebraucht werden
-- in welcher Reihenfolge die Migration fachlich sinnvoll ist
+- welches Framework eingesetzt werden soll
+- wie die Zielstruktur des Frontends aussieht
+- welche fachlichen Bereiche zuerst migriert werden
+- welche Teile vorerst stabil bleiben
+- wie der Bestand schrittweise in eine übergabefähige Architektur überführt wird
 
 ## Technische Zielrichtung
 
 Empfohlener Zielstack:
 
-- `Vue 3`
+- `React`
 - `Vite`
-- `Vue Router`
-- `Pinia`
+- `TypeScript`
+- `React Router`
+- `Zustand` oder alternativ `Redux Toolkit` nur bei später wachsender Komplexität
+
+Festgelegte Arbeitsentscheidung:
+
+- Für den ersten Migrationsschritt wird mit `React + Vite + TypeScript`
+  geplant.
+- Das bestehende Render-Backend bleibt bestehen.
+- Die bestehende Qualitätslogik bleibt fachlich führend und wird nicht parallel
+  neu erfunden.
+
+Begründung:
+
+- große Entwicklerverfügbarkeit
+- gute Übergabefähigkeit an externe Teams
+- klar lesbare Komponenten- und Hook-Struktur
+- einfache lokale Entwicklung
+- problemloser Betrieb hinter dem bestehenden Proxy
+- später sauber auf eigenem Server betreibbar
+
+## Migrationsgrundsatz
+
+Die Migration erfolgt nicht als Big Bang.
+
+Reihenfolge:
+
+1. Bestehenden Code weiter entkoppeln
+2. Neues Framework-Frontend parallel aufsetzen
+3. Gemeinsame API- und State-Grenzen festziehen
+4. Erste Pilotseite migrieren
+5. Weitere Seiten kontrolliert überführen
+6. Alt-Frontend erst entfernen, wenn fachliche Gleichheit erreicht ist
 
 Wichtig:
 
-- dies ist ein Migrationsziel, kein sofortiger Komplettumbau
-- der bestehende Produktstand muss wÃ¤hrend der Umstellung benutzbar bleiben
-- zuerst wird fachlich entkoppelt, dann technisch migriert
+- Der aktuelle Produktstand muss während der Migration benutzbar bleiben.
+- Backend, API-Wege und Secrets bleiben zunächst unverändert.
+- Die Framework-Migration ist ein Strukturprojekt, kein fachlicher Neubau.
 
-## Ausgangslage im aktuellen Frontend
-
-Die aktuelle Frontend-Logik sitzt hauptsÃ¤chlich in:
-
-- `Statistik/scripts.js`
-- `Statistik/quality.js`
-- `Statistik/tasks/task-logic.js`
-- `Statistik/tasks/task-families.js`
-- `Statistik/records/records-search.js`
-- `Statistik/records/record-communication.js`
-- `Statistik/records/record-mail.js`
-- `Statistik/core/api-config.js`
-- `Statistik/core/app-constants.js`
-
-Aktive Ansichten:
-
-- Ãœbersicht
-- Pflegeaufgaben
-- DatensÃ¤tze
-- Datensatz-Detail
-- Open-Data-Statistik
-- Hilfe
-
-## Zielstruktur fÃ¼r das Frontend
+## Zielstruktur für das neue Frontend
 
 Empfohlene Ordnerstruktur:
 
@@ -62,127 +70,183 @@ frontend/
   src/
     app/
       router/
+      providers/
       layout/
-    pages/
+    features/
       overview/
       tasks/
       records/
       record-detail/
       stats/
       help/
-    components/
-      shell/
-      context/
-      kpi/
-      tasks/
-      records/
-      detail/
-      stats/
-      help/
-      common/
-    stores/
-    services/
-    content/
-    utils/
+    shared/
+      api/
+      state/
+      ui/
+      quality/
+      utils/
+      content/
+      hooks/
+      types/
     styles/
+    main.tsx
+  public/
 ```
 
-## Zielseiten und Seitengrenzen
+## Zielgrenzen im Code
 
-### 1. Ãœbersicht
+### 1. `app/`
 
-Heutige Quelle:
+Verantwortung:
 
-- `Statistik/index.html`
-- Teile aus `Statistik/scripts.js`
+- App-Start
+- Router
+- globale Provider
+- Seitenlayout
+- Seitennavigation
+- Shell-Struktur
+
+### 2. `features/`
+
+Verantwortung:
+
+- fachliche Seitenlogik pro Bereich
+- seitennahe Komponenten
+- Feature-spezifische Hooks
+- Feature-spezifische View-Model-Transformationen
+
+### 3. `shared/api/`
+
+Verantwortung:
+
+- HTTP-Client
+- API-Endpunkte
+- Request-Fehlerbehandlung
+- Timeouts
+- Response-Normalisierung
+
+### 4. `shared/state/`
+
+Verantwortung:
+
+- globaler Arbeitskontext
+- UI-Zwischenzustände
+- Persistenz in Session/Local Storage
+- spätere gemeinsame Selektoren
+
+### 5. `shared/quality/`
+
+Verantwortung:
+
+- Einbindung der Qualitätslogik
+- fachliche Transformationen für Score, Kriterien und Status
+- keine direkte Vermischung mit UI-Komponenten
+
+### 6. `shared/ui/`
+
+Verantwortung:
+
+- wiederverwendbare Oberflächenbausteine
+- Tabellen
+- Dialoge
+- Status-Badges
+- Ladezustände
+- Fehlermeldungen
+- Paginierung
+
+## Was vorerst stabil bleibt
+
+Diese Teile werden zunächst nicht grundlegend umgebaut:
+
+- `routes/search.js`
+- `routes/records.js`
+- `routes/quality.js`
+- `routes/oi.js`
+- bestehende Render-Konfiguration
+- bestehende API-Keys und Secrets
+- fachliche Kriterienbasis in `Statistik/quality.js`
+
+Das ist absichtlich konservativ.
+Der Frontend-Übergang soll zuerst die Wartbarkeit und Übergabe verbessern, ohne
+gleichzeitig das Betriebsmodell zu destabilisieren.
+
+## Erste Pilotseite
+
+Die erste echte Migrationsseite soll `Datensätze` sein.
+
+Begründung:
+
+- höchste Interaktionsdichte
+- Suchlogik, Filter, Paging und Tabellenzustände sind dort bereits komplex
+- AI-Suche und Mailfunktion hängen daran
+- Datensatzseite zwingt zu sauberem Routing, State und API-Schnittstellen
+
+Wenn `Datensätze` sauber im Framework steht, ist die Grundarchitektur belastbar.
+
+## Zielmodule je Fachbereich
+
+### 1. Übersicht
 
 Zielmodul:
 
-- `pages/overview/`
+- `features/overview/`
 
 Verantwortung:
 
 - KPI-Karten
 - wichtigste Pflegeaufgaben
-- QualitÃ¤tsstatus-Verteilung
+- Qualitätsstatus-Verteilung
 - Open-Data-Status
-- Hinweise zum Datenstand
+- Lade- und Leerzustände
 
 ### 2. Pflegeaufgaben
 
-Heutige Quelle:
-
-- `Statistik/tasks.html`
-- Teile aus `Statistik/scripts.js`
-- `Statistik/tasks/task-logic.js`
-- `Statistik/tasks/task-families.js`
-
 Zielmodul:
 
-- `pages/tasks/`
+- `features/tasks/`
 
 Verantwortung:
 
 - Aufgabenliste
-- Gruppierung nach Aufgabenfamilien
-- Auswahl nach Datentyp
-- zugehÃ¶rige Datensatzliste
+- Filter
+- Typkontext
+- Verlinkung in Datensatzlisten
 
-### 3. DatensÃ¤tze
-
-Heutige Quelle:
-
-- `Statistik/records.html`
-- Teile aus `Statistik/scripts.js`
-- `Statistik/records/records-search.js`
-- `Statistik/records/record-communication.js`
-- `Statistik/records/record-mail.js`
+### 3. Datensätze
 
 Zielmodul:
 
-- `pages/records/`
+- `features/records/`
 
 Verantwortung:
 
 - Volltextsuche
 - ID-Suche
 - AI-Suche
-- Filter
-- Datensatzliste
-- CSV
+- Pflegeaufgaben-Filter
+- Tabellenansicht
+- CSV-Export
 - Mailaktion
 
 ### 4. Datensatz-Detail
 
-Heutige Quelle:
-
-- `Statistik/record-detail.html`
-- Teile aus `Statistik/scripts.js`
-
 Zielmodul:
 
-- `pages/record-detail/`
+- `features/record-detail/`
 
 Verantwortung:
 
 - Detailkopf
-- QualitÃ¤tsprobleme
-- Nutzbarkeit
-- Texte
-- Medien
-- Kontakt- und Systeminformationen
-- Listen-Navigation zurÃ¼ck
+- Qualitätsprobleme
+- Kriterienstatus
+- Inhalte, Medien und Kontaktdaten
+- Rücknavigation in die Liste
 
 ### 5. Open-Data-Statistik
 
-Heutige Quelle:
-
-- `Statistik/stats.html`
-- Teile aus `Statistik/scripts.js`
-
 Zielmodul:
 
-- `pages/stats/`
+- `features/stats/`
 
 Verantwortung:
 
@@ -193,332 +257,207 @@ Verantwortung:
 
 ### 6. Hilfe
 
-Heutige Quelle:
-
-- `Statistik/help.html`
-- Teile aus `Statistik/scripts.js`
-
 Zielmodul:
 
-- `pages/help/`
+- `features/help/`
 
 Verantwortung:
 
-- Score verstÃ¤ndlich erklÃ¤ren
-- Fehler-Ebenen erklÃ¤ren
-- Datentypbezogene Mindestanforderungen
-- spÃ¤tere 3-Ebenen-Kommunikation aufnehmen
+- Score-Erklärung
+- Fehler-Ebenen
+- Mindestanforderungen pro Datentyp
+- spätere 3-Ebenen-Kommunikation
 
-## Ziel-Stores
+## Geplante Stores und gemeinsamer State
 
-Die kÃ¼nftige gemeinsame Zustandslogik sollte mindestens in folgende Stores
-zerlegt werden.
-
-### 1. `useContextStore`
+### 1. `context-store`
 
 Verantwortung:
 
-- Arbeitskontext
 - Gebiet
 - Ort
 - Datentyp
 - Persistenz des Arbeitskontexts
 
-Heutige Quelle:
+### 2. `records-store`
 
-- `state.context`
-- `loadWorkContext()`
-- `saveWorkContext()`
+Verantwortung:
 
-### 2. `useOverviewStore`
+- Suchzustand
+- Filterzustand
+- Paginierung
+- AI-Suchmodus
+- Datensatzliste
+
+### 3. `tasks-store`
+
+Verantwortung:
+
+- Aufgabenfilter
+- selektierte Aufgabe
+- Aufgaben-Datensätze
+
+### 4. `overview-store`
 
 Verantwortung:
 
 - KPI-Daten
-- QualitÃ¤tsaggregationen
-- Ãœbersichtsladezustand
-- Datenstand-Hinweise
+- Qualitätsaggregationen
+- Ladezustände
 
-Heutige Quelle:
-
-- `state.latestRows`
-- `state.normalizedItems`
-- `state.qualityAggregations`
-- `state.qualityDataMeta`
-
-### 3. `useTasksStore`
+### 5. `stats-store`
 
 Verantwortung:
+
+- Statistikfilter
+- Statistikdaten
+- Exporte
+
+### 6. `ui-store`
+
+Verantwortung:
+
+- globale Dialogzustände
+- Ladehinweise
+- Toasts oder Systemmeldungen
+
+## API-Grenzen für das neue Frontend
+
+Das neue Frontend soll keine API-Aufrufe direkt in Komponenten verstreuen.
+
+Geplante Services:
+
+- `searchApi`
+- `recordsApi`
+- `qualityApi`
+- `oiApi`
+- `autocompleteApi`
+
+Jeder Service soll:
+
+- Request-Aufbau kapseln
+- Timeouts zentral setzen
+- Fehler einheitlich normalisieren
+- keine DOM-Logik enthalten
+
+## Konkrete Migrationsreihenfolge
+
+### Schritt 1 – Vorbereitende Entkopplung im Bestand abschließen
+
+Ziel:
+
+- `scripts.js` weiter verkleinern
+- Wrapper und Doppeldelegationen entfernen
+- Seitengrenzen schärfen
+
+### Schritt 2 – Neues Frontend-Gerüst parallel anlegen
+
+Ziel:
+
+- `frontend/` neu anlegen
+- Vite-, React- und TypeScript-Setup
+- Basisrouting
+- Grundlayout
+
+### Schritt 3 – Gemeinsamen API-Client aufbauen
+
+Ziel:
+
+- Fetch-Wrapper
+- Timeout-Strategie
+- Fehlerformat
+- Basis-Endpoints aus Runtime-Konfiguration
+
+### Schritt 4 – Arbeitskontext migrieren
+
+Ziel:
+
+- Kontextstore
+- Persistenz
+- Shell-Anzeige
+- Seitenübergreifende Nutzung
+
+### Schritt 5 – `Datensätze` als Pilotseite migrieren
+
+Ziel:
+
+- Suche
+- Filter
+- Paging
+- Pflegeaufgaben-Verknüpfung
+- AI-Suche
+- Mailaktion
+
+### Schritt 6 – `Datensatz-Detail` migrieren
+
+Ziel:
+
+- gleiche Bewertungslogik
+- gleiche Rückverlinkung
+- klare Komponentenstruktur
+
+### Schritt 7 – `Pflegeaufgaben` migrieren
+
+Ziel:
 
 - Aufgabenliste
-- Filter auf Aufgaben
-- selektierte Aufgabe
-- selektierter Aufgabentyp
-- Aufgaben-DatensÃ¤tze
+- Aufgabendetails
+- Verlinkung in Datensatzlisten
 
-Heutige Quelle:
+### Schritt 8 – `Übersicht` und `Open-Data-Statistik` migrieren
 
-- `state.taskItems`
-- `state.taskRows`
-- `state.filteredTaskRows`
-- `state.selectedTask`
-- `state.selectedTaskType`
-- `state.taskRecordRows`
+Ziel:
 
-### 4. `useRecordsStore`
+- KPI-Darstellung
+- Diagramm- und Statistikflächen
+- Exportpfade
 
-Verantwortung:
+### Schritt 9 – `Hilfe` migrieren
 
-- Datensatzliste
-- SuchzustÃ¤nde
-- FilterzustÃ¤nde
-- AI-Suche
-- Paging
-- Record-View-State
+Ziel:
 
-Heutige Quelle:
+- Inhalte aus Logik herauslösen
+- produktnahe Nutzerhilfe pflegen
 
-- `state.recordItems`
-- `state.recordRows`
-- `state.filteredRecordRows`
-- `state.recordPage`
-- `state.recordRowsPerPage`
-- `state.pendingRecordView`
-- `state.recordAiSearchPrompt`
+### Schritt 10 – Alt-Frontend kontrolliert ablösen
 
-### 5. `useRecordDetailStore`
+Voraussetzung:
 
-Verantwortung:
+- alle Hauptseiten fachlich gleichwertig
+- Routing vollständig
+- Regressionstests bestanden
 
-- geladener Datensatz
-- Detail-View-Model
-- RÃ¼cksprung-Kontext
-- Detail-Ladezustand
+## Definition of Done für die Migration
 
-Heutige Quelle:
+Die Framework-Migration gilt erst dann als erfolgreich, wenn:
 
-- `state.recordDetailItem`
-- `state.recordDetailViewModel`
+- der Arbeitskontext seitenübergreifend stabil funktioniert
+- Datensatzsuche, Pflegeaufgaben und Detailseite fachlich gleich arbeiten
+- AI-Suche und Mailfunktion weiter über den bestehenden Proxy laufen
+- Qualitätsstatus und Prüfkriterien identisch zum Altbestand bleiben
+- Entwickler das Frontend lokal mit klarer Anleitung starten können
+- der Code ohne Kenntnis von `scripts.js` verständlich wartbar ist
 
-### 6. `useStatsStore`
+## Offene Architekturentscheidungen
 
-Verantwortung:
+Noch zu entscheiden:
 
-- Statistikdaten
-- Statistikfilter
-- Quoten und Summen
+- `Zustand` oder `Redux Toolkit` als endgültiger Store
+- Teststrategie für das neue Frontend:
+  - `Vitest`
+  - `React Testing Library`
+  - optional später End-to-End-Tests
+- Styling-Strategie:
+  - bestehendes CSS weiterverwenden und modularisieren
+  - oder schrittweise in komponentennahe Styles überführen
 
-Heutige Quelle:
+## Empfehlung für den nächsten konkreten Arbeitsschritt
 
-- `state.statsRows`
-- `state.statsSummary`
+Als Nächstes soll kein UI umgebaut werden.
 
-### 7. `useUiStore`
+Der nächste konkrete Schritt ist:
 
-Verantwortung:
-
-- globale LadezustÃ¤nde
-- globale Meldungen
-- DialogzustÃ¤nde
-- Refresh-Markierung
-
-Heutige Quelle:
-
-- `markForceFresh()`
-- `shouldForceFresh()`
-- Dialoglogik
-- Message-Logik
-
-## Ziel-Services
-
-Die API-Zugriffe sollen kÃ¼nftig nicht mehr direkt in Seitenkomponenten
-liegen.
-
-### 1. `context.service`
-
-- Persistenz des Arbeitskontexts
-- URL- und Session-Ãœbergabe
-
-### 2. `statistics.service`
-
-- Statistik-BestÃ¤nde
-- Open-Data-Zahlen
-
-### 3. `quality.service`
-
-- Snapshot laden
-- Quality-Counts
-- Quality-Scans
-- regionale QualitÃ¤tsbewertung
-
-### 4. `tasks.service`
-
-- Aufgaben aus Aggregationen ableiten
-- Aufgabenlisten mit Metadaten anreichern
-
-Hinweis:
-
-- ein Teil davon bleibt fachlich im QualitÃ¤tsmodell, nicht im Service
-
-### 5. `records.service`
-
-- Datensatzlisten
-- Filteranfragen
-- DatensatzauflÃ¶sung
-- globale IDs auflÃ¶sen
-
-### 6. `search.service`
-
-- Autocomplete
-- ID-/Textsuche
-
-### 7. `oi.service`
-
-- AI-Suche
-- Mailentwurf
-
-## Ziel-Komponenten
-
-Die folgenden UI-Bausteine sollten als wiederverwendbare Komponenten geplant
-werden.
-
-### Shell und Navigation
-
-- `AppShell`
-- `SideNavigation`
-- `TopContextBar`
-- `LastUpdatedBadge`
-
-### Gemeinsame UI-Bausteine
-
-- `LoadingState`
-- `EmptyState`
-- `ErrorState`
-- `StatusBadge`
-- `TypeChip`
-- `PrimarySystemLogo`
-- `ActionIconButton`
-- `FilterToolbar`
-- `PaginationControl`
-
-### Ãœbersicht
-
-- `KpiCard`
-- `TopTaskList`
-- `QualityDistributionCard`
-- `OpenDataStatusCard`
-
-### Pflegeaufgaben
-
-- `TaskTable`
-- `TaskDetailPanel`
-- `TaskTypeSelect`
-- `TaskRecordPreview`
-
-### DatensÃ¤tze
-
-- `RecordSearchBar`
-- `RecordAiSearchDialog`
-- `RecordFilterPanel`
-- `RecordTable`
-- `RecordQuickFilters`
-- `RecordStatusLegend`
-
-### Datensatz-Detail
-
-- `RecordHeaderCard`
-- `RecordIssueList`
-- `RecordUsabilityGrid`
-- `RecordTextSection`
-- `RecordMediaSection`
-- `RecordInfoSection`
-- `RecordCriteriaSection`
-
-### Statistik
-
-- `StatsSummaryCards`
-- `StatsTypeDistribution`
-- `StatsQuoteBars`
-- `StatsLicenseTaskCard`
-
-### Hilfe
-
-- `HelpSeverityGrid`
-- `HelpTypeCard`
-- `HelpCriteriaList`
-
-## Ziel-Routing
-
-Empfohlene Zielrouten:
-
-- `/`
-- `/tasks`
-- `/records`
-- `/record/:type/:id`
-- `/stats`
-- `/help`
-
-ZusÃ¤tzliche Anforderungen:
-
-- Query-Parameter fÃ¼r Filter mÃ¼ssen erhalten bleiben
-- Pflegeaufgaben-Kontext muss sauber an `records` Ã¼bergeben werden
-- RÃ¼cksprung von Detailseite zur Liste muss stabil bleiben
-
-## Migrationsreihenfolge
-
-### Phase 1 â€“ Vorarbeit im Bestand
-
-- `scripts.js` weiter fachlich zerlegen
-- Service-Grenzen im bestehenden Code schÃ¤rfen
-- State-Grenzen im bestehenden Code schÃ¤rfen
-
-### Phase 2 â€“ Neue Frontend-Struktur anlegen
-
-- Vue-App aufsetzen
-- Router anlegen
-- Stores definieren
-- Basislayout bauen
-
-### Phase 3 â€“ Gemeinsame Shell migrieren
-
-- Navigation
-- Arbeitskontext
-- globale Meldungen
-
-### Phase 4 â€“ Seiten schrittweise migrieren
-
-Reihenfolge:
-
-1. Ãœbersicht
-2. Pflegeaufgaben
-3. DatensÃ¤tze
-4. Datensatz-Detail
-5. Statistik
-6. Hilfe
-
-Diese Reihenfolge ist bewusst gewÃ¤hlt:
-
-- Ãœbersicht und Pflegeaufgaben tragen den Hauptfluss
-- DatensÃ¤tze und Detailseite hÃ¤ngen fachlich daran
-- Statistik und Hilfe sind fachlich wichtig, aber weniger kritisch fÃ¼r den
-  Hauptnutzungsfluss
-
-## Dokumentationsregel fÃ¼r die Migration
-
-FÃ¼r jeden spÃ¤teren Migrationsschritt mÃ¼ssen folgende Punkte festgehalten
-werden:
-
-- betroffene Seite oder Komponente
-- fachlicher Zweck
-- Ã¼bernommene Datenquellen
-- ersetzte Altdateien oder Altfunktionen
-- offene Abweichungen zum Bestand
-- bekannte Risiken
-
-## NÃ¤chste konkrete Folgeschritte
-
-Aus diesem Dokument folgen als nÃ¤chste sinnvolle Schritte:
-
-1. `scripts.js` weiter nach Store-/Service-/Seitenlogik entkoppeln
-2. Zielmodule gegen die aktuelle Datei- und Zustandslage abgleichen
-3. danach die technische Vue-Grundstruktur vorbereiten
+1. `React + Vite + TypeScript` als Zielarchitektur dokumentarisch festziehen
+2. `scripts.js` weiter als Orchestrierungsdatei reduzieren
+3. danach ein neues `frontend/`-Grundgerüst parallel anlegen
+4. anschließend `Datensätze` als Pilotseite migrieren

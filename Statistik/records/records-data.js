@@ -54,12 +54,13 @@ export function normalizeItem(raw, fallbackType, {
 }) {
   const helpers = { qualityHelpers, textValue };
   const globalId = getFirst(raw, ['global_id', 'globalId'], helpers);
+  const resolvedType = fallbackType || getFirst(raw, ['type', 'typeName'], helpers) || '';
   return {
     raw,
     id: extractId(raw),
     globalId,
     title: getFirst(raw, ['title', 'name', 'presentation.title'], helpers) || 'Ohne Titel',
-    type: getFirst(raw, ['type', 'typeName'], helpers) || fallbackType,
+    type: resolvedType,
     region: qualityHelpers.getAreaValues(raw)?.[0] || context.area || '',
     city: getFirst(raw, ['city', 'location.city', 'address.city'], helpers) || context.city || '',
     category: qualityHelpers.getCategoryValues(raw)?.[0] || '',
