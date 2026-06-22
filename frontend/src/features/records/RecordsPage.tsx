@@ -8,6 +8,7 @@ import { loadRecordsForFrontend, requestRecordMailDraftFrontend } from './record
 import type { RecordRow, RecordSearchMeta } from './records-types';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+const RECORD_LIST_STATE_KEY = 'satourn.frontend.recordListState';
 const QUICK_FILTERS = [
   { id: 'license_missing', label: 'Ohne Lizenz' },
   { id: 'description_missing', label: 'Ohne Beschreibung' },
@@ -107,6 +108,25 @@ function buildRecordsCsv(rows: RecordRow[]) {
   return [header, ...body].map((line) => line.map(csvValue).join(';')).join('\n');
 }
 
+function saveRecordListState(rows: RecordRow[]) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.sessionStorage.setItem(RECORD_LIST_STATE_KEY, JSON.stringify({
+      backUrl: '/records',
+      rows: rows.map((row) => ({
+        id: row.id,
+        globalId: row.globalId,
+        type: row.type,
+        title: row.title,
+        detailUrl: row.detailUrl
+      }))
+    }));
+  } catch {
+    // sessionStorage is an optional navigation enhancement.
+  }
+}
+
 export function RecordsPage() {
   const { context, setContext } = useContextStore();
   const [query, setQuery] = useState('');
@@ -199,6 +219,7 @@ export function RecordsPage() {
         context,
         selectedType: context.type
       });
+      saveRecordListState(result.rows);
       setRows(result.rows);
       setMeta(result.meta);
       setCategoryFilter('');

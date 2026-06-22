@@ -44,6 +44,7 @@ Aktueller Stand:
 - zentraler Arbeitskontext-Dialog steht im React-Shell-Pfad
 - Runtime-API-Konfiguration steht
 - HTTP-Client-Basis steht
+- gemeinsame Feldnormalisierung für Datensatzliste und Detailseite steht unter `frontend/src/shared/records/record-fields.ts`
 - Platzhalterseiten für alle aktuellen Fachbereiche stehen
 - `Datensätze` ist die erste fachliche Pilotseite
 
@@ -61,10 +62,21 @@ Die Records-Pilotseite kann aktuell:
 - Mailentwurf über `/api/oi/mail-draft`
 - vollständiges Zurücksetzen des AI-Search-Modus über `Filter zurücksetzen`
 
+Die neue React-Detailseite kann aktuell:
+
+- Datensatz per `id` oder `global_id` über `/api/records/by-global-ids` laden
+- Qualitätsstatus und Score mit dem bestehenden Qualitätsmodell auswerten
+- wichtigste Pflegepunkte, Identität, Kontakt-/Pflegeangaben und Kriterienstatus anzeigen
+- Live-nahe Aktionszeile mit Zurücklink, et4-Link und Website-Link anzeigen
+- Vorher/Nächster-Navigation aus dem letzten Records-Listenstand anbieten
+- ID, `global_id` und aktuellen Detail-Link kopieren
+- Beschreibung, Medien, Öffnungszeiten, ÖPNV-Anreise und Preisinfo anzeigen
+- einen begrenzten Rohdaten-Auszug für technische Kontrolle darstellen
+
 Noch nicht umgesetzt:
 
 - vollständige 1:1-Funktionalität der Live-Datensatzseite
-- vollständige Detailseite in React
+- vollständige Detailseite in React auf Live-Niveau, insbesondere weitere Live-spezifische Detailauswertungen
 - Autocomplete im neuen Frontend
 - Feinschliff am Arbeitskontext-Dialog auf vollständiges Live-Niveau
 - fachliche Migration der übrigen Produktseiten
@@ -123,6 +135,10 @@ Wichtige Produktentscheidung:
 - React-Shell auf Live-nahe Header-, Sidebar-, Logo- und Tabellenstruktur umgestellt
 - Schnellfilter, CSV-Export und AI-Search-Reset in der Records-Pilotseite ergänzt
 - Arbeitskontext-Dialog in die React-Shell verlagert und Inline-Gebiets-/Ortfilter aus der Records-Seite entfernt
+- React-Detailseite um Aktionszeile, Beschreibung, Medien, Öffnungszeiten, ÖPNV-Anreise und Preisinfo erweitert
+- Records-Pilot speichert den letzten Listenstand für die Detailnavigation
+- React-Detailseite um Vorher/Nächster-Navigation und Kopieraktionen erweitert
+- Feldzugriffe aus Records- und Detailseite in ein gemeinsames Shared-Modul verschoben
 - aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung
@@ -130,4 +146,5 @@ Wichtige Produktentscheidung:
 - `scripts.js` bleibt vorerst Orchestrator des Bestandsfrontends
 - neue Fachlogik soll nicht mehr direkt in `scripts.js` landen
 - das neue `frontend/` ist der Migrationspfad
+- wiederverwendbare Feldnormalisierung liegt im neuen Frontend unter `shared/records`
 - Umschaltung erfolgt später seitenweise und nur nach visueller und fachlicher Abnahme

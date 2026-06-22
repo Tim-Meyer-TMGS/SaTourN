@@ -9,4 +9,5 @@ declare module '../../../../Statistik/quality.js' {
   }>;
 
   export function evaluateAllItems(items: unknown[]): unknown[];
+  export function evaluateQualityForItem(item: unknown): Record<string, unknown>;
 }
