@@ -11,5 +11,5 @@ export type QualityCriterion = {
   recommendation?: string;
 };
 
-export const qualityCriteria = legacyQualityCriteria as QualityCriterion[];
+export const qualityCriteria = legacyQualityCriteria as readonly QualityCriterion[];
 export const evaluateAllItems = legacyEvaluateAllItems as (items: unknown[]) => unknown[];
