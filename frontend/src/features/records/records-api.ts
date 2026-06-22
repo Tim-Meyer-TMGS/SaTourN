@@ -1,8 +1,7 @@
-import { evaluateAllItems, qualityCriteria } from '../../../../Statistik/quality.js';
-
 import { fetchJson } from '../../shared/api/http-client';
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
+import { evaluateAllItems, qualityCriteria } from '../../shared/legacy/quality';
 import type { WorkContext } from '../../shared/types/context';
 import type { RecordRow, RecordSearchMeta } from './records-types';
 
@@ -24,6 +23,11 @@ type AiSearchPayload = {
 
 type ResolvedPayload = {
   items?: Array<{ raw?: unknown; _resolvedType?: string; type?: string } | unknown>;
+};
+
+type SearchResult = {
+  items: Record<string, unknown>[];
+  meta: RecordSearchMeta;
 };
 
 const RECORD_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'] as const;
@@ -99,13 +103,13 @@ function getFirst(raw: unknown, paths: string[]) {
 
 function getCategory(raw: unknown) {
   const categories = getNestedValue(raw, 'categories');
-  if (Array.isArray(categories)) return categories.map((entry) => textValue(entry)).find(Boolean) || '';
+  if (Array.isArray(categories)) return (categories as unknown[]).map((entry) => textValue(entry)).find(Boolean) || '';
   return textValue(categories);
 }
 
 function getArea(raw: unknown, fallbackArea: string) {
   const areas = getNestedValue(raw, 'areas');
-  if (Array.isArray(areas)) return areas.map((entry) => textValue(entry)).find(Boolean) || fallbackArea;
+  if (Array.isArray(areas)) return (areas as unknown[]).map((entry) => textValue(entry)).find(Boolean) || fallbackArea;
   return textValue(areas) || fallbackArea;
 }
 
@@ -245,7 +249,7 @@ async function executeTextSearch(query: string, context: WorkContext, selectedTy
   const combinedQuery = [contextQuery, termQuery].filter(Boolean).join(' AND ');
   const perTypeLimit = selectedType ? 40 : 15;
 
-  const payloads = await Promise.all(targetTypes.map(async (type) => {
+  const payloads = await Promise.all(targetTypes.map(async (type): Promise<{ items: Record<string, unknown>[]; total: number }> => {
     try {
       const payload = await fetchJson<SearchPayload>(
         buildSearchApiUrl(runtime.searchApiBase, type, combinedQuery, { limit: perTypeLimit })
@@ -273,7 +277,7 @@ async function executeTextSearch(query: string, context: WorkContext, selectedTy
   };
 }
 
-async function loadAiSearch(prompt: string, context: WorkContext, selectedType: string) {
+async function loadAiSearch(prompt: string, context: WorkContext, selectedType: string): Promise<SearchResult> {
   const runtime = getRuntimeConfig();
   const aiPayload = await fetchJson<AiSearchPayload>(runtime.oiSearchApiBase, {
     method: 'POST',
@@ -318,7 +322,7 @@ async function loadAiSearch(prompt: string, context: WorkContext, selectedType: 
   });
 
   const resolvedItems = Array.isArray(resolvedPayload.items) ? resolvedPayload.items : [];
-  const normalized = resolvedItems.map((entry) => {
+  const normalized = resolvedItems.map((entry: ResolvedPayload['items'][number]) => {
     if (entry && typeof entry === 'object' && 'raw' in entry) {
       const resolvedEntry = entry as { raw?: unknown; _resolvedType?: string; type?: string };
       return normalizeSearchItem(
