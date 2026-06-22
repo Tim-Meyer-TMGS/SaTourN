@@ -38,6 +38,18 @@ jobs:
           source: ./
           destination: ./_site
 
+      - name: Set up Node for frontend preview
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build frontend preview
+        run: |
+          npm install --prefix frontend
+          npm run --prefix frontend build
+          mkdir -p _site/frontend-preview
+          cp -R frontend/dist/. _site/frontend-preview/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 

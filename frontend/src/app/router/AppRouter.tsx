@@ -8,9 +8,13 @@ import { RecordsPage } from '../../features/records/RecordsPage';
 import { StatsPage } from '../../features/stats/StatsPage';
 import { TasksPage } from '../../features/tasks/TasksPage';
 
+const routerBaseName = import.meta.env.BASE_URL === '/'
+  ? '/'
+  : import.meta.env.BASE_URL.replace(/\/$/, '');
+
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBaseName}>
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<OverviewPage />} />

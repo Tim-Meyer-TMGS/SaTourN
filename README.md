@@ -22,6 +22,23 @@ Destination.One-Links, Datenprüfung und Kategorien-Bearbeitung.
 - `deepl-checker/`
   separates Testprojekt für DeepL-Glossare
 
+## GitHub Pages
+
+Produktive Statistik:
+
+```text
+https://tim-meyer-tmgs.github.io/SaTourN/Statistik/index.html
+```
+
+Framework-Preview:
+
+```text
+https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/
+```
+
+Die Framework-Preview wird im GitHub-Pages-Workflow zusätzlich gebaut und ersetzt
+die produktive Statistik nicht.
+
 ## Secrets und Umgebungsvariablen
 
 Der Proxy akzeptiert die Secret-Namen aus dem GitHub-/Render-Setup:

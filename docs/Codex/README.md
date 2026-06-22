@@ -22,6 +22,9 @@ Diese beiden Dateien zuerst lesen:
 - `Datenqualitaetsmonitor_Frontend_Migrationsplan.md`
   konkrete Zielarchitektur für `React + Vite + TypeScript`, Migrationsreihenfolge,
   Frontend-Grenzen und Pilotmigration.
+- `GitHub_Pages_Frontend_Preview.md`
+  Einrichtung und Test-URL für die parallele GitHub-Pages-Preview des neuen
+  React-Frontends.
 - `Datenqualitaetsmonitor_Pflegeaufgaben_je_Datentyp.md`
   Übersicht, welche Pflegeaufgaben pro Datentyp fachlich vorkommen können.
 - `one_intelligence_Kontext_und_Fehlerbilder.md`
