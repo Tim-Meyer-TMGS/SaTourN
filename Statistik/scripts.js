@@ -326,6 +326,7 @@ import {
   syncConsentControls as syncConsentControlsPageModel
 } from './core/consent-ui.js';
 import {
+  contextAreaLabel as contextAreaLabelModel,
   fillContextControls as fillContextControlsModel,
   initSharedShell as initSharedShellModel,
   initializePage as initializePageModel,
@@ -1651,7 +1652,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderRecordsLoading,
       closeRecordAiSearchDialog,
       getErrorMessage,
-      contextAreaLabel,
+      contextAreaLabel: () => contextAreaLabelModel(state.context.area, AREAS),
       showRecordsMessage,
       selectedType: () => els.recordTypeFilter?.value || state.context.type || '',
       runAiRecordSearch: ({ prompt, context }) => runAiRecordSearch({

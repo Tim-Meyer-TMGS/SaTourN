@@ -11,8 +11,7 @@ export function buildRecordViewModel({
   getRecordThumbnailUrl,
   buildRecordViewModelModel
 }) {
-  return buildRecordViewModelModel({
-    item,
+  return buildRecordViewModelModel(item, {
     extractId,
     getFirst,
     getRecordEmail,
