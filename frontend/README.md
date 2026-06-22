@@ -33,9 +33,12 @@ unberührt.
 - React-/Vite-/TypeScript-Grundgerüst angelegt
 - Router, Shell, Arbeitskontext-Store und API-Basis angelegt
 - erste Records-Pilotseite mit Suche, KI-Suche, Qualitätsbewertung und Mailentwurf
+- erste React-Detailseite mit Datensatzauflösung, Qualitätsbewertung, Detailfeldern und Listen-Navigation
+- gemeinsame Feldnormalisierung unter `src/shared/records/record-fields.ts`
 - weitere Seiten noch als Platzhalter oder Teilmigration
 
 ## Nächster Umsetzungsschritt
 
-Die Records-Pilotseite wird weiter stabilisiert, danach folgt die Detailseite
-als nächste Framework-Seite.
+Records- und Detailseite werden weiter gegen die Live-Seiten abgeglichen.
+Neue Feldzugriffe sollen über `src/shared/records/record-fields.ts` laufen,
+damit Listen- und Detailansicht dieselbe Normalisierung nutzen.

@@ -2,6 +2,15 @@ import { fetchJson } from '../../shared/api/http-client';
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
 import { evaluateAllItems, qualityCriteria } from '../../shared/legacy/quality';
+import {
+  buildRecordDetailUrl,
+  extractRecordId,
+  getFirst,
+  getRecordArea,
+  getRecordCategory,
+  getRecordEmail,
+  getRecordWeb
+} from '../../shared/records/record-fields';
 import type { WorkContext } from '../../shared/types/context';
 import type { RecordRow, RecordSearchMeta } from './records-types';
 
@@ -59,96 +68,19 @@ function extractTotal(payload: SearchPayload | null | undefined, fallbackLength:
   return Number.isFinite(total) ? total : fallbackLength;
 }
 
-function extractId(raw: unknown) {
-  if (!raw || typeof raw !== 'object') return '';
-  const item = raw as Record<string, unknown>;
-  return String(item.id ?? item.ID ?? item.Id ?? '');
-}
-
-function getNestedValue(source: unknown, path: string): unknown {
-  if (!source || !path) return null;
-
-  return path
-    .replace(/\[(\w+)\]/g, '.$1')
-    .split('.')
-    .filter(Boolean)
-    .reduce<unknown>((current, segment) => {
-      if (!current || typeof current !== 'object') return null;
-      return (current as Record<string, unknown>)[segment] ?? null;
-    }, source);
-}
-
-function textValue(value: unknown): string {
-  if (value == null) return '';
-  if (Array.isArray(value)) return value.map(textValue).find(Boolean) || '';
-  if (typeof value === 'object') {
-    const candidate = value as Record<string, unknown>;
-    return (
-      textValue(candidate.title)
-      || textValue(candidate.name)
-      || textValue(candidate.label)
-      || textValue(candidate.value)
-      || textValue(candidate.text)
-      || ''
-    );
-  }
-  return String(value).trim();
-}
-
-function getFirst(raw: unknown, paths: string[]) {
-  for (const path of paths) {
-    const text = textValue(getNestedValue(raw, path));
-    if (text) return text;
-  }
-  return '';
-}
-
-function getCategory(raw: unknown) {
-  const categories = getNestedValue(raw, 'categories');
-  if (Array.isArray(categories)) return (categories as unknown[]).map((entry) => textValue(entry)).find(Boolean) || '';
-  return textValue(categories);
-}
-
-function getArea(raw: unknown, fallbackArea: string) {
-  const areas = getNestedValue(raw, 'areas');
-  if (Array.isArray(areas)) return (areas as unknown[]).map((entry) => textValue(entry)).find(Boolean) || fallbackArea;
-  return textValue(areas) || fallbackArea;
-}
-
-function getRecordEmail(raw: unknown) {
-  return getFirst(raw, ['email', 'emailRequest', 'address.email', 'addresses.email', 'addresses_mail.email']);
-}
-
-function getRecordWeb(raw: unknown) {
-  return getFirst(raw, ['web', 'url', 'website', 'address.web', 'addresses.web']);
-}
-
-function buildRecordDetailUrl(item: { type?: unknown; globalId?: unknown; id?: unknown }) {
-  const params = new URLSearchParams();
-  const type = String(item.type || '');
-  const globalId = String(item.globalId || '');
-  const id = String(item.id || '');
-
-  if (type) params.set('type', type);
-  if (globalId) params.set('global_id', globalId);
-  else if (id) params.set('id', id);
-
-  return `/record-detail?${params.toString()}`;
-}
-
 function normalizeSearchItem(raw: unknown, fallbackType: string, context: WorkContext) {
   const globalId = getFirst(raw, ['global_id', 'globalId']);
   const resolvedType = fallbackType || getFirst(raw, ['type', 'typeName']);
 
   return {
     raw,
-    id: extractId(raw),
+    id: extractRecordId(raw),
     globalId,
     title: getFirst(raw, ['title', 'name', 'presentation.title']) || 'Ohne Titel',
     type: resolvedType,
-    region: getArea(raw, context.area),
+    region: getRecordArea(raw, context.area),
     city: getFirst(raw, ['city', 'location.city', 'address.city']) || context.city || '',
-    category: getCategory(raw),
+    category: getRecordCategory(raw),
     updatedAt: getFirst(raw, ['updatedAt', 'lastModified', 'modified', 'changeDate']),
     qualityScore: null,
     qualityStatus: '',
