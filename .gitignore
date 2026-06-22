@@ -1,3 +1,4 @@
 node_modules/
 .env
 KG-Finder/config.js
+frontend-preview/
