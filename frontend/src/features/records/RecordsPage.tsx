@@ -7,7 +7,7 @@ import { useContextStore } from '../../shared/state/context-store';
 import { loadRecordsForFrontend, requestRecordMailDraftFrontend } from './records-api';
 import type { RecordRow, RecordSearchMeta } from './records-types';
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 function buildMailtoUrl(payload: {
   to: string;
@@ -40,6 +40,13 @@ function launchMailto(mailtoUrl: string) {
   return true;
 }
 
+function getStatusClass(status: string) {
+  if (status === 'gut') return 'good';
+  if (status === 'kritisch') return 'critical';
+  if (status === 'pruefen' || status === 'prüfen') return 'review';
+  return 'muted';
+}
+
 export function RecordsPage() {
   const { context, setContext } = useContextStore();
   const [query, setQuery] = useState('');
@@ -52,7 +59,6 @@ export function RecordsPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [issueFilter, setIssueFilter] = useState('');
   const [page, setPage] = useState(1);
@@ -64,7 +70,7 @@ export function RecordsPage() {
     if (error) return error;
     if (meta.mode === 'ai_search' && meta.prompt) return `KI-Suche: ${rows.length} Datensätze geladen`;
     if (!rows.length) return 'Noch keine Datensätze geladen.';
-    const extra = meta.truncated ? ' – Ergebnisliste gekürzt' : '';
+    const extra = meta.truncated ? ' - Ergebnisliste gekürzt' : '';
     return `${rows.length} Datensätze geladen${extra}`;
   }, [error, loading, meta, rows.length]);
 
@@ -84,12 +90,11 @@ export function RecordsPage() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       if (context.type && row.type !== context.type) return false;
-      if (statusFilter && row.qualityStatus !== statusFilter) return false;
       if (categoryFilter && row.category !== categoryFilter) return false;
       if (issueFilter && !row.missingCriteria.includes(issueFilter)) return false;
       return true;
     });
-  }, [categoryFilter, context.type, issueFilter, rows, statusFilter]);
+  }, [categoryFilter, context.type, issueFilter, rows]);
 
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -103,7 +108,7 @@ export function RecordsPage() {
     if (!filteredRows.length) return '0 Datensätze';
     const startIndex = (currentPage - 1) * pageSize + 1;
     const endIndex = Math.min(filteredRows.length, currentPage * pageSize);
-    return `${startIndex}–${endIndex} von ${filteredRows.length}`;
+    return `${startIndex}-${endIndex} von ${filteredRows.length}`;
   }, [currentPage, filteredRows.length, pageSize]);
 
   async function handleSubmit(nextMode: 'search' | 'ai_search') {
@@ -173,199 +178,125 @@ export function RecordsPage() {
   }
 
   function resetFilters() {
-    setStatusFilter('');
     setCategoryFilter('');
     setIssueFilter('');
     setPage(1);
   }
 
   return (
-    <section className="content-panel">
-      <header className="panel-header">
-        <div>
-          <h1>Datensätze</h1>
-          <p>Erste Pilotseite für Suche, KI-Suche, Kontextbezug, Filter, Paging und Ergebnislisten gegen den bestehenden Proxy.</p>
-        </div>
-        <span className="status-chip">Pilotseite</span>
-      </header>
+    <>
+      <section className="overview-hero">
+        <h1>Datensätze</h1>
+        <p>Suche und prüfe einzelne Datensätze oder arbeite gefilterte Listen ab.</p>
+      </section>
 
-      <div className="records-grid">
-        <section className="placeholder-block">
-          <h2>Arbeitskontext</h2>
-
-          <div className="form-grid">
-            <label className="field-block">
-              <span>Gebiet</span>
-              <select
-                value={context.area}
-                onChange={(event) => setContext({ area: event.target.value })}
-              >
-                {AREAS.map(([label, value]) => (
-                  <option key={value || 'all'} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field-block">
-              <span>Ort</span>
-              <input
-                type="text"
-                value={context.city}
-                placeholder="Alle Orte"
-                onChange={(event) => setContext({ city: event.target.value })}
-              />
-            </label>
-
-            <label className="field-block">
-              <span>Datentyp</span>
-              <select
-                value={context.type}
-                onChange={(event) => setContext({ type: event.target.value as typeof context.type })}
-              >
-                <option value="">Alle Datentypen</option>
-                {DATA_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section className="placeholder-block">
-          <h2>Suche</h2>
-          <div className="form-grid single-column">
-            <label className="field-block">
-              <span>{mode === 'ai_search' ? 'KI-Suchanfrage' : 'Suchanfrage'}</span>
-              <textarea
-                rows={mode === 'ai_search' ? 4 : 2}
-                value={query}
-                placeholder={mode === 'ai_search'
-                  ? 'z. B. Museen in Sachsen oder Wanderwege mit Hund'
-                  : 'Titel, ID, global_id, Ort, Kategorie oder Problem'}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
-
-            <div className="button-row">
-              <button
-                type="button"
-                className="action-button primary"
-                onClick={() => void handleSubmit('search')}
-                disabled={loading}
-              >
-                {loading && mode === 'search' ? 'Suche läuft ...' : 'Suchen'}
-              </button>
-              <button
-                type="button"
-                className="action-button secondary"
-                onClick={() => void handleSubmit('ai_search')}
-                disabled={loading}
-              >
-                {loading && mode === 'ai_search' ? 'KI-Suche läuft ...' : 'AI-Search'}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="placeholder-block">
-          <h2>Filter und Seite</h2>
-          <div className="form-grid">
-            <label className="field-block">
-              <span>Status</span>
-              <select
-                value={statusFilter}
-                onChange={(event) => {
-                  setStatusFilter(event.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="">Alle Status</option>
-                <option value="gut">Gut</option>
-                <option value="pruefen">Prüfen</option>
-                <option value="kritisch">Kritisch</option>
-                <option value="nicht berechenbar">Nicht berechenbar</option>
-              </select>
-            </label>
-
-            <label className="field-block">
-              <span>Kategorie</span>
-              <select
-                value={categoryFilter}
-                onChange={(event) => {
-                  setCategoryFilter(event.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="">Alle Kategorien</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field-block">
-              <span>Problem</span>
-              <select
-                value={issueFilter}
-                onChange={(event) => {
-                  setIssueFilter(event.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="">Alle Probleme</option>
-                {issues.map((issue) => (
-                  <option key={issue.id} value={issue.id}>
-                    {issue.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field-block">
-              <span>Pro Seite</span>
-              <select
-                value={pageSize}
-                onChange={(event) => {
-                  setPageSize(Number(event.target.value));
-                  setPage(1);
-                }}
-              >
-                {PAGE_SIZE_OPTIONS.map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="button-row">
-            <button type="button" className="action-button secondary" onClick={resetFilters}>
-              Filter zurücksetzen
+      <section className="record-filter-card" aria-label="Datensätze suchen und filtern">
+        <div className="record-search-block">
+          <label className="record-search-field">
+            <span className="sr-only">Datensatz suchen</span>
+            <input
+              type="search"
+              value={query}
+              placeholder="Suche nach Titel, ID, global_id, Ort, Kategorie oder Problem ..."
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void handleSubmit('search');
+              }}
+            />
+          </label>
+          <div className="record-search-actions">
+            <button className="context-edit" type="button" disabled={loading} onClick={() => void handleSubmit('search')}>
+              {loading && mode === 'search' ? 'Sucht ...' : 'Suchen'}
+            </button>
+            <button className="plain-button icon-text-button" type="button" disabled={loading} onClick={() => void handleSubmit('ai_search')}>
+              <span className="material-icons" aria-hidden="true">auto_awesome</span>
+              {loading && mode === 'ai_search' ? 'KI sucht ...' : 'AI-Search'}
             </button>
           </div>
-        </section>
-      </div>
-
-      <section className="records-results">
-        <div className="records-toolbar">
-          <strong>{resultSummary}</strong>
-          <div className="toolbar-meta">
-            <span className="page-range-text">{pageRangeText}</span>
-            {meta.mode === 'ai_search' && meta.prompt ? (
-              <span className="status-chip subtle">KI-Suche aktiv: {meta.prompt}</span>
-            ) : null}
-          </div>
+          <small>Du kannst auch direkt eine ID oder global_id eingeben.</small>
         </div>
 
-        <div className="table-wrap">
-          <table className="records-table">
+        <label>
+          <span>Gebiet</span>
+          <select value={context.area} onChange={(event) => setContext({ area: event.target.value })}>
+            {AREAS.map(([label, value]) => (
+              <option key={value || 'all'} value={value}>{label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Ort</span>
+          <input
+            type="text"
+            value={context.city}
+            placeholder="Alle Orte"
+            onChange={(event) => setContext({ city: event.target.value })}
+          />
+        </label>
+
+        <label>
+          <span>Typ</span>
+          <select value={context.type} onChange={(event) => setContext({ type: event.target.value as typeof context.type })}>
+            <option value="">Typ: Alle</option>
+            {DATA_TYPES.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Kategorie</span>
+          <select value={categoryFilter} onChange={(event) => {
+            setCategoryFilter(event.target.value);
+            setPage(1);
+          }}>
+            <option value="">Kategorie: Alle</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Problem / Kriterium</span>
+          <select value={issueFilter} onChange={(event) => {
+            setIssueFilter(event.target.value);
+            setPage(1);
+          }}>
+            <option value="">Problem / Kriterium: Alle</option>
+            {issues.map((issue) => (
+              <option key={issue.id} value={issue.id}>{issue.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <button className="plain-button" type="button" onClick={resetFilters}>
+          Filter zurücksetzen
+        </button>
+
+        {meta.mode === 'ai_search' && meta.prompt ? (
+          <div className="overview-message record-mode-message">
+            KI-Suche aktiv: {meta.prompt}
+          </div>
+        ) : null}
+      </section>
+
+      {error ? <div className="overview-message">{error}</div> : null}
+
+      <section className="record-result-head">
+        <p>{resultSummary}</p>
+        <div className="record-actions">
+          <button className="context-edit icon-text-button" type="button" disabled>
+            <span className="material-icons" aria-hidden="true">file_download</span>
+            CSV exportieren
+          </button>
+        </div>
+      </section>
+
+      <section className="panel-card records-table-card">
+        <div className="tasks-table-wrap">
+          <table className="records-main-table">
             <thead>
               <tr>
                 <th>Titel</th>
@@ -375,14 +306,15 @@ export function RecordsPage() {
                 <th>Status</th>
                 <th>Score</th>
                 <th>Hauptproblem</th>
+                <th>Aktualisiert</th>
                 <th>Aktionen</th>
               </tr>
             </thead>
             <tbody>
               {!pagedRows.length ? (
                 <tr>
-                  <td colSpan={8} className="table-empty">
-                    {loading ? 'Datensätze werden geladen ...' : 'Keine Datensätze geladen.'}
+                  <td colSpan={9} className="table-empty">
+                    {loading ? <span className="loading-line">Datensätze werden geladen ...</span> : 'Keine Datensätze geladen.'}
                   </td>
                 </tr>
               ) : pagedRows.map((row) => (
@@ -391,13 +323,19 @@ export function RecordsPage() {
                     <Link className="table-title-link" to={row.detailUrl}>
                       {row.title}
                     </Link>
+                    <small>{row.globalId || row.id}</small>
                   </td>
                   <td>{row.type || '-'}</td>
                   <td>{[row.city, row.region].filter(Boolean).join(' / ') || '-'}</td>
                   <td>{row.category || '-'}</td>
-                  <td>{row.qualityStatus || 'nicht berechenbar'}</td>
+                  <td>
+                    <span className={`status-badge ${getStatusClass(row.qualityStatus)}`}>
+                      {row.qualityStatus || 'nicht berechenbar'}
+                    </span>
+                  </td>
                   <td>{row.qualityScore ?? '-'}</td>
                   <td>{row.primaryIssue || '-'}</td>
+                  <td>{row.updatedAt || '-'}</td>
                   <td>
                     <div className="table-actions">
                       <Link className="table-link-button" to={row.detailUrl}>
@@ -418,29 +356,30 @@ export function RecordsPage() {
             </tbody>
           </table>
         </div>
-
-        <div className="pagination-bar">
-          <button
-            type="button"
-            className="action-button secondary"
-            disabled={currentPage <= 1}
-            onClick={() => setPage((value) => Math.max(1, value - 1))}
-          >
-            Zurück
-          </button>
-          <span className="page-status">
-            Seite {currentPage} / {pageCount}
-          </span>
-          <button
-            type="button"
-            className="action-button secondary"
-            disabled={currentPage >= pageCount}
-            onClick={() => setPage((value) => Math.min(pageCount, value + 1))}
-          >
-            Weiter
-          </button>
-        </div>
+        <footer className="table-footer record-table-footer">
+          <span>{pageRangeText}</span>
+          <label>
+            <span className="sr-only">Datensätze pro Seite</span>
+            <select value={pageSize} onChange={(event) => {
+              setPageSize(Number(event.target.value));
+              setPage(1);
+            }}>
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>{size} pro Seite</option>
+              ))}
+            </select>
+          </label>
+          <div className="pager" aria-label="Datensatz Seiten">
+            <button className="icon-button" type="button" aria-label="Vorherige Seite" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+              <span className="material-icons" aria-hidden="true">chevron_left</span>
+            </button>
+            <span>{currentPage} / {pageCount}</span>
+            <button className="icon-button" type="button" aria-label="Nächste Seite" disabled={currentPage >= pageCount} onClick={() => setPage((value) => Math.min(pageCount, value + 1))}>
+              <span className="material-icons" aria-hidden="true">chevron_right</span>
+            </button>
+          </div>
+        </footer>
       </section>
-    </section>
+    </>
   );
 }

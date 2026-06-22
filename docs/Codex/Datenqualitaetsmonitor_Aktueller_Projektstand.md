@@ -1,4 +1,4 @@
-# Datenqualitätsmonitor – Aktueller Projektstand
+# Datenqualitätsmonitor - Aktueller Projektstand
 
 Stand: 2026-06-22
 
@@ -8,9 +8,13 @@ Stand: 2026-06-22
 Geschützte oder modellgestützte Zugriffe laufen serverseitig über den
 Render-Proxy. Secrets liegen nicht im Frontend.
 
-Parallel wurde jetzt ein neues Frontend-Grundgerüst unter `frontend/` angelegt.
-Es dient als Migrationspfad für `React + Vite + TypeScript`, ohne den
-laufenden Produktstand zu gefährden.
+Parallel existiert ein neues Frontend unter `frontend/`. Es dient als
+Migrationspfad für `React + Vite + TypeScript`, ohne den laufenden Produktstand
+zu gefährden. Die GitHub-Pages-Preview läuft getrennt unter:
+
+```text
+https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/
+```
 
 ## Aktive Seiten im Bestandsfrontend
 
@@ -27,43 +31,39 @@ laufenden Produktstand zu gefährden.
 - `Statistik/help.html`
   reduzierte Hilfeseite für Score, Datentypen und Pflegeverständnis
 
-## Neues Frontend-Gerüst
+## Neues Frontend
 
-Neu angelegt:
-
-- `frontend/package.json`
-- `frontend/vite.config.ts`
-- `frontend/src/app/`
-- `frontend/src/features/`
-- `frontend/src/shared/`
-- `frontend/src/styles/`
-
-Aktueller Stand des neuen Frontends:
+Aktueller Stand:
 
 - React-/Vite-/TypeScript-Basis steht
 - Router steht
-- Shell und Navigation stehen
+- GitHub-Pages-Preview ist eingerichtet
+- Shell und Navigation sind an das bestehende Live-Design angenähert
+- SaTourN-Logo, Arbeitskontext-Leiste, Sidebar, Kartenstil und Tabellenstil sind im Preview-CSS abgebildet
 - Arbeitskontext-Store steht
 - Runtime-API-Konfiguration steht
 - HTTP-Client-Basis steht
 - Platzhalterseiten für alle aktuellen Fachbereiche stehen
-- `Datensätze` hat bereits eine erste echte Pilotimplementierung mit:
-  - Arbeitskontext-Steuerung
-  - Suche gegen `/api/search`
-  - KI-Suche gegen `/api/oi/search-records`
-  - ID-Auflösung über `/api/records/by-global-ids`
-  - clientseitiger Qualitätsauswertung auf Basis des bestehenden Qualitätsmodells
-  - lokalen Filtern für Status, Kategorie und Problem
-  - Paginierung im Frontend
-  - Detailverlinkung im neuen Routing
-  - Mailentwurf über `/api/oi/mail-draft`
+- `Datensätze` ist die erste fachliche Pilotseite
+
+Die Records-Pilotseite kann aktuell:
+
+- Suche gegen `/api/search`
+- KI-Suche gegen `/api/oi/search-records`
+- ID-Auflösung über `/api/records/by-global-ids`
+- clientseitige Qualitätsauswertung auf Basis des bestehenden Qualitätsmodells
+- lokale Filter für Kategorie und Problem
+- Paginierung im Frontend
+- Detailverlinkung im neuen Routing
+- Mailentwurf über `/api/oi/mail-draft`
 
 Noch nicht umgesetzt:
 
-- fachliche Migration der übrigen Produktseiten
-- vollständige Übernahme der Detailseite in React
-- UI-Feinschliff auf 1:1-Produktniveau des bestehenden Frontends
+- vollständige 1:1-Funktionalität der Live-Datensatzseite
+- vollständige Detailseite in React
 - Export, Schnellfilter und Autocomplete im neuen Frontend
+- echter Arbeitskontext-Dialog wie im Bestandsfrontend
+- fachliche Migration der übrigen Produktseiten
 
 ## Produktiver Betrieb
 
@@ -71,6 +71,7 @@ Noch nicht umgesetzt:
 - Render bleibt der produktive Node-/Express-Proxy
 - aktuell keine Cronjobs, keine produktiven Snapshots, kein serverseitiger Cache
 - ein kurzer Browser-In-Memory-Cache für wiederholte GET-Anfragen ist aktiv
+- die Framework-Preview ersetzt keine produktive URL
 
 ## Relevante API-Endpunkte
 
@@ -100,14 +101,6 @@ Wichtige Produktentscheidung:
 - produktiv funktioniert der direkte OI-Toolpfad mit
   `server:meta-open-data-sachsen-tourismus`
 
-## UI-Stand
-
-- Pflegeaufgaben mit `0` Treffern bleiben unsichtbar
-- Open-Data-Status wird binär dargestellt
-- Pflegeaufgaben springen korrekt auf `records.html`
-- Dropdown-Menüs wurden global an das übrige Design angepasst
-- Mailto-Links werden Outlook-tauglich als `%20`-kodierte URLs erzeugt
-
 ## Bewertungslogik
 
 - Ganz Sachsen zeigt keinen berechneten Qualitätsscore
@@ -116,50 +109,19 @@ Wichtige Produktentscheidung:
   sind nicht scorewirksam
 - generische Wildcard-Pushdowns bleiben fachlich ausgeschlossen
 - erste produktive POI-Ausschlusslogik ist zentral verankert
-- KI-Suchergebnisse werden wieder gegen die Prüfkriterien ausgewertet
-
-## Wichtige Dateien
-
-### Bestandsfrontend
-
-- `Statistik/scripts.js`
-- `Statistik/quality.js`
-- `Statistik/main.js`
-- `Statistik/core/`
-- `Statistik/overview/`
-- `Statistik/tasks/`
-- `Statistik/records/`
-- `Statistik/detail/`
-- `Statistik/stats/`
-- `Statistik/help/`
-
-### Neues Frontend
-
-- `frontend/src/app/`
-- `frontend/src/features/`
-- `frontend/src/shared/`
-- `frontend/src/styles/global.css`
-
-### Proxy
-
-- `routes/search.js`
-- `routes/quality.js`
-- `routes/records.js`
-- `routes/oi.js`
-- `lib/oi-config.js`
+- KI-Suchergebnisse werden gegen die Prüfkriterien ausgewertet
 
 ## Zuletzt umgesetzt
 
-- React-/Vite-/TypeScript-Frontend als paralleles Grundgerüst angelegt
-- Router, Shell, Runtime-Konfiguration und Context-Store vorbereitet
-- `Datensätze` als erste Pilotseite im neuen Frontend mit Suche, KI-Suche, Filtern, Paging und Mailentwurf erweitert
-- KI-Suche auf korrekten Qualitätsdurchlauf nach Typauflösung nachgezogen
-- OI-Timeouts für Suche und Mailentwurf erhöht
+- GitHub-Pages-Preview für das neue Frontend eingerichtet
+- Frontend-Build in den Pages-Workflow integriert, ohne `Statistik/` umzuschalten
+- Records-Pilotseite grafisch näher an das Live-Design gebracht
+- React-Shell auf Live-nahe Header-, Sidebar-, Logo- und Tabellenstruktur umgestellt
+- aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung
 
 - `scripts.js` bleibt vorerst Orchestrator des Bestandsfrontends
 - neue Fachlogik soll nicht mehr direkt in `scripts.js` landen
 - das neue `frontend/` ist der Migrationspfad
-- der nächste echte Umsetzungsschritt ist die fachliche Migration der Seite
-  `Datensätze`
+- Umschaltung erfolgt später seitenweise und nur nach visueller und fachlicher Abnahme
