@@ -24,7 +24,7 @@ export function PagePlaceholder({
       <div className="panel-body">
         <div className="placeholder-block">
           <h2>Aktueller Stand</h2>
-          <p>Diese Seite ist im neuen Frontend-Gerüst angelegt, aber fachlich noch nicht migriert.</p>
+          <p>Diese Seite ist im neuen Frontend-Grundgerüst angelegt, aber fachlich noch nicht migriert.</p>
         </div>
 
         <div className="placeholder-block">

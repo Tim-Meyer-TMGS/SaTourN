@@ -9,11 +9,11 @@ export function ContextSummary() {
   const context = useContextStore((state) => state.context);
 
   return (
-    <div className="context-summary">
-      <span className="context-label">Arbeitskontext:</span>
-      <strong>
+    <div className="work-context-bar">
+      <span>Arbeitskontext:</span>
+      <button className="context-summary" type="button">
         {getAreaLabel(context.area)} - {context.city || 'Alle Orte'} - {context.type || 'Alle Datentypen'}
-      </strong>
+      </button>
     </div>
   );
 }

@@ -3,44 +3,51 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { ContextSummary } from '../../shared/ui/ContextSummary';
 
 const navigationItems = [
-  { to: '/', label: 'Übersicht', end: true },
-  { to: '/tasks', label: 'Pflegeaufgaben' },
-  { to: '/records', label: 'Datensätze' },
-  { to: '/stats', label: 'Open-Data-Statistik' },
-  { to: '/help', label: 'Hilfe' }
+  { to: '/', label: 'Übersicht', icon: 'home', end: true },
+  { to: '/tasks', label: 'Pflegeaufgaben', icon: 'assignment' },
+  { to: '/records', label: 'Datensätze', icon: 'storage' },
+  { to: '/stats', label: 'Open-Data-Statistik', icon: 'bar_chart' },
+  { to: '/help', label: 'Hilfe', icon: 'help_outline' }
 ];
 
 export function AppShell() {
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div className="brand-block">
-          <div className="brand-badge" aria-hidden="true">S</div>
-          <div>
-            <div className="brand-title">SaTourN</div>
-            <div className="brand-subtitle">Datenqualitätsmonitor</div>
-          </div>
-        </div>
+    <div className="statistik light-shell">
+      <header className="app-header">
+        <NavLink className="brand" to="/" aria-label="SaTourN Datenqualitäts-Monitor">
+          <span className="brand-mark" aria-hidden="true" />
+          <span>
+            <strong>SaTourN</strong>
+            <small>Datenqualitäts-Monitor</small>
+          </span>
+        </NavLink>
+
         <ContextSummary />
+
+        <div className="header-status">
+          <button className="icon-button" type="button" aria-label="Daten aktualisieren">
+            <span className="material-icons" aria-hidden="true">refresh</span>
+          </button>
+          <span>Framework-Preview</span>
+        </div>
       </header>
 
-      <div className="layout-grid">
-        <aside className="sidebar">
-          <nav className="sidebar-nav" aria-label="Hauptnavigation">
-            {navigationItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </aside>
+      <div className="app-layout">
+        <nav className="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
+          {navigationItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+            >
+              <span className="material-icons" aria-hidden="true">{item.icon}</span>
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
 
-        <main className="page-content">
+        <main className="records-main">
           <Outlet />
         </main>
       </div>
