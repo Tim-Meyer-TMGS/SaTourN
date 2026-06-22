@@ -9,7 +9,7 @@ import {
   OI_MODEL_SEARCH
 } from '../lib/oi-config.js';
 
-const OI_TIMEOUT_MS = 30000;
+const OI_TIMEOUT_MS = 60000;
 const MAX_AI_SEARCH_RESULTS = 50;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;

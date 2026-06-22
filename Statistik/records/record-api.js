@@ -1,3 +1,7 @@
+const OI_SEARCH_TIMEOUT_MS = 60_000;
+const RECORD_RESOLVE_TIMEOUT_MS = 45_000;
+const OI_MAIL_TIMEOUT_MS = 45_000;
+
 export async function runAiRecordSearch({
   apiBase,
   fetchJson,
@@ -6,6 +10,7 @@ export async function runAiRecordSearch({
 }) {
   return fetchJson(apiBase, {
     method: 'POST',
+    timeout: OI_SEARCH_TIMEOUT_MS,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       prompt,
@@ -26,6 +31,7 @@ export async function resolveRecordsByIds({
 }) {
   return fetchJson(apiBase, {
     method: 'POST',
+    timeout: RECORD_RESOLVE_TIMEOUT_MS,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       ids,
@@ -41,6 +47,7 @@ export async function requestRecordMailDraft({
 }) {
   return fetchJson(apiBase, {
     method: 'POST',
+    timeout: OI_MAIL_TIMEOUT_MS,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
