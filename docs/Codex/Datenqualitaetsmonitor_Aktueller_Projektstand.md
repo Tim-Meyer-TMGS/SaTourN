@@ -53,15 +53,18 @@ Die Records-Pilotseite kann aktuell:
 - ID-Auflösung über `/api/records/by-global-ids`
 - clientseitige Qualitätsauswertung auf Basis des bestehenden Qualitätsmodells
 - lokale Filter für Kategorie und Problem
+- Schnellfilter für Lizenz, Beschreibung, Bilder und Öffnungszeiten
 - Paginierung im Frontend
+- CSV-Export der aktuell gefilterten Treffer
 - Detailverlinkung im neuen Routing
 - Mailentwurf über `/api/oi/mail-draft`
+- vollständiges Zurücksetzen des AI-Search-Modus über `Filter zurücksetzen`
 
 Noch nicht umgesetzt:
 
 - vollständige 1:1-Funktionalität der Live-Datensatzseite
 - vollständige Detailseite in React
-- Export, Schnellfilter und Autocomplete im neuen Frontend
+- Autocomplete im neuen Frontend
 - echter Arbeitskontext-Dialog wie im Bestandsfrontend
 - fachliche Migration der übrigen Produktseiten
 
@@ -117,6 +120,7 @@ Wichtige Produktentscheidung:
 - Frontend-Build in den Pages-Workflow integriert, ohne `Statistik/` umzuschalten
 - Records-Pilotseite grafisch näher an das Live-Design gebracht
 - React-Shell auf Live-nahe Header-, Sidebar-, Logo- und Tabellenstruktur umgestellt
+- Schnellfilter, CSV-Export und AI-Search-Reset in der Records-Pilotseite ergänzt
 - aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung

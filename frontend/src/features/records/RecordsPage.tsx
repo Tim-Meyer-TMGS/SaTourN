@@ -8,6 +8,12 @@ import { loadRecordsForFrontend, requestRecordMailDraftFrontend } from './record
 import type { RecordRow, RecordSearchMeta } from './records-types';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+const QUICK_FILTERS = [
+  { id: 'license_missing', label: 'Ohne Lizenz' },
+  { id: 'description_missing', label: 'Ohne Beschreibung' },
+  { id: 'image_missing', label: 'Ohne Bilder' },
+  { id: 'opening_hours_missing', label: 'Ohne Öffnungszeiten' }
+] as const;
 
 function buildMailtoUrl(payload: {
   to: string;
@@ -40,11 +46,65 @@ function launchMailto(mailtoUrl: string) {
   return true;
 }
 
+function downloadText(filename: string, text: string, mimeType: string) {
+  const blob = new Blob([text], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvValue(value: unknown) {
+  const text = String(value ?? '').replace(/\r?\n/g, ' ').trim();
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
 function getStatusClass(status: string) {
   if (status === 'gut') return 'good';
   if (status === 'kritisch') return 'critical';
   if (status === 'pruefen' || status === 'prüfen') return 'review';
   return 'muted';
+}
+
+function buildRecordsCsv(rows: RecordRow[]) {
+  const header = [
+    'Titel',
+    'Typ',
+    'Ort',
+    'Gebiet',
+    'Kategorie',
+    'Status',
+    'Score',
+    'Hauptproblem',
+    'Fehlende Kriterien',
+    'ID',
+    'global_id',
+    'E-Mail',
+    'Website'
+  ];
+
+  const body = rows.map((row) => [
+    row.title,
+    row.type,
+    row.city,
+    row.region,
+    row.category,
+    row.qualityStatus,
+    row.qualityScore ?? '',
+    row.primaryIssue,
+    row.missingCriteria.join(', '),
+    row.id,
+    row.globalId,
+    row.email,
+    row.web
+  ]);
+
+  return [header, ...body].map((line) => line.map(csvValue).join(';')).join('\n');
 }
 
 export function RecordsPage() {
@@ -96,6 +156,15 @@ export function RecordsPage() {
     });
   }, [categoryFilter, context.type, issueFilter, rows]);
 
+  const quickCounts = useMemo(() => {
+    return Object.fromEntries(
+      QUICK_FILTERS.map((filter) => [
+        filter.id,
+        rows.filter((row) => row.missingCriteria.includes(filter.id)).length
+      ])
+    ) as Record<(typeof QUICK_FILTERS)[number]['id'], number>;
+  }, [rows]);
+
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const currentPage = Math.min(page, pageCount);
 
@@ -132,6 +201,8 @@ export function RecordsPage() {
       });
       setRows(result.rows);
       setMeta(result.meta);
+      setCategoryFilter('');
+      setIssueFilter('');
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : 'Datensätze konnten nicht geladen werden.';
       setRows([]);
@@ -177,10 +248,32 @@ export function RecordsPage() {
     }
   }
 
+  function applyQuickFilter(criterionId: string) {
+    setIssueFilter((current) => current === criterionId ? '' : criterionId);
+    setPage(1);
+  }
+
   function resetFilters() {
     setCategoryFilter('');
     setIssueFilter('');
     setPage(1);
+
+    if (meta.mode === 'ai_search') {
+      setMode('search');
+      setMeta({
+        mode: 'idle',
+        estimatedTotalItems: 0,
+        truncated: false
+      });
+      setRows([]);
+      setQuery('');
+    }
+  }
+
+  function exportCsv() {
+    if (!filteredRows.length) return;
+    const csv = `\uFEFF${buildRecordsCsv(filteredRows)}`;
+    downloadText('satourn_datensaetze.csv', csv, 'text/csv;charset=utf-8');
   }
 
   return (
@@ -275,6 +368,21 @@ export function RecordsPage() {
           Filter zurücksetzen
         </button>
 
+        <div className="quick-filter-row" aria-label="Schnellfilter">
+          <strong>Schnellfilter:</strong>
+          {QUICK_FILTERS.map((filter) => (
+            <button
+              key={filter.id}
+              className={`quick-filter-button${issueFilter === filter.id ? ' active' : ''}`}
+              type="button"
+              disabled={!rows.length}
+              onClick={() => applyQuickFilter(filter.id)}
+            >
+              {filter.label} <span>{quickCounts[filter.id]}</span>
+            </button>
+          ))}
+        </div>
+
         {meta.mode === 'ai_search' && meta.prompt ? (
           <div className="overview-message record-mode-message">
             KI-Suche aktiv: {meta.prompt}
@@ -287,7 +395,7 @@ export function RecordsPage() {
       <section className="record-result-head">
         <p>{resultSummary}</p>
         <div className="record-actions">
-          <button className="context-edit icon-text-button" type="button" disabled>
+          <button className="context-edit icon-text-button" type="button" disabled={!filteredRows.length} onClick={exportCsv}>
             <span className="material-icons" aria-hidden="true">file_download</span>
             CSV exportieren
           </button>
