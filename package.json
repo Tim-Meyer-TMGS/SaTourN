@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "check": "node --check index.js && node --check lib/config.js && node --check lib/cache.js && node --check lib/search-utils.js && node --check routes/search.js && node --check routes/quality.js && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs",
+    "check": "node --check index.js && node --check lib/config.js && node --check lib/oi-config.js && node --check lib/cache.js && node --check lib/kv-store.js && node --check lib/quality-cache.js && node --check lib/search-utils.js && node --check routes/search.js && node --check routes/records.js && node --check routes/oi.js && node --check routes/quality.js && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs && node --check scripts/run-quality-snapshot.mjs",
     "diagnose:quality-examples": "node scripts/diagnose-quality-examples.mjs",
     "diagnose:quality-examples:json": "node scripts/diagnose-quality-examples.mjs --json",
+    "quality:snapshot": "node scripts/run-quality-snapshot.mjs",
     "update:pagesbuilder-json": "node Pages-Builder/scripts/update-pagesbuilder-json.mjs"
   },
   "dependencies": {

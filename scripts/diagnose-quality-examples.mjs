@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   evaluateQualityForItem,
   getCriteriaForType,
+  getDomainQualityModelSummary,
   getQualityScanConfig,
   qualityHelpers
 } from '../Statistik/quality.js';
@@ -149,8 +150,11 @@ function buildWarnings(type, itemCount, helperStats, criteria) {
 }
 
 function printTextReport(results, helperStatus) {
+  const domainSummary = getDomainQualityModelSummary();
   console.log('SaTourN quality example diagnostics');
   console.log(`Required helpers: ${helperStatus.available}/${helperStatus.required}`);
+  console.log(`Domain model: ${domainSummary.totalCriteria} fachlich gueltige Kriterien, ${domainSummary.sourceGuaranteedCount} quellseitig vorausgesetzte Felder`);
+  console.log(`Domain model status: ${Object.entries(domainSummary.statusCounts).map(([status, value]) => `${status}=${value}`).join(', ')}`);
   if (helperStatus.missing.length) {
     console.log(`Missing helpers: ${helperStatus.missing.join(', ')}`);
   }
@@ -207,6 +211,7 @@ const report = {
   generatedAt: new Date().toISOString(),
   exampleDir,
   helperStatus,
+  domainQualityModel: getDomainQualityModelSummary(),
   results
 };
 

@@ -1,183 +1,165 @@
-# Datenqualitaets-Monitor - Aktueller Projektstand
+# Datenqualitätsmonitor – Aktueller Projektstand
 
-Stand: 2026-06-04
+Stand: 2026-06-22
 
-Diese Datei ist die kompakte Kontextkarte fuer neue Arbeit an
-`Statistik/`. Das Dashboard ist ein statisches GitHub-Pages-Frontend mit
-Vanilla-JS-UI und Node/Express-Proxy fuer Destination.One/eT4-Requests. Keine
-neue Build-Kette, keine Secrets im Frontend.
+## Kurzfassung
 
-## Aktueller Stand
+`Statistik/` bleibt aktuell das produktive Frontend mit Vanilla JavaScript.
+Geschützte oder modellgestützte Zugriffe laufen serverseitig über den
+Render-Proxy. Secrets liegen nicht im Frontend.
 
-- Statistik-Dashboard wurde zum Datenqualitaets-Monitor erweitert.
-- Arbeitsbereiche: Ueberblick, Statistik, Datenqualitaet, Fehlerlisten,
-  Datentypen, Kriterien, Ergebnisse, KI-Analyse.
-- Diese acht Arbeitsbereiche sind ein funktionaler Zwischenstand. Das neue
-  Produktziel aus dem Arbeitsauftrag ist eine ruhigere Struktur mit wenigen
-  Hauptbereichen und perspektivisch mehreren statischen HTML-Seiten.
-- Bestehende Statistik-KPIs, Charts, Ergebnisliste und Statistik-CSV bleiben
-  auf Aggregatzeilen/`overallcount` basiert.
-- Qualitaets-KPIs, Problemcluster, Matrix, Datentypen, Fehlerlisten, Detailpanel,
-  KI-Kontext und Fehlerlisten-CSV basieren auf normalisierten Items.
-- Browser sammelt nur begrenzte Item-Samples; vollstaendige Fehlerlisten koennen
-  bei eindeutigem Typ und Kriterium ueber `/api/quality/scan` nachgeladen werden.
-- POI-ET4-Pages-Link ist verifiziert:
-  `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/{global_id}/x`.
-  Andere Typen duerfen erst nach Verifikation automatisch verlinkt werden.
-- KI-Analyse laeuft ueber n8n-Webhook-Konfiguration; one.intelligence-Keys
-  gehoeren nicht ins Frontend.
+Parallel wurde jetzt ein neues Frontend-Grundgerüst unter `frontend/` angelegt.
+Es dient als Migrationspfad für `React + Vite + TypeScript`, ohne den
+laufenden Produktstand zu gefährden.
 
-## Relevante Dateien
+## Aktive Seiten im Bestandsfrontend
 
-- Frontend: `Statistik/index.html`, `Statistik/scripts.js`,
-  `Statistik/style.css`, `Statistik/quality.js`.
-- Proxy: `index.js`, `routes/search.js`, `routes/quality.js`,
-  `lib/search-utils.js`.
-- Diagnose: `scripts/diagnose-quality-examples.mjs` mit Fixtures unter
-  `testdata/quality-examples/`.
+- `Statistik/index.html`
+  Übersicht mit Arbeitskontext, KPIs, Pflegeaufgaben und Open-Data-Status
+- `Statistik/tasks.html`
+  Pflegeaufgaben mit Typwahl und Sprung in die Datensatzliste
+- `Statistik/records.html`
+  Datensatzliste mit Suche, KI-Suche, Filtern, CSV und Mailaktion
+- `Statistik/record-detail.html`
+  Detailansicht eines einzelnen Datensatzes
+- `Statistik/stats.html`
+  Open-Data-Statistik
+- `Statistik/help.html`
+  reduzierte Hilfeseite für Score, Datentypen und Pflegeverständnis
 
-## Zentrale Datenmodelle
+## Neues Frontend-Gerüst
 
-- `dashboardState` in `Statistik/scripts.js`, sichtbar als
-  `window.satournDashboardState`.
-- Wichtige Listen: `latestRows`, `rawItemResponses`, `allItems`,
-  `normalizedItems`, `filteredItems`.
-- Wichtige Steuerfelder: `activeFilters`, `activeIssue`, `activeIssueType`,
-  `activePanel`, `qualityDataMeta`, `serverIssueList`, `activeDetailItem`,
-  `aiChat`.
-- `Statistik/quality.js` exportiert `qualityCriteria`, Helper,
-  Einzelbewertung, Aggregationen und `getQualityScanConfig()`.
-- `qualityScore` und `qualityStatus` sind Orientierung fuer Datenpflege. Die
-  weitere UI soll zusaetzlich fachliche Nutzbarkeit erklaeren, nicht Score als
-  absolute Wahrheit behandeln.
-- Gebiet, Ort und Typ sind aktuell technisch als Filter umgesetzt, werden fuer
-  die weitere Arbeit aber als fachlicher Arbeitskontext der Datenpflege
-  behandelt.
-- UI-Ziel fuer die naechste Arbeit: weniger sichtbare Hauptnavigation, weniger
-  Filterdichte im ersten Sichtbereich, Spezialfunktionen kontextuell statt als
-  gleichwertige Hauptbereiche.
-- UI-Verschlankung startet bei Fehlerlisten, Statusmeldungen und Loadern. Die
-  aktuelle Fehlerliste ist noch zu breit und technisch; Detailpanel und CSV
-  duerfen die Tiefe behalten.
+Neu angelegt:
 
-## Aktive Kriterien
+- `frontend/package.json`
+- `frontend/vite.config.ts`
+- `frontend/src/app/`
+- `frontend/src/features/`
+- `frontend/src/shared/`
+- `frontend/src/styles/`
 
-- `opening_hours_missing`: POI, Gastro; API-Pushdown verifiziert.
-- `license_missing`: POI, Gastro, Tour, Hotel, Package; API-Pushdown verifiziert.
-- `description_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
-- `image_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
-- `image_author_missing`: alle Typen mit pruefbaren Medien; Server-Scan.
-- `public_transport_missing`: POI, Gastro, Tour, Hotel, Event; API-Pushdown
-  verifiziert.
-- `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package offen und
-  serverseitig zu pruefen.
+Aktueller Stand des neuen Frontends:
 
-Nicht aktiv als automatischer Fehler: `geo_missing`, `touristtrip_incomplete`,
-`manual_image_quality`.
+- React-/Vite-/TypeScript-Basis steht
+- Router steht
+- Shell und Navigation stehen
+- Arbeitskontext-Store steht
+- Runtime-API-Konfiguration steht
+- HTTP-Client-Basis steht
+- Platzhalterseiten für alle aktuellen Fachbereiche stehen
+- `Datensätze` hat bereits eine erste echte Pilotimplementierung mit:
+  - Arbeitskontext-Steuerung
+  - Suche gegen `/api/search`
+  - KI-Suche gegen `/api/oi/search-records`
+  - ID-Auflösung über `/api/records/by-global-ids`
+  - clientseitiger Qualitätsauswertung auf Basis des bestehenden Qualitätsmodells
+  - lokalen Filtern für Status, Kategorie und Problem
+  - Paginierung im Frontend
+  - Detailverlinkung im neuen Routing
+  - Mailentwurf über `/api/oi/mail-draft`
 
-## Datenfluss
+Noch nicht umgesetzt:
 
-1. Nutzer setzt Filter; `currentFilters()` synchronisiert `activeFilters`.
-2. Statistik-Requests liefern Counts und begrenzte Item-Samples.
-3. `refreshNormalizedItems()` normalisiert und bewertet Items.
-4. `refreshFilteredItems()` baut Basislisten und `qualityAggregations`.
-5. `renderAll()` rendert Statistik- und Qualitaetsbereiche.
-6. Klick auf Pflegebedarf, Datentyp oder Matrixzeile setzt `activeIssue` und
-   oeffnet den Arbeitsbereich `issues`.
-7. Bei eindeutigem Typ/Kriterium nutzt die Fehlerliste `/api/quality/scan`;
-   sonst bleibt die Browser-Stichprobe aktiv.
-8. CSV exportiert entweder Statistik-Aggregate oder die aktive Fehlerliste.
-9. Detailpanel und KI-Kontext nutzen reduzierte, gefilterte Daten.
+- fachliche Migration der übrigen Produktseiten
+- vollständige Übernahme der Detailseite in React
+- UI-Feinschliff auf 1:1-Produktniveau des bestehenden Frontends
+- Export, Schnellfilter und Autocomplete im neuen Frontend
 
-## Zielseitenlogik
+## Produktiver Betrieb
 
-- Uebersicht: ruhige Lage im Arbeitskontext, kompakte Qualitaetslage,
-  wichtigste Pflegeaufgaben, dezente Open-Data-Kennzahl, keine langen Listen,
-  Rohdaten, Matrix oder Voll-Scans.
-- Pflegeaufgaben: primaerer Arbeitsbereich; Aufgaben fachlich benennen und
-  klickbar zu konkreten Fehlerlisten bzw. Datensatzlisten fuehren.
-- Datensaetze: schlanke Arbeitsliste auf Datensatzebene; Details, IDs, Links,
-  Rohdaten und vollstaendige Kriterienbewertung bleiben im Detailpanel.
-- Statistik: aggregierte `overallcount`-basierte Zahlen, Vergleiche, Charts und
-  Statistik-CSV; keine Datensatzdetails und keine unnoetigen Qualitaets-Scans.
+- GitHub Pages liefert das bestehende Frontend aus
+- Render bleibt der produktive Node-/Express-Proxy
+- aktuell keine Cronjobs, keine produktiven Snapshots, kein serverseitiger Cache
+- ein kurzer Browser-In-Memory-Cache für wiederholte GET-Anfragen ist aktiv
 
-## Naechste Umsetzungsreihenfolge
+## Relevante API-Endpunkte
 
-1. UI auditieren: Tabellen, Statusmeldungen, Loader, Panels, Navigation.
-2. Fehlerlisten verschlanken: UI-Spalten auf Arbeitsentscheidung reduzieren.
-3. Technische Statusmeldungen aus UI in Console verschieben.
-4. Ladezustaende komponentennah integrieren.
-5. Arbeitskontext mit Gebiet, Ort und Datentyp vorbereiten.
-6. Hauptnavigation auf Uebersicht, Pflegeaufgaben, Datensaetze, Statistik
-   ausrichten.
+- `/api/search`
+- `/api/autocomplete`
+- `/api/quality/count`
+- `/api/quality/scan`
+- `/api/quality/list`
+- `/api/quality/snapshot`
+- `/api/records/by-global-ids`
+- `/api/oi/status`
+- `/api/oi/tools`
+- `/api/oi/search-records`
+- `/api/oi/mail-draft`
 
-## Tests
+## one.intelligence-Stand
 
-- Standard: `git diff --check`.
-- Wenn Node verfuegbar ist: `npm run check` und
-  `npm run diagnose:quality-examples`.
-- Falls Node fehlt, JSON-Fixtures mit PowerShell parsebar pruefen und Node-Checks
-  als nicht ausgefuehrt dokumentieren.
+- KI-Suche ist produktiv angebunden über `POST /api/oi/search-records`
+- Mailentwurf ist produktiv angebunden über `POST /api/oi/mail-draft`
+- die OI-Integration ist sauber von der Meta-/Search-Anbindung getrennt
+- `OI_API_KEY`, `OI_MODEL_MAIL` und `OI_MODEL_SEARCH` laufen nur serverseitig
 
-## Abschnittsarbeit
+Wichtige Produktentscheidung:
 
-- Punkt 1 `Technischer Rahmen` aus
-  `docs/Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md` ist in
-  `docs/Codex/Datenqualitaetsmonitor_Arbeitsstand.md` konsolidiert.
-- Punkt 2 `Produktziel` ist dort ebenfalls konsolidiert: Mehrseitenziel,
-  API-Schonung und Reduktion weiterer Panel-Komplexitaet.
-- Punkt 3 `Zentrale Produktperspektive` ist konsolidiert: Fokus auf
-  Datenpfleger, Arbeitskontext und konkrete Pflegeaufgaben statt abstrakter
-  Gesamtstatistik.
-- Punkt 4 `UI-Grundprinzip` ist konsolidiert: UI ruhiger fuehren,
-  Progressive Disclosure nutzen und technische Details aus der Startansicht
-  herausnehmen.
-- Punkt 5 `Navigation und Mehrseitenstruktur` ist konsolidiert: Zielnavigation
-  Uebersicht, Pflegeaufgaben, Datensaetze, Statistik; `activePanel` bleibt nur
-  Uebergang.
-- Punkt 6 `Arbeitskontext statt Einstellungsflut` ist konsolidiert: Gebiet,
-  Ort und Datentyp bilden den kleinen lokalen Arbeitskontext; weitere Filter
-  bleiben ansichtsspezifisch.
-- Punkt 7 `API-schonende Grundregeln` ist konsolidiert: keine impliziten
-  Vollabfragen, grosse Fehlerlisten nur nach konkretem Nutzerklick,
-  Stichproben transparent kennzeichnen.
-- Punkt 8 `Datenfluss beibehalten und sinnvoll modularisieren` ist
-  konsolidiert: bestehender Filter-/Sample-/Normalisierungs-/Renderfluss bleibt
-  fachlich richtig und wird nur an klaren Grenzen modularisiert.
-- Punkt 9 `Seitenlogik` ist konsolidiert: vier Zielbereiche mit klar getrennten
-  Aufgaben und Datenquellen.
-- Punkt 10 `Nutzbarkeit statt nur Vollstaendigkeit` ist konsolidiert:
-  Pflegehinweise sollen praktische Wirkung erklaeren, nicht nur fehlende Felder
-  melden.
-- Punkt 11 `Qualitaetslogik` ist konsolidiert: aktive Kriterien und
-  Score-Schwellen bleiben wie in `Statistik/quality.js`; Geo, TouristTrip und
-  manuelle Bildqualitaet werden nicht automatisch aktiviert.
-- Punkt 12 `Reale Feldmappings` ist konsolidiert: bestehende Feldchecks bleiben
-  verbindlich; neue Annahmen brauchen dokumentierte Pruefung.
-- Punkte 13 bis 25 sind konsolidiert: Tabellen werden Entscheidungshilfen,
-  Detailpanel entlastet Listen, Aktionen ersetzen technische Spalten,
-  Statusmeldungen und Loader werden ruhiger, KI bleibt dezent, CSV bleibt
-  ansichtsspezifisch und Migration erfolgt schrittweise.
-- Der erste Mockup-Umbau aus `docs/Codex/Umbau_Statistik` ist gestartet:
-  `Startseite.png`/`Startseite.md` wurden in `Statistik/index.html`,
-  `Statistik/scripts.js`, `Statistik/style.css` und die vorbereiteten
-  Zielseiten `tasks.html`, `records.html`, `stats.html` uebernommen.
-- Der zweite Mockup-Umbau ist umgesetzt:
-  `Pflegeaufgaben.png` und
-  `Datenqualitaetsmonitor_Pflegeaufgaben_Seite.md` wurden in eine echte
-  Pflegeaufgaben-Seite mit Sample-Aggregationen, Detailkarte,
-  Scan-on-demand-Datensatzliste und kontextuellem CSV-Export uebernommen.
-- Der dritte Mockup-Umbau ist umgesetzt:
-  `Datensatz-Haupseite.png` und
-  `Datenqualitaetsmonitor_Datensaetze_Hauptseiteg.md` wurden in die
-  eigenstaendige Datensaetze-Hauptseite mit Suche, Filtern, Schnellfiltern,
-  schlanker Tabelle, Pagination und CSV-Export uebernommen. Die Detailseite
-  bleibt separat.
-- Der vierte Mockup-Umbau ist umgesetzt:
-  `Detailansicht datensatz.png` und
-  `Datenqualitaetsmonitor_Datensatz_Detailseite.md` wurden in
-  `Statistik/record-detail.html` uebernommen. Die Seite laedt einzelne
-  Datensaetze gezielt, bewertet sie mit `quality.js` und zeigt keine
-  vollstaendige Rohdatenansicht.
-- Offene Punkte aus der Abschnittsarbeit stehen in
-  `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`.
+- Für die KI-Suche darf im OI-Suchmodell kein vorgeschalteter Skill aktiv sein,
+  der den direkten Tool-Call überlagert
+- produktiv funktioniert der direkte OI-Toolpfad mit
+  `server:meta-open-data-sachsen-tourismus`
+
+## UI-Stand
+
+- Pflegeaufgaben mit `0` Treffern bleiben unsichtbar
+- Open-Data-Status wird binär dargestellt
+- Pflegeaufgaben springen korrekt auf `records.html`
+- Dropdown-Menüs wurden global an das übrige Design angepasst
+- Mailto-Links werden Outlook-tauglich als `%20`-kodierte URLs erzeugt
+
+## Bewertungslogik
+
+- Ganz Sachsen zeigt keinen berechneten Qualitätsscore
+- Scoreberechnung läuft nur für Gebiet oder Ort
+- `source_guarded`, `not_applicable` und `excluded_by_category`
+  sind nicht scorewirksam
+- generische Wildcard-Pushdowns bleiben fachlich ausgeschlossen
+- erste produktive POI-Ausschlusslogik ist zentral verankert
+- KI-Suchergebnisse werden wieder gegen die Prüfkriterien ausgewertet
+
+## Wichtige Dateien
+
+### Bestandsfrontend
+
+- `Statistik/scripts.js`
+- `Statistik/quality.js`
+- `Statistik/main.js`
+- `Statistik/core/`
+- `Statistik/overview/`
+- `Statistik/tasks/`
+- `Statistik/records/`
+- `Statistik/detail/`
+- `Statistik/stats/`
+- `Statistik/help/`
+
+### Neues Frontend
+
+- `frontend/src/app/`
+- `frontend/src/features/`
+- `frontend/src/shared/`
+- `frontend/src/styles/global.css`
+
+### Proxy
+
+- `routes/search.js`
+- `routes/quality.js`
+- `routes/records.js`
+- `routes/oi.js`
+- `lib/oi-config.js`
+
+## Zuletzt umgesetzt
+
+- React-/Vite-/TypeScript-Frontend als paralleles Grundgerüst angelegt
+- Router, Shell, Runtime-Konfiguration und Context-Store vorbereitet
+- `Datensätze` als erste Pilotseite im neuen Frontend mit Suche, KI-Suche, Filtern, Paging und Mailentwurf erweitert
+- KI-Suche auf korrekten Qualitätsdurchlauf nach Typauflösung nachgezogen
+- OI-Timeouts für Suche und Mailentwurf erhöht
+
+## Technische Richtung
+
+- `scripts.js` bleibt vorerst Orchestrator des Bestandsfrontends
+- neue Fachlogik soll nicht mehr direkt in `scripts.js` landen
+- das neue `frontend/` ist der Migrationspfad
+- der nächste echte Umsetzungsschritt ist die fachliche Migration der Seite
+  `Datensätze`

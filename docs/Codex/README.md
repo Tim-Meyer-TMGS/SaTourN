@@ -1,32 +1,46 @@
 # Codex-Dokumentation
 
-Diese Ebene ist der kurze Arbeitskontext fuer die weitere Statistik- und
-Datenqualitaetsmonitor-Entwicklung. Lade nicht automatisch Archivdateien oder
-Rohdaten.
+Stand: 2026-06-22
 
-## Standard-Kontext
+Diese Datei beschreibt, welche Codex-Dokumente aktiv genutzt werden und was
+nur noch als Archivmaterial vorliegt.
+
+## Standardkontext für neue Arbeitssitzungen
+
+Diese beiden Dateien zuerst lesen:
 
 1. `Datenqualitaetsmonitor_Aktueller_Projektstand.md`
 2. `Datenqualitaetsmonitor_Offene_TODOs.md`
-3. `Datenqualitaetsmonitor_Arbeitsstand.md`
-4. `../Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md`, wenn am neuen
-   Arbeitsauftrag abschnittsweise gearbeitet wird.
 
-Diese beiden Dateien reichen fuer normale Weiterarbeit am Dashboard.
+## Aktive Fachdokumente bei Bedarf
 
-## Bei Bedarf lesen
+- `Datenqualitaetsmonitor_Entscheidungen.md`
+  Architektur-, API-, UI- und Bewertungsentscheidungen.
+- `Datenqualitaetsmonitor_Architektur_und_Zielbild.md`
+  aktuelle Systemarchitektur, Zielstruktur für Framework-Migration,
+  Übergabe und späteres Eigenhosting.
+- `Datenqualitaetsmonitor_Frontend_Migrationsplan.md`
+  konkrete Zielarchitektur für `React + Vite + TypeScript`, Migrationsreihenfolge,
+  Frontend-Grenzen und Pilotmigration.
+- `GitHub_Pages_Frontend_Preview.md`
+  Einrichtung und Test-URL für die parallele GitHub-Pages-Preview des neuen
+  React-Frontends.
+- `Datenqualitaetsmonitor_Pflegeaufgaben_je_Datentyp.md`
+  Übersicht, welche Pflegeaufgaben pro Datentyp fachlich vorkommen können.
+- `one_intelligence_Kontext_und_Fehlerbilder.md`
+  Kontext für KI-Modelle, Mailentwürfe und Fehlerbeschreibungen.
+- `Render_OI_Einrichtung.md`
+  produktive Einrichtung der one.intelligence-Anbindung in Render.
 
-- `Datenqualitaetsmonitor_Entscheidungen.md`: Kriterien, API-Scan, Limits,
-  Python-Entscheidung, KI/n8n-Regeln.
-- `Beispieldaten.md`: Index der grossen Fixtures und Diagnosebefehle.
-- `Zielbild.md` und `zielbild.png`: visuelle Orientierung, nicht pixelgenaue
-  Vorgabe.
+## Archiv
 
-## Nicht im Standard-Kontext laden
+Nicht mehr automatisch laden. Nur gezielt nachschlagen:
 
-- `../../testdata/quality-examples/`: grosse reale Beispiel-JSONs.
-- `../../_archive/codex-docs/2026-06-04/`: alte Prompts und historische
-  Abschnittsstaende.
+- `Archiv/2026-06-15_Analyse-und-Nachweise/`
+  historische API-Prüfungen, Pushdown-Nachweise und Kriterienmatrix
 
-Diese Dateien bleiben als Referenz erhalten, sind aber fuer neue Codex-Kontexte
-normalerweise Kontextballast.
+## Arbeitsregel
+
+Neue Codex-Sitzungen starten mit Projektstand und offener TODO-Liste.
+Archivdokumente nur dann lesen, wenn eine konkrete technische oder fachliche
+Nachweisfrage offen ist.

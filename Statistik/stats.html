@@ -37,36 +37,13 @@ module: true
       <a class="nav-link" href="tasks.html"><span class="material-icons" aria-hidden="true">assignment</span>Pflegeaufgaben</a>
       <a class="nav-link" href="records.html"><span class="material-icons" aria-hidden="true">storage</span>Datensätze</a>
       <a class="nav-link active" href="stats.html" aria-current="page"><span class="material-icons" aria-hidden="true">bar_chart</span>Open-Data-Statistik</a>
-      <div class="sidebar-bottom">
-        <button class="nav-utility" type="button" disabled>Hilfe &amp; Dokumentation</button>
-        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
-      </div>
+      <a class="nav-link" href="help.html"><span class="material-icons" aria-hidden="true">help_outline</span>Hilfe</a>
     </nav>
 
     <main class="stats-main" aria-labelledby="stats-title">
       <section class="overview-hero">
         <h1 id="stats-title">Open-Data-Statistik</h1>
         <p>Aggregierte Kennzahlen für Ihren Arbeitskontext.</p>
-      </section>
-
-      <section class="stats-filter-card" aria-label="Open-Data-Statistik filtern">
-        <label>
-          Gebiet
-          <select id="stats-area-filter"></select>
-        </label>
-        <label>
-          Ort
-          <input id="stats-city-filter" type="text" placeholder="Alle Orte">
-        </label>
-        <label>
-          Datentyp
-          <select id="stats-type-filter"></select>
-        </label>
-        <div class="stats-filter-actions">
-          <button id="stats-reset-filters" class="context-edit icon-text-button" type="button"><span class="material-icons" aria-hidden="true">restart_alt</span>Filter zurücksetzen</button>
-          <button id="stats-refresh" class="primary-action" type="button"><span class="material-icons" aria-hidden="true">refresh</span>Aktualisieren</button>
-          <button id="stats-export" class="context-edit icon-text-button" type="button" disabled><span class="material-icons" aria-hidden="true">file_download</span>CSV exportieren</button>
-        </div>
       </section>
 
       <div id="stats-message" class="overview-message" hidden></div>
@@ -110,17 +87,14 @@ module: true
         <article class="panel-card stats-chart-card">
           <header class="panel-head"><h2>Verteilung nach Datentyp (Anzahl)</h2></header>
           <div class="stats-donut-layout">
-            <div id="stats-type-donut" class="stats-type-donut" aria-label="Verteilung nach Datentyp">
-              <span id="stats-type-donut-total">-</span>
-              <small>Gesamt</small>
-            </div>
+            <div id="stats-type-donut" class="stats-type-donut" aria-label="Verteilung nach Datentyp"></div>
             <div class="stats-chart-table-wrap">
               <table class="stats-mini-table">
                 <thead>
                   <tr><th>Datentyp</th><th>Anzahl</th><th>Anteil</th></tr>
                 </thead>
                 <tbody id="stats-type-distribution-body">
-                  <tr><td colspan="3" class="table-empty">Statistik wird geladen ...</td></tr>
+                  <tr><td colspan="3" class="table-empty"><span class="loading-line">Statistik wird geladen ...</span></td></tr>
                 </tbody>
               </table>
             </div>
@@ -136,32 +110,19 @@ module: true
         </article>
       </section>
 
-      <section class="panel-card stats-table-card">
-        <header class="panel-head">
-          <h2>Kennzahlen nach Datentyp</h2>
-        </header>
-        <div class="tasks-table-wrap">
-          <table class="stats-table">
-            <thead>
-              <tr>
-                <th>Datentyp</th>
-                <th>Gesamtzahl</th>
-                <th>Open-Data-fähig</th>
-                <th>Open-Data-Quote</th>
-                <th>Nicht Open-Data-fähig</th>
-              </tr>
-            </thead>
-            <tbody id="stats-type-table-body">
-              <tr><td colspan="5" class="table-empty">Statistik wird geladen ...</td></tr>
-            </tbody>
-          </table>
+      <section id="stats-license-task-card" class="panel-card stats-task-card" hidden>
+        <span class="stats-task-icon material-icons" aria-hidden="true">assignment</span>
+        <div>
+          <h2>Lizenzen pflegen</h2>
+          <p class="stats-task-copy">Datens&auml;tze ohne g&uuml;ltige Open-Data-Lizenz direkt in den Pflegeaufgaben bearbeiten.</p>
         </div>
+        <div class="stats-task-metric">
+          <strong id="stats-license-task-count">-</strong>
+          <small id="stats-license-task-share">-</small>
+        </div>
+        <a class="primary-action stats-task-link" href="tasks.html?task=license_missing">Pflegeaufgabe &ouml;ffnen<span class="material-icons" aria-hidden="true">arrow_forward</span></a>
       </section>
 
-      <section class="stats-data-note" aria-label="Datenbasis">
-        <span><span class="material-icons" aria-hidden="true">info</span>Die dargestellten Zahlen basieren auf allen verfügbaren Daten in Ihrem Arbeitskontext. Diese Statistik ist vollständig.</span>
-        <strong><span class="material-icons" aria-hidden="true">check_circle</span>Datenbasis: Vollständig</strong>
-      </section>
     </main>
   </div>
 

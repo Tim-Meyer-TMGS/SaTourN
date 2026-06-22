@@ -49,17 +49,17 @@ module: true
         <span class="material-icons" aria-hidden="true">bar_chart</span>
         Open-Data-Statistik
       </a>
+      <a class="nav-link" href="help.html">
+        <span class="material-icons" aria-hidden="true">help_outline</span>
+        Hilfe
+      </a>
 
-      <div class="sidebar-bottom">
-        <button class="nav-utility" type="button" disabled>Hilfe</button>
-        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
-      </div>
     </nav>
 
     <main class="overview-main" aria-labelledby="overview-title">
       <section class="overview-hero">
-        <h1 id="overview-title">Guten Morgen!</h1>
-        <p id="overview-subtitle">Hier ist die aktuelle Lage für Sachsen.</p>
+        <h1 id="overview-title">Datenqualitäts-Monitor</h1>
+        <p id="overview-subtitle">Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für Sachsen.</p>
       </section>
 
       <section class="kpi-grid" aria-label="Kennzahlen">
@@ -139,7 +139,6 @@ module: true
             <div class="stacked-bar" aria-hidden="true">
               <span id="open-data-capable-bar" class="bar-good"></span>
               <span id="open-data-missing-bar" class="bar-review"></span>
-              <span id="open-data-unknown-bar" class="bar-muted"></span>
             </div>
             <div class="open-data-stats">
               <div>
@@ -151,11 +150,6 @@ module: true
                 <span>Nicht Open-Data-fähig</span>
                 <strong id="open-data-missing">-</strong>
                 <small id="open-data-missing-percent">-</small>
-              </div>
-              <div>
-                <span>Nicht bewertbar</span>
-                <strong id="open-data-unknown">-</strong>
-                <small id="open-data-unknown-percent">-</small>
               </div>
             </div>
             <a class="panel-link align-right" href="stats.html">Mehr zur Open-Data-Quote <span class="material-icons" aria-hidden="true">arrow_forward</span></a>
@@ -177,6 +171,10 @@ module: true
           <a class="quick-action" href="stats.html">
             <span class="quick-icon green material-icons" aria-hidden="true">bar_chart</span>
             <span><strong>Open-Data-Statistik</strong><small>Zahlen und Entwicklungen</small></span>
+          </a>
+          <a class="quick-action" href="help.html">
+            <span class="quick-icon amber material-icons" aria-hidden="true">help_outline</span>
+            <span><strong>Score verstehen</strong><small>Matrix und Kriterien ansehen</small></span>
           </a>
           <button id="quick-export" class="quick-action" type="button">
             <span class="quick-icon purple material-icons" aria-hidden="true">file_download</span>

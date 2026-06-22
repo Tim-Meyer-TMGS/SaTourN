@@ -49,11 +49,11 @@ module: true
         <span class="material-icons" aria-hidden="true">bar_chart</span>
         Open-Data-Statistik
       </a>
+      <a class="nav-link" href="help.html">
+        <span class="material-icons" aria-hidden="true">help_outline</span>
+        Hilfe
+      </a>
 
-      <div class="sidebar-bottom">
-        <button class="nav-utility" type="button" disabled>Hilfe &amp; Dokumentation</button>
-        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
-      </div>
     </nav>
 
     <main class="records-main" aria-labelledby="records-title">
@@ -69,8 +69,12 @@ module: true
             <input id="record-search-input" type="search" placeholder="Suche nach Titel, ID, global_id, Ort, Kategorie oder Problem ...">
             <button id="record-search-clear" class="plain-button" type="button" aria-label="Suche leeren"><span class="material-icons" aria-hidden="true">close</span></button>
           </label>
+          <div class="record-search-actions">
             <button id="record-search-button" class="context-edit" type="button">Suchen</button>
+            <button id="record-ai-search-button" class="plain-button icon-text-button" type="button"><span class="material-icons" aria-hidden="true">auto_awesome</span>AI-Search</button>
+          </div>
           <small>Du kannst auch direkt eine ID oder global_id eingeben.</small>
+          <div id="record-autocomplete-list" class="record-autocomplete-list" role="listbox" hidden></div>
         </div>
 
         <label>
@@ -86,16 +90,6 @@ module: true
           </select>
         </label>
         <label>
-          <span class="sr-only">Qualitätsstatus</span>
-          <select id="record-status-filter">
-            <option value="">Qualitätsstatus: Alle</option>
-            <option value="gut">Qualitätsstatus: gut</option>
-            <option value="pruefen">Qualitätsstatus: prüfen</option>
-            <option value="kritisch">Qualitätsstatus: kritisch</option>
-            <option value="nicht berechenbar">Qualitätsstatus: nicht bewertbar</option>
-          </select>
-        </label>
-        <label>
           <span class="sr-only">Problem oder Kriterium</span>
           <select id="record-issue-filter">
             <option value="">Problem / Kriterium: Alle</option>
@@ -105,12 +99,10 @@ module: true
 
         <div class="quick-filter-row" aria-label="Schnellfilter">
           <strong>Schnellfilter:</strong>
-          <button class="quick-filter-button" type="button" data-record-quick="critical">Nur kritische Datensätze <span id="quick-count-critical">-</span></button>
           <button class="quick-filter-button" type="button" data-record-quick="license_missing">Ohne Lizenz <span id="quick-count-license">-</span></button>
           <button class="quick-filter-button" type="button" data-record-quick="description_missing">Ohne Beschreibung <span id="quick-count-description">-</span></button>
           <button class="quick-filter-button" type="button" data-record-quick="image_missing">Ohne Bilder <span id="quick-count-image">-</span></button>
           <button class="quick-filter-button" type="button" data-record-quick="opening_hours_missing">Ohne Öffnungszeiten <span id="quick-count-openings">-</span></button>
-          <button class="quick-filter-button" type="button" disabled>Mehr Filter</button>
         </div>
       </section>
 
@@ -120,11 +112,6 @@ module: true
         <p id="record-result-summary">Noch keine Datensätze geladen.</p>
         <div class="record-actions">
           <button id="record-export" class="context-edit icon-text-button" type="button" disabled><span class="material-icons" aria-hidden="true">file_download</span>CSV exportieren</button>
-          <button class="context-edit" type="button" disabled>Spalten</button>
-          <div class="view-toggle" aria-label="Ansicht">
-            <button class="icon-button active" type="button" aria-label="Listenansicht"><span class="material-icons" aria-hidden="true">view_list</span></button>
-            <button class="icon-button" type="button" aria-label="Rasteransicht" disabled><span class="material-icons" aria-hidden="true">grid_view</span></button>
-          </div>
         </div>
       </section>
 
@@ -137,15 +124,13 @@ module: true
                 <th>Typ</th>
                 <th>Ort / Gebiet</th>
                 <th>Kategorie</th>
-                <th>Qualitätsstatus</th>
                 <th>Hauptproblem</th>
-                <th>Qualitäts-Score</th>
                 <th>Aktualisiert</th>
                 <th>Aktionen</th>
               </tr>
             </thead>
             <tbody id="records-table-body" aria-live="polite">
-              <tr><td colspan="9" class="table-empty">Datensätze werden geladen ...</td></tr>
+              <tr><td colspan="7" class="table-empty"><span class="loading-line">Datensätze werden geladen ...</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -167,15 +152,6 @@ module: true
         </footer>
       </section>
 
-      <section class="record-status-legend" aria-label="Qualitätsstatus">
-        <strong>Qualitätsstatus:</strong>
-        <span><i class="status-dot good"></i>gut <small id="legend-good">-</small></span>
-        <span><i class="status-dot review"></i>prüfen <small id="legend-review">-</small></span>
-        <span><i class="status-dot critical"></i>kritisch <small id="legend-critical">-</small></span>
-        <span><i class="status-dot muted"></i>nicht bewertbar <small id="legend-unknown">-</small></span>
-      </section>
-
-      <p id="record-data-note" class="data-note record-data-note">Die Qualitätsbewertung basiert auf den aktivierten Kriterien und verfügbaren Daten.</p>
     </main>
   </div>
 
@@ -200,6 +176,24 @@ module: true
       <footer>
         <button value="cancel" type="submit">Abbrechen</button>
         <button class="primary" value="default" type="submit">Übernehmen</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog id="record-ai-search-dialog" class="context-dialog record-ai-search-dialog" aria-labelledby="record-ai-search-title">
+    <form method="dialog" id="record-ai-search-form">
+      <header>
+        <h2 id="record-ai-search-title">AI-Search</h2>
+        <button class="icon-button" value="cancel" type="submit" aria-label="Schließen"><span class="material-icons" aria-hidden="true">close</span></button>
+      </header>
+      <label>
+        Suchanfrage
+        <textarea id="record-ai-search-input" rows="4" placeholder="z. B. Kampagnenthema Wandern im Erzgebirge oder familienfreundliche Ausflugsziele"></textarea>
+      </label>
+        <p id="record-ai-search-note" class="data-note">Die KI liefert passende Datensatz-IDs. Diese Datensätze werden anschließend direkt geladen.</p>
+      <footer>
+        <button value="cancel" type="submit">Abbrechen</button>
+        <button id="record-ai-search-submit" class="primary" value="default" type="submit">Mit KI suchen</button>
       </footer>
     </form>
   </dialog>

@@ -49,11 +49,11 @@ module: true
         <span class="material-icons" aria-hidden="true">bar_chart</span>
         Open-Data-Statistik
       </a>
+      <a class="nav-link" href="help.html">
+        <span class="material-icons" aria-hidden="true">help_outline</span>
+        Hilfe
+      </a>
 
-      <div class="sidebar-bottom">
-        <button class="nav-utility" type="button" disabled>Hilfe</button>
-        <button class="nav-utility" type="button" disabled>Menü einklappen</button>
-      </div>
     </nav>
 
     <main class="tasks-main" aria-labelledby="tasks-title">
@@ -126,14 +126,6 @@ module: true
           </select>
         </label>
         <label>
-          <span class="sr-only">Prüfbarkeit</span>
-          <select id="task-check-filter">
-            <option value="">Prüfbarkeit: Alle</option>
-            <option value="auto">Prüfbarkeit: Automatisch</option>
-            <option value="manual">Prüfbarkeit: Manuell</option>
-          </select>
-        </label>
-        <label>
           <span class="sr-only">Auswirkung</span>
           <select id="task-impact-filter">
             <option value="">Auswirkung: Alle</option>
@@ -161,13 +153,12 @@ module: true
                   <th>Betroffene Datensätze</th>
                   <th>Priorität</th>
                   <th>Betroffene Typen</th>
-                  <th>Prüfbarkeit</th>
                   <th>Auswirkung</th>
                   <th><span class="sr-only">Aktion</span></th>
                 </tr>
               </thead>
               <tbody id="tasks-table-body" aria-live="polite">
-                <tr><td colspan="7" class="table-empty">Pflegeaufgaben werden geladen ...</td></tr>
+                <tr><td colspan="6" class="table-empty"><span class="loading-line">Pflegeaufgaben werden geladen ...</span></td></tr>
               </tbody>
             </table>
           </div>
@@ -198,10 +189,6 @@ module: true
             <div id="primary-system-list" class="primary-system-list"></div>
           </article>
 
-          <article class="panel-card task-hint-card">
-            <strong>Hinweis</strong>
-            <p id="task-data-note">Die Anzahl betroffener Datensätze basiert auf den aktuellen Filtern und einer Stichprobe.</p>
-          </article>
         </aside>
       </section>
 

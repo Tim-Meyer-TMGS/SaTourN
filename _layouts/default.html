@@ -4,12 +4,51 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ page.title | default: site.title }}</title>
+  <link rel="icon" type="image/png" href="{{ '/SaTourN-RGB.png' | relative_url }}">
 
   <link rel="stylesheet" href="{{ '/base.css' | relative_url }}">
 
   {% if page.css %}
     <link rel="stylesheet" href="{{ page.css | relative_url }}">
   {% endif %}
+
+  <script>
+    window.SATOURN_RUNTIME = window.SATOURN_RUNTIME || Object.freeze({
+      generatedAt: '2026-06-11',
+      consent: {
+        version: '2026-06-11',
+        categories: ['essential', 'external_ui', 'automation', 'analytics'],
+        optionalDefaults: {
+          external_ui: false,
+          automation: false,
+          analytics: false
+        }
+      },
+      externalServices: [
+        {
+          id: 'destination-one-proxy',
+          category: 'essential',
+          active: true,
+          host: 'satourn.onrender.com',
+          purpose: 'Proxy fuer Suche, Counts und Qualitaetsabfragen'
+        },
+        {
+          id: 'google-fonts-css',
+          category: 'external_ui',
+          active: true,
+          host: 'fonts.googleapis.com',
+          purpose: 'Roboto und Material Icons Stylesheets'
+        },
+        {
+          id: 'google-fonts-files',
+          category: 'external_ui',
+          active: true,
+          host: 'fonts.gstatic.com',
+          purpose: 'Schriftdateien fuer Roboto und Material Icons'
+        }
+      ]
+    });
+  </script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

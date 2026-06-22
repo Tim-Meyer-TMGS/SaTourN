@@ -458,9 +458,9 @@ Aktive Qualitätskriterien:
 * `license_missing`: POI, Gastro, Tour, Hotel, Package; API-Pushdown verifiziert.
 * `description_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
 * `image_missing`: POI, Gastro, Tour; API-Pushdown verifiziert.
-* `image_author_missing`: alle Typen mit prüfbaren Medien; Server-Scan.
+* `image_author_missing`: alle Typen mit prüfbaren Medien; Server-Scan verifiziert, API-Pushdown nicht verifiziert.
 * `public_transport_missing`: POI, Gastro, Tour, Hotel, Event; API-Pushdown verifiziert.
-* `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package offen und serverseitig zu prüfen.
+* `booking_link_missing`: Hotel per API-Pushdown verifiziert, Package per Server-Scan verifiziert; API-Pushdown fuer Package nicht verifiziert.
 
 Nicht als automatische Fehler aktivieren:
 
