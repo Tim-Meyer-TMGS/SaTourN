@@ -41,6 +41,7 @@ Aktueller Stand:
 - Shell und Navigation sind an das bestehende Live-Design angenähert
 - SaTourN-Logo, Arbeitskontext-Leiste, Sidebar, Kartenstil und Tabellenstil sind im Preview-CSS abgebildet
 - Arbeitskontext-Store steht
+- zentraler Arbeitskontext-Dialog steht im React-Shell-Pfad
 - Runtime-API-Konfiguration steht
 - HTTP-Client-Basis steht
 - Platzhalterseiten für alle aktuellen Fachbereiche stehen
@@ -65,7 +66,7 @@ Noch nicht umgesetzt:
 - vollständige 1:1-Funktionalität der Live-Datensatzseite
 - vollständige Detailseite in React
 - Autocomplete im neuen Frontend
-- echter Arbeitskontext-Dialog wie im Bestandsfrontend
+- Feinschliff am Arbeitskontext-Dialog auf vollständiges Live-Niveau
 - fachliche Migration der übrigen Produktseiten
 
 ## Produktiver Betrieb
@@ -121,6 +122,7 @@ Wichtige Produktentscheidung:
 - Records-Pilotseite grafisch näher an das Live-Design gebracht
 - React-Shell auf Live-nahe Header-, Sidebar-, Logo- und Tabellenstruktur umgestellt
 - Schnellfilter, CSV-Export und AI-Search-Reset in der Records-Pilotseite ergänzt
+- Arbeitskontext-Dialog in die React-Shell verlagert und Inline-Gebiets-/Ortfilter aus der Records-Seite entfernt
 - aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung

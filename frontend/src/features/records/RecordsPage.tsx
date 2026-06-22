@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { AREAS, DATA_TYPES } from '../../shared/config/constants';
+import { DATA_TYPES } from '../../shared/config/constants';
 import { qualityCriteria } from '../../shared/legacy/quality';
 import { useContextStore } from '../../shared/state/context-store';
 import { loadRecordsForFrontend, requestRecordMailDraftFrontend } from './records-api';
@@ -308,25 +308,6 @@ export function RecordsPage() {
           </div>
           <small>Du kannst auch direkt eine ID oder global_id eingeben.</small>
         </div>
-
-        <label>
-          <span>Gebiet</span>
-          <select value={context.area} onChange={(event) => setContext({ area: event.target.value })}>
-            {AREAS.map(([label, value]) => (
-              <option key={value || 'all'} value={value}>{label}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          <span>Ort</span>
-          <input
-            type="text"
-            value={context.city}
-            placeholder="Alle Orte"
-            onChange={(event) => setContext({ city: event.target.value })}
-          />
-        </label>
 
         <label>
           <span>Typ</span>

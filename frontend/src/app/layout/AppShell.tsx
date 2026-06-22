@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
+import { AREAS, DATA_TYPES } from '../../shared/config/constants';
+import { useContextStore } from '../../shared/state/context-store';
+import type { DataType, WorkContext } from '../../shared/types/context';
 import { ContextSummary } from '../../shared/ui/ContextSummary';
 
 const navigationItems = [
@@ -11,6 +15,23 @@ const navigationItems = [
 ];
 
 export function AppShell() {
+  const { context, setContext } = useContextStore();
+  const [isContextOpen, setIsContextOpen] = useState(false);
+  const [draftContext, setDraftContext] = useState<WorkContext>(context);
+
+  useEffect(() => {
+    if (isContextOpen) setDraftContext(context);
+  }, [context, isContextOpen]);
+
+  function closeContextDialog() {
+    setIsContextOpen(false);
+  }
+
+  function applyContextDialog() {
+    setContext(draftContext);
+    setIsContextOpen(false);
+  }
+
   return (
     <div className="statistik light-shell">
       <header className="app-header">
@@ -22,7 +43,7 @@ export function AppShell() {
           </span>
         </NavLink>
 
-        <ContextSummary />
+        <ContextSummary onEdit={() => setIsContextOpen(true)} />
 
         <div className="header-status">
           <button className="icon-button" type="button" aria-label="Daten aktualisieren">
@@ -51,6 +72,59 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      {isContextOpen ? (
+        <div className="dialog-backdrop" role="presentation">
+          <section className="context-dialog" role="dialog" aria-modal="true" aria-labelledby="context-dialog-title">
+            <header>
+              <h2 id="context-dialog-title">Arbeitskontext ändern</h2>
+              <button className="icon-button" type="button" aria-label="Schließen" onClick={closeContextDialog}>
+                <span className="material-icons" aria-hidden="true">close</span>
+              </button>
+            </header>
+
+            <label>
+              Gebiet
+              <select
+                value={draftContext.area}
+                onChange={(event) => setDraftContext((current) => ({ ...current, area: event.target.value }))}
+              >
+                {AREAS.map(([label, value]) => (
+                  <option key={value || 'all'} value={value}>{label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              Ort
+              <input
+                type="text"
+                value={draftContext.city}
+                placeholder="Alle Orte"
+                onChange={(event) => setDraftContext((current) => ({ ...current, city: event.target.value }))}
+              />
+            </label>
+
+            <label>
+              Datentyp
+              <select
+                value={draftContext.type}
+                onChange={(event) => setDraftContext((current) => ({ ...current, type: event.target.value as DataType }))}
+              >
+                <option value="">Alle Datentypen</option>
+                {DATA_TYPES.map((type) => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </label>
+
+            <footer>
+              <button type="button" onClick={closeContextDialog}>Abbrechen</button>
+              <button className="primary" type="button" onClick={applyContextDialog}>Übernehmen</button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
