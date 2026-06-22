@@ -21,8 +21,10 @@ type AiSearchPayload = {
   truncated?: boolean;
 };
 
+type ResolvedItem = { raw?: unknown; _resolvedType?: string; type?: string } | unknown;
+
 type ResolvedPayload = {
-  items?: Array<{ raw?: unknown; _resolvedType?: string; type?: string } | unknown>;
+  items?: ResolvedItem[];
 };
 
 type SearchResult = {
@@ -33,7 +35,7 @@ type SearchResult = {
 const RECORD_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'] as const;
 
 function cleanQueryValue(value: string) {
-  return String(value || '').replaceAll('"', '').trim();
+  return String(value || '').replace(/"/g, '').trim();
 }
 
 function buildContextQuery({ area, city }: WorkContext) {
@@ -322,7 +324,7 @@ async function loadAiSearch(prompt: string, context: WorkContext, selectedType: 
   });
 
   const resolvedItems = Array.isArray(resolvedPayload.items) ? resolvedPayload.items : [];
-  const normalized = resolvedItems.map((entry: ResolvedPayload['items'][number]) => {
+  const normalized = resolvedItems.map((entry: ResolvedItem) => {
     if (entry && typeof entry === 'object' && 'raw' in entry) {
       const resolvedEntry = entry as { raw?: unknown; _resolvedType?: string; type?: string };
       return normalizeSearchItem(
