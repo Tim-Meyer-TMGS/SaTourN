@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { qualityCriteria } from '../../../../Statistik/quality.js';
 import { AREAS, DATA_TYPES } from '../../shared/config/constants';
+import { qualityCriteria } from '../../shared/legacy/quality';
 import { useContextStore } from '../../shared/state/context-store';
 import { loadRecordsForFrontend, requestRecordMailDraftFrontend } from './records-api';
 import type { RecordRow, RecordSearchMeta } from './records-types';
