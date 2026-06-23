@@ -1,6 +1,6 @@
 # Datenqualitätsmonitor – Offene TODOs
 
-Stand: 2026-06-22
+Stand: 2026-06-23
 
 Diese Datei ist die kurze, aktive Arbeitsliste. Abgeschlossene Analysen und
 alte Nachweise liegen im Archiv.
@@ -95,7 +95,8 @@ Betroffene Dateien:
 
 Offen:
 
-- Datensatzdetail weiter auf handlungsrelevante Inhalte zuschneiden
+- React-Detailseite gegen echte Datensätze visuell mit der produktiven Detailseite vergleichen
+- React-Detailseite auf mobile Darstellung, lange Texte, viele Medien und fehlende Felder prüfen
 - Statistikseite weiter entschlacken
 - Zustände, Ladeanimationen und Fehlermeldungen vereinheitlichen
 
@@ -138,6 +139,8 @@ Erledigt:
 - Zielstruktur für `frontend/src/app`, `features` und `shared` beschrieben
 - Pilotseite `Datensätze` als erster Migrationskandidat festgelegt
 - Migrationsreihenfolge für den Parallelbetrieb dokumentiert
+- Records-Pilotseite mit Suche, KI-Suche, Filtern, Paging, CSV, Mailentwurf und Detailverlinkung umgesetzt
+- React-Detailseite auf das produktive 3-Spalten-Layout mit Aktionszeile, Nutzbarkeit, Medien, Detail-Informationen und Kriterienbewertung angeglichen
 
 Ergebnis:
 

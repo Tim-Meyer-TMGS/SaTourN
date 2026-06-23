@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { AREAS, DATA_TYPES } from '../../shared/config/constants';
 import { useContextStore } from '../../shared/state/context-store';
@@ -15,6 +15,7 @@ const navigationItems = [
 ];
 
 export function AppShell() {
+  const location = useLocation();
   const { context, setContext } = useContextStore();
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [draftContext, setDraftContext] = useState<WorkContext>(context);
@@ -31,6 +32,10 @@ export function AppShell() {
     setContext(draftContext);
     setIsContextOpen(false);
   }
+
+  const mainClassName = location.pathname.startsWith('/record-detail')
+    ? 'record-detail-main'
+    : 'records-main';
 
   return (
     <div className="statistik light-shell">
@@ -68,7 +73,7 @@ export function AppShell() {
           ))}
         </nav>
 
-        <main className="records-main">
+        <main className={mainClassName}>
           <Outlet />
         </main>
       </div>

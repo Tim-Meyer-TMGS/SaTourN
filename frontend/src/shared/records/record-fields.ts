@@ -87,6 +87,52 @@ export function getRecordWeb(raw: unknown) {
   return getFirst(raw, ['web', 'url', 'website', 'address.web', 'addresses.web']);
 }
 
+export function getRecordPhone(raw: unknown) {
+  return getFirst(raw, ['phone', 'phone2', 'telephone', 'address.phone', 'addresses.phone']);
+}
+
+export function buildVerifiedEt4Url(item: { type?: unknown; globalId?: unknown }) {
+  if (String(item.type || '') !== 'POI' || !item.globalId) return '';
+  return `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/${encodeURIComponent(String(item.globalId))}/x`;
+}
+
+function getKeywordValues(item: unknown) {
+  const raw = item && typeof item === 'object' && 'raw' in item
+    ? (item as { raw?: unknown }).raw
+    : item;
+  const direct = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+  const rawObject = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
+  return [
+    rawObject.keywords_old,
+    rawObject.keywords,
+    direct.keywords_old,
+    direct.keywords
+  ].flatMap((value) => Array.isArray(value) ? value.map(textValue) : []).filter(Boolean);
+}
+
+export function getPrimarySystem(item: unknown) {
+  const keywords = getKeywordValues(item).map((keyword) => keyword.toLowerCase());
+  if (keywords.includes('import_source_feratel') || keywords.includes('hassystemid_feratel')) {
+    return {
+      id: 'feratel',
+      name: 'feratel',
+      short: 'FD'
+    };
+  }
+  if (keywords.includes('import_source_outdooractive')) {
+    return {
+      id: 'outdooractive',
+      name: 'outdooractive',
+      short: 'OA'
+    };
+  }
+  return {
+    id: 'satourn',
+    name: 'SaTourN',
+    short: 'ST'
+  };
+}
+
 export function buildRecordDetailUrl(item: { type?: unknown; globalId?: unknown; id?: unknown }) {
   const params = new URLSearchParams();
   const type = String(item.type || '');

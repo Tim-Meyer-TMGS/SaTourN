@@ -1,6 +1,6 @@
 # Datenqualitätsmonitor - Aktueller Projektstand
 
-Stand: 2026-06-22
+Stand: 2026-06-23
 
 ## Kurzfassung
 
@@ -66,17 +66,17 @@ Die neue React-Detailseite kann aktuell:
 
 - Datensatz per `id` oder `global_id` über `/api/records/by-global-ids` laden
 - Qualitätsstatus und Score mit dem bestehenden Qualitätsmodell auswerten
-- wichtigste Pflegepunkte, Identität, Kontakt-/Pflegeangaben und Kriterienstatus anzeigen
-- Live-nahe Aktionszeile mit Zurücklink, et4-Link und Website-Link anzeigen
+- wichtigste Pflegepunkte, Nutzbarkeit, Kategorien/Gebiet und Detail-Informationen im 3-Spalten-Layout anzeigen
+- Live-nahe Aktionszeile mit Zurücklink, Vorher/Nächster, et4-Link und Aktionen-Menü anzeigen
 - Vorher/Nächster-Navigation aus dem letzten Records-Listenstand anbieten
 - ID, `global_id` und aktuellen Detail-Link kopieren
 - Beschreibung, Medien, Öffnungszeiten, ÖPNV-Anreise und Preisinfo anzeigen
-- einen begrenzten Rohdaten-Auszug für technische Kontrolle darstellen
+- die gesamte Qualitätsbewertung nach automatisch bewerteten, vorbereiteten, manuellen und ausgenommenen Kriterien darstellen
+- Kontext-Hinweis anzeigen, wenn die Detailseite aus einer Pflegeaufgabe geöffnet wird
 
 Noch nicht umgesetzt:
 
-- vollständige 1:1-Funktionalität der Live-Datensatzseite
-- vollständige Detailseite in React auf Live-Niveau, insbesondere weitere Live-spezifische Detailauswertungen
+- vollständiger visueller Feinschliff der React-Detailseite gegen echte Beispiel-Datensätze
 - Autocomplete im neuen Frontend
 - Feinschliff am Arbeitskontext-Dialog auf vollständiges Live-Niveau
 - fachliche Migration der übrigen Produktseiten
