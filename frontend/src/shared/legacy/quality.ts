@@ -5,6 +5,7 @@ import {
   findMissingCopyrightMedia as legacyFindMissingCopyrightMedia,
   getAttributeValue as legacyGetAttributeValue,
   getDomainCriteriaForType as legacyGetDomainCriteriaForType,
+  getQualityScanConfig as legacyGetQualityScanConfig,
   getMediaObjects as legacyGetMediaObjects,
   getTextsByRel as legacyGetTextsByRel,
   hasBookingLink as legacyHasBookingLink,
@@ -26,10 +27,22 @@ export type QualityCriterion = {
   autoCheck?: boolean;
 };
 
+export type QualityScanConfig = {
+  method: string;
+  verified: boolean;
+  missingQuery?: string | null;
+  positiveQuery?: string | null;
+  prefilterQuery?: string | null;
+};
+
 export const qualityCriteria = legacyQualityCriteria as readonly QualityCriterion[];
 export const evaluateAllItems = legacyEvaluateAllItems as (items: unknown[]) => unknown[];
 export const evaluateQualityForItem = legacyEvaluateQualityForItem as (item: unknown) => Record<string, unknown>;
 export const getDomainCriteriaForType = legacyGetDomainCriteriaForType as (type: string) => QualityCriterion[];
+export const getQualityScanConfig = legacyGetQualityScanConfig as (
+  criterionId: string | QualityCriterion,
+  type: string
+) => QualityScanConfig;
 export const getAttributeValue = legacyGetAttributeValue as (item: unknown, key: string) => string;
 export const getTextsByRel = legacyGetTextsByRel as (item: unknown, rel: string) => unknown[];
 export const hasValidDatasetLicense = legacyHasValidDatasetLicense as (item: unknown) => boolean;

@@ -116,6 +116,11 @@ export function OverviewPage() {
   const statusGradient = hasQualitySummary
     ? `conic-gradient(#2bb673 0 ${goodWidth}%, #f2a91b ${goodWidth}% ${goodWidth + reviewWidth}%, #ef4444 ${goodWidth + reviewWidth}% ${goodWidth + reviewWidth + criticalWidth}%, #98a2b3 ${goodWidth + reviewWidth + criticalWidth}% 100%)`
     : 'conic-gradient(#e2e8f0 0 100%)';
+  const summaryPartial = Boolean(
+    qualitySummary?.meta?.partial ||
+    qualitySummary?.meta?.failedTypes?.length ||
+    qualitySummary?.meta?.incompleteTypes?.length
+  );
 
   return (
     <>
@@ -222,6 +227,9 @@ export function OverviewPage() {
                 ? `Qualitätsstatus basiert auf ${formatNumber(qualityTotal)} bewerteten Datensätzen im aktuellen Arbeitskontext.`
                 : (canCalculateScore ? 'Qualitätsstatus konnte für diesen Kontext noch nicht geladen werden.' : 'Für ganz Sachsen wird kein Qualitäts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.')}
             </p>
+            {summaryPartial ? (
+              <p className="data-note subtle-note">Einige Datentypen wurden nur teilweise bewertet. Die Zahlen werden angezeigt, sobald verfügbare Ergebnisse vorliegen.</p>
+            ) : null}
           </article>
 
           <article className="panel-card open-data-card">
