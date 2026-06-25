@@ -16,6 +16,10 @@ function percent(value: number, total: number) {
   return total > 0 ? (value / total) * 100 : 0;
 }
 
+function qualityContextAllowsScore(area: string, city: string) {
+  return Boolean(city || (area && area !== 'Sachsen'));
+}
+
 function priorityClass(priority: string) {
   return priority === 'hoch' ? 'critical' : 'review';
 }
@@ -83,21 +87,35 @@ export function OverviewPage() {
     const openData = rows.reduce((sum, row) => sum + row.openData, 0);
     const notOpenData = Math.max(0, total - openData);
     const openDataQuote = percent(openData, total);
-    const issueTotal = (data?.issues || []).reduce((sum, issue) => sum + issue.affectedCount, 0);
 
     return {
       total,
       openData,
       notOpenData,
-      openDataQuote,
-      issueTotal
+      openDataQuote
     };
   }, [data]);
 
   const topIssues = useMemo(() => (data?.issues || []).slice(0, 5), [data]);
-  const canCalculateScore = Boolean(context.area || context.city);
+  const qualitySummary = data?.qualitySummary || null;
+  const canCalculateScore = qualityContextAllowsScore(context.area, context.city);
+  const hasQualitySummary = Boolean(qualitySummary);
+  const qualityTotal = qualitySummary?.totalAssessed || 0;
+  const qualityScore = qualitySummary?.averageQualityScore ?? null;
+  const qualityStatusTotal = (qualitySummary?.good || 0)
+    + (qualitySummary?.review || 0)
+    + (qualitySummary?.critical || 0)
+    + (qualitySummary?.notCalculable || 0);
+  const goodWidth = percent(qualitySummary?.good || 0, qualityStatusTotal);
+  const reviewWidth = percent(qualitySummary?.review || 0, qualityStatusTotal);
+  const criticalWidth = percent(qualitySummary?.critical || 0, qualityStatusTotal);
+  const notCalculatedWidth = Math.max(0, 100 - goodWidth - reviewWidth - criticalWidth);
   const openDataWidth = percent(summary.openData, summary.total);
   const notOpenDataWidth = percent(summary.notOpenData, summary.total);
+  const scoreWidth = qualityScore == null ? 0 : Math.max(0, Math.min(100, qualityScore));
+  const statusGradient = hasQualitySummary
+    ? `conic-gradient(#2bb673 0 ${goodWidth}%, #f2a91b ${goodWidth}% ${goodWidth + reviewWidth}%, #ef4444 ${goodWidth + reviewWidth}% ${goodWidth + reviewWidth + criticalWidth}%, #98a2b3 ${goodWidth + reviewWidth + criticalWidth}% 100%)`
+    : 'conic-gradient(#e2e8f0 0 100%)';
 
   return (
     <>
@@ -109,8 +127,8 @@ export function OverviewPage() {
       <section className="kpi-grid" aria-label="Kennzahlen">
         <article className="kpi-card">
           <div className="card-label">Qualitäts-Score <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value"><span>-</span> <small>/ 100</small></div>
-          <div className="score-track"><span style={{ width: '0%' }} /></div>
+          <div className="kpi-value"><span>{loading ? '...' : (qualityScore ?? '-')}</span> <small>/ 100</small></div>
+          <div className="score-track"><span style={{ width: `${scoreWidth}%` }} /></div>
           <p>Gesamtbewertung der Datenqualität</p>
         </article>
 
@@ -122,22 +140,22 @@ export function OverviewPage() {
 
         <article className="kpi-card">
           <div className="card-label">Gute Datensätze <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value">-</div>
-          <strong>Nicht berechnet</strong>
+          <div className="kpi-value">{loading ? '...' : (hasQualitySummary ? formatNumber(qualitySummary?.good || 0) : '-')}</div>
+          <strong>{hasQualitySummary ? `${formatPercent(percent(qualitySummary?.good || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
           <p>Vollständig und aktuell</p>
         </article>
 
         <article className="kpi-card">
           <div className="card-label">Mit Pflegebedarf <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value">{loading ? '...' : formatNumber(summary.issueTotal)}</div>
-          <strong>{summary.total ? formatPercent(percent(summary.issueTotal, summary.total)) : '-'}</strong>
+          <div className="kpi-value">{loading ? '...' : (hasQualitySummary ? formatNumber(qualitySummary?.withIssues || 0) : '-')}</div>
+          <strong>{hasQualitySummary ? `${formatPercent(percent(qualitySummary?.withIssues || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
           <p>Ergänzungen empfohlen</p>
         </article>
 
         <article className="kpi-card">
           <div className="card-label">Kritische Datensätze <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value">-</div>
-          <strong>Nicht berechnet</strong>
+          <div className="kpi-value">{loading ? '...' : (hasQualitySummary ? formatNumber(qualitySummary?.critical || 0) : '-')}</div>
+          <strong>{hasQualitySummary ? `${formatPercent(percent(qualitySummary?.critical || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
           <p>Dringender Handlungsbedarf</p>
         </article>
 
@@ -183,12 +201,27 @@ export function OverviewPage() {
               <h2>Qualitäts-Status-Verteilung</h2>
             </header>
             <div className="status-layout">
-              <div className="donut" aria-label="Qualitätsstatus-Verteilung" style={{ background: 'conic-gradient(#e2e8f0 0 100%)' }} />
+              <div className="donut" aria-label="Qualitätsstatus-Verteilung" style={{ background: statusGradient }} />
               <div className="legend">
-                <div className="legend-row"><span className="legend-dot muted" /><span>Nicht berechnet</span><strong>-</strong></div>
+                {hasQualitySummary ? (
+                  <>
+                    <div className="legend-row"><span className="legend-dot good" /><span>Gut</span><strong>{formatPercent(goodWidth)} ({formatNumber(qualitySummary?.good || 0)})</strong></div>
+                    <div className="legend-row"><span className="legend-dot review" /><span>Prüfen</span><strong>{formatPercent(reviewWidth)} ({formatNumber(qualitySummary?.review || 0)})</strong></div>
+                    <div className="legend-row"><span className="legend-dot critical" /><span>Kritisch</span><strong>{formatPercent(criticalWidth)} ({formatNumber(qualitySummary?.critical || 0)})</strong></div>
+                    {(qualitySummary?.notCalculable || 0) > 0 ? (
+                      <div className="legend-row"><span className="legend-dot muted" /><span>Nicht berechnet</span><strong>{formatPercent(notCalculatedWidth)} ({formatNumber(qualitySummary?.notCalculable || 0)})</strong></div>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="legend-row"><span className="legend-dot muted" /><span>Nicht berechnet</span><strong>-</strong></div>
+                )}
               </div>
             </div>
-            <p className="data-note">{canCalculateScore ? 'Qualitätsstatus wird hier noch nicht vollständig berechnet.' : 'Für ganz Sachsen wird kein Qualitäts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.'}</p>
+            <p className="data-note">
+              {hasQualitySummary
+                ? `Qualitätsstatus basiert auf ${formatNumber(qualityTotal)} bewerteten Datensätzen im aktuellen Arbeitskontext.`
+                : (canCalculateScore ? 'Qualitätsstatus konnte für diesen Kontext noch nicht geladen werden.' : 'Für ganz Sachsen wird kein Qualitäts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.')}
+            </p>
           </article>
 
           <article className="panel-card open-data-card">

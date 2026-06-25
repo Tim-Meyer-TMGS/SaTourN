@@ -23,12 +23,38 @@ export type OverviewIssue = {
 export type OverviewData = {
   statisticRows: OverviewStatisticRow[];
   issues: OverviewIssue[];
+  qualitySummary: OverviewQualitySummary | null;
+  qualitySummaryAvailable: boolean;
 };
 
 type CountPayload = {
   overallcount?: number;
   OverallCount?: number;
   count?: number;
+};
+
+export type OverviewQualityStatusCounts = {
+  gut?: number;
+  pruefen?: number;
+  kritisch?: number;
+  nichtBerechenbar?: number;
+};
+
+export type OverviewQualitySummary = {
+  totalAssessed: number;
+  withIssues: number;
+  good: number;
+  review: number;
+  critical: number;
+  notCalculable: number;
+  averageQualityScore: number | null;
+  openDataCapableCount: number;
+  issueSummary: OverviewIssue[];
+  statusCounts: OverviewQualityStatusCounts;
+  meta?: {
+    partial?: boolean;
+    failedTypes?: Array<{ type: string; error: string }>;
+  };
 };
 
 function cleanQueryValue(value: string) {
@@ -53,6 +79,10 @@ function priorityRank(priority: string) {
   return 1;
 }
 
+function hasConcreteQualityContext(context: WorkContext) {
+  return Boolean(context.city || (context.area && context.area !== 'Sachsen'));
+}
+
 async function loadStatisticRow(type: string, context: WorkContext): Promise<OverviewStatisticRow> {
   const runtime = getRuntimeConfig();
   const query = buildContextQuery(context);
@@ -66,6 +96,23 @@ async function loadStatisticRow(type: string, context: WorkContext): Promise<Ove
     total: extractTotal(totalPayload),
     openData: extractTotal(openDataPayload)
   };
+}
+
+async function loadQualitySummary(context: WorkContext): Promise<OverviewQualitySummary | null> {
+  if (!hasConcreteQualityContext(context)) return null;
+
+  const runtime = getRuntimeConfig();
+  const query = buildContextQuery(context);
+  if (!query) return null;
+
+  const params = new URLSearchParams();
+  params.set('query', query);
+  params.set('scanPageSize', '200');
+  params.set('maxPages', '20');
+  params.set('timeoutMs', '20000');
+  if (context.type) params.set('type', context.type);
+
+  return fetchJson<OverviewQualitySummary>(`${runtime.qualitySummaryApiBase}?${params.toString()}`);
 }
 
 async function loadIssueCount(criterionId: string, type: string, context: WorkContext) {
@@ -83,9 +130,19 @@ async function loadIssueCount(criterionId: string, type: string, context: WorkCo
 export async function loadOverviewData(context: WorkContext): Promise<OverviewData> {
   const targetTypes = context.type ? [context.type] : [...DATA_TYPES];
 
-  const statisticRows = await Promise.all(
-    targetTypes.map((type) => loadStatisticRow(type, context))
-  );
+  const [statisticRows, qualitySummary] = await Promise.all([
+    Promise.all(targetTypes.map((type) => loadStatisticRow(type, context))),
+    loadQualitySummary(context).catch(() => null)
+  ]);
+
+  if (qualitySummary) {
+    return {
+      statisticRows,
+      issues: qualitySummary.issueSummary || [],
+      qualitySummary,
+      qualitySummaryAvailable: true
+    };
+  }
 
   const issueMap = new Map<string, OverviewIssue>();
   const activeCriteria = qualityCriteria.filter((criterion) => criterion.autoCheck !== false);
@@ -124,6 +181,8 @@ export async function loadOverviewData(context: WorkContext): Promise<OverviewDa
 
   return {
     statisticRows,
-    issues
+    issues,
+    qualitySummary: null,
+    qualitySummaryAvailable: false
   };
 }
