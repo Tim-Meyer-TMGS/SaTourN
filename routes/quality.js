@@ -23,6 +23,7 @@ import {
 } from '../lib/quality-cache.js';
 import {
   evaluateQualityForItem,
+  getQualityAggregations,
   getAreaValues,
   getAttributeValue,
   getCategoryValues,
@@ -40,8 +41,10 @@ const MAX_SCAN_PAGE_SIZE = 200;
 const DEFAULT_MAX_PAGES = 5;
 const MAX_SCAN_PAGES = 20;
 const DEFAULT_SCAN_TIMEOUT_MS = 8000;
+const DEFAULT_SUMMARY_TIMEOUT_MS = 12000;
 const ET4_PAGES_BASE_URL = 'https://pages.et4.de/de/statistik_sachsen/wlan/detail';
 const VERIFIED_ET4_PAGE_TYPES = new Set(['POI']);
+const QUALITY_SUMMARY_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
 const QUALITY_COUNT_CACHE_TTL_MS = Number(process.env.QUALITY_COUNT_CACHE_TTL_MS) || 5 * 60 * 1000;
 const qualityCountCache = new Map();
 
@@ -182,6 +185,133 @@ function reduceCriterionForResponse(criterion, type = null) {
     api: criterion.api || null,
     apiByType: criterion.apiByType || null,
     unsupportedQueries: criterion.unsupportedQueries || []
+  };
+}
+
+function getRecordKey(rawItem, type, fallback = '') {
+  return getGlobalId(rawItem)
+    || extractId(rawItem)
+    || `${type}:${fallback}`;
+}
+
+function countItemsWithIssues(items) {
+  return items.filter((item) => Array.isArray(item?.missingCriteria) && item.missingCriteria.length > 0).length;
+}
+
+function summarizeQualityItems(items, meta = {}) {
+  const aggregations = getQualityAggregations(items);
+  const statusCounts = aggregations.qualityStatusCounts || {};
+  const totalAssessed = items.length;
+
+  return {
+    totalAssessed,
+    withIssues: countItemsWithIssues(items),
+    good: Number(statusCounts.gut || 0),
+    review: Number(statusCounts.pruefen || 0),
+    critical: Number(statusCounts.kritisch || 0),
+    notCalculable: Number(statusCounts.nichtBerechenbar || 0),
+    averageQualityScore: aggregations.averageQualityScore,
+    openDataCapableCount: aggregations.openDataCapableCount || 0,
+    issueSummary: aggregations.issueSummary || [],
+    typeSummary: aggregations.typeSummary || [],
+    statusCounts,
+    meta
+  };
+}
+
+async function scanQualitySummaryType({
+  type,
+  qParam,
+  pageSize,
+  maxPages,
+  signal
+}) {
+  const cities = isCitiesRequest({ type, qParam, scope: null, forceCities: false });
+  const finalPageSize = computeFinalLimit({ requestedLimit: pageSize, isCities: cities });
+  const items = [];
+  const seenRecordKeys = new Set();
+  const seenPageKeys = new Set();
+  let totalSourceItems = null;
+  let scannedItems = 0;
+  let scannedPages = 0;
+  let currentOffset = 0;
+  let complete = false;
+  let reason = null;
+  let paginationRepeated = false;
+
+  while (scannedPages < maxPages) {
+    const targetUrl = buildSearchUrl({
+      baseUrl: BASE_URL,
+      experience: EXPERIENCE,
+      template: TEMPLATE,
+      type,
+      qParam,
+      limit: finalPageSize,
+      offset: currentOffset,
+      apiKey: API_KEY
+    });
+
+    const payload = await fetchJsonPage(targetUrl, signal);
+    const pageItems = extractItems(payload);
+    const pageTotal = extractTotal(payload);
+    if (Number.isFinite(pageTotal)) totalSourceItems = pageTotal;
+
+    scannedPages += 1;
+    scannedItems += pageItems.length;
+
+    const pageKey = pageItems
+      .map((item, index) => getRecordKey(item, type, `${currentOffset + index}`))
+      .filter(Boolean)
+      .slice(0, 5)
+      .join('|');
+
+    if (pageKey && seenPageKeys.has(pageKey)) {
+      paginationRepeated = true;
+      reason = 'pagination_repeated';
+      break;
+    }
+    if (pageKey) seenPageKeys.add(pageKey);
+
+    pageItems.forEach((rawItem, index) => {
+      const recordKey = getRecordKey(rawItem, type, `${currentOffset + index}`);
+      if (seenRecordKeys.has(recordKey)) return;
+      seenRecordKeys.add(recordKey);
+      items.push(evaluateQualityForItem(normalizeItemForEvaluation(rawItem, type)));
+    });
+
+    currentOffset += pageItems.length;
+
+    if (!pageItems.length || pageItems.length < finalPageSize) {
+      complete = true;
+      reason = 'source_exhausted';
+      break;
+    }
+
+    if (Number.isFinite(totalSourceItems) && currentOffset >= totalSourceItems) {
+      complete = true;
+      reason = 'source_exhausted';
+      break;
+    }
+  }
+
+  if (!complete && !reason) {
+    reason = scannedPages >= maxPages ? 'scan_budget_exhausted' : 'source_exhausted';
+  }
+
+  return {
+    type,
+    items,
+    stats: {
+      type,
+      scannedItems,
+      scannedPages,
+      totalSourceItems,
+      overallcount: totalSourceItems,
+      complete,
+      reason,
+      budgetExhausted: scannedPages >= maxPages && !complete,
+      paginationRepeated
+    }
   };
 }
 
@@ -477,6 +607,107 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
           verifiedForType: scanConfig.verifiedForType,
           warnings: scanConfig.warnings,
           unsupportedQueries: scanConfig.unsupportedQueries
+        }
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
+
+  app.get('/api/quality/summary', async (req, res) => {
+    const {
+      type,
+      query = '',
+      scanPageSize,
+      maxPages,
+      timeoutMs
+    } = req.query;
+
+    if (!API_KEY) {
+      return res.status(500).json({ error: 'Server configuration missing: LICENSEKEY' });
+    }
+
+    const qParam = normalizeQueryParam(query);
+    if (!qParam) {
+      return res.status(400).json({
+        error: 'Missing query. Quality summaries require a regional or local work context.'
+      });
+    }
+
+    const normalizedType = String(type || '').trim();
+    const targetTypes = normalizedType ? [normalizedType] : QUALITY_SUMMARY_TYPES;
+    const pageSize = clampInteger(scanPageSize, DEFAULT_SCAN_PAGE_SIZE, 1, MAX_SCAN_PAGE_SIZE);
+    const pageBudget = clampInteger(maxPages, DEFAULT_MAX_PAGES, 1, MAX_SCAN_PAGES);
+    const summaryTimeoutMs = clampInteger(timeoutMs, DEFAULT_SUMMARY_TIMEOUT_MS, 1000, REQUEST_TIMEOUT_MS);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), summaryTimeoutMs);
+
+    try {
+      const results = await Promise.allSettled(targetTypes.map((targetType) => scanQualitySummaryType({
+        type: targetType,
+        qParam,
+        pageSize,
+        maxPages: pageBudget,
+        signal: controller.signal
+      })));
+
+      const failedTypes = [];
+      const typeStats = [];
+      const allItems = [];
+      const seenKeys = new Set();
+
+      results.forEach((result, index) => {
+        const targetType = targetTypes[index];
+        if (result.status === 'rejected') {
+          failedTypes.push({
+            type: targetType,
+            error: String(result.reason?.message || result.reason || 'unknown').slice(0, 300)
+          });
+          return;
+        }
+
+        typeStats.push(result.value.stats);
+        result.value.items.forEach((item, itemIndex) => {
+          const raw = item.raw || item;
+          const recordKey = getRecordKey(raw, item.type || targetType, `${targetType}:${itemIndex}`);
+          if (seenKeys.has(recordKey)) return;
+          seenKeys.add(recordKey);
+          allItems.push(item);
+        });
+      });
+
+      const incompleteTypes = typeStats
+        .filter((stats) => !stats.complete)
+        .map((stats) => ({
+          type: stats.type,
+          reason: stats.reason
+        }));
+
+      const payload = summarizeQualityItems(allItems, {
+        query: qParam,
+        requestedTypes: targetTypes,
+        completedTypes: targetTypes.filter((targetType) => !failedTypes.some((failure) => failure.type === targetType)),
+        failedTypes,
+        incompleteTypes,
+        pageSize,
+        maxPages: pageBudget,
+        timeoutMs: summaryTimeoutMs,
+        partial: failedTypes.length > 0 || incompleteTypes.length > 0,
+        typeStats
+      });
+
+      return res.status(failedTypes.length === targetTypes.length ? 502 : 200).json(payload);
+    } catch (error) {
+      const isAbort = error && (error.name === 'AbortError' || /aborted|timeout/i.test(String(error)));
+      return res.status(isAbort ? 504 : 500).json({
+        error: isAbort ? 'Quality summary timeout' : 'Quality summary failed',
+        details: isAbort ? undefined : String(error.message || error).slice(0, 300),
+        meta: {
+          query: qParam,
+          requestedTypes: targetTypes,
+          pageSize,
+          maxPages: pageBudget,
+          timeoutMs: summaryTimeoutMs
         }
       });
     } finally {

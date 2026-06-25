@@ -32,7 +32,7 @@ unberührt.
 
 - React-/Vite-/TypeScript-Grundgerüst angelegt
 - Router, Shell, Arbeitskontext-Store und API-Basis angelegt
-- Overview-Pilotseite mit KPI-Karten, Open-Data-Status, wichtigsten Pflegeaufgaben und Schnellzugriffen
+- Overview-Pilotseite mit KPI-Karten, Open-Data-Status, wichtigsten Pflegeaufgaben, Schnellzugriffen und deduplizierter Qualitätszusammenfassung für konkrete Arbeitskontexte
 - erste Records-Pilotseite mit Suche, KI-Suche, Qualitätsbewertung, Mailentwurf und gefiltertem Detailkontext
 - React-Detailseite mit Datensatzauflösung, 3-Spalten-Layout, Qualitätsbewertung, Medien, Nutzbarkeit, Detailfeldern und kontextbezogener Listen-Navigation
 - gemeinsame Feldnormalisierung unter `src/shared/records/record-fields.ts`
@@ -43,3 +43,5 @@ unberührt.
 Overview-, Records- und Detailseite werden weiter gegen echte Daten und die Live-Seiten abgeglichen.
 Neue Feldzugriffe sollen über `src/shared/records/record-fields.ts` laufen,
 damit Listen- und Detailansicht dieselbe Normalisierung nutzen.
+Die Overview-Seite darf Pflegebedarf nicht aus einzelnen Fehlercounts summieren;
+für berechnete Qualitätskennzahlen ist `/api/quality/summary` maßgeblich.

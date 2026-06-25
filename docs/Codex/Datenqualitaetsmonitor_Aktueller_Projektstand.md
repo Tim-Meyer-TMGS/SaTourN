@@ -55,6 +55,8 @@ Die Overview-Pilotseite kann aktuell:
 - wichtigste Pflegeaufgaben über verifizierte Qualitäts-Count-Endpunkte laden
 - Pflegeaufgaben in die React-Datensatzliste mit `criterionId` und Datentyp übergeben
 - bei ganz Sachsen bewusst keinen Qualitäts-Score anzeigen
+- bei konkretem Gebiet oder Ort eine deduplizierte Qualitätszusammenfassung über `/api/quality/summary` laden
+- `Mit Pflegebedarf`, gute Datensätze und kritische Datensätze aus der echten Datensatzbewertung berechnen, nicht aus aufsummierten Pflegeaufgaben-Counts
 - Schnellzugriffe auf die migrierten und vorbereiteten Bereiche darstellen
 
 Die Records-Pilotseite kann aktuell:
@@ -106,6 +108,7 @@ Noch nicht umgesetzt:
 - `/api/search`
 - `/api/autocomplete`
 - `/api/quality/count`
+- `/api/quality/summary`
 - `/api/quality/scan`
 - `/api/quality/list`
 - `/api/quality/snapshot`
@@ -138,6 +141,7 @@ Wichtige Produktentscheidung:
 - generische Wildcard-Pushdowns bleiben fachlich ausgeschlossen
 - erste produktive POI-Ausschlusslogik ist zentral verankert
 - KI-Suchergebnisse werden gegen die Prüfkriterien ausgewertet
+- `/api/quality/summary` bewertet konkrete Arbeitskontexte serverseitig und dedupliziert Datensätze vor der Aggregation
 
 ## Zuletzt umgesetzt
 
@@ -151,6 +155,7 @@ Wichtige Produktentscheidung:
 - Records-Pilot speichert den letzten Listenstand für die Detailnavigation
 - React-Detailseite um Vorher/Nächster-Navigation und Kopieraktionen erweitert
 - Feldzugriffe aus Records- und Detailseite in ein gemeinsames Shared-Modul verschoben
+- React-Übersicht nutzt für Gebiet/Ort eine deduplizierte Qualitätszusammenfassung statt aufsummierter Fehlercounts
 - aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung

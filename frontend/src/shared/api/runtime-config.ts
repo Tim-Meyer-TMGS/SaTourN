@@ -2,6 +2,7 @@ export type FrontendRuntimeConfig = {
   searchApiBase: string;
   qualityCountApiBase: string;
   qualityScanApiBase: string;
+  qualitySummaryApiBase: string;
   qualitySnapshotApiBase: string;
   qualityListApiBase: string;
   oiSearchApiBase: string;
@@ -15,6 +16,7 @@ declare global {
     SATOURN_SEARCH_API_BASE?: string;
     SATOURN_QUALITY_COUNT_API_BASE?: string;
     SATOURN_QUALITY_SCAN_API_BASE?: string;
+    SATOURN_QUALITY_SUMMARY_API_BASE?: string;
     SATOURN_QUALITY_SNAPSHOT_API_BASE?: string;
     SATOURN_QUALITY_LIST_API_BASE?: string;
     SATOURN_OI_SEARCH_API_BASE?: string;
@@ -50,6 +52,7 @@ export function getRuntimeConfig(): FrontendRuntimeConfig {
     searchApiBase,
     qualityCountApiBase: window.SATOURN_QUALITY_COUNT_API_BASE || derive(searchApiBase, '/api/quality/count'),
     qualityScanApiBase: window.SATOURN_QUALITY_SCAN_API_BASE || derive(searchApiBase, '/api/quality/scan'),
+    qualitySummaryApiBase: window.SATOURN_QUALITY_SUMMARY_API_BASE || derive(searchApiBase, '/api/quality/summary'),
     qualitySnapshotApiBase: window.SATOURN_QUALITY_SNAPSHOT_API_BASE || derive(searchApiBase, '/api/quality/snapshot'),
     qualityListApiBase: window.SATOURN_QUALITY_LIST_API_BASE || derive(searchApiBase, '/api/quality/list'),
     oiSearchApiBase: window.SATOURN_OI_SEARCH_API_BASE || derive(searchApiBase, '/api/oi/search-records'),
