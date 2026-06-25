@@ -36,6 +36,18 @@ type ResolvedPayload = {
   items?: ResolvedItem[];
 };
 
+type QualityScanPayload = {
+  items?: Array<Record<string, unknown>>;
+  stats?: {
+    overallcount?: number;
+    totalSourceItems?: number;
+    matchedItems?: number;
+  };
+  page?: {
+    complete?: boolean;
+  };
+};
+
 type SearchResult = {
   items: Record<string, unknown>[];
   meta: RecordSearchMeta;
@@ -296,6 +308,50 @@ export async function loadRecordsForFrontend(options: {
   return {
     rows: evaluated.map(toRecordRow),
     meta: baseResult.meta
+  };
+}
+
+export async function loadCriterionRecordsForFrontend(options: {
+  criterionId: string;
+  context: WorkContext;
+  selectedType: string;
+}) {
+  const { criterionId, context, selectedType } = options;
+  const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
+  if (!criterionId || !selectedType) {
+    throw new Error('Für diese Pflegeaufgabe fehlt ein konkreter Datentyp.');
+  }
+
+  const runtime = getRuntimeConfig();
+  const params = new URLSearchParams();
+  params.set('criterionId', criterionId);
+  params.set('type', selectedType);
+  params.set('limit', '200');
+  params.set('scanPageSize', '200');
+  params.set('maxPages', '20');
+  const query = buildContextQuery(context);
+  if (query) params.set('query', query);
+
+  const payload = await fetchJson<QualityScanPayload>(`${runtime.qualityScanApiBase}?${params.toString()}`, {
+    timeoutMs: 45_000
+  });
+
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  const rows = items.map((item) => toRecordRow({
+    ...item,
+    type: item.type || selectedType,
+    raw: item.raw || item
+  }));
+
+  return {
+    rows,
+    meta: {
+      mode: 'criterion',
+      criterionId,
+      criterionLabel: criterion?.label || criterionId,
+      estimatedTotalItems: Number(payload.stats?.overallcount ?? payload.stats?.matchedItems ?? rows.length),
+      truncated: payload.page?.complete === false
+    } satisfies RecordSearchMeta
   };
 }
 

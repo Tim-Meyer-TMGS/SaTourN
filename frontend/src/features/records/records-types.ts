@@ -18,8 +18,10 @@ export type RecordRow = {
 };
 
 export type RecordSearchMeta = {
-  mode: 'idle' | 'search' | 'id_search' | 'ai_search';
+  mode: 'idle' | 'search' | 'id_search' | 'ai_search' | 'criterion';
   prompt?: string;
+  criterionId?: string;
+  criterionLabel?: string;
   estimatedTotalItems: number;
   truncated: boolean;
 };

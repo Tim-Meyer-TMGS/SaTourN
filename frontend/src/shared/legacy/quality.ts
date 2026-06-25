@@ -23,6 +23,7 @@ export type QualityCriterion = {
   recommendation?: string;
   types?: string[];
   status?: string;
+  autoCheck?: boolean;
 };
 
 export const qualityCriteria = legacyQualityCriteria as readonly QualityCriterion[];

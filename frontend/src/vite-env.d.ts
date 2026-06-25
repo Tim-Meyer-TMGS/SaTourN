@@ -8,6 +8,7 @@ declare module '../../../../Statistik/quality.js' {
     recommendation?: string;
     types?: string[];
     status?: string;
+    autoCheck?: boolean;
   }>;
 
   export function evaluateAllItems(items: unknown[]): unknown[];

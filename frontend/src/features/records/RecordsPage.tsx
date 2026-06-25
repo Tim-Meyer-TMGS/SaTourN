@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { DATA_TYPES } from '../../shared/config/constants';
+import { formatRecordDate } from '../../shared/format/formatters';
 import { qualityCriteria } from '../../shared/legacy/quality';
 import { useContextStore } from '../../shared/state/context-store';
-import { loadRecordsForFrontend, requestRecordMailDraftFrontend } from './records-api';
+import { loadCriterionRecordsForFrontend, loadRecordsForFrontend, requestRecordMailDraftFrontend } from './records-api';
 import type { RecordRow, RecordSearchMeta } from './records-types';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
@@ -108,7 +109,7 @@ function buildRecordsCsv(rows: RecordRow[]) {
   return [header, ...body].map((line) => line.map(csvValue).join(';')).join('\n');
 }
 
-function saveRecordListState(rows: RecordRow[]) {
+function saveRecordListState(rows: RecordRow[], buildDetailUrl: (row: RecordRow) => string = (row) => row.detailUrl) {
   if (typeof window === 'undefined') return;
 
   try {
@@ -119,7 +120,7 @@ function saveRecordListState(rows: RecordRow[]) {
         globalId: row.globalId,
         type: row.type,
         title: row.title,
-        detailUrl: row.detailUrl
+        detailUrl: buildDetailUrl(row)
       }))
     }));
   } catch {
@@ -128,6 +129,7 @@ function saveRecordListState(rows: RecordRow[]) {
 }
 
 export function RecordsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { context, setContext } = useContextStore();
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<'search' | 'ai_search'>('search');
@@ -144,11 +146,14 @@ export function RecordsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(25);
   const [mailLoadingKey, setMailLoadingKey] = useState('');
+  const urlCriterionId = searchParams.get('criterionId') || '';
+  const urlType = searchParams.get('type') || '';
 
   const resultSummary = useMemo(() => {
     if (loading) return 'Datensätze werden geladen ...';
     if (error) return error;
     if (meta.mode === 'ai_search' && meta.prompt) return `KI-Suche: ${rows.length} Datensätze geladen`;
+    if (meta.mode === 'criterion') return `Gefiltert nach Pflegeaufgabe: ${meta.criterionLabel || meta.criterionId || 'Auswahl'} - ${rows.length} Datensätze geladen`;
     if (!rows.length) return 'Noch keine Datensätze geladen.';
     const extra = meta.truncated ? ' - Ergebnisliste gekürzt' : '';
     return `${rows.length} Datensätze geladen${extra}`;
@@ -199,6 +204,84 @@ export function RecordsPage() {
     const endIndex = Math.min(filteredRows.length, currentPage * pageSize);
     return `${startIndex}-${endIndex} von ${filteredRows.length}`;
   }, [currentPage, filteredRows.length, pageSize]);
+
+  function buildDetailUrl(row: RecordRow) {
+    if (!issueFilter) return row.detailUrl;
+
+    const criterionLabel = qualityCriteria.find((entry) => entry.id === issueFilter)?.label || row.primaryIssue || issueFilter;
+    const url = new URL(row.detailUrl, 'https://satourn.local');
+    url.searchParams.set('source', 'task');
+    url.searchParams.set('criterion_id', issueFilter);
+    url.searchParams.set('criterion_label', criterionLabel);
+    return `${url.pathname}${url.search}`;
+  }
+
+  useEffect(() => {
+    if (!rows.length) return;
+    saveRecordListState(filteredRows, buildDetailUrl);
+  }, [filteredRows, issueFilter, rows.length]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCriterionFromUrl() {
+      if (!urlCriterionId) return;
+      if (urlType && context.type !== urlType) {
+        setContext({ type: urlType as typeof context.type });
+        return;
+      }
+
+      const selectedType = urlType || context.type;
+      if (!selectedType) {
+        setError('Für diese Pflegeaufgabe fehlt ein konkreter Datentyp.');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+      setMode('search');
+      setPage(1);
+      setIssueFilter(urlCriterionId);
+
+      try {
+        const result = await loadCriterionRecordsForFrontend({
+          criterionId: urlCriterionId,
+          context,
+          selectedType
+        });
+        if (!active) return;
+        setRows(result.rows);
+        setMeta(result.meta);
+        setCategoryFilter('');
+        saveRecordListState(result.rows, (row) => {
+          const criterionLabel = result.meta.criterionLabel || urlCriterionId;
+          const url = new URL(row.detailUrl, 'https://satourn.local');
+          url.searchParams.set('source', 'task');
+          url.searchParams.set('criterion_id', urlCriterionId);
+          url.searchParams.set('criterion_label', criterionLabel);
+          return `${url.pathname}${url.search}`;
+        });
+      } catch (caughtError) {
+        if (!active) return;
+        setRows([]);
+        setMeta({
+          mode: 'criterion',
+          criterionId: urlCriterionId,
+          estimatedTotalItems: 0,
+          truncated: false
+        });
+        setError(caughtError instanceof Error ? caughtError.message : 'Fehlerliste konnte nicht geladen werden.');
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void loadCriterionFromUrl();
+
+    return () => {
+      active = false;
+    };
+  }, [context, setContext, urlCriterionId, urlType]);
 
   async function handleSubmit(nextMode: 'search' | 'ai_search') {
     const trimmedQuery = query.trim();
@@ -288,6 +371,17 @@ export function RecordsPage() {
       });
       setRows([]);
       setQuery('');
+    }
+
+    if (meta.mode === 'criterion') {
+      setSearchParams({});
+      setMode('search');
+      setMeta({
+        mode: 'idle',
+        estimatedTotalItems: 0,
+        truncated: false
+      });
+      setRows([]);
     }
   }
 
@@ -430,7 +524,7 @@ export function RecordsPage() {
               ) : pagedRows.map((row) => (
                 <tr key={row.globalId || `${row.type}:${row.id}`}>
                   <td>
-                    <Link className="table-title-link" to={row.detailUrl}>
+                    <Link className="table-title-link" to={buildDetailUrl(row)}>
                       {row.title}
                     </Link>
                     <small>{row.globalId || row.id}</small>
@@ -445,10 +539,10 @@ export function RecordsPage() {
                   </td>
                   <td>{row.qualityScore ?? '-'}</td>
                   <td>{row.primaryIssue || '-'}</td>
-                  <td>{row.updatedAt || '-'}</td>
+                  <td>{formatRecordDate(row.updatedAt)}</td>
                   <td>
                     <div className="table-actions">
-                      <Link className="table-link-button" to={row.detailUrl}>
+                      <Link className="table-link-button" to={buildDetailUrl(row)}>
                         Detail
                       </Link>
                       <button
