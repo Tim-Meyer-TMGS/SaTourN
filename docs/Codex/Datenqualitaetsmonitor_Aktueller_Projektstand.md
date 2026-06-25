@@ -45,14 +45,24 @@ Aktueller Stand:
 - Runtime-API-Konfiguration steht
 - HTTP-Client-Basis steht
 - gemeinsame Feldnormalisierung für Datensatzliste und Detailseite steht unter `frontend/src/shared/records/record-fields.ts`
-- Platzhalterseiten für alle aktuellen Fachbereiche stehen
-- `Datensätze` ist die erste fachliche Pilotseite
+- Platzhalterseiten für noch nicht migrierte Fachbereiche stehen
+- `Übersicht`, `Datensätze` und `Datensatz-Detail` sind fachliche Pilotseiten
+
+Die Overview-Pilotseite kann aktuell:
+
+- Statistik-Counts pro Datentyp über den bestehenden Search-Proxy laden
+- Open-Data-Quote aus Gesamt- und Open-Data-Counts berechnen
+- wichtigste Pflegeaufgaben über verifizierte Qualitäts-Count-Endpunkte laden
+- Pflegeaufgaben in die React-Datensatzliste mit `criterionId` und Datentyp übergeben
+- bei ganz Sachsen bewusst keinen Qualitäts-Score anzeigen
+- Schnellzugriffe auf die migrierten und vorbereiteten Bereiche darstellen
 
 Die Records-Pilotseite kann aktuell:
 
 - Suche gegen `/api/search`
 - KI-Suche gegen `/api/oi/search-records`
 - ID-Auflösung über `/api/records/by-global-ids`
+- Pflegeaufgabenlisten aus `/api/quality/scan` laden, wenn `criterionId` und `type` in der URL gesetzt sind
 - clientseitige Qualitätsauswertung auf Basis des bestehenden Qualitätsmodells
 - lokale Filter für Kategorie und Problem
 - Schnellfilter für Lizenz, Beschreibung, Bilder und Öffnungszeiten
@@ -61,6 +71,7 @@ Die Records-Pilotseite kann aktuell:
 - Detailverlinkung im neuen Routing
 - Mailentwurf über `/api/oi/mail-draft`
 - vollständiges Zurücksetzen des AI-Search-Modus über `Filter zurücksetzen`
+- den aktuell gefilterten Listenstand für die Detailnavigation speichern
 
 Die neue React-Detailseite kann aktuell:
 
@@ -69,6 +80,7 @@ Die neue React-Detailseite kann aktuell:
 - wichtigste Pflegepunkte, Nutzbarkeit, Kategorien/Gebiet und Detail-Informationen im 3-Spalten-Layout anzeigen
 - Live-nahe Aktionszeile mit Zurücklink, Vorher/Nächster, et4-Link und Aktionen-Menü anzeigen
 - Vorher/Nächster-Navigation aus dem letzten Records-Listenstand anbieten
+- Pflegeaufgaben-Kontext aus der gefilterten Records-Liste übernehmen
 - ID, `global_id` und aktuellen Detail-Link kopieren
 - Beschreibung, Medien, Öffnungszeiten, ÖPNV-Anreise und Preisinfo anzeigen
 - die gesamte Qualitätsbewertung nach automatisch bewerteten, vorbereiteten, manuellen und ausgenommenen Kriterien darstellen

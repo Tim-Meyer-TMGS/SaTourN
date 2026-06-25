@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { fetchJson } from '../../shared/api/http-client';
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
+import { formatRecordDate } from '../../shared/format/formatters';
 import {
   evaluateQualityForItem,
   findMissingCopyrightMedia,
@@ -106,30 +107,11 @@ type DetailItem = {
   zip: string;
   license: string;
   primarySystem: string;
-  coordinates: string;
   usability: DetailUsability[];
   criteriaSections: DetailCriteriaSection[];
   mediaImages: DetailImage[];
   mediaNote: string;
 };
-
-function textValue(value: unknown): string {
-  if (value == null) return '';
-  if (Array.isArray(value)) return value.map(textValue).find(Boolean) || '';
-  if (typeof value === 'object') {
-    const candidate = value as Record<string, unknown>;
-    return (
-      textValue(candidate.title)
-      || textValue(candidate.name)
-      || textValue(candidate.label)
-      || textValue(candidate.value)
-      || textValue(candidate.text)
-      || textValue(candidate.content)
-      || ''
-    );
-  }
-  return String(value).replace(/\s+/g, ' ').trim();
-}
 
 function htmlToPlainText(value: unknown) {
   return String(value || '')
@@ -195,12 +177,6 @@ function getOpeningHoursSummary(raw: unknown) {
     .slice(0, 7);
 
   return rows.length ? rows.join('\n') : 'Keine Öffnungszeiten angegeben.';
-}
-
-function getCoordinates(raw: unknown) {
-  const lat = getFirst(raw, ['geo.main.latitude', 'latitude']);
-  const lon = getFirst(raw, ['geo.main.longitude', 'longitude']);
-  return lat && lon ? `${lat}, ${lon}` : '';
 }
 
 function priorityRank(priority: string | undefined) {
@@ -424,7 +400,6 @@ function normalizeDetailItem(rawInput: unknown, fallbackType: string): DetailIte
     zip: getFirst(raw, ['zip', 'address.zip']),
     license: getAttributeValue(raw, 'license') || '',
     primarySystem: primarySystem.name,
-    coordinates: getCoordinates(raw),
     usability: buildUsability(raw, evaluatedType, images),
     criteriaSections: buildCriteriaSections({
       type: evaluatedType,
@@ -776,10 +751,8 @@ export function RecordDetailPage() {
                   <dd>{[item.street, item.zip, item.city].filter(Boolean).join(', ') || 'Nicht angegeben'}</dd>
                   <dt>Lizenz</dt>
                   <dd>{item.license || 'Lizenz fehlt'}</dd>
-                  <dt>Koordinaten</dt>
-                  <dd>{item.coordinates || 'Nicht angegeben'}</dd>
                   <dt>Letzte Aktualisierung</dt>
-                  <dd>{item.updatedAt || '-'}</dd>
+                  <dd>{formatRecordDate(item.updatedAt)}</dd>
                 </dl>
               </article>
 
