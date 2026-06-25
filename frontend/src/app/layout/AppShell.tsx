@@ -54,7 +54,7 @@ export function AppShell() {
           <button className="icon-button" type="button" aria-label="Daten aktualisieren">
             <span className="material-icons" aria-hidden="true">refresh</span>
           </button>
-          <span>Framework-Preview</span>
+          <span className="preview-chip">Preview</span>
         </div>
       </header>
 

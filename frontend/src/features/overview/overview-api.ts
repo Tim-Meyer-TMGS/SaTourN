@@ -2,7 +2,7 @@ import { fetchJson } from '../../shared/api/http-client';
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
 import { DATA_TYPES } from '../../shared/config/constants';
-import { qualityCriteria } from '../../shared/legacy/quality';
+import { getQualityScanConfig, qualityCriteria, type QualityCriterion } from '../../shared/legacy/quality';
 import type { WorkContext } from '../../shared/types/context';
 
 export type OverviewStatisticRow = {
@@ -54,6 +54,7 @@ export type OverviewQualitySummary = {
   meta?: {
     partial?: boolean;
     failedTypes?: Array<{ type: string; error: string }>;
+    incompleteTypes?: Array<{ type: string; reason: string }>;
   };
 };
 
@@ -81,6 +82,11 @@ function priorityRank(priority: string) {
 
 function hasConcreteQualityContext(context: WorkContext) {
   return Boolean(context.city || (context.area && context.area !== 'Sachsen'));
+}
+
+function canLoadPushdownCount(criterion: QualityCriterion, type: string) {
+  const config = getQualityScanConfig(criterion, type);
+  return config.method === 'api_pushdown' && config.verified && Boolean(config.missingQuery);
 }
 
 async function loadStatisticRow(type: string, context: WorkContext): Promise<OverviewStatisticRow> {
@@ -150,6 +156,7 @@ export async function loadOverviewData(context: WorkContext): Promise<OverviewDa
   await Promise.all(activeCriteria.flatMap((criterion) => (
     targetTypes
       .filter((type) => !criterion.types?.length || criterion.types.includes(type))
+      .filter((type) => canLoadPushdownCount(criterion, type))
       .map(async (type) => {
         try {
           const count = await loadIssueCount(criterion.id, type, context);
