@@ -1,4 +1,4 @@
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom';
+import { HashRouter, NavLink, Route, Routes } from 'react-router-dom';
 
 import { AppShell } from '../layout/AppShell';
 import { HelpPage } from '../../features/help/HelpPage';
@@ -8,13 +8,9 @@ import { RecordsPage } from '../../features/records/RecordsPage';
 import { StatsPage } from '../../features/stats/StatsPage';
 import { TasksPage } from '../../features/tasks/TasksPage';
 
-const routerBaseName = import.meta.env.BASE_URL === '/'
-  ? '/'
-  : import.meta.env.BASE_URL.replace(/\/$/, '');
-
 export function AppRouter() {
   return (
-    <BrowserRouter basename={routerBaseName}>
+    <HashRouter>
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<OverviewPage />} />
@@ -35,6 +31,6 @@ export function AppRouter() {
           />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

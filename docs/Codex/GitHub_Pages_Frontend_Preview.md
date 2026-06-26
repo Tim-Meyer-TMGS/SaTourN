@@ -11,6 +11,14 @@ Preview-URL nach erfolgreichem Deployment:
 https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/
 ```
 
+Direkte Seitenaufrufe in der Preview laufen über Hash-Routing:
+
+```text
+https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/#/tasks
+https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/#/records
+https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/#/record-detail?type=POI&global_id=p_100188350
+```
+
 Bestehende Live-URL bleibt:
 
 ```text
@@ -23,6 +31,8 @@ https://tim-meyer-tmgs.github.io/SaTourN/Statistik/index.html
 - `.github/workflows/pages.yml` baut zuerst die bestehende Jekyll-Seite.
 - Danach wird `SaTourN/frontend` mit Vite gebaut.
 - Der Vite-Build wird nach `_site/frontend-preview/` kopiert.
+- Die React-Preview nutzt `HashRouter`, damit GitHub Pages keine Server-Rewrites braucht.
+- Bekannte alte Direktpfade wie `/frontend-preview/tasks` und `/frontend-preview/tasks/` leiten per statischer Redirect-Seite auf `#/tasks` um.
 - `_config.yml` schließt den Quellordner `frontend/` aus dem Jekyll-Output aus.
 
 ## GitHub-Einstellungen
@@ -48,6 +58,7 @@ Nach erfolgreichem Workflow gibt es zwei getrennte Einstiege:
 
 - Produktive Statistik: `/SaTourN/Statistik/index.html`
 - Framework-Preview: `/SaTourN/frontend-preview/`
+- Framework-Unterseiten: `/SaTourN/frontend-preview/#/tasks`, `#/records`, `#/stats`, `#/help`
 
 Falls die Preview fehlschlägt, bleibt die bestehende Statistik-Seite unverändert. Der Workflow würde dann zwar nicht deployen, aber die produktiven Dateien im Repository werden dadurch nicht geändert.
 

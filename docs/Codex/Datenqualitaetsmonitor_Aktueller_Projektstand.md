@@ -16,6 +16,12 @@ zu gefährden. Die GitHub-Pages-Preview läuft getrennt unter:
 https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/
 ```
 
+Unterseiten der Preview nutzen Hash-Routing, zum Beispiel:
+
+```text
+https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/#/tasks
+```
+
 ## Aktive Seiten im Bestandsfrontend
 
 - `Statistik/index.html`
@@ -38,6 +44,7 @@ Aktueller Stand:
 - React-/Vite-/TypeScript-Basis steht
 - Router steht
 - GitHub-Pages-Preview ist eingerichtet
+- GitHub-Pages-Preview nutzt Hash-Routing und statische Redirects für bekannte Unterseiten
 - Shell und Navigation sind an das bestehende Live-Design angenähert
 - SaTourN-Logo, Arbeitskontext-Leiste, Sidebar, Kartenstil und Tabellenstil sind im Preview-CSS abgebildet
 - Light-/Dark-Mode ist in der React-Shell umschaltbar und wird lokal gespeichert
