@@ -45,8 +45,8 @@ Aktueller Stand:
 - Runtime-API-Konfiguration steht
 - HTTP-Client-Basis steht
 - gemeinsame Feldnormalisierung für Datensatzliste und Detailseite steht unter `frontend/src/shared/records/record-fields.ts`
-- Platzhalterseiten für noch nicht migrierte Fachbereiche stehen
 - `Übersicht`, `Pflegeaufgaben`, `Datensätze`, `Datensatz-Detail` und `Open-Data-Statistik` sind fachliche Pilotseiten
+- `Hilfe` ist als fachliche Pilotseite mit Score-Erklärung, drei Fehler-Ebenen und Mindestanforderungen je Datentyp umgesetzt
 
 Die Overview-Pilotseite kann aktuell:
 
@@ -107,12 +107,20 @@ Die Open-Data-Statistik-Pilotseite kann aktuell:
 - den bestehenden Arbeitskontext aus der React-Shell übernehmen, ohne eigene doppelte Filterleiste
 - bei nicht Open-Data-fähigen Datensätzen direkt zur Lizenz-Pflegeaufgabe in der Datensatzliste springen
 
+Die Hilfe-Pilotseite kann aktuell:
+
+- den Score nutzerverständlich erklären
+- die drei Ebenen `Kritische Fehler`, `Fehler` und `Leichte Optimierungen` darstellen
+- je Datentyp Mindestanforderungen und sinnvolle Optimierungen aus dem bestehenden Qualitätsmodell ableiten
+- fachlich vorbereitete, aber noch nicht automatisch bewertete Kriterien getrennt erklären
+- technische Prüfbegriffe aus der Nutzerkommunikation heraushalten
+
 Noch nicht umgesetzt:
 
 - vollständiger visueller Feinschliff der React-Detailseite gegen echte Beispiel-Datensätze
 - Autocomplete im neuen Frontend
 - Feinschliff am Arbeitskontext-Dialog auf vollständiges Live-Niveau
-- fachliche Migration der übrigen Produktseiten
+- weiterer fachlicher Abgleich der migrierten Produktseiten gegen echte Beispieldaten
 
 ## Produktiver Betrieb
 
@@ -179,6 +187,7 @@ Wichtige Produktentscheidung:
 - React-Übersicht nutzt für Gebiet/Ort eine deduplizierte Qualitätszusammenfassung statt aufsummierter Fehlercounts
 - React-Pflegeaufgaben-Seite mit gruppierten Aufgaben, Filtern, Detailspalte und Records-Verlinkung migriert
 - React-Open-Data-Statistik mit KPI-Karten, Datentypverteilung, Quote-Balken und Lizenz-Pflegehinweis migriert
+- React-Hilfeseite mit Score-Verständnis, Fehler-Ebenen und Datentyp-Anforderungen migriert
 - aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung

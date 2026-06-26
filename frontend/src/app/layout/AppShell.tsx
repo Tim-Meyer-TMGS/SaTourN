@@ -39,7 +39,9 @@ export function AppShell() {
       ? 'tasks-main'
       : location.pathname.startsWith('/stats')
         ? 'stats-main'
-        : 'records-main';
+        : location.pathname.startsWith('/help')
+          ? 'help-main'
+          : 'records-main';
 
   return (
     <div className="statistik light-shell">

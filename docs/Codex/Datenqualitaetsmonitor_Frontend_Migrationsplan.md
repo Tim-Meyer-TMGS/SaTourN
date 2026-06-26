@@ -388,6 +388,11 @@ Ziel:
 - AI-Suche
 - Mailaktion
 
+Status:
+
+- als React-Pilotseite umgesetzt
+- weiterer Abgleich gegen Live-Verhalten und echte Suchfälle offen
+
 ### Schritt 6 – `Datensatz-Detail` migrieren
 
 Ziel:
@@ -395,6 +400,12 @@ Ziel:
 - gleiche Bewertungslogik
 - gleiche Rückverlinkung
 - klare Komponentenstruktur
+
+Status:
+
+- als React-Pilotseite umgesetzt
+- Mapping, Typen und UI-Komponenten sind getrennt
+- weiterer visueller und fachlicher Abgleich gegen echte Datensätze offen
 
 ### Schritt 7 – `Pflegeaufgaben` migrieren
 
@@ -404,6 +415,11 @@ Ziel:
 - Aufgabendetails
 - Verlinkung in Datensatzlisten
 
+Status:
+
+- als React-Pilotseite umgesetzt
+- Gruppierung und Sprung in Datensatzlisten gegen echte Aufgaben weiter prüfen
+
 ### Schritt 8 – `Übersicht` und `Open-Data-Statistik` migrieren
 
 Ziel:
@@ -412,12 +428,23 @@ Ziel:
 - Diagramm- und Statistikflächen
 - Exportpfade
 
+Status:
+
+- als React-Pilotseiten umgesetzt
+- Kennzahlen und API-Abrufe weiter gegen den Bestand prüfen
+
 ### Schritt 9 – `Hilfe` migrieren
 
 Ziel:
 
 - Inhalte aus Logik herauslösen
 - produktnahe Nutzerhilfe pflegen
+
+Status:
+
+- als React-Pilotseite umgesetzt
+- nutzt das bestehende Qualitätsmodell für Datentyp-Anforderungen
+- nach finaler fachlicher Gewichtung erneut prüfen
 
 ### Schritt 10 – Alt-Frontend kontrolliert ablösen
 
@@ -453,11 +480,13 @@ Noch zu entscheiden:
 
 ## Empfehlung für den nächsten konkreten Arbeitsschritt
 
-Als Nächstes soll kein UI umgebaut werden.
+Als Nächstes soll keine weitere Seite neu gebaut werden.
 
-Der nächste konkrete Schritt ist:
+Der nächste konkrete Schritt ist der systematische Abgleich der React-Preview
+gegen den produktiven Bestand:
 
-1. `React + Vite + TypeScript` als Zielarchitektur dokumentarisch festziehen
-2. `scripts.js` weiter als Orchestrierungsdatei reduzieren
-3. danach ein neues `frontend/`-Grundgerüst parallel anlegen
-4. anschließend `Datensätze` als Pilotseite migrieren
+1. pro Seite eine kurze Checkliste aus Live-Funktion, API-Abruf und UI-Zustand erstellen
+2. kritische Abweichungen zuerst beheben:
+   Suche, Pflegeaufgabenfilter, Detailnavigation, Scoreberechnung, Open-Data-Zahlen
+3. erst danach kosmetischen UI-Feinschliff durchführen
+4. Umschaltung auf produktive Pfade erst vorbereiten, wenn alle Hauptseiten fachlich gleichwertig sind
