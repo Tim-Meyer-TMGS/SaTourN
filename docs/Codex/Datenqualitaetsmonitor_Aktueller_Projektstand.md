@@ -40,6 +40,7 @@ Aktueller Stand:
 - GitHub-Pages-Preview ist eingerichtet
 - Shell und Navigation sind an das bestehende Live-Design angenähert
 - SaTourN-Logo, Arbeitskontext-Leiste, Sidebar, Kartenstil und Tabellenstil sind im Preview-CSS abgebildet
+- Light-/Dark-Mode ist in der React-Shell umschaltbar und wird lokal gespeichert
 - Arbeitskontext-Store steht
 - zentraler Arbeitskontext-Dialog steht im React-Shell-Pfad
 - Runtime-API-Konfiguration steht
@@ -188,6 +189,7 @@ Wichtige Produktentscheidung:
 - React-Pflegeaufgaben-Seite mit gruppierten Aufgaben, Filtern, Detailspalte und Records-Verlinkung migriert
 - React-Open-Data-Statistik mit KPI-Karten, Datentypverteilung, Quote-Balken und Lizenz-Pflegehinweis migriert
 - React-Hilfeseite mit Score-Verständnis, Fehler-Ebenen und Datentyp-Anforderungen migriert
+- React-Preview um persistenten Dark Mode ergänzt
 - aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung

@@ -32,6 +32,7 @@ unberührt.
 
 - React-/Vite-/TypeScript-Grundgerüst angelegt
 - Router, Shell, Arbeitskontext-Store und API-Basis angelegt
+- persistenter Light-/Dark-Mode in der React-Shell
 - Overview-Pilotseite mit KPI-Karten, Open-Data-Status, wichtigsten Pflegeaufgaben, Schnellzugriffen und deduplizierter Qualitätszusammenfassung für konkrete Arbeitskontexte
 - Pflegeaufgaben-Pilotseite mit KPI-Zeile, Filtern, gruppierten Aufgaben, Detailspalte und Übergabe in die Datensatzliste
 - erste Records-Pilotseite mit Suche, KI-Suche, Qualitätsbewertung, Mailentwurf und gefiltertem Detailkontext
