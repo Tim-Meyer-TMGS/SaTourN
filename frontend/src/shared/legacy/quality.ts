@@ -21,10 +21,16 @@ export type QualityCriterion = {
   id: string;
   label: string;
   priority?: string;
+  uiPriority?: string;
   recommendation?: string;
   types?: string[];
   status?: string;
   autoCheck?: boolean;
+  openDataRelevant?: boolean;
+  uiSeverity?: string;
+  qualityLevel?: string;
+  severity?: string;
+  weight?: number;
 };
 
 export type QualityScanConfig = {

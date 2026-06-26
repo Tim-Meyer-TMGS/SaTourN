@@ -39,18 +39,23 @@ Betroffene Dateien:
 - `Statistik/records/records-data.js`
 - `routes/oi.js`
 
-### 3. Hilfeseite und KI-Texte auf den aktuellen Produktstand ziehen
+### 3. KI-Texte auf den aktuellen Produktstand ziehen
 
 Offen:
 
-- Hilfeseite an die tatsächlich aktiven Kriterien anpassen
 - Mail- und Sucheinstieg kurz und verständlich dokumentieren
 - spätere 3-Ebenen-Logik weiter fachlich vorbereiten:
   `Kritische Fehler`, `Fehler`, `Leichte Optimierungen`
 
+Erledigt:
+
+- Hilfeseite im React-Preview an die tatsächlich aktiven Kriterien angepasst
+- Score-Erklärung, drei Fehler-Ebenen und Mindestanforderungen je Datentyp in der Preview umgesetzt
+
 Betroffene Dateien:
 
 - `Statistik/help.html`
+- `frontend/src/features/help/HelpPage.tsx`
 - `Statistik/scripts.js`
 - `docs/Codex/Datenqualitaetsmonitor_Aktueller_Projektstand.md`
 
@@ -212,26 +217,44 @@ Bereits umgesetzt:
 - neues `frontend/`-Grundgerüst parallel zum Bestand angelegt
 - Routing, Shell und Arbeitskontext im neuen Frontend vorbereitet
 - gemeinsamer API-Client-Grundrahmen für Search, Quality, Records und OI vorbereitet
-- Platzhalterseiten für alle heutigen Hauptbereiche angelegt
+- `Übersicht` migriert
+- `Pflegeaufgaben` migriert
+- `Datensätze` migriert
+- `Datensatz-Detail` migriert
+- `Open-Data-Statistik` migriert
+- `Hilfe` migriert
+- UI-Komponenten der Detailseite in eigene Dateien ausgelagert
+- Hilfe-Seite nutzt das bestehende Qualitätsmodell für Datentyp-Anforderungen
 
 Nächste Umsetzungsschritte:
 
-1. `Datensätze` als erste Pilotseite vollständig migrieren
-2. danach `Datensatz-Detail`, `Pflegeaufgaben`, `Übersicht`, `Open-Data-Statistik`, `Hilfe`
-3. Alt-Frontend erst nach fachlicher Gleichheit kontrolliert ablösen
+1. alle React-Seiten systematisch gegen die Live-Seiten prüfen
+2. API-Abrufe und Berechnungslogik je Seite mit dem Bestand vergleichen
+3. UI-Abstände, Tabellen, Karten und mobile Darstellung an den Produktstand angleichen
+4. fehlende Detailfunktionen nur gezielt nachziehen, keine neue Fachlogik erfinden
+5. Alt-Frontend erst nach fachlicher Gleichheit kontrolliert ablösen
 
-Aktueller Teilstand zu `Datensätze`:
+Aktueller Teilstand:
 
-- neue React-Seite kann bereits gegen den bestehenden Proxy suchen
-- KI-Suche ist im neuen Frontend ansprechbar
-- Datensätze werden im neuen Frontend bereits gegen das bestehende Qualitätsmodell ausgewertet
-- Detailverlinkung, lokale Filter, Paging und Mailentwurf sind im neuen Frontend vorbereitet
-- es fehlen noch:
-  - UI-Angleichung an den Produktstand
-  - CSV-Export
-  - Schnellfilter
-  - Autocomplete
-  - vollständige React-Detailseite
+- alle heutigen Hauptseiten existieren als React-Pilotseiten
+- die produktive Seite unter `Statistik/` bleibt unverändert aktiv
+- der Preview-Pfad bleibt getrennt unter `/frontend-preview/`
+- der nächste Schwerpunkt ist fachliche Gleichheit, nicht weitere Seitenmigration
+
+Offene Prüfpunkte:
+
+- Datensatzliste: Suche, KI-Suche, Pflegeaufgabenfilter, CSV und Mailaktion gegen echte Fälle prüfen
+- Detailseite: lange Texte, viele Medien, fehlende Felder, externe IDs und Pflegesysteme prüfen
+- Übersicht: Kennzahlen für Sachsen vs. konkrete Gebiete gegen Live-Zahlen prüfen
+- Pflegeaufgaben: Gruppierung, Typfilter und Sprung in Datensatzlisten prüfen
+- Statistik: Open-Data-Zahlen und Lizenz-Pflegehinweis gegen Live-Seite prüfen
+- Hilfe: Verständlichkeit und Gewichtungslogik nach neuer fachlicher Gewichtung erneut prüfen
+- Autocomplete im neuen Frontend nachziehen
+- mobile Darstellung aller Seiten prüfen
+
+Abgleich-Dokument:
+
+- `docs/Codex/Datenqualitaetsmonitor_React_Live_Abgleich.md`
 
 Wichtig:
 

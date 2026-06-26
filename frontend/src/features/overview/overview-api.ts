@@ -114,7 +114,7 @@ async function loadQualitySummary(context: WorkContext): Promise<OverviewQuality
   const params = new URLSearchParams();
   params.set('query', query);
   params.set('scanPageSize', '200');
-  params.set('maxPages', '20');
+  params.set('maxPages', '50');
   params.set('timeoutMs', '20000');
   if (context.type) params.set('type', context.type);
 

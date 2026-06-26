@@ -33,14 +33,18 @@ unberührt.
 - React-/Vite-/TypeScript-Grundgerüst angelegt
 - Router, Shell, Arbeitskontext-Store und API-Basis angelegt
 - Overview-Pilotseite mit KPI-Karten, Open-Data-Status, wichtigsten Pflegeaufgaben, Schnellzugriffen und deduplizierter Qualitätszusammenfassung für konkrete Arbeitskontexte
+- Pflegeaufgaben-Pilotseite mit KPI-Zeile, Filtern, gruppierten Aufgaben, Detailspalte und Übergabe in die Datensatzliste
 - erste Records-Pilotseite mit Suche, KI-Suche, Qualitätsbewertung, Mailentwurf und gefiltertem Detailkontext
-- React-Detailseite mit Datensatzauflösung, 3-Spalten-Layout, Qualitätsbewertung, Medien, Nutzbarkeit, Detailfeldern und kontextbezogener Listen-Navigation
+- React-Detailseite mit Datensatzauflösung, 3-Spalten-Layout, Qualitätsbewertung, Medien, Nutzbarkeit, Pflegesystem-Logo, erweiterten Detailfeldern und kontextbezogener Listen-Navigation
+- Open-Data-Statistik-Pilotseite mit Bestandskennzahlen, Datentypverteilung, Open-Data-Quote nach Typ und Lizenz-Pflegehinweis
+- Hilfe-Pilotseite mit Score-Erklärung, drei Fehler-Ebenen und Mindestanforderungen je Datentyp aus dem bestehenden Qualitätsmodell
 - gemeinsame Feldnormalisierung unter `src/shared/records/record-fields.ts`
-- weitere Seiten noch als Platzhalter oder Teilmigration
+- Detailseiten-Mapping und Detail-UI in `src/features/record-detail/record-detail-mapper.ts` und `record-detail-components.tsx` getrennt
+- weitere Bereiche nur noch dort als Teilmigration, wo Detailverhalten gegen echte Daten abgeglichen werden muss
 
 ## Nächster Umsetzungsschritt
 
-Overview-, Records- und Detailseite werden weiter gegen echte Daten und die Live-Seiten abgeglichen.
+Overview-, Pflegeaufgaben-, Records-, Detail-, Statistik- und Hilfeseite werden weiter gegen echte Daten und die Live-Seiten abgeglichen.
 Neue Feldzugriffe sollen über `src/shared/records/record-fields.ts` laufen,
 damit Listen- und Detailansicht dieselbe Normalisierung nutzen.
 Die Overview-Seite darf Pflegebedarf nicht aus einzelnen Fehlercounts summieren;

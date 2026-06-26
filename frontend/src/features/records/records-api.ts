@@ -1,7 +1,7 @@
 import { fetchJson } from '../../shared/api/http-client';
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
-import { evaluateAllItems, qualityCriteria } from '../../shared/legacy/quality';
+import { evaluateAllItems, qualityCriteria, type QualityCriterion } from '../../shared/legacy/quality';
 import {
   buildRecordDetailUrl,
   extractRecordId,
@@ -54,6 +54,7 @@ type SearchResult = {
 };
 
 const RECORD_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'] as const;
+const RECORD_TYPE_SET = new Set<string>(RECORD_TYPES);
 
 function cleanQueryValue(value: string) {
   return String(value || '').replace(/"/g, '').trim();
@@ -313,44 +314,81 @@ export async function loadRecordsForFrontend(options: {
 
 export async function loadCriterionRecordsForFrontend(options: {
   criterionId: string;
+  criterionIds?: string[];
   context: WorkContext;
   selectedType: string;
+  selectedTypes?: string[];
 }) {
-  const { criterionId, context, selectedType } = options;
+  const { criterionId, criterionIds = [], context, selectedType, selectedTypes = [] } = options;
   const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
-  if (!criterionId || !selectedType) {
+  const criteria = Array.from(new Set((criterionIds.length ? criterionIds : [criterionId]).filter(Boolean)))
+    .map((id) => qualityCriteria.find((entry) => entry.id === id))
+    .filter((entry): entry is QualityCriterion => Boolean(entry));
+  const explicitTypes = (selectedTypes.length ? selectedTypes : [selectedType]).filter(Boolean);
+  const criterionTypes = criteria.length
+    ? Array.from(new Set(criteria.flatMap((entry) => entry.types?.length ? entry.types : [...RECORD_TYPES])))
+    : criterion?.types?.length ? criterion.types : [...RECORD_TYPES];
+  const targetTypes = Array.from(new Set((explicitTypes.length ? explicitTypes : criterionTypes)
+    .filter((type) => RECORD_TYPE_SET.has(type))
+    .filter((type) => !criteria.length || criteria.some((entry) => !entry.types?.length || entry.types.includes(type)))));
+  if (!criterionId || !targetTypes.length || !criteria.length) {
     throw new Error('Für diese Pflegeaufgabe fehlt ein konkreter Datentyp.');
   }
 
   const runtime = getRuntimeConfig();
-  const params = new URLSearchParams();
-  params.set('criterionId', criterionId);
-  params.set('type', selectedType);
-  params.set('limit', '200');
-  params.set('scanPageSize', '200');
-  params.set('maxPages', '20');
   const query = buildContextQuery(context);
-  if (query) params.set('query', query);
+  const requests = criteria.flatMap((activeCriterion) => targetTypes
+    .filter((type) => !activeCriterion.types?.length || activeCriterion.types.includes(type))
+    .map((type) => ({ criterion: activeCriterion, type })));
 
-  const payload = await fetchJson<QualityScanPayload>(`${runtime.qualityScanApiBase}?${params.toString()}`, {
-    timeoutMs: 45_000
+  const payloads = (await Promise.all(requests.map(async ({ criterion: activeCriterion, type }) => {
+    const params = new URLSearchParams();
+    params.set('criterionId', activeCriterion.id);
+    params.set('type', type);
+    params.set('limit', '200');
+    params.set('scanPageSize', '200');
+    params.set('maxPages', '20');
+    if (query) params.set('query', query);
+
+    try {
+      const payload = await fetchJson<QualityScanPayload>(`${runtime.qualityScanApiBase}?${params.toString()}`, {
+        timeoutMs: 45_000
+      });
+
+      return { type, payload };
+    } catch {
+      return null;
+    }
+  }))).filter((entry): entry is { type: string; payload: QualityScanPayload } => Boolean(entry));
+
+  const seen = new Set<string>();
+  const rows = payloads.flatMap(({ type, payload }) => {
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    return items
+      .map((item) => toRecordRow({
+        ...item,
+        type: item.type || type,
+        raw: item.raw || item
+      }))
+      .filter((row) => {
+        const key = row.globalId || `${row.type}:${row.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
   });
-
-  const items = Array.isArray(payload.items) ? payload.items : [];
-  const rows = items.map((item) => toRecordRow({
-    ...item,
-    type: item.type || selectedType,
-    raw: item.raw || item
-  }));
+  const estimatedTotalItems = payloads.reduce((sum, { payload }) => (
+    sum + Number(payload.stats?.overallcount ?? payload.stats?.matchedItems ?? 0)
+  ), 0);
 
   return {
     rows,
     meta: {
       mode: 'criterion',
       criterionId,
-      criterionLabel: criterion?.label || criterionId,
-      estimatedTotalItems: Number(payload.stats?.overallcount ?? payload.stats?.matchedItems ?? rows.length),
-      truncated: payload.page?.complete === false
+      criterionLabel: criteria.length > 1 ? 'Gruppierte Pflegeaufgabe' : criterion?.label || criterionId,
+      estimatedTotalItems: estimatedTotalItems || rows.length,
+      truncated: payloads.some(({ payload }) => payload.page?.complete === false)
     } satisfies RecordSearchMeta
   };
 }

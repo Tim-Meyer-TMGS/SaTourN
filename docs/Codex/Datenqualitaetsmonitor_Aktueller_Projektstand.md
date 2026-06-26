@@ -45,8 +45,8 @@ Aktueller Stand:
 - Runtime-API-Konfiguration steht
 - HTTP-Client-Basis steht
 - gemeinsame Feldnormalisierung für Datensatzliste und Detailseite steht unter `frontend/src/shared/records/record-fields.ts`
-- Platzhalterseiten für noch nicht migrierte Fachbereiche stehen
-- `Übersicht`, `Datensätze` und `Datensatz-Detail` sind fachliche Pilotseiten
+- `Übersicht`, `Pflegeaufgaben`, `Datensätze`, `Datensatz-Detail` und `Open-Data-Statistik` sind fachliche Pilotseiten
+- `Hilfe` ist als fachliche Pilotseite mit Score-Erklärung, drei Fehler-Ebenen und Mindestanforderungen je Datentyp umgesetzt
 
 Die Overview-Pilotseite kann aktuell:
 
@@ -75,6 +75,15 @@ Die Records-Pilotseite kann aktuell:
 - vollständiges Zurücksetzen des AI-Search-Modus über `Filter zurücksetzen`
 - den aktuell gefilterten Listenstand für die Detailnavigation speichern
 
+Die Pflegeaufgaben-Pilotseite kann aktuell:
+
+- Pflegeaufgaben aus denselben Qualitätsdaten wie die Übersicht laden
+- fachlich verwandte Kriterien wie Zahlungsarten, Sprachen und Parkhinweise gruppieren
+- Aufgaben nach Suche, Priorität, Datentyp und Auswirkung filtern
+- Kennzahlen zu offenen Aufgaben, hoher Priorität, betroffenen Treffern, Open-Data-Relevanz und Potenzial anzeigen
+- eine Detailspalte mit Problem, Auswirkung, nächstem Schritt und betroffenen Datentypen anzeigen
+- aus Aufgaben direkt in die React-Datensatzliste springen und dabei einzelne oder mehrere betroffene Typen übergeben
+
 Die neue React-Detailseite kann aktuell:
 
 - Datensatz per `id` oder `global_id` über `/api/records/by-global-ids` laden
@@ -87,13 +96,31 @@ Die neue React-Detailseite kann aktuell:
 - Beschreibung, Medien, Öffnungszeiten, ÖPNV-Anreise und Preisinfo anzeigen
 - die gesamte Qualitätsbewertung nach automatisch bewerteten, vorbereiteten, manuellen und ausgenommenen Kriterien darstellen
 - Kontext-Hinweis anzeigen, wenn die Detailseite aus einer Pflegeaufgabe geöffnet wird
+- Pflegesystem mit Logo darstellen, sofern ein Logo im Bestandsfrontend vorhanden ist
+- Quelle, Lizenz-URL, Koordinaten, externe IDs, Kontakt-/Adressrollen und technischen Auszug anzeigen, wenn diese Daten im Datensatz vorhanden sind
+
+Die Open-Data-Statistik-Pilotseite kann aktuell:
+
+- Gesamtbestand, Open-Data-fähige Datensätze, Open-Data-Quote und nicht Open-Data-fähige Datensätze aus denselben Statistik-Counts wie die Übersicht laden
+- die Verteilung nach Datentyp als Donut und Tabelle darstellen
+- die Open-Data-Quote je Datentyp als Balkendiagramm anzeigen
+- den bestehenden Arbeitskontext aus der React-Shell übernehmen, ohne eigene doppelte Filterleiste
+- bei nicht Open-Data-fähigen Datensätzen direkt zur Lizenz-Pflegeaufgabe in der Datensatzliste springen
+
+Die Hilfe-Pilotseite kann aktuell:
+
+- den Score nutzerverständlich erklären
+- die drei Ebenen `Kritische Fehler`, `Fehler` und `Leichte Optimierungen` darstellen
+- je Datentyp Mindestanforderungen und sinnvolle Optimierungen aus dem bestehenden Qualitätsmodell ableiten
+- fachlich vorbereitete, aber noch nicht automatisch bewertete Kriterien getrennt erklären
+- technische Prüfbegriffe aus der Nutzerkommunikation heraushalten
 
 Noch nicht umgesetzt:
 
 - vollständiger visueller Feinschliff der React-Detailseite gegen echte Beispiel-Datensätze
 - Autocomplete im neuen Frontend
 - Feinschliff am Arbeitskontext-Dialog auf vollständiges Live-Niveau
-- fachliche Migration der übrigen Produktseiten
+- weiterer fachlicher Abgleich der migrierten Produktseiten gegen echte Beispieldaten
 
 ## Produktiver Betrieb
 
@@ -155,7 +182,12 @@ Wichtige Produktentscheidung:
 - Records-Pilot speichert den letzten Listenstand für die Detailnavigation
 - React-Detailseite um Vorher/Nächster-Navigation und Kopieraktionen erweitert
 - Feldzugriffe aus Records- und Detailseite in ein gemeinsames Shared-Modul verschoben
+- React-Detailseite um Pflegesystem-Logo, externe IDs, Kontakt-/Adressrollen, Quelle, Lizenz-URL, Koordinaten und technischen Auszug erweitert
+- React-Detailseite in Controller, Mapping, Typen und UI-Komponenten getrennt
 - React-Übersicht nutzt für Gebiet/Ort eine deduplizierte Qualitätszusammenfassung statt aufsummierter Fehlercounts
+- React-Pflegeaufgaben-Seite mit gruppierten Aufgaben, Filtern, Detailspalte und Records-Verlinkung migriert
+- React-Open-Data-Statistik mit KPI-Karten, Datentypverteilung, Quote-Balken und Lizenz-Pflegehinweis migriert
+- React-Hilfeseite mit Score-Verständnis, Fehler-Ebenen und Datentyp-Anforderungen migriert
 - aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung
