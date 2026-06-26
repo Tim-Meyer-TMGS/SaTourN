@@ -73,6 +73,13 @@ Kritische Abweichungen:
 - AI-Suche darf keine ungeprüften Treffer anzeigen
 - Pflegeaufgabenfilter darf keine leere Liste zeigen, wenn der Count Treffer ausweist
 
+Umgesetzt im React-Preview:
+
+- Datensatzliste und Detailseite nutzen dieselbe Shared-Funktion für die Bewertungsbasis:
+  `buildQualityEvaluationInput`
+- Suchtreffer, KI-Treffer und Detaildatensätze werden damit vor der Qualitätsbewertung einheitlich normalisiert
+- URL-Parameter für Pflegeaufgabenfilter werden stabil aus primitiven Query-Strings abgeleitet, damit das Öffnen einer Aufgabe keinen unnötigen Reload des Loaders auslöst
+
 ### 4. Datensatz-Detail
 
 Prüfen:
@@ -90,6 +97,10 @@ Kritische Abweichungen:
 
 - Detailseite darf keinen anderen Qualitätsstatus berechnen als die Liste
 - fehlende Felder dürfen die Seite nicht abbrechen lassen
+
+Umgesetzt im React-Preview:
+
+- Detailseite verwendet dieselbe Bewertungsbasis wie die Datensatzliste
 
 ### 5. Open-Data-Statistik
 

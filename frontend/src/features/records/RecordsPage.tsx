@@ -148,21 +148,23 @@ export function RecordsPage() {
   const [pageSize, setPageSize] = useState<number>(25);
   const [mailLoadingKey, setMailLoadingKey] = useState('');
   const urlCriterionId = searchParams.get('criterionId') || '';
+  const urlCriterionIdsParam = searchParams.get('criterionIds') || '';
+  const urlTypesParam = searchParams.get('types') || '';
   const urlCriterionIds = useMemo(() => {
-    const values = (searchParams.get('criterionIds') || '')
+    const values = urlCriterionIdsParam
       .split(',')
       .map((entry) => entry.trim())
       .filter(Boolean);
     return Array.from(new Set(values));
-  }, [searchParams]);
+  }, [urlCriterionIdsParam]);
   const urlType = searchParams.get('type') || '';
   const urlTypes = useMemo(() => {
-    const values = (searchParams.get('types') || '')
+    const values = urlTypesParam
       .split(',')
       .map((entry) => entry.trim())
       .filter((entry) => DATA_TYPE_SET.has(entry));
     return Array.from(new Set(values));
-  }, [searchParams]);
+  }, [urlTypesParam]);
 
   const resultSummary = useMemo(() => {
     if (loading) return 'Datensätze werden geladen ...';
@@ -224,9 +226,10 @@ export function RecordsPage() {
     return `${startIndex}-${endIndex} von ${filteredRows.length}`;
   }, [currentPage, filteredRows.length, pageSize]);
 
-  const activeUrlCriterionIds = useMemo(() => (
-    urlCriterionIds.length ? urlCriterionIds : urlCriterionId ? [urlCriterionId] : []
-  ), [urlCriterionId, urlCriterionIds]);
+  const activeUrlCriterionIds = useMemo(() => {
+    if (urlCriterionIds.length) return urlCriterionIds;
+    return urlCriterionId ? [urlCriterionId] : [];
+  }, [urlCriterionId, urlCriterionIds]);
 
   function resolveRowCriterionId(row: RecordRow) {
     if (issueFilter && row.missingCriteria.includes(issueFilter)) return issueFilter;
@@ -311,7 +314,16 @@ export function RecordsPage() {
     return () => {
       active = false;
     };
-  }, [activeUrlCriterionIds, context, urlCriterionId, urlCriterionIds, urlType, urlTypes]);
+  }, [
+    activeUrlCriterionIds,
+    context.area,
+    context.city,
+    context.type,
+    urlCriterionId,
+    urlCriterionIds,
+    urlType,
+    urlTypes
+  ]);
 
   async function handleSubmit(nextMode: 'search' | 'ai_search') {
     const trimmedQuery = query.trim();

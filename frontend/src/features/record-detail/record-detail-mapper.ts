@@ -15,14 +15,12 @@ import {
 } from '../../shared/legacy/quality';
 import {
   arrayOfStrings,
+  buildQualityEvaluationInput,
   buildVerifiedEt4Url,
-  extractRecordId,
   getArrayFromPaths,
   getFirst,
   getNestedValue,
   getPrimarySystem,
-  getRecordArea,
-  getRecordCategory,
   getRecordEmail,
   getRecordPhone,
   getRecordWeb,
@@ -328,17 +326,7 @@ export function normalizeDetailItem(rawInput: unknown, fallbackType: string): De
     ? (rawInput as { raw?: unknown }).raw ?? rawInput
     : rawInput;
   const resolvedType = getFirst(rawInput, ['_resolvedType', 'type']) || fallbackType || getTypeFromGlobalId(getFirst(raw, ['global_id', 'globalId']));
-  const baseItem = {
-    raw,
-    id: extractRecordId(raw),
-    globalId: getFirst(raw, ['global_id', 'globalId']),
-    title: getFirst(raw, ['title', 'name', 'presentation.title']) || 'Ohne Titel',
-    type: resolvedType,
-    region: getRecordArea(raw),
-    city: getFirst(raw, ['city', 'location.city', 'address.city']),
-    category: getRecordCategory(raw),
-    updatedAt: getFirst(raw, ['changed', 'updatedAt', 'lastModified', 'modified', 'changeDate'])
-  };
+  const baseItem = buildQualityEvaluationInput(raw, { fallbackType: resolvedType });
 
   const evaluated = evaluateQualityForItem(baseItem) as Record<string, unknown>;
   const evaluatedType = String(evaluated.type || baseItem.type || '');
