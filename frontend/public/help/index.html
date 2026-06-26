@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex" />
+    <title>Weiterleitung</title>
+    <script>
+      var route = window.location.pathname.split('/').filter(Boolean).pop() || '';
+      window.location.replace('../#/' + route + window.location.search);
+    </script>
+  </head>
+  <body>
+    <p>Weiterleitung ...</p>
+  </body>
+</html>

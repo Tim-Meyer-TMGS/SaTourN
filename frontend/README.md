@@ -25,6 +25,12 @@ veröffentlicht es unter:
 https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/
 ```
 
+Unterseiten werden auf GitHub Pages per Hash-Routing geöffnet, zum Beispiel:
+
+```text
+https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/#/tasks
+```
+
 Die bestehende Live-Seite unter `/SaTourN/Statistik/index.html` bleibt davon
 unberührt.
 
