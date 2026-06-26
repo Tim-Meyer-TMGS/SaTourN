@@ -128,6 +128,7 @@ Eine Seite gilt als abnahmefähig, wenn:
 - Counts, Listen und Detailansichten konsistent sind
 - bekannte Sonderfälle sauber abgebildet werden
 - mobile Darstellung keine Überlagerungen erzeugt
+- Light Mode und Dark Mode lesbar bleiben
 - keine Mojibake-Texte sichtbar sind
 - keine Console-Fehler aus dem Anwendungscode auftreten
 

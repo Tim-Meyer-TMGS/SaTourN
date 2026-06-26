@@ -14,15 +14,43 @@ const navigationItems = [
   { to: '/help', label: 'Hilfe', icon: 'help_outline' }
 ];
 
+type ThemeMode = 'light' | 'dark';
+
+const THEME_STORAGE_KEY = 'satourn.frontend.theme';
+
+function getInitialTheme(): ThemeMode {
+  if (typeof window === 'undefined') return 'light';
+
+  try {
+    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme;
+  } catch {
+    // Theme persistence is optional.
+  }
+
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 export function AppShell() {
   const location = useLocation();
   const { context, setContext } = useContextStore();
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [draftContext, setDraftContext] = useState<WorkContext>(context);
+  const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
 
   useEffect(() => {
     if (isContextOpen) setDraftContext(context);
   }, [context, isContextOpen]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // localStorage may be unavailable in privacy-restricted environments.
+    }
+  }, [theme]);
 
   function closeContextDialog() {
     setIsContextOpen(false);
@@ -44,7 +72,7 @@ export function AppShell() {
           : 'records-main';
 
   return (
-    <div className="statistik light-shell">
+    <div className={`statistik ${theme}-shell`}>
       <header className="app-header">
         <NavLink className="brand" to="/" aria-label="SaTourN Datenqualitäts-Monitor">
           <span className="brand-mark" aria-hidden="true" />
@@ -57,6 +85,15 @@ export function AppShell() {
         <ContextSummary onEdit={() => setIsContextOpen(true)} />
 
         <div className="header-status">
+          <button
+            className="icon-button"
+            type="button"
+            aria-label={theme === 'dark' ? 'Hellen Modus aktivieren' : 'Dunklen Modus aktivieren'}
+            title={theme === 'dark' ? 'Hellen Modus aktivieren' : 'Dunklen Modus aktivieren'}
+            onClick={() => setTheme((currentTheme) => (currentTheme === 'dark' ? 'light' : 'dark'))}
+          >
+            <span className="material-icons" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
+          </button>
           <button className="icon-button" type="button" aria-label="Daten aktualisieren">
             <span className="material-icons" aria-hidden="true">refresh</span>
           </button>
