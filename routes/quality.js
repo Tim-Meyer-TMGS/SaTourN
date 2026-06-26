@@ -42,6 +42,8 @@ const DEFAULT_MAX_PAGES = 5;
 const MAX_SCAN_PAGES = 20;
 const DEFAULT_SCAN_TIMEOUT_MS = 8000;
 const DEFAULT_SUMMARY_TIMEOUT_MS = 12000;
+const DEFAULT_SUMMARY_MAX_PAGES = 50;
+const MAX_SUMMARY_PAGES = 50;
 const ET4_PAGES_BASE_URL = 'https://pages.et4.de/de/statistik_sachsen/wlan/detail';
 const VERIFIED_ET4_PAGE_TYPES = new Set(['POI']);
 const QUALITY_SUMMARY_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
@@ -637,7 +639,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
     const normalizedType = String(type || '').trim();
     const targetTypes = normalizedType ? [normalizedType] : QUALITY_SUMMARY_TYPES;
     const pageSize = clampInteger(scanPageSize, DEFAULT_SCAN_PAGE_SIZE, 1, MAX_SCAN_PAGE_SIZE);
-    const pageBudget = clampInteger(maxPages, DEFAULT_MAX_PAGES, 1, MAX_SCAN_PAGES);
+    const pageBudget = clampInteger(maxPages, DEFAULT_SUMMARY_MAX_PAGES, 1, MAX_SUMMARY_PAGES);
     const summaryTimeoutMs = clampInteger(timeoutMs, DEFAULT_SUMMARY_TIMEOUT_MS, 1000, REQUEST_TIMEOUT_MS);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), summaryTimeoutMs);

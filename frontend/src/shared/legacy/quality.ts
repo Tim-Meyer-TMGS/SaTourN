@@ -25,6 +25,9 @@ export type QualityCriterion = {
   types?: string[];
   status?: string;
   autoCheck?: boolean;
+  openDataRelevant?: boolean;
+  uiSeverity?: string;
+  qualityLevel?: string;
 };
 
 export type QualityScanConfig = {

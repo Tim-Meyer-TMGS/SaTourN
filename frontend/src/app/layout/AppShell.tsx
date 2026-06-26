@@ -35,7 +35,11 @@ export function AppShell() {
 
   const mainClassName = location.pathname.startsWith('/record-detail')
     ? 'record-detail-main'
-    : 'records-main';
+    : location.pathname.startsWith('/tasks')
+      ? 'tasks-main'
+      : location.pathname.startsWith('/stats')
+        ? 'stats-main'
+        : 'records-main';
 
   return (
     <div className="statistik light-shell">

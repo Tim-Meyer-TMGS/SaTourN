@@ -16,6 +16,7 @@ const QUICK_FILTERS = [
   { id: 'image_missing', label: 'Ohne Bilder' },
   { id: 'opening_hours_missing', label: 'Ohne Öffnungszeiten' }
 ] as const;
+const DATA_TYPE_SET = new Set<string>(DATA_TYPES);
 
 function buildMailtoUrl(payload: {
   to: string;
@@ -147,7 +148,21 @@ export function RecordsPage() {
   const [pageSize, setPageSize] = useState<number>(25);
   const [mailLoadingKey, setMailLoadingKey] = useState('');
   const urlCriterionId = searchParams.get('criterionId') || '';
+  const urlCriterionIds = useMemo(() => {
+    const values = (searchParams.get('criterionIds') || '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    return Array.from(new Set(values));
+  }, [searchParams]);
   const urlType = searchParams.get('type') || '';
+  const urlTypes = useMemo(() => {
+    const values = (searchParams.get('types') || '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter((entry) => DATA_TYPE_SET.has(entry));
+    return Array.from(new Set(values));
+  }, [searchParams]);
 
   const resultSummary = useMemo(() => {
     if (loading) return 'Datensätze werden geladen ...';
@@ -172,14 +187,18 @@ export function RecordsPage() {
       .sort((left, right) => left.label.localeCompare(right.label, 'de'));
   }, [rows]);
 
+  const activeTypeFilter = urlCriterionId
+    ? urlType
+    : context.type;
+
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      if (context.type && row.type !== context.type) return false;
+      if (activeTypeFilter && row.type !== activeTypeFilter) return false;
       if (categoryFilter && row.category !== categoryFilter) return false;
       if (issueFilter && !row.missingCriteria.includes(issueFilter)) return false;
       return true;
     });
-  }, [categoryFilter, context.type, issueFilter, rows]);
+  }, [activeTypeFilter, categoryFilter, issueFilter, rows]);
 
   const quickCounts = useMemo(() => {
     return Object.fromEntries(
@@ -205,13 +224,23 @@ export function RecordsPage() {
     return `${startIndex}-${endIndex} von ${filteredRows.length}`;
   }, [currentPage, filteredRows.length, pageSize]);
 
-  function buildDetailUrl(row: RecordRow) {
-    if (!issueFilter) return row.detailUrl;
+  const activeUrlCriterionIds = useMemo(() => (
+    urlCriterionIds.length ? urlCriterionIds : urlCriterionId ? [urlCriterionId] : []
+  ), [urlCriterionId, urlCriterionIds]);
 
-    const criterionLabel = qualityCriteria.find((entry) => entry.id === issueFilter)?.label || row.primaryIssue || issueFilter;
+  function resolveRowCriterionId(row: RecordRow) {
+    if (issueFilter && row.missingCriteria.includes(issueFilter)) return issueFilter;
+    return activeUrlCriterionIds.find((criterionId) => row.missingCriteria.includes(criterionId)) || '';
+  }
+
+  function buildDetailUrl(row: RecordRow) {
+    const rowCriterionId = resolveRowCriterionId(row);
+    if (!rowCriterionId) return row.detailUrl;
+
+    const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || row.primaryIssue || rowCriterionId;
     const url = new URL(row.detailUrl, 'https://satourn.local');
     url.searchParams.set('source', 'task');
-    url.searchParams.set('criterion_id', issueFilter);
+    url.searchParams.set('criterion_id', rowCriterionId);
     url.searchParams.set('criterion_label', criterionLabel);
     return `${url.pathname}${url.search}`;
   }
@@ -226,13 +255,11 @@ export function RecordsPage() {
 
     async function loadCriterionFromUrl() {
       if (!urlCriterionId) return;
-      if (urlType && context.type !== urlType) {
-        setContext({ type: urlType as typeof context.type });
-        return;
-      }
 
-      const selectedType = urlType || context.type;
-      if (!selectedType) {
+      const selectedTypes = urlTypes.length
+        ? urlTypes
+        : [urlType].filter((entry) => DATA_TYPE_SET.has(entry));
+      if (urlType && !DATA_TYPE_SET.has(urlType)) {
         setError('Für diese Pflegeaufgabe fehlt ein konkreter Datentyp.');
         return;
       }
@@ -241,23 +268,26 @@ export function RecordsPage() {
       setError('');
       setMode('search');
       setPage(1);
-      setIssueFilter(urlCriterionId);
+      setIssueFilter('');
 
       try {
         const result = await loadCriterionRecordsForFrontend({
           criterionId: urlCriterionId,
+          criterionIds: urlCriterionIds,
           context,
-          selectedType
+          selectedType: selectedTypes[0] || '',
+          selectedTypes
         });
         if (!active) return;
         setRows(result.rows);
         setMeta(result.meta);
         setCategoryFilter('');
         saveRecordListState(result.rows, (row) => {
-          const criterionLabel = result.meta.criterionLabel || urlCriterionId;
+          const rowCriterionId = activeUrlCriterionIds.find((criterionId) => row.missingCriteria.includes(criterionId)) || urlCriterionId;
+          const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || result.meta.criterionLabel || rowCriterionId;
           const url = new URL(row.detailUrl, 'https://satourn.local');
           url.searchParams.set('source', 'task');
-          url.searchParams.set('criterion_id', urlCriterionId);
+          url.searchParams.set('criterion_id', rowCriterionId);
           url.searchParams.set('criterion_label', criterionLabel);
           return `${url.pathname}${url.search}`;
         });
@@ -281,7 +311,7 @@ export function RecordsPage() {
     return () => {
       active = false;
     };
-  }, [context, setContext, urlCriterionId, urlType]);
+  }, [activeUrlCriterionIds, context, urlCriterionId, urlCriterionIds, urlType, urlTypes]);
 
   async function handleSubmit(nextMode: 'search' | 'ai_search') {
     const trimmedQuery = query.trim();

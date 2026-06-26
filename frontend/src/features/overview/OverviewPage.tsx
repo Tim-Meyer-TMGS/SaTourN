@@ -43,8 +43,11 @@ function issueRecordsUrl(issue: OverviewIssue, contextType: string) {
   const params = new URLSearchParams();
   params.set('criterionId', issue.criterionId);
   params.set('from', 'overview');
-  const preferredType = contextType || issue.affectedTypes[0] || '';
-  if (preferredType) params.set('type', preferredType);
+  if (contextType) {
+    params.set('type', contextType);
+  } else if (issue.affectedTypes.length) {
+    params.set('types', issue.affectedTypes.join(','));
+  }
   return `/records?${params.toString()}`;
 }
 
