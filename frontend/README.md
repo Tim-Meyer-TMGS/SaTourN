@@ -40,6 +40,7 @@ unberührt.
 - Open-Data-Statistik-Pilotseite mit Bestandskennzahlen, Datentypverteilung, Open-Data-Quote nach Typ und Lizenz-Pflegehinweis
 - Hilfe-Pilotseite mit Score-Erklärung, drei Fehler-Ebenen und Mindestanforderungen je Datentyp aus dem bestehenden Qualitätsmodell
 - gemeinsame Feldnormalisierung unter `src/shared/records/record-fields.ts`
+- gemeinsame Bewertungsbasis für Records- und Detailseite über `buildQualityEvaluationInput`
 - Detailseiten-Mapping und Detail-UI in `src/features/record-detail/record-detail-mapper.ts` und `record-detail-components.tsx` getrennt
 - weitere Bereiche nur noch dort als Teilmigration, wo Detailverhalten gegen echte Daten abgeglichen werden muss
 
@@ -48,5 +49,7 @@ unberührt.
 Overview-, Pflegeaufgaben-, Records-, Detail-, Statistik- und Hilfeseite werden weiter gegen echte Daten und die Live-Seiten abgeglichen.
 Neue Feldzugriffe sollen über `src/shared/records/record-fields.ts` laufen,
 damit Listen- und Detailansicht dieselbe Normalisierung nutzen.
+Bewertungsrelevante Datensatzobjekte sollen über `buildQualityEvaluationInput`
+gebaut werden, damit Liste und Detail denselben Score berechnen.
 Die Overview-Seite darf Pflegebedarf nicht aus einzelnen Fehlercounts summieren;
 für berechnete Qualitätskennzahlen ist `/api/quality/summary` maßgeblich.

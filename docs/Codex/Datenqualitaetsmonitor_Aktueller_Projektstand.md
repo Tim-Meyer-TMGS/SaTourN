@@ -46,6 +46,7 @@ Aktueller Stand:
 - Runtime-API-Konfiguration steht
 - HTTP-Client-Basis steht
 - gemeinsame Feldnormalisierung für Datensatzliste und Detailseite steht unter `frontend/src/shared/records/record-fields.ts`
+- gemeinsame Bewertungsbasis für Datensatzliste und Detailseite steht über `buildQualityEvaluationInput`
 - `Übersicht`, `Pflegeaufgaben`, `Datensätze`, `Datensatz-Detail` und `Open-Data-Statistik` sind fachliche Pilotseiten
 - `Hilfe` ist als fachliche Pilotseite mit Score-Erklärung, drei Fehler-Ebenen und Mindestanforderungen je Datentyp umgesetzt
 
@@ -190,6 +191,7 @@ Wichtige Produktentscheidung:
 - React-Open-Data-Statistik mit KPI-Karten, Datentypverteilung, Quote-Balken und Lizenz-Pflegehinweis migriert
 - React-Hilfeseite mit Score-Verständnis, Fehler-Ebenen und Datentyp-Anforderungen migriert
 - React-Preview um persistenten Dark Mode ergänzt
+- React-Datensatzliste und React-Detailseite nutzen dieselbe Bewertungsbasis für Score und Kriterien
 - aktive Preview-Dateien auf saubere Umlaute geprüft
 
 ## Technische Richtung

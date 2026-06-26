@@ -145,3 +145,27 @@ export function buildRecordDetailUrl(item: { type?: unknown; globalId?: unknown;
 
   return `/record-detail?${params.toString()}`;
 }
+
+export function buildQualityEvaluationInput(
+  raw: unknown,
+  options: {
+    fallbackType?: string;
+    fallbackArea?: string;
+    fallbackCity?: string;
+  } = {}
+) {
+  const globalId = getFirst(raw, ['global_id', 'globalId']);
+  const type = options.fallbackType || getFirst(raw, ['type', 'typeName']) || getTypeFromGlobalId(globalId);
+
+  return {
+    raw,
+    id: extractRecordId(raw),
+    globalId,
+    title: getFirst(raw, ['title', 'name', 'presentation.title']) || 'Ohne Titel',
+    type,
+    region: getRecordArea(raw, options.fallbackArea || ''),
+    city: getFirst(raw, ['city', 'location.city', 'address.city']) || options.fallbackCity || '',
+    category: getRecordCategory(raw),
+    updatedAt: getFirst(raw, ['changed', 'updatedAt', 'lastModified', 'modified', 'changeDate'])
+  };
+}

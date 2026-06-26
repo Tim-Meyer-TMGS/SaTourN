@@ -3,11 +3,8 @@ import { getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
 import { evaluateAllItems, qualityCriteria, type QualityCriterion } from '../../shared/legacy/quality';
 import {
+  buildQualityEvaluationInput,
   buildRecordDetailUrl,
-  extractRecordId,
-  getFirst,
-  getRecordArea,
-  getRecordCategory,
   getRecordEmail,
   getRecordWeb
 } from '../../shared/records/record-fields';
@@ -82,19 +79,12 @@ function extractTotal(payload: SearchPayload | null | undefined, fallbackLength:
 }
 
 function normalizeSearchItem(raw: unknown, fallbackType: string, context: WorkContext) {
-  const globalId = getFirst(raw, ['global_id', 'globalId']);
-  const resolvedType = fallbackType || getFirst(raw, ['type', 'typeName']);
-
   return {
-    raw,
-    id: extractRecordId(raw),
-    globalId,
-    title: getFirst(raw, ['title', 'name', 'presentation.title']) || 'Ohne Titel',
-    type: resolvedType,
-    region: getRecordArea(raw, context.area),
-    city: getFirst(raw, ['city', 'location.city', 'address.city']) || context.city || '',
-    category: getRecordCategory(raw),
-    updatedAt: getFirst(raw, ['updatedAt', 'lastModified', 'modified', 'changeDate']),
+    ...buildQualityEvaluationInput(raw, {
+      fallbackType,
+      fallbackArea: context.area,
+      fallbackCity: context.city
+    }),
     qualityScore: null,
     qualityStatus: '',
     missingCriteria: [],
