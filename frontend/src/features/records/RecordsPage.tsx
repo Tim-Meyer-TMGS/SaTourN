@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 import { DATA_TYPES } from '../../shared/config/constants';
 import { formatRecordDate } from '../../shared/format/formatters';
@@ -110,12 +110,16 @@ function buildRecordsCsv(rows: RecordRow[]) {
   return [header, ...body].map((line) => line.map(csvValue).join(';')).join('\n');
 }
 
-function saveRecordListState(rows: RecordRow[], buildDetailUrl: (row: RecordRow) => string = (row) => row.detailUrl) {
+function saveRecordListState(
+  rows: RecordRow[],
+  backUrl: string,
+  buildDetailUrl: (row: RecordRow) => string = (row) => row.detailUrl
+) {
   if (typeof window === 'undefined') return;
 
   try {
     window.sessionStorage.setItem(RECORD_LIST_STATE_KEY, JSON.stringify({
-      backUrl: '/records',
+      backUrl: backUrl || '/records',
       rows: rows.map((row) => ({
         id: row.id,
         globalId: row.globalId,
@@ -131,6 +135,7 @@ function saveRecordListState(rows: RecordRow[], buildDetailUrl: (row: RecordRow)
 
 export function RecordsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const { context, setContext } = useContextStore();
   const [query, setQuery] = useState('');
   const [mode, setMode] = useState<'search' | 'ai_search'>('search');
@@ -230,6 +235,7 @@ export function RecordsPage() {
     if (urlCriterionIds.length) return urlCriterionIds;
     return urlCriterionId ? [urlCriterionId] : [];
   }, [urlCriterionId, urlCriterionIds]);
+  const currentListUrl = `${location.pathname}${location.search}`;
 
   function resolveRowCriterionId(row: RecordRow) {
     if (issueFilter && row.missingCriteria.includes(issueFilter)) return issueFilter;
@@ -250,8 +256,8 @@ export function RecordsPage() {
 
   useEffect(() => {
     if (!rows.length) return;
-    saveRecordListState(filteredRows, buildDetailUrl);
-  }, [filteredRows, issueFilter, rows.length]);
+    saveRecordListState(filteredRows, currentListUrl, buildDetailUrl);
+  }, [currentListUrl, filteredRows, issueFilter, rows.length]);
 
   useEffect(() => {
     let active = true;
@@ -285,7 +291,7 @@ export function RecordsPage() {
         setRows(result.rows);
         setMeta(result.meta);
         setCategoryFilter('');
-        saveRecordListState(result.rows, (row) => {
+        saveRecordListState(result.rows, currentListUrl, (row) => {
           const rowCriterionId = activeUrlCriterionIds.find((criterionId) => row.missingCriteria.includes(criterionId)) || urlCriterionId;
           const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || result.meta.criterionLabel || rowCriterionId;
           const url = new URL(row.detailUrl, 'https://satourn.local');
@@ -319,6 +325,7 @@ export function RecordsPage() {
     context.area,
     context.city,
     context.type,
+    currentListUrl,
     urlCriterionId,
     urlCriterionIds,
     urlType,
@@ -344,7 +351,7 @@ export function RecordsPage() {
         context,
         selectedType: context.type
       });
-      saveRecordListState(result.rows);
+      saveRecordListState(result.rows, currentListUrl);
       setRows(result.rows);
       setMeta(result.meta);
       setCategoryFilter('');
