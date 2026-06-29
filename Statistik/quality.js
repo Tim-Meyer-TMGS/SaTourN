@@ -1,3 +1,8 @@
+import {
+  NON_OPEN_DATA_LICENSE_QUERY,
+  OPEN_DATA_LICENSE_QUERY
+} from '../lib/open-data-rules.js';
+
 const TYPE_ALIASES = new Map([
   ['poi', 'POI'],
   ['pointofinterest', 'POI'],
@@ -1438,8 +1443,8 @@ export const domainQualityModel = Object.freeze({
       level: 'very_good',
       fieldCandidates: ['attributes[key=license]'],
       apiCandidate: apiQueryCandidate({
-        positiveQuery: 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
-        missingQuery: 'all:all -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
+        positiveQuery: OPEN_DATA_LICENSE_QUERY,
+        missingQuery: NON_OPEN_DATA_LICENSE_QUERY,
         prefixes: ['attribute_license'],
         source: 'existing_quality_query',
         confidence: 'existing_prefix_needs_type_verification',
@@ -1549,8 +1554,8 @@ export const qualityCriteria = Object.freeze([
     fields: ['attributes[key=license]'],
     method: 'api_pushdown',
     api: {
-      positiveQuery: 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
-      missingQuery: 'all:all -attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)',
+      positiveQuery: OPEN_DATA_LICENSE_QUERY,
+      missingQuery: NON_OPEN_DATA_LICENSE_QUERY,
       verified: true,
       verifiedForTypes: ['POI', 'Gastro', 'Tour', 'Hotel', 'Package']
     },

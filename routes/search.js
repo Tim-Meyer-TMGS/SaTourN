@@ -8,13 +8,12 @@ import {
   TEMPLATE
 } from '../lib/config.js';
 import {
+  applyOpenDataFilter,
   buildAutocompleteUrl,
   buildSearchUrl,
   computeFinalLimit,
   isCitiesRequest,
-  normalizeOffsetParam,
-  normalizeQueryParam,
-  OPEN_DATA_LICENSE_QUERY
+  normalizeOffsetParam
 } from '../lib/search-utils.js';
 
 export function registerSearchRoute(app, cache) {
@@ -97,19 +96,14 @@ export function registerSearchRoute(app, cache) {
   });
 
   app.get('/api/search', async (req, res) => {
-    const { type, query = '', isOpenData = 'false', limit, offset, scope, forceCities } = req.query;
+    const { type, query = '', isOpenData = '', limit, offset, scope, forceCities } = req.query;
 
     if (!API_KEY) {
       console.error('DESTINATION_ONE_API_KEY, LICENSEKEY or LICENSE_KEY is missing');
       return res.status(500).json({ error: 'Server configuration missing: LICENSEKEY' });
     }
 
-    let qParam = normalizeQueryParam(query);
-    if (String(isOpenData).toLowerCase() === 'true') {
-      qParam = qParam
-        ? `${qParam} AND ${OPEN_DATA_LICENSE_QUERY}`
-        : OPEN_DATA_LICENSE_QUERY;
-    }
+    const qParam = applyOpenDataFilter(query, isOpenData);
 
     const cities = isCitiesRequest({
       scope,

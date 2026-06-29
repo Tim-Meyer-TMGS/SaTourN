@@ -18,7 +18,7 @@ export type RecordRow = {
 };
 
 export type RecordSearchMeta = {
-  mode: 'idle' | 'search' | 'id_search' | 'ai_search' | 'criterion';
+  mode: 'idle' | 'search' | 'id_search' | 'ai_search' | 'criterion' | 'open_data_gap';
   prompt?: string;
   criterionId?: string;
   criterionLabel?: string;
