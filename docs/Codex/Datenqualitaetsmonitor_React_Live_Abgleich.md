@@ -111,13 +111,19 @@ Prüfen:
 - Gesamtbestand, Open-Data-fähig und nicht Open-Data-fähig stimmen mit Live-Seite überein
 - Datentypverteilung nutzt dieselben Counts wie die Übersicht
 - Quote nach Datentyp ist korrekt
-- Lizenz-Pflegehinweis führt in die Datensatzliste zur Lizenzaufgabe
+- Lizenz-Pflegehinweis führt in die Datensatzliste aller nicht Open-Data-fähigen Datensätze
 - kein doppelter Arbeitskontext auf der Seite
 
 Kritische Abweichungen:
 
 - Open-Data-Status kennt nur Open-Data-fähig oder nicht Open-Data-fähig
 - kein zusätzlicher Status `Nicht bewertbar`
+
+Umgesetzt im React-Preview:
+
+- Die Aufgabenkarte in der Open-Data-Statistik nutzt die fachliche Differenz `Gesamt - Open-Data-fähig` statt des engeren `license_missing`-Issue-Counts.
+- Der Button öffnet die Datensatzliste mit `list=non_open_data`; dieser Modus nutzt den Search-Proxy mit `isOpenData=false`.
+- Die Open-Data-Lizenzdefinition liegt zentral in `lib/open-data-rules.js` und wird von Search-Proxy, Snapshot-Job und Qualitätsmodell gemeinsam genutzt.
 
 ### 6. Hilfe
 
@@ -145,6 +151,18 @@ Eine Seite gilt als abnahmefähig, wenn:
 - Light Mode und Dark Mode lesbar bleiben
 - keine Mojibake-Texte sichtbar sind
 - keine Console-Fehler aus dem Anwendungscode auftreten
+
+## Bekannte Browser-Noise
+
+Die Chrome-Meldung
+
+```text
+A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received
+```
+
+kommt typischerweise von Browser-Erweiterungen und nicht aus der Anwendung.
+Die React-Preview filtert genau diese unhandled Promise Rejection, damit echte
+App-Fehler und API-Fehler in der Console sichtbar bleiben.
 
 ## Aktueller nächster Schritt
 

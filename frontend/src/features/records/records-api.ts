@@ -52,6 +52,8 @@ type SearchResult = {
 
 const RECORD_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'] as const;
 const RECORD_TYPE_SET = new Set<string>(RECORD_TYPES);
+const OPEN_DATA_GAP_PAGE_SIZE = 200;
+const OPEN_DATA_GAP_MAX_PAGES = 20;
 
 function cleanQueryValue(value: string) {
   return String(value || '').replace(/"/g, '').trim();
@@ -282,6 +284,61 @@ async function loadAiSearch(prompt: string, context: WorkContext, selectedType: 
   };
 }
 
+async function executeOpenDataGapSearch(context: WorkContext, selectedTypes: string[]): Promise<SearchResult> {
+  const runtime = getRuntimeConfig();
+  const targetTypes = (selectedTypes.length ? selectedTypes : [...RECORD_TYPES])
+    .filter((type) => RECORD_TYPE_SET.has(type as (typeof RECORD_TYPES)[number]));
+  const contextQuery = buildContextQuery(context);
+
+  const payloads = await Promise.all(targetTypes.map(async (type) => {
+    const items: Record<string, unknown>[] = [];
+    let total = 0;
+    let offset = 0;
+
+    for (let page = 0; page < OPEN_DATA_GAP_MAX_PAGES; page += 1) {
+      const payload = await fetchJson<SearchPayload>(
+        buildSearchApiUrl(runtime.searchApiBase, type, contextQuery, {
+          limit: OPEN_DATA_GAP_PAGE_SIZE,
+          offset,
+          isOpenData: false
+        }),
+        { timeoutMs: 45_000 }
+      );
+      const pageItems = extractItems(payload);
+      total = extractTotal(payload, total || pageItems.length);
+      items.push(...pageItems.map((raw) => normalizeSearchItem(raw, type, context)));
+      if (!pageItems.length || items.length >= total) break;
+      offset += pageItems.length;
+    }
+
+    return {
+      items,
+      total,
+      truncated: total > items.length
+    };
+  }));
+
+  const seen = new Set<string>();
+  const items = payloads.flatMap((entry) => entry.items).filter((item) => {
+    const key = String(item.globalId || `${item.type}:${item.id}`);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const estimatedTotalItems = payloads.reduce((sum, entry) => sum + entry.total, 0);
+
+  return {
+    items,
+    meta: {
+      mode: 'open_data_gap',
+      criterionId: 'license_missing',
+      criterionLabel: 'Nicht Open-Data-fähig',
+      estimatedTotalItems,
+      truncated: payloads.some((entry) => entry.truncated)
+    } satisfies RecordSearchMeta
+  };
+}
+
 export async function loadRecordsForFrontend(options: {
   mode: 'search' | 'ai_search';
   query: string;
@@ -295,6 +352,18 @@ export async function loadRecordsForFrontend(options: {
       ? await executeIdSearch(query, context, selectedType)
       : await executeTextSearch(query, context, selectedType);
 
+  const evaluated = evaluateAllItems(baseResult.items) as Array<Record<string, unknown>>;
+  return {
+    rows: evaluated.map(toRecordRow),
+    meta: baseResult.meta
+  };
+}
+
+export async function loadOpenDataGapRecordsForFrontend(options: {
+  context: WorkContext;
+  selectedTypes?: string[];
+}) {
+  const baseResult = await executeOpenDataGapSearch(options.context, options.selectedTypes || []);
   const evaluated = evaluateAllItems(baseResult.items) as Array<Record<string, unknown>>;
   return {
     rows: evaluated.map(toRecordRow),

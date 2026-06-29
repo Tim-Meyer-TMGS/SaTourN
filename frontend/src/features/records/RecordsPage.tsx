@@ -5,7 +5,12 @@ import { DATA_TYPES } from '../../shared/config/constants';
 import { formatRecordDate } from '../../shared/format/formatters';
 import { qualityCriteria } from '../../shared/legacy/quality';
 import { useContextStore } from '../../shared/state/context-store';
-import { loadCriterionRecordsForFrontend, loadRecordsForFrontend, requestRecordMailDraftFrontend } from './records-api';
+import {
+  loadCriterionRecordsForFrontend,
+  loadOpenDataGapRecordsForFrontend,
+  loadRecordsForFrontend,
+  requestRecordMailDraftFrontend
+} from './records-api';
 import type { RecordRow, RecordSearchMeta } from './records-types';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
@@ -155,6 +160,7 @@ export function RecordsPage() {
   const urlCriterionId = searchParams.get('criterionId') || '';
   const urlCriterionIdsParam = searchParams.get('criterionIds') || '';
   const urlTypesParam = searchParams.get('types') || '';
+  const urlListMode = searchParams.get('list') || '';
   const urlCriterionIds = useMemo(() => {
     const values = urlCriterionIdsParam
       .split(',')
@@ -175,6 +181,7 @@ export function RecordsPage() {
     if (loading) return 'Datensätze werden geladen ...';
     if (error) return error;
     if (meta.mode === 'ai_search' && meta.prompt) return `KI-Suche: ${rows.length} Datensätze geladen`;
+    if (meta.mode === 'open_data_gap') return `Nicht Open-Data-fähig: ${rows.length} Datensätze geladen`;
     if (meta.mode === 'criterion') return `Gefiltert nach Pflegeaufgabe: ${meta.criterionLabel || meta.criterionId || 'Auswahl'} - ${rows.length} Datensätze geladen`;
     if (!rows.length) return 'Noch keine Datensätze geladen.';
     const extra = meta.truncated ? ' - Ergebnisliste gekürzt' : '';
@@ -262,8 +269,8 @@ export function RecordsPage() {
   useEffect(() => {
     let active = true;
 
-    async function loadCriterionFromUrl() {
-      if (!urlCriterionId) return;
+    async function loadListFromUrl() {
+      if (!urlCriterionId && urlListMode !== 'non_open_data') return;
 
       const selectedTypes = urlTypes.length
         ? urlTypes
@@ -280,31 +287,40 @@ export function RecordsPage() {
       setIssueFilter('');
 
       try {
-        const result = await loadCriterionRecordsForFrontend({
-          criterionId: urlCriterionId,
-          criterionIds: urlCriterionIds,
-          context,
-          selectedType: selectedTypes[0] || '',
-          selectedTypes
-        });
+        const result = urlListMode === 'non_open_data'
+          ? await loadOpenDataGapRecordsForFrontend({
+            context,
+            selectedTypes: selectedTypes.length ? selectedTypes : (context.type ? [context.type] : [])
+          })
+          : await loadCriterionRecordsForFrontend({
+            criterionId: urlCriterionId,
+            criterionIds: urlCriterionIds,
+            context,
+            selectedType: selectedTypes[0] || '',
+            selectedTypes
+          });
         if (!active) return;
         setRows(result.rows);
         setMeta(result.meta);
         setCategoryFilter('');
         saveRecordListState(result.rows, currentListUrl, (row) => {
-          const rowCriterionId = activeUrlCriterionIds.find((criterionId) => row.missingCriteria.includes(criterionId)) || urlCriterionId;
-          const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || result.meta.criterionLabel || rowCriterionId;
+          const rowCriterionId = urlListMode === 'non_open_data'
+            ? (row.missingCriteria.includes('license_missing') ? 'license_missing' : '')
+            : activeUrlCriterionIds.find((criterionId) => row.missingCriteria.includes(criterionId)) || urlCriterionId;
           const url = new URL(row.detailUrl, 'https://satourn.local');
-          url.searchParams.set('source', 'task');
-          url.searchParams.set('criterion_id', rowCriterionId);
-          url.searchParams.set('criterion_label', criterionLabel);
+          if (rowCriterionId) {
+            const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || result.meta.criterionLabel || rowCriterionId;
+            url.searchParams.set('source', 'task');
+            url.searchParams.set('criterion_id', rowCriterionId);
+            url.searchParams.set('criterion_label', criterionLabel);
+          }
           return `${url.pathname}${url.search}`;
         });
       } catch (caughtError) {
         if (!active) return;
         setRows([]);
         setMeta({
-          mode: 'criterion',
+          mode: urlListMode === 'non_open_data' ? 'open_data_gap' : 'criterion',
           criterionId: urlCriterionId,
           estimatedTotalItems: 0,
           truncated: false
@@ -315,7 +331,7 @@ export function RecordsPage() {
       }
     }
 
-    void loadCriterionFromUrl();
+    void loadListFromUrl();
 
     return () => {
       active = false;
@@ -326,6 +342,7 @@ export function RecordsPage() {
     context.city,
     context.type,
     currentListUrl,
+    urlListMode,
     urlCriterionId,
     urlCriterionIds,
     urlType,

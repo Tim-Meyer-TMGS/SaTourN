@@ -17,6 +17,7 @@ import {
 } from '../lib/quality-cache.js';
 import {
   buildSearchUrl,
+  combineSearchQueries,
   normalizeOffsetParam,
   normalizeQueryParam,
   OPEN_DATA_LICENSE_QUERY
@@ -88,14 +89,6 @@ function buildContextQuery({ area = '', city = '' } = {}) {
   if (area) parts.push(`area:"${cleanQueryValue(area)}"`);
   if (city) parts.push(`city:"${cleanQueryValue(city)}"`);
   return parts.join(' AND ');
-}
-
-function combineQueries(baseQuery, criterionQuery) {
-  const base = normalizeQueryParam(baseQuery);
-  const criterion = normalizeQueryParam(criterionQuery);
-  if (!base) return criterion;
-  if (!criterion) return base;
-  return `(${base}) AND (${criterion})`;
 }
 
 async function fetchJsonPage({ type, query, limit, offset }) {
@@ -300,7 +293,7 @@ function addListItem(listBuckets, criterion, type, query, item) {
 }
 
 async function scanType({ type, query, rows, issueMap, listBuckets, overallStatusCounts }) {
-  const openDataQuery = combineQueries(query, OPEN_DATA_LICENSE_QUERY);
+  const openDataQuery = combineSearchQueries(query, OPEN_DATA_LICENSE_QUERY);
   const [statistikCount, openDataCount] = await Promise.all([
     fetchCount(type, query),
     fetchCount(type, openDataQuery)

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useContextStore } from '../../shared/state/context-store';
-import { loadOverviewData, type OverviewData, type OverviewIssue, type OverviewStatisticRow } from '../overview/overview-api';
+import { loadOverviewData, type OverviewData, type OverviewStatisticRow } from '../overview/overview-api';
 
 const TYPE_COLORS = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9'];
 
@@ -56,16 +56,15 @@ function buildTypeDonutBackground(rows: StatsRow[]) {
   return `conic-gradient(${segments.join(', ')})`;
 }
 
-function buildLicenseTaskUrl(issue: OverviewIssue | undefined, fallbackTypes: string[], contextType: string) {
+function buildLicenseTaskUrl(fallbackTypes: string[], contextType: string) {
   const params = new URLSearchParams();
-  params.set('criterionId', 'license_missing');
+  params.set('list', 'non_open_data');
   params.set('from', 'stats');
 
   if (contextType) {
     params.set('type', contextType);
   } else {
-    const types = issue?.affectedTypes?.length ? issue.affectedTypes : fallbackTypes;
-    if (types.length) params.set('types', types.join(','));
+    if (fallbackTypes.length) params.set('types', fallbackTypes.join(','));
   }
 
   return `/records?${params.toString()}`;
@@ -117,7 +116,6 @@ export function StatsPage() {
       openDataQuote: percent(openDataRecords, totalRecords)
     };
   }, [rows]);
-  const licenseIssue = useMemo(() => data?.issues.find((issue) => issue.criterionId === 'license_missing'), [data]);
   const fallbackTypes = useMemo(() => rows.map((row) => row.type), [rows]);
   const showLicenseTask = !loading && summary.nonOpenDataRecords > 0;
   const donutBackground = buildTypeDonutBackground(rows);
@@ -224,10 +222,10 @@ export function StatsPage() {
             <p className="stats-task-copy">Datensätze ohne gültige Open-Data-Lizenz direkt in den Pflegeaufgaben bearbeiten.</p>
           </div>
           <div className="stats-task-metric">
-            <strong>{formatNumber(licenseIssue?.affectedCount || summary.nonOpenDataRecords)}</strong>
-            <small>{formatPercent(percent(licenseIssue?.affectedCount || summary.nonOpenDataRecords, summary.totalRecords))} nicht Open-Data-fähig</small>
+            <strong>{formatNumber(summary.nonOpenDataRecords)}</strong>
+            <small>{formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} nicht Open-Data-fähig</small>
           </div>
-          <Link className="primary-action stats-task-link" to={buildLicenseTaskUrl(licenseIssue, fallbackTypes, context.type)}>
+          <Link className="primary-action stats-task-link" to={buildLicenseTaskUrl(fallbackTypes, context.type)}>
             Pflegeaufgabe öffnen
             <span className="material-icons" aria-hidden="true">arrow_forward</span>
           </Link>
