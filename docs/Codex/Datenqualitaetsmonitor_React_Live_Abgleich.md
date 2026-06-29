@@ -79,6 +79,7 @@ Umgesetzt im React-Preview:
   `buildQualityEvaluationInput`
 - Suchtreffer, KI-Treffer und Detaildatensätze werden damit vor der Qualitätsbewertung einheitlich normalisiert
 - URL-Parameter für Pflegeaufgabenfilter werden stabil aus primitiven Query-Strings abgeleitet, damit das Öffnen einer Aufgabe keinen unnötigen Reload des Loaders auslöst
+- Fehlerlisten zeigen jetzt eine echte Fehlermeldung, wenn alle `/api/quality/scan`-Requests scheitern; Teiltreffer bleiben weiterhin nutzbar
 
 ### 4. Datensatz-Detail
 
@@ -101,6 +102,7 @@ Kritische Abweichungen:
 Umgesetzt im React-Preview:
 
 - Detailseite verwendet dieselbe Bewertungsbasis wie die Datensatzliste
+- Zurück aus der Detailseite erhält den ursprünglichen Listenpfad inklusive Pflegeaufgaben-Query, statt pauschal auf `/records` zurückzuspringen
 
 ### 5. Open-Data-Statistik
 

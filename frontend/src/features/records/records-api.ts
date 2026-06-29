@@ -331,7 +331,7 @@ export async function loadCriterionRecordsForFrontend(options: {
     .filter((type) => !activeCriterion.types?.length || activeCriterion.types.includes(type))
     .map((type) => ({ criterion: activeCriterion, type })));
 
-  const payloads = (await Promise.all(requests.map(async ({ criterion: activeCriterion, type }) => {
+  const scanResults = await Promise.all(requests.map(async ({ criterion: activeCriterion, type }) => {
     const params = new URLSearchParams();
     params.set('criterionId', activeCriterion.id);
     params.set('type', type);
@@ -345,11 +345,17 @@ export async function loadCriterionRecordsForFrontend(options: {
         timeoutMs: 45_000
       });
 
-      return { type, payload };
-    } catch {
-      return null;
+      return { type, payload, error: '' };
+    } catch (caughtError) {
+      const message = caughtError instanceof Error ? caughtError.message : 'Unbekannter Fehler';
+      return { type, payload: null, error: `${activeCriterion.label || activeCriterion.id} (${type}): ${message}` };
     }
-  }))).filter((entry): entry is { type: string; payload: QualityScanPayload } => Boolean(entry));
+  }));
+
+  const payloads = scanResults.filter((entry): entry is { type: string; payload: QualityScanPayload; error: string } => Boolean(entry.payload));
+  if (!payloads.length && scanResults.length) {
+    throw new Error(`Fehlerliste konnte nicht geladen werden. ${scanResults.map((entry) => entry.error).filter(Boolean).join(' | ')}`);
+  }
 
   const seen = new Set<string>();
   const rows = payloads.flatMap(({ type, payload }) => {
