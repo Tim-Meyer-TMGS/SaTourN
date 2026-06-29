@@ -48,6 +48,7 @@ Aktueller Stand:
 - Shell und Navigation sind an das bestehende Live-Design angenähert
 - SaTourN-Logo, Arbeitskontext-Leiste, Sidebar, Kartenstil und Tabellenstil sind im Preview-CSS abgebildet
 - Light-/Dark-Mode ist in der React-Shell umschaltbar und wird lokal gespeichert
+- React-Shell startet beim Laden einen nicht-blockierenden Warmup-Call auf `/health`, um Render-Kaltstarts abzufedern
 - Arbeitskontext-Store steht
 - zentraler Arbeitskontext-Dialog steht im React-Shell-Pfad
 - Runtime-API-Konfiguration steht
