@@ -1,4 +1,5 @@
 export type FrontendRuntimeConfig = {
+  warmupApiBase: string;
   searchApiBase: string;
   qualityCountApiBase: string;
   qualityScanApiBase: string;
@@ -14,6 +15,7 @@ export type FrontendRuntimeConfig = {
 declare global {
   interface Window {
     SATOURN_SEARCH_API_BASE?: string;
+    SATOURN_WARMUP_API_BASE?: string;
     SATOURN_QUALITY_COUNT_API_BASE?: string;
     SATOURN_QUALITY_SCAN_API_BASE?: string;
     SATOURN_QUALITY_SUMMARY_API_BASE?: string;
@@ -49,6 +51,7 @@ export function getRuntimeConfig(): FrontendRuntimeConfig {
   const searchApiBase = deriveApiBase();
 
   return {
+    warmupApiBase: window.SATOURN_WARMUP_API_BASE || derive(searchApiBase, '/health'),
     searchApiBase,
     qualityCountApiBase: window.SATOURN_QUALITY_COUNT_API_BASE || derive(searchApiBase, '/api/quality/count'),
     qualityScanApiBase: window.SATOURN_QUALITY_SCAN_API_BASE || derive(searchApiBase, '/api/quality/scan'),

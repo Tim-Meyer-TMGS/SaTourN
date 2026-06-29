@@ -138,6 +138,7 @@ Kritische Abweichungen:
 Eine Seite gilt als abnahmefähig, wenn:
 
 - API-Abrufe zur fachlichen Aussage passen
+- der initiale `/health`-Warmup-Call den Seitenstart nicht blockiert
 - Counts, Listen und Detailansichten konsistent sind
 - bekannte Sonderfälle sauber abgebildet werden
 - mobile Darstellung keine Überlagerungen erzeugt

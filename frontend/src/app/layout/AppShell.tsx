@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
+import { getRuntimeConfig } from '../../shared/api/runtime-config';
 import { AREAS, DATA_TYPES } from '../../shared/config/constants';
 import { useContextStore } from '../../shared/state/context-store';
 import type { DataType, WorkContext } from '../../shared/types/context';
@@ -37,6 +38,7 @@ export function AppShell() {
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [draftContext, setDraftContext] = useState<WorkContext>(context);
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
+  const [serverWarmupState, setServerWarmupState] = useState<'idle' | 'warming' | 'ready' | 'failed'>('idle');
 
   useEffect(() => {
     if (isContextOpen) setDraftContext(context);
@@ -51,6 +53,37 @@ export function AppShell() {
       // localStorage may be unavailable in privacy-restricted environments.
     }
   }, [theme]);
+
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
+    async function wakeServer() {
+      setServerWarmupState('warming');
+
+      try {
+        const runtime = getRuntimeConfig();
+        const response = await fetch(runtime.warmupApiBase, {
+          method: 'GET',
+          signal: controller.signal,
+          cache: 'no-store'
+        });
+
+        if (!active) return;
+        setServerWarmupState(response.ok ? 'ready' : 'failed');
+      } catch {
+        if (!active || controller.signal.aborted) return;
+        setServerWarmupState('failed');
+      }
+    }
+
+    void wakeServer();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
 
   function closeContextDialog() {
     setIsContextOpen(false);
@@ -97,6 +130,9 @@ export function AppShell() {
           <button className="icon-button" type="button" aria-label="Daten aktualisieren">
             <span className="material-icons" aria-hidden="true">refresh</span>
           </button>
+          <span className={`server-status server-status-${serverWarmupState}`}>
+            {serverWarmupState === 'warming' ? 'Server startet' : serverWarmupState === 'ready' ? 'Server bereit' : serverWarmupState === 'failed' ? 'Server prüfen' : 'Server'}
+          </span>
           <span className="preview-chip">Preview</span>
         </div>
       </header>
