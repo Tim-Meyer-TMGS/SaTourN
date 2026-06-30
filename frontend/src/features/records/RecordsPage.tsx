@@ -7,9 +7,8 @@ import { qualityCriteria } from '../../shared/legacy/quality';
 import { useContextStore } from '../../shared/state/context-store';
 import {
   loadCriterionRecordsForFrontend,
-  loadOpenDataGapRecordsForFrontend,
-  loadRecordsForFrontend,
-  requestRecordMailDraftFrontend
+  loadNonOpenDataRecordsForFrontend,
+  loadRecordsForFrontend
 } from './records-api';
 import type { RecordRow, RecordSearchMeta } from './records-types';
 
@@ -22,37 +21,6 @@ const QUICK_FILTERS = [
   { id: 'opening_hours_missing', label: 'Ohne Öffnungszeiten' }
 ] as const;
 const DATA_TYPE_SET = new Set<string>(DATA_TYPES);
-
-function buildMailtoUrl(payload: {
-  to: string;
-  cc?: string[];
-  bcc?: string[];
-  subject?: string;
-  body?: string;
-}) {
-  const to = String(payload.to || '').trim();
-  if (!to) return '';
-
-  const params: string[] = [];
-  if (payload.subject) params.push(`subject=${encodeURIComponent(String(payload.subject).slice(0, 240))}`);
-  if (payload.body) params.push(`body=${encodeURIComponent(String(payload.body).slice(0, 3500))}`);
-  if (Array.isArray(payload.cc) && payload.cc.length) params.push(`cc=${encodeURIComponent(payload.cc.join(','))}`);
-  if (Array.isArray(payload.bcc) && payload.bcc.length) params.push(`bcc=${encodeURIComponent(payload.bcc.join(','))}`);
-
-  const query = params.join('&');
-  return query ? `mailto:${to}?${query}` : `mailto:${to}`;
-}
-
-function launchMailto(mailtoUrl: string) {
-  if (!mailtoUrl) return false;
-  const link = document.createElement('a');
-  link.href = mailtoUrl;
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  return true;
-}
 
 function downloadText(filename: string, text: string, mimeType: string) {
   const blob = new Blob([text], { type: mimeType });
@@ -138,6 +106,35 @@ function saveRecordListState(
   }
 }
 
+function splitUniqueValues(value: string) {
+  return Array.from(new Set(
+    value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+  ));
+}
+
+function parseSelectedTypes(value: string) {
+  return splitUniqueValues(value).filter((entry) => DATA_TYPE_SET.has(entry));
+}
+
+function shouldResetLoadedRows(mode: RecordSearchMeta['mode']) {
+  return mode === 'ai_search' || mode === 'criterion' || mode === 'non_open_data';
+}
+
+function buildTaskAwareDetailUrl(
+  row: RecordRow,
+  criterionId: string,
+  criterionLabel: string
+) {
+  const url = new URL(row.detailUrl, 'https://satourn.local');
+  url.searchParams.set('source', 'task');
+  url.searchParams.set('criterion_id', criterionId);
+  url.searchParams.set('criterion_label', criterionLabel);
+  return `${url.pathname}${url.search}`;
+}
+
 export function RecordsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -156,32 +153,19 @@ export function RecordsPage() {
   const [issueFilter, setIssueFilter] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(25);
-  const [mailLoadingKey, setMailLoadingKey] = useState('');
   const urlCriterionId = searchParams.get('criterionId') || '';
   const urlCriterionIdsParam = searchParams.get('criterionIds') || '';
   const urlTypesParam = searchParams.get('types') || '';
   const urlListMode = searchParams.get('list') || '';
-  const urlCriterionIds = useMemo(() => {
-    const values = urlCriterionIdsParam
-      .split(',')
-      .map((entry) => entry.trim())
-      .filter(Boolean);
-    return Array.from(new Set(values));
-  }, [urlCriterionIdsParam]);
+  const urlCriterionIds = useMemo(() => splitUniqueValues(urlCriterionIdsParam), [urlCriterionIdsParam]);
   const urlType = searchParams.get('type') || '';
-  const urlTypes = useMemo(() => {
-    const values = urlTypesParam
-      .split(',')
-      .map((entry) => entry.trim())
-      .filter((entry) => DATA_TYPE_SET.has(entry));
-    return Array.from(new Set(values));
-  }, [urlTypesParam]);
+  const urlTypes = useMemo(() => parseSelectedTypes(urlTypesParam), [urlTypesParam]);
 
   const resultSummary = useMemo(() => {
     if (loading) return 'Datensätze werden geladen ...';
     if (error) return error;
     if (meta.mode === 'ai_search' && meta.prompt) return `KI-Suche: ${rows.length} Datensätze geladen`;
-    if (meta.mode === 'open_data_gap') return `Nicht Open-Data-fähig: ${rows.length} Datensätze geladen`;
+    if (meta.mode === 'non_open_data') return `Nicht Open-Data-fähig: ${rows.length} Datensätze geladen`;
     if (meta.mode === 'criterion') return `Gefiltert nach Pflegeaufgabe: ${meta.criterionLabel || meta.criterionId || 'Auswahl'} - ${rows.length} Datensätze geladen`;
     if (!rows.length) return 'Noch keine Datensätze geladen.';
     const extra = meta.truncated ? ' - Ergebnisliste gekürzt' : '';
@@ -254,22 +238,19 @@ export function RecordsPage() {
     if (!rowCriterionId) return row.detailUrl;
 
     const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || row.primaryIssue || rowCriterionId;
-    const url = new URL(row.detailUrl, 'https://satourn.local');
-    url.searchParams.set('source', 'task');
-    url.searchParams.set('criterion_id', rowCriterionId);
-    url.searchParams.set('criterion_label', criterionLabel);
-    return `${url.pathname}${url.search}`;
+    return buildTaskAwareDetailUrl(row, rowCriterionId, criterionLabel);
   }
 
   useEffect(() => {
     if (!rows.length) return;
+    // Detail pages need the current filtered list for "previous/next" navigation.
     saveRecordListState(filteredRows, currentListUrl, buildDetailUrl);
   }, [currentListUrl, filteredRows, issueFilter, rows.length]);
 
   useEffect(() => {
     let active = true;
 
-    async function loadListFromUrl() {
+    async function loadRequestedRecordList() {
       if (!urlCriterionId && urlListMode !== 'non_open_data') return;
 
       const selectedTypes = urlTypes.length
@@ -288,7 +269,7 @@ export function RecordsPage() {
 
       try {
         const result = urlListMode === 'non_open_data'
-          ? await loadOpenDataGapRecordsForFrontend({
+          ? await loadNonOpenDataRecordsForFrontend({
             context,
             selectedTypes: selectedTypes.length ? selectedTypes : (context.type ? [context.type] : [])
           })
@@ -307,20 +288,17 @@ export function RecordsPage() {
           const rowCriterionId = urlListMode === 'non_open_data'
             ? (row.missingCriteria.includes('license_missing') ? 'license_missing' : '')
             : activeUrlCriterionIds.find((criterionId) => row.missingCriteria.includes(criterionId)) || urlCriterionId;
-          const url = new URL(row.detailUrl, 'https://satourn.local');
           if (rowCriterionId) {
             const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || result.meta.criterionLabel || rowCriterionId;
-            url.searchParams.set('source', 'task');
-            url.searchParams.set('criterion_id', rowCriterionId);
-            url.searchParams.set('criterion_label', criterionLabel);
+            return buildTaskAwareDetailUrl(row, rowCriterionId, criterionLabel);
           }
-          return `${url.pathname}${url.search}`;
+          return row.detailUrl;
         });
       } catch (caughtError) {
         if (!active) return;
         setRows([]);
         setMeta({
-          mode: urlListMode === 'non_open_data' ? 'open_data_gap' : 'criterion',
+          mode: urlListMode === 'non_open_data' ? 'non_open_data' : 'criterion',
           criterionId: urlCriterionId,
           estimatedTotalItems: 0,
           truncated: false
@@ -331,7 +309,7 @@ export function RecordsPage() {
       }
     }
 
-    void loadListFromUrl();
+    void loadRequestedRecordList();
 
     return () => {
       active = false;
@@ -349,7 +327,7 @@ export function RecordsPage() {
     urlTypes
   ]);
 
-  async function handleSubmit(nextMode: 'search' | 'ai_search') {
+  async function runRecordSearch(nextMode: 'search' | 'ai_search') {
     const trimmedQuery = query.trim();
     if (!trimmedQuery) {
       setError(nextMode === 'ai_search' ? 'Bitte gib zuerst eine KI-Suchanfrage ein.' : 'Bitte gib zuerst eine Suchanfrage ein.');
@@ -388,58 +366,21 @@ export function RecordsPage() {
     }
   }
 
-  async function handleMailDraft(row: RecordRow) {
-    if (!row.email || !row.missingCriteria.length) return;
-
-    const key = row.globalId || row.id;
-    setMailLoadingKey(key);
-    setError('');
-
-    try {
-      const payload = await requestRecordMailDraftFrontend({
-        row,
-        selectedCriterionId: issueFilter
-      });
-      const mailtoUrl = buildMailtoUrl({
-        to: payload.to,
-        cc: payload.cc,
-        bcc: payload.bcc,
-        subject: payload.subject,
-        body: payload.body
-      });
-      if (!launchMailto(mailtoUrl)) {
-        throw new Error('Mailprogramm konnte nicht geöffnet werden.');
-      }
-    } catch (caughtError) {
-      const message = caughtError instanceof Error ? caughtError.message : 'Mailentwurf konnte nicht erzeugt werden.';
-      setError(message);
-    } finally {
-      setMailLoadingKey('');
-    }
-  }
-
-  function applyQuickFilter(criterionId: string) {
+  function toggleQuickCriterionFilter(criterionId: string) {
     setIssueFilter((current) => current === criterionId ? '' : criterionId);
     setPage(1);
   }
 
-  function resetFilters() {
+  function resetRecordFilters() {
     setCategoryFilter('');
     setIssueFilter('');
     setPage(1);
 
     if (meta.mode === 'ai_search') {
-      setMode('search');
-      setMeta({
-        mode: 'idle',
-        estimatedTotalItems: 0,
-        truncated: false
-      });
-      setRows([]);
       setQuery('');
     }
 
-    if (meta.mode === 'criterion') {
+    if (shouldResetLoadedRows(meta.mode)) {
       setSearchParams({});
       setMode('search');
       setMeta({
@@ -451,7 +392,7 @@ export function RecordsPage() {
     }
   }
 
-  function exportCsv() {
+  function exportFilteredRowsAsCsv() {
     if (!filteredRows.length) return;
     const csv = `\uFEFF${buildRecordsCsv(filteredRows)}`;
     downloadText('satourn_datensaetze.csv', csv, 'text/csv;charset=utf-8');
@@ -474,15 +415,15 @@ export function RecordsPage() {
               placeholder="Suche nach Titel, ID, global_id, Ort, Kategorie oder Problem ..."
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') void handleSubmit('search');
+                if (event.key === 'Enter') void runRecordSearch('search');
               }}
             />
           </label>
           <div className="record-search-actions">
-            <button className="context-edit" type="button" disabled={loading} onClick={() => void handleSubmit('search')}>
+            <button className="context-edit" type="button" disabled={loading} onClick={() => void runRecordSearch('search')}>
               {loading && mode === 'search' ? 'Sucht ...' : 'Suchen'}
             </button>
-            <button className="plain-button icon-text-button" type="button" disabled={loading} onClick={() => void handleSubmit('ai_search')}>
+            <button className="plain-button icon-text-button" type="button" disabled={loading} onClick={() => void runRecordSearch('ai_search')}>
               <span className="material-icons" aria-hidden="true">auto_awesome</span>
               {loading && mode === 'ai_search' ? 'KI sucht ...' : 'AI-Search'}
             </button>
@@ -526,7 +467,7 @@ export function RecordsPage() {
           </select>
         </label>
 
-        <button className="plain-button" type="button" onClick={resetFilters}>
+        <button className="plain-button" type="button" onClick={resetRecordFilters}>
           Filter zurücksetzen
         </button>
 
@@ -538,7 +479,7 @@ export function RecordsPage() {
               className={`quick-filter-button${issueFilter === filter.id ? ' active' : ''}`}
               type="button"
               disabled={!rows.length}
-              onClick={() => applyQuickFilter(filter.id)}
+              onClick={() => toggleQuickCriterionFilter(filter.id)}
             >
               {filter.label} <span>{quickCounts[filter.id]}</span>
             </button>
@@ -557,7 +498,7 @@ export function RecordsPage() {
       <section className="record-result-head">
         <p>{resultSummary}</p>
         <div className="record-actions">
-          <button className="context-edit icon-text-button" type="button" disabled={!filteredRows.length} onClick={exportCsv}>
+          <button className="context-edit icon-text-button" type="button" disabled={!filteredRows.length} onClick={exportFilteredRowsAsCsv}>
             <span className="material-icons" aria-hidden="true">file_download</span>
             CSV exportieren
           </button>
@@ -611,14 +552,6 @@ export function RecordsPage() {
                       <Link className="table-link-button" to={buildDetailUrl(row)}>
                         Detail
                       </Link>
-                      <button
-                        type="button"
-                        className="table-link-button"
-                        disabled={!row.email || !row.missingCriteria.length || mailLoadingKey === (row.globalId || row.id)}
-                        onClick={() => void handleMailDraft(row)}
-                      >
-                        {mailLoadingKey === (row.globalId || row.id) ? 'Lädt ...' : 'E-Mail'}
-                      </button>
                     </div>
                   </td>
                 </tr>

@@ -51,6 +51,52 @@ function issueRecordsUrl(issue: OverviewIssue, contextType: string) {
   return `/records?${params.toString()}`;
 }
 
+function buildOpenDataSummary(rows: OverviewData['statisticRows']) {
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
+  const openData = rows.reduce((sum, row) => sum + row.openData, 0);
+  const notOpenData = Math.max(0, total - openData);
+
+  return {
+    total,
+    openData,
+    notOpenData,
+    openDataQuote: percent(openData, total)
+  };
+}
+
+function buildQualityDistribution(summary: OverviewData['qualitySummary']) {
+  const total = (summary?.good || 0)
+    + (summary?.review || 0)
+    + (summary?.critical || 0)
+    + (summary?.notCalculable || 0);
+  const goodWidth = percent(summary?.good || 0, total);
+  const reviewWidth = percent(summary?.review || 0, total);
+  const criticalWidth = percent(summary?.critical || 0, total);
+
+  return {
+    total,
+    goodWidth,
+    reviewWidth,
+    criticalWidth,
+    notCalculatedWidth: Math.max(0, 100 - goodWidth - reviewWidth - criticalWidth)
+  };
+}
+
+function buildQualityStatusGradient(distribution: ReturnType<typeof buildQualityDistribution>) {
+  const reviewStart = distribution.goodWidth;
+  const criticalStart = distribution.goodWidth + distribution.reviewWidth;
+  const mutedStart = criticalStart + distribution.criticalWidth;
+
+  return [
+    'conic-gradient(',
+    `#2bb673 0 ${distribution.goodWidth}%, `,
+    `#f2a91b ${reviewStart}% ${criticalStart}%, `,
+    `#ef4444 ${criticalStart}% ${mutedStart}%, `,
+    `#98a2b3 ${mutedStart}% 100%`,
+    ')'
+  ].join('');
+}
+
 export function OverviewPage() {
   const { context } = useContextStore();
   const [data, setData] = useState<OverviewData | null>(null);
@@ -86,17 +132,7 @@ export function OverviewPage() {
 
   const summary = useMemo(() => {
     const rows = data?.statisticRows || [];
-    const total = rows.reduce((sum, row) => sum + row.total, 0);
-    const openData = rows.reduce((sum, row) => sum + row.openData, 0);
-    const notOpenData = Math.max(0, total - openData);
-    const openDataQuote = percent(openData, total);
-
-    return {
-      total,
-      openData,
-      notOpenData,
-      openDataQuote
-    };
+    return buildOpenDataSummary(rows);
   }, [data]);
 
   const topIssues = useMemo(() => (data?.issues || []).slice(0, 5), [data]);
@@ -105,19 +141,12 @@ export function OverviewPage() {
   const hasQualitySummary = Boolean(qualitySummary);
   const qualityTotal = qualitySummary?.totalAssessed || 0;
   const qualityScore = qualitySummary?.averageQualityScore ?? null;
-  const qualityStatusTotal = (qualitySummary?.good || 0)
-    + (qualitySummary?.review || 0)
-    + (qualitySummary?.critical || 0)
-    + (qualitySummary?.notCalculable || 0);
-  const goodWidth = percent(qualitySummary?.good || 0, qualityStatusTotal);
-  const reviewWidth = percent(qualitySummary?.review || 0, qualityStatusTotal);
-  const criticalWidth = percent(qualitySummary?.critical || 0, qualityStatusTotal);
-  const notCalculatedWidth = Math.max(0, 100 - goodWidth - reviewWidth - criticalWidth);
+  const qualityDistribution = buildQualityDistribution(qualitySummary);
   const openDataWidth = percent(summary.openData, summary.total);
   const notOpenDataWidth = percent(summary.notOpenData, summary.total);
   const scoreWidth = qualityScore == null ? 0 : Math.max(0, Math.min(100, qualityScore));
   const statusGradient = hasQualitySummary
-    ? `conic-gradient(#2bb673 0 ${goodWidth}%, #f2a91b ${goodWidth}% ${goodWidth + reviewWidth}%, #ef4444 ${goodWidth + reviewWidth}% ${goodWidth + reviewWidth + criticalWidth}%, #98a2b3 ${goodWidth + reviewWidth + criticalWidth}% 100%)`
+    ? buildQualityStatusGradient(qualityDistribution)
     : 'conic-gradient(#e2e8f0 0 100%)';
   const summaryPartial = Boolean(
     qualitySummary?.meta?.partial ||
@@ -213,11 +242,11 @@ export function OverviewPage() {
               <div className="legend">
                 {hasQualitySummary ? (
                   <>
-                    <div className="legend-row"><span className="legend-dot good" /><span>Gut</span><strong>{formatPercent(goodWidth)} ({formatNumber(qualitySummary?.good || 0)})</strong></div>
-                    <div className="legend-row"><span className="legend-dot review" /><span>Prüfen</span><strong>{formatPercent(reviewWidth)} ({formatNumber(qualitySummary?.review || 0)})</strong></div>
-                    <div className="legend-row"><span className="legend-dot critical" /><span>Kritisch</span><strong>{formatPercent(criticalWidth)} ({formatNumber(qualitySummary?.critical || 0)})</strong></div>
+                    <div className="legend-row"><span className="legend-dot good" /><span>Gut</span><strong>{formatPercent(qualityDistribution.goodWidth)} ({formatNumber(qualitySummary?.good || 0)})</strong></div>
+                    <div className="legend-row"><span className="legend-dot review" /><span>Prüfen</span><strong>{formatPercent(qualityDistribution.reviewWidth)} ({formatNumber(qualitySummary?.review || 0)})</strong></div>
+                    <div className="legend-row"><span className="legend-dot critical" /><span>Kritisch</span><strong>{formatPercent(qualityDistribution.criticalWidth)} ({formatNumber(qualitySummary?.critical || 0)})</strong></div>
                     {(qualitySummary?.notCalculable || 0) > 0 ? (
-                      <div className="legend-row"><span className="legend-dot muted" /><span>Nicht berechnet</span><strong>{formatPercent(notCalculatedWidth)} ({formatNumber(qualitySummary?.notCalculable || 0)})</strong></div>
+                      <div className="legend-row"><span className="legend-dot muted" /><span>Nicht berechnet</span><strong>{formatPercent(qualityDistribution.notCalculatedWidth)} ({formatNumber(qualitySummary?.notCalculable || 0)})</strong></div>
                     ) : null}
                   </>
                 ) : (

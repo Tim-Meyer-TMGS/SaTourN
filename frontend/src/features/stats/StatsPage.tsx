@@ -15,6 +15,14 @@ type StatsRow = {
   inventoryShare: number;
 };
 
+type StatsSummary = {
+  totalRecords: number;
+  openDataRecords: number;
+  nonOpenDataRecords: number;
+  openDataQuote: number;
+  nonOpenDataQuote: number;
+};
+
 function formatNumber(value: number) {
   return new Intl.NumberFormat('de-DE').format(value);
 }
@@ -42,6 +50,24 @@ function mapStatsRows(rows: OverviewStatisticRow[]): StatsRow[] {
     }));
 }
 
+function buildStatsSummary(rows: StatsRow[]): StatsSummary {
+  const totalRecords = rows.reduce((sum, row) => sum + row.total, 0);
+  const openDataRecords = rows.reduce((sum, row) => sum + row.openData, 0);
+  const nonOpenDataRecords = Math.max(0, totalRecords - openDataRecords);
+
+  return {
+    totalRecords,
+    openDataRecords,
+    nonOpenDataRecords,
+    openDataQuote: percent(openDataRecords, totalRecords),
+    nonOpenDataQuote: percent(nonOpenDataRecords, totalRecords)
+  };
+}
+
+function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
+
 function buildTypeDonutBackground(rows: StatsRow[]) {
   if (!rows.length) return 'conic-gradient(#e2e8f0 0 100%)';
 
@@ -54,6 +80,16 @@ function buildTypeDonutBackground(rows: StatsRow[]) {
   });
 
   return `conic-gradient(${segments.join(', ')})`;
+}
+
+function buildStatsPageModel(data: OverviewData | null) {
+  const rows = mapStatsRows(data?.statisticRows || []);
+  return {
+    rows,
+    summary: buildStatsSummary(rows),
+    fallbackTypes: rows.map((row) => row.type),
+    donutBackground: buildTypeDonutBackground(rows)
+  };
 }
 
 function buildLicenseTaskUrl(fallbackTypes: string[], contextType: string) {
@@ -103,22 +139,9 @@ export function StatsPage() {
     };
   }, [context]);
 
-  const rows = useMemo(() => mapStatsRows(data?.statisticRows || []), [data]);
-  const summary = useMemo(() => {
-    const totalRecords = rows.reduce((sum, row) => sum + row.total, 0);
-    const openDataRecords = rows.reduce((sum, row) => sum + row.openData, 0);
-    const nonOpenDataRecords = Math.max(0, totalRecords - openDataRecords);
-
-    return {
-      totalRecords,
-      openDataRecords,
-      nonOpenDataRecords,
-      openDataQuote: percent(openDataRecords, totalRecords)
-    };
-  }, [rows]);
-  const fallbackTypes = useMemo(() => rows.map((row) => row.type), [rows]);
+  const statsModel = useMemo(() => buildStatsPageModel(data), [data]);
+  const { rows, summary, fallbackTypes, donutBackground } = statsModel;
   const showLicenseTask = !loading && summary.nonOpenDataRecords > 0;
-  const donutBackground = buildTypeDonutBackground(rows);
 
   return (
     <>
@@ -159,7 +182,7 @@ export function StatsPage() {
           <div>
             <span>Nicht Open-Data-fähig</span>
             <strong>{loading ? '...' : formatNumber(summary.nonOpenDataRecords)}</strong>
-            <small>{loading ? '...' : `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} aller Datensätze`}</small>
+            <small>{loading ? '...' : `${formatPercent(summary.nonOpenDataQuote)} aller Datensätze`}</small>
           </div>
         </article>
       </section>
@@ -205,7 +228,7 @@ export function StatsPage() {
             {!loading && rows.map((row) => (
               <div className="stats-quote-row" key={row.type}>
                 <span>{row.type}</span>
-                <div className="stats-quote-track"><i style={{ width: `${Math.max(0, Math.min(100, row.openDataQuote))}%` }} /></div>
+                <div className="stats-quote-track"><i style={{ width: `${clampPercent(row.openDataQuote)}%` }} /></div>
                 <strong>{formatPercent(row.openDataQuote)}</strong>
               </div>
             ))}
@@ -223,7 +246,7 @@ export function StatsPage() {
           </div>
           <div className="stats-task-metric">
             <strong>{formatNumber(summary.nonOpenDataRecords)}</strong>
-            <small>{formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} nicht Open-Data-fähig</small>
+            <small>{formatPercent(summary.nonOpenDataQuote)} nicht Open-Data-fähig</small>
           </div>
           <Link className="primary-action stats-task-link" to={buildLicenseTaskUrl(fallbackTypes, context.type)}>
             Pflegeaufgabe öffnen

@@ -39,6 +39,10 @@ function DetailInfoList({ entries, wide = false }: { entries: DetailInfoEntry[];
   );
 }
 
+function canCreateMailDraft(item: DetailItem, mailDraftLoading: boolean) {
+  return Boolean(item.email && item.missingCriteria.length && !mailDraftLoading);
+}
+
 export function DetailBreadcrumb({
   contextSource,
   contextLabel
@@ -77,14 +81,20 @@ export function DetailActionBar({
   backUrl,
   previous,
   next,
-  onCopy
+  mailDraftLoading,
+  onCopy,
+  onCreateMailDraft
 }: {
   item: DetailItem;
   backUrl: string;
   previous: RecordListEntry | null;
   next: RecordListEntry | null;
+  mailDraftLoading: boolean;
   onCopy: (value: string, label: string) => void;
+  onCreateMailDraft: () => void;
 }) {
+  const mailDraftAvailable = canCreateMailDraft(item, mailDraftLoading);
+
   return (
     <section className="detail-action-bar">
       <Link className="context-edit icon-text-button" to={backUrl || '/records'}>
@@ -125,6 +135,13 @@ export function DetailActionBar({
             <span className="material-icons" aria-hidden="true">expand_more</span>
           </summary>
           <div>
+            <button
+              type="button"
+              disabled={!mailDraftAvailable}
+              onClick={onCreateMailDraft}
+            >
+              {mailDraftLoading ? 'Mailentwurf wird erstellt ...' : 'Mailentwurf erstellen'}
+            </button>
             <button type="button" onClick={() => onCopy(item.id, 'ID')}>ID kopieren</button>
             <button type="button" onClick={() => onCopy(item.globalId, 'global_id')}>global_id kopieren</button>
             <button type="button" onClick={() => onCopy(window.location.href, 'Link')}>Link kopieren</button>

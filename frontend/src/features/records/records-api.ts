@@ -52,8 +52,8 @@ type SearchResult = {
 
 const RECORD_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'] as const;
 const RECORD_TYPE_SET = new Set<string>(RECORD_TYPES);
-const OPEN_DATA_GAP_PAGE_SIZE = 200;
-const OPEN_DATA_GAP_MAX_PAGES = 20;
+const NON_OPEN_DATA_PAGE_SIZE = 200;
+const NON_OPEN_DATA_MAX_PAGES = 20;
 
 function cleanQueryValue(value: string) {
   return String(value || '').replace(/"/g, '').trim();
@@ -92,6 +92,29 @@ function normalizeSearchItem(raw: unknown, fallbackType: string, context: WorkCo
     missingCriteria: [],
     recommendations: []
   };
+}
+
+function normalizeResolvedItem(entry: ResolvedItem, selectedType: string, context: WorkContext) {
+  if (entry && typeof entry === 'object' && 'raw' in entry) {
+    const resolvedEntry = entry as { raw?: unknown; _resolvedType?: string; type?: string };
+    return normalizeSearchItem(
+      resolvedEntry.raw ?? entry,
+      resolvedEntry._resolvedType || resolvedEntry.type || selectedType,
+      context
+    );
+  }
+
+  return normalizeSearchItem(entry, selectedType, context);
+}
+
+function extractAiResultIds(payload: AiSearchPayload | null | undefined) {
+  const ids = Array.isArray(payload?.ids)
+    ? payload.ids
+    : Array.isArray(payload?.globalIds)
+      ? payload.globalIds
+      : [];
+
+  return Array.from(new Set(ids.map((entry) => String(entry).trim()).filter(Boolean)));
 }
 
 function priorityRank(priority: string) {
@@ -135,7 +158,34 @@ function toRecordRow(item: Record<string, unknown>): RecordRow {
   };
 }
 
-async function executeIdSearch(query: string, context: WorkContext, selectedType: string) {
+function buildEvaluatedRecordRows(items: Record<string, unknown>[]) {
+  const evaluated = evaluateAllItems(items) as Array<Record<string, unknown>>;
+  return evaluated.map(toRecordRow);
+}
+
+function uniqueRecordItems(items: Record<string, unknown>[]) {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    const key = String(item.globalId || `${item.type}:${item.id}`);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function uniqueRecordRows(rows: RecordRow[]) {
+  const seen = new Set<string>();
+
+  return rows.filter((row) => {
+    const key = row.globalId || `${row.type}:${row.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function fetchRecordsById(query: string, context: WorkContext, selectedType: string) {
   const runtime = getRuntimeConfig();
   const targetTypes = selectedType ? [selectedType] : [...RECORD_TYPES];
   const contextQuery = buildContextQuery(context);
@@ -165,7 +215,7 @@ async function executeIdSearch(query: string, context: WorkContext, selectedType
   };
 }
 
-async function executeTextSearch(query: string, context: WorkContext, selectedType: string) {
+async function fetchRecordsByTextQuery(query: string, context: WorkContext, selectedType: string) {
   const runtime = getRuntimeConfig();
   const targetTypes = selectedType ? [selectedType] : [...RECORD_TYPES];
   const contextQuery = buildContextQuery(context);
@@ -216,7 +266,7 @@ async function executeTextSearch(query: string, context: WorkContext, selectedTy
   };
 }
 
-async function loadAiSearch(prompt: string, context: WorkContext, selectedType: string): Promise<SearchResult> {
+async function fetchRecordsByAiPrompt(prompt: string, context: WorkContext, selectedType: string): Promise<SearchResult> {
   const runtime = getRuntimeConfig();
   const aiPayload = await fetchJson<AiSearchPayload>(runtime.oiSearchApiBase, {
     method: 'POST',
@@ -232,11 +282,7 @@ async function loadAiSearch(prompt: string, context: WorkContext, selectedType: 
     })
   });
 
-  const ids = Array.isArray(aiPayload.ids)
-    ? aiPayload.ids
-    : Array.isArray(aiPayload.globalIds)
-      ? aiPayload.globalIds
-      : [];
+  const ids = extractAiResultIds(aiPayload);
 
   if (!ids.length) {
     return {
@@ -261,17 +307,7 @@ async function loadAiSearch(prompt: string, context: WorkContext, selectedType: 
   });
 
   const resolvedItems = Array.isArray(resolvedPayload.items) ? resolvedPayload.items : [];
-  const normalized = resolvedItems.map((entry: ResolvedItem) => {
-    if (entry && typeof entry === 'object' && 'raw' in entry) {
-      const resolvedEntry = entry as { raw?: unknown; _resolvedType?: string; type?: string };
-      return normalizeSearchItem(
-        resolvedEntry.raw ?? entry,
-        resolvedEntry._resolvedType || resolvedEntry.type || selectedType,
-        context
-      );
-    }
-    return normalizeSearchItem(entry, selectedType, context);
-  });
+  const normalized = resolvedItems.map((entry) => normalizeResolvedItem(entry, selectedType, context));
 
   return {
     items: normalized,
@@ -284,7 +320,7 @@ async function loadAiSearch(prompt: string, context: WorkContext, selectedType: 
   };
 }
 
-async function executeOpenDataGapSearch(context: WorkContext, selectedTypes: string[]): Promise<SearchResult> {
+async function fetchNonOpenDataRecords(context: WorkContext, selectedTypes: string[]): Promise<SearchResult> {
   const runtime = getRuntimeConfig();
   const targetTypes = (selectedTypes.length ? selectedTypes : [...RECORD_TYPES])
     .filter((type) => RECORD_TYPE_SET.has(type as (typeof RECORD_TYPES)[number]));
@@ -295,10 +331,10 @@ async function executeOpenDataGapSearch(context: WorkContext, selectedTypes: str
     let total = 0;
     let offset = 0;
 
-    for (let page = 0; page < OPEN_DATA_GAP_MAX_PAGES; page += 1) {
+    for (let page = 0; page < NON_OPEN_DATA_MAX_PAGES; page += 1) {
       const payload = await fetchJson<SearchPayload>(
         buildSearchApiUrl(runtime.searchApiBase, type, contextQuery, {
-          limit: OPEN_DATA_GAP_PAGE_SIZE,
+          limit: NON_OPEN_DATA_PAGE_SIZE,
           offset,
           isOpenData: false
         }),
@@ -318,19 +354,13 @@ async function executeOpenDataGapSearch(context: WorkContext, selectedTypes: str
     };
   }));
 
-  const seen = new Set<string>();
-  const items = payloads.flatMap((entry) => entry.items).filter((item) => {
-    const key = String(item.globalId || `${item.type}:${item.id}`);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const items = uniqueRecordItems(payloads.flatMap((entry) => entry.items));
   const estimatedTotalItems = payloads.reduce((sum, entry) => sum + entry.total, 0);
 
   return {
     items,
     meta: {
-      mode: 'open_data_gap',
+      mode: 'non_open_data',
       criterionId: 'license_missing',
       criterionLabel: 'Nicht Open-Data-fähig',
       estimatedTotalItems,
@@ -347,26 +377,24 @@ export async function loadRecordsForFrontend(options: {
 }) {
   const { mode, query, context, selectedType } = options;
   const baseResult = mode === 'ai_search'
-    ? await loadAiSearch(query, context, selectedType)
+    ? await fetchRecordsByAiPrompt(query, context, selectedType)
     : looksLikeRecordId(query)
-      ? await executeIdSearch(query, context, selectedType)
-      : await executeTextSearch(query, context, selectedType);
+      ? await fetchRecordsById(query, context, selectedType)
+      : await fetchRecordsByTextQuery(query, context, selectedType);
 
-  const evaluated = evaluateAllItems(baseResult.items) as Array<Record<string, unknown>>;
   return {
-    rows: evaluated.map(toRecordRow),
+    rows: buildEvaluatedRecordRows(baseResult.items),
     meta: baseResult.meta
   };
 }
 
-export async function loadOpenDataGapRecordsForFrontend(options: {
+export async function loadNonOpenDataRecordsForFrontend(options: {
   context: WorkContext;
   selectedTypes?: string[];
 }) {
-  const baseResult = await executeOpenDataGapSearch(options.context, options.selectedTypes || []);
-  const evaluated = evaluateAllItems(baseResult.items) as Array<Record<string, unknown>>;
+  const baseResult = await fetchNonOpenDataRecords(options.context, options.selectedTypes || []);
   return {
-    rows: evaluated.map(toRecordRow),
+    rows: buildEvaluatedRecordRows(baseResult.items),
     meta: baseResult.meta
   };
 }
@@ -426,22 +454,15 @@ export async function loadCriterionRecordsForFrontend(options: {
     throw new Error(`Fehlerliste konnte nicht geladen werden. ${scanResults.map((entry) => entry.error).filter(Boolean).join(' | ')}`);
   }
 
-  const seen = new Set<string>();
-  const rows = payloads.flatMap(({ type, payload }) => {
+  const rows = uniqueRecordRows(payloads.flatMap(({ type, payload }) => {
     const items = Array.isArray(payload.items) ? payload.items : [];
     return items
       .map((item) => toRecordRow({
         ...item,
         type: item.type || type,
         raw: item.raw || item
-      }))
-      .filter((row) => {
-        const key = row.globalId || `${row.type}:${row.id}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-  });
+      }));
+  }));
   const estimatedTotalItems = payloads.reduce((sum, { payload }) => (
     sum + Number(payload.stats?.overallcount ?? payload.stats?.matchedItems ?? 0)
   ), 0);
@@ -456,60 +477,4 @@ export async function loadCriterionRecordsForFrontend(options: {
       truncated: payloads.some(({ payload }) => payload.page?.complete === false)
     } satisfies RecordSearchMeta
   };
-}
-
-export async function requestRecordMailDraftFrontend(options: {
-  row: RecordRow;
-  selectedCriterionId?: string;
-}) {
-  const runtime = getRuntimeConfig();
-  const { row, selectedCriterionId = '' } = options;
-
-  const relevantIds = selectedCriterionId && row.missingCriteria.includes(selectedCriterionId)
-    ? [selectedCriterionId]
-    : row.missingCriteria;
-
-  const issues = relevantIds
-    .map((criterionId) => {
-      const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
-      if (!criterion) return null;
-      return {
-        criterionId,
-        label: criterion.label,
-        problem: criterion.label,
-        recommendation: criterion.recommendation || 'Datensatz prüfen und fehlende Angaben ergänzen.'
-      };
-    })
-    .filter(Boolean);
-
-  return fetchJson<{
-    to: string;
-    cc?: string[];
-    bcc?: string[];
-    subject?: string;
-    body?: string;
-  }>(runtime.oiMailDraftApiBase, {
-    method: 'POST',
-    timeoutMs: 45_000,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      record: {
-        id: row.id,
-        globalId: row.globalId,
-        type: row.type,
-        title: row.title,
-        city: row.city,
-        region: row.region,
-        email: row.email,
-        web: row.web,
-        et4Url: ''
-      },
-      issueContext: {
-        source: selectedCriterionId ? 'records-filter' : 'records',
-        criterionId: selectedCriterionId,
-        criterionLabel: row.primaryIssue || ''
-      },
-      issues
-    })
-  });
 }

@@ -83,6 +83,19 @@ type TaskFilters = {
   impact: string;
 };
 
+type TaskGroupDraft = {
+  taskId: string;
+  taskFamily: string;
+  criterionId: string;
+  criterionIds: Set<string>;
+  criteriaByType: Record<string, string>;
+  label: string;
+  priority: string;
+  recommendation?: string;
+  affectedCount: number;
+  affectedTypes: Set<string>;
+};
+
 function formatNumber(value: number) {
   return new Intl.NumberFormat('de-DE').format(value);
 }
@@ -254,69 +267,68 @@ function getTaskIcon(id: string) {
   return 'assignment';
 }
 
+function createTaskGroupDraft(issue: OverviewIssue, taskFamily: string, familyMeta: TaskFamilyMeta | null): TaskGroupDraft {
+  return {
+    taskId: taskFamily,
+    taskFamily,
+    criterionId: issue.criterionId,
+    criterionIds: new Set<string>(),
+    criteriaByType: {},
+    label: familyMeta?.label || issue.label,
+    priority: issue.priority || '',
+    recommendation: familyMeta?.recommendation || issue.recommendation,
+    affectedCount: 0,
+    affectedTypes: new Set<string>()
+  };
+}
+
+function addIssueToTaskGroup(group: TaskGroupDraft, issue: OverviewIssue) {
+  group.criterionIds.add(issue.criterionId);
+  group.affectedCount += issue.affectedCount;
+  if (priorityRank(issue.priority) > priorityRank(group.priority)) group.priority = issue.priority;
+
+  for (const type of issue.affectedTypes || []) {
+    if (!type) continue;
+    group.affectedTypes.add(type);
+    group.criteriaByType[type] = issue.criterionId;
+  }
+}
+
+function buildTaskRow(group: TaskGroupDraft): TaskRow {
+  const criterion = qualityCriteria.find((item) => item.id === group.criterionId);
+  const familyMeta = getTaskFamilyMeta(group.taskFamily);
+  const affectedTypes = Array.from(group.affectedTypes).sort((left, right) => left.localeCompare(right, 'de'));
+  const openDataRelevant = Array.from(group.criterionIds).some(isOpenDataRelevantCriterion);
+  const impact = computeTaskImpact(group.priority, openDataRelevant, group.affectedCount);
+
+  return {
+    ...group,
+    criterionIds: Array.from(group.criterionIds),
+    affectedTypes,
+    description: familyMeta?.description || getTaskDescription(group.criterionId),
+    problem: familyMeta?.problem || getTaskProblem(group.criterionId),
+    recommendation: familyMeta?.recommendation || criterion?.recommendation || group.recommendation || 'Datensatz prüfen und fehlende Angaben ergänzen.',
+    impactText: familyMeta?.impactText || getTaskImpactText(group.criterionId),
+    iconCriterionId: familyMeta?.iconCriterionId || group.criterionId,
+    openDataRelevant,
+    impact
+  };
+}
+
 function buildTaskRows(issues: OverviewIssue[]): TaskRow[] {
-  const grouped = new Map<string, {
-    taskId: string;
-    taskFamily: string;
-    criterionId: string;
-    criterionIds: Set<string>;
-    criteriaByType: Record<string, string>;
-    label: string;
-    priority: string;
-    recommendation?: string;
-    affectedCount: number;
-    affectedTypes: Set<string>;
-  }>();
+  const grouped = new Map<string, TaskGroupDraft>();
 
   for (const issue of issues) {
     if (!issue.criterionId || issue.affectedCount <= 0) continue;
     const taskFamily = getTaskFamilyId(issue.criterionId);
     const familyMeta = getTaskFamilyMeta(taskFamily);
-    const current = grouped.get(taskFamily) || {
-      taskId: taskFamily,
-      taskFamily,
-      criterionId: issue.criterionId,
-      criterionIds: new Set<string>(),
-      criteriaByType: {},
-      label: familyMeta?.label || issue.label,
-      priority: issue.priority || '',
-      recommendation: familyMeta?.recommendation || issue.recommendation,
-      affectedCount: 0,
-      affectedTypes: new Set<string>()
-    };
-
-    current.criterionIds.add(issue.criterionId);
-    current.affectedCount += issue.affectedCount;
-    if (priorityRank(issue.priority) > priorityRank(current.priority)) current.priority = issue.priority;
-    for (const type of issue.affectedTypes || []) {
-      if (!type) continue;
-      current.affectedTypes.add(type);
-      current.criteriaByType[type] = issue.criterionId;
-    }
+    const current = grouped.get(taskFamily) || createTaskGroupDraft(issue, taskFamily, familyMeta);
+    addIssueToTaskGroup(current, issue);
     grouped.set(taskFamily, current);
   }
 
   return Array.from(grouped.values())
-    .map((entry) => {
-      const criterion = qualityCriteria.find((item) => item.id === entry.criterionId);
-      const familyMeta = getTaskFamilyMeta(entry.taskFamily);
-      const affectedTypes = Array.from(entry.affectedTypes).sort((left, right) => left.localeCompare(right, 'de'));
-      const openDataRelevant = Array.from(entry.criterionIds).some(isOpenDataRelevantCriterion);
-      const impact = computeTaskImpact(entry.priority, openDataRelevant, entry.affectedCount);
-
-      return {
-        ...entry,
-        criterionIds: Array.from(entry.criterionIds),
-        affectedTypes,
-        description: familyMeta?.description || getTaskDescription(entry.criterionId),
-        problem: familyMeta?.problem || getTaskProblem(entry.criterionId),
-        recommendation: familyMeta?.recommendation || criterion?.recommendation || entry.recommendation || 'Datensatz prüfen und fehlende Angaben ergänzen.',
-        impactText: familyMeta?.impactText || getTaskImpactText(entry.criterionId),
-        iconCriterionId: familyMeta?.iconCriterionId || entry.criterionId,
-        openDataRelevant,
-        impact
-      } satisfies TaskRow;
-    })
+    .map(buildTaskRow)
     .sort((left, right) => (
       impactRank(right.impact) - impactRank(left.impact)
       || priorityRank(right.priority) - priorityRank(left.priority)
@@ -438,7 +450,7 @@ export function TasksPage() {
     setFilters((current) => ({ ...current, [key]: value }));
   }
 
-  function resetFilters() {
+  function resetTaskFilters() {
     setFilters({ query: '', priority: '', type: '', impact: '' });
   }
 
@@ -528,7 +540,7 @@ export function TasksPage() {
             <option value="niedrig">Auswirkung: Niedrig</option>
           </select>
         </label>
-        <button className="plain-button" type="button" onClick={resetFilters}>Filter zurücksetzen</button>
+        <button className="plain-button" type="button" onClick={resetTaskFilters}>Filter zurücksetzen</button>
       </section>
 
       {error ? <div className="overview-message">{error}</div> : null}
