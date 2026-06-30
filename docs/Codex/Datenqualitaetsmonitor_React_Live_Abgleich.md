@@ -103,6 +103,9 @@ Umgesetzt im React-Preview:
 
 - Detailseite verwendet dieselbe Bewertungsbasis wie die Datensatzliste
 - Zurück aus der Detailseite erhält den ursprünglichen Listenpfad inklusive Pflegeaufgaben-Query, statt pauschal auf `/records` zurückzuspringen
+- Der KI-Mailentwurf liegt in der Detailseite im Dropdown `Aktionen`; die Datensatzliste bietet nur noch den Einstieg in die Detailseite.
+- Mailentwurf-Helfer sind in `frontend/src/shared/records/record-mail-draft.ts` gekapselt und sprechend benannt (`buildMailDraftUrl`, `openMailDraftInMailClient`, `requestRecordMailDraft`).
+- RecordsPage nutzt sprechende Handlernamen (`runRecordSearch`, `resetRecordFilters`, `toggleQuickCriterionFilter`) und verlässt auch den Modus `non_open_data` sauber über `Filter zurücksetzen`.
 
 ### 5. Open-Data-Statistik
 

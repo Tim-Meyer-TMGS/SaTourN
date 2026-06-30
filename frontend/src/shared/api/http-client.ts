@@ -26,6 +26,14 @@ function createTimeoutSignal(timeoutMs: number, externalSignal?: AbortSignal) {
   };
 }
 
+function buildHttpError(status: number, body: string) {
+  return new Error(`HTTP ${status}: ${body}`);
+}
+
+function parseJsonResponse<T>(text: string): T {
+  return JSON.parse(text) as T;
+}
+
 export async function fetchJson<T>(url: string, options: JsonRequestOptions = {}): Promise<T> {
   const {
     method = 'GET',
@@ -47,10 +55,10 @@ export async function fetchJson<T>(url: string, options: JsonRequestOptions = {}
 
     const text = await response.text();
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${text}`);
+      throw buildHttpError(response.status, text);
     }
 
-    return JSON.parse(text) as T;
+    return parseJsonResponse<T>(text);
   } finally {
     cleanup();
   }

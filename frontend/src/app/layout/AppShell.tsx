@@ -16,6 +16,7 @@ const navigationItems = [
 ];
 
 type ThemeMode = 'light' | 'dark';
+type ServerWarmupState = 'idle' | 'warming' | 'ready' | 'failed';
 
 const THEME_STORAGE_KEY = 'satourn.frontend.theme';
 
@@ -32,26 +33,45 @@ function getInitialTheme(): ThemeMode {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+function getMainClassName(pathname: string) {
+  if (pathname.startsWith('/record-detail')) return 'record-detail-main';
+  if (pathname.startsWith('/tasks')) return 'tasks-main';
+  if (pathname.startsWith('/stats')) return 'stats-main';
+  if (pathname.startsWith('/help')) return 'help-main';
+  return 'records-main';
+}
+
+function getServerWarmupLabel(state: ServerWarmupState) {
+  if (state === 'warming') return 'Server startet';
+  if (state === 'ready') return 'Server bereit';
+  if (state === 'failed') return 'Server prüfen';
+  return 'Server';
+}
+
+function persistTheme(theme: ThemeMode) {
+  document.documentElement.dataset.theme = theme;
+
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // localStorage may be unavailable in privacy-restricted environments.
+  }
+}
+
 export function AppShell() {
   const location = useLocation();
   const { context, setContext } = useContextStore();
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [draftContext, setDraftContext] = useState<WorkContext>(context);
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
-  const [serverWarmupState, setServerWarmupState] = useState<'idle' | 'warming' | 'ready' | 'failed'>('idle');
+  const [serverWarmupState, setServerWarmupState] = useState<ServerWarmupState>('idle');
 
   useEffect(() => {
     if (isContextOpen) setDraftContext(context);
   }, [context, isContextOpen]);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-    } catch {
-      // localStorage may be unavailable in privacy-restricted environments.
-    }
+    persistTheme(theme);
   }, [theme]);
 
   useEffect(() => {
@@ -94,15 +114,7 @@ export function AppShell() {
     setIsContextOpen(false);
   }
 
-  const mainClassName = location.pathname.startsWith('/record-detail')
-    ? 'record-detail-main'
-    : location.pathname.startsWith('/tasks')
-      ? 'tasks-main'
-      : location.pathname.startsWith('/stats')
-        ? 'stats-main'
-        : location.pathname.startsWith('/help')
-          ? 'help-main'
-          : 'records-main';
+  const mainClassName = getMainClassName(location.pathname);
 
   return (
     <div className={`statistik ${theme}-shell`}>
@@ -131,7 +143,7 @@ export function AppShell() {
             <span className="material-icons" aria-hidden="true">refresh</span>
           </button>
           <span className={`server-status server-status-${serverWarmupState}`}>
-            {serverWarmupState === 'warming' ? 'Server startet' : serverWarmupState === 'ready' ? 'Server bereit' : serverWarmupState === 'failed' ? 'Server prüfen' : 'Server'}
+            {getServerWarmupLabel(serverWarmupState)}
           </span>
           <span className="preview-chip">Preview</span>
         </div>

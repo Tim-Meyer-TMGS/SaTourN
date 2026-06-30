@@ -1893,6 +1893,16 @@ button.table-link-button:disabled,
   background: var(--surface-soft);
 }
 
+.detail-actions-menu button:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.detail-actions-menu button:disabled:hover {
+  background: transparent;
+}
+
 .detail-head-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

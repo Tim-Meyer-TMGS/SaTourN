@@ -329,6 +329,9 @@ function buildTypeScoreModel(criteria: readonly QualityCriterion[]) {
     return { threshold, minimumCriteria: selected.length ? selected : criteria.slice(0, 4) };
   }
 
+  // The help page should show a minimal understandable "good enough" set.
+  // For small criterion groups we can safely test all combinations and pick
+  // the shortest set that reaches the 80-point threshold.
   for (let mask = 1; mask < (1 << criteria.length); mask += 1) {
     const selected: QualityCriterion[] = [];
     let weight = 0;

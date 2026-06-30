@@ -8,6 +8,16 @@ import { RecordsPage } from '../../features/records/RecordsPage';
 import { StatsPage } from '../../features/stats/StatsPage';
 import { TasksPage } from '../../features/tasks/TasksPage';
 
+function NotFoundPage() {
+  return (
+    <section className="content-panel">
+      <h1>Seite nicht gefunden</h1>
+      <p>Die angeforderte Route existiert im neuen Frontend noch nicht.</p>
+      <NavLink className="inline-link" to="/">Zur Übersicht</NavLink>
+    </section>
+  );
+}
+
 export function AppRouter() {
   return (
     <HashRouter>
@@ -19,16 +29,7 @@ export function AppRouter() {
           <Route path="/record-detail" element={<RecordDetailPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/help" element={<HelpPage />} />
-          <Route
-            path="*"
-            element={(
-              <section className="content-panel">
-                <h1>Seite nicht gefunden</h1>
-                <p>Die angeforderte Route existiert im neuen Frontend noch nicht.</p>
-                <NavLink className="inline-link" to="/">Zur Übersicht</NavLink>
-              </section>
-            )}
-          />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </HashRouter>

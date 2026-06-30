@@ -293,6 +293,7 @@ function buildUsability(raw: unknown, itemType: string, images: DetailImage[]): 
   const hasOpeningsValue = hasOpeningHours(raw);
   const hasTransport = hasPublicTransportFeature(raw);
   const bookingRelevant = ['Hotel', 'Package'].includes(itemType);
+  const hasBooking = hasBookingLink(raw);
 
   return [
     { label: 'Open Data', value: licenseOk ? 'ja' : 'nein', ok: licenseOk },
@@ -307,8 +308,8 @@ function buildUsability(raw: unknown, itemType: string, images: DetailImage[]): 
     { label: 'ÖPNV-Info', value: hasTransport ? 'vorhanden' : 'nicht vorhanden', ok: hasTransport },
     {
       label: 'Buchungslink',
-      value: bookingRelevant ? (hasBookingLink(raw) ? 'vorhanden' : 'fehlt') : 'nicht relevant',
-      ok: !bookingRelevant || hasBookingLink(raw),
+      value: bookingRelevant ? (hasBooking ? 'vorhanden' : 'fehlt') : 'nicht relevant',
+      ok: !bookingRelevant || hasBooking,
       relevant: bookingRelevant
     },
     { label: 'Öffnungszeiten', value: hasOpeningsValue ? 'vorhanden' : 'fehlt', ok: hasOpeningsValue }
@@ -321,11 +322,26 @@ export function priorityRank(priority: string | undefined) {
   return 1;
 }
 
-export function normalizeDetailItem(rawInput: unknown, fallbackType: string): DetailItem {
-  const raw = rawInput && typeof rawInput === 'object' && 'raw' in rawInput
+function unwrapResolvedRawItem(rawInput: unknown) {
+  return rawInput && typeof rawInput === 'object' && 'raw' in rawInput
     ? (rawInput as { raw?: unknown }).raw ?? rawInput
     : rawInput;
-  const resolvedType = getFirst(rawInput, ['_resolvedType', 'type']) || fallbackType || getTypeFromGlobalId(getFirst(raw, ['global_id', 'globalId']));
+}
+
+function resolveDetailType(rawInput: unknown, raw: unknown, fallbackType: string) {
+  return getFirst(rawInput, ['_resolvedType', 'type']) ||
+    fallbackType ||
+    getTypeFromGlobalId(getFirst(raw, ['global_id', 'globalId']));
+}
+
+function buildMediaNote(images: DetailImage[], missingCopyrightCount: number) {
+  const missingAltTextCount = images.filter((image) => !image.alt).length;
+  return `${images.length} Bilder vorhanden. ${missingCopyrightCount} ohne Urheberangabe. ${missingAltTextCount} ohne Alt-Text.`;
+}
+
+export function normalizeDetailItem(rawInput: unknown, fallbackType: string): DetailItem {
+  const raw = unwrapResolvedRawItem(rawInput);
+  const resolvedType = resolveDetailType(rawInput, raw, fallbackType);
   const baseItem = buildQualityEvaluationInput(raw, { fallbackType: resolvedType });
 
   const evaluated = evaluateQualityForItem(baseItem) as Record<string, unknown>;
@@ -381,6 +397,6 @@ export function normalizeDetailItem(rawInput: unknown, fallbackType: string): De
       manualCriteria
     }),
     mediaImages: images,
-    mediaNote: `${images.length} Bilder vorhanden. ${missingCopyrightCount} ohne Urheberangabe. ${images.filter((image) => !image.alt).length} ohne Alt-Text.`
+    mediaNote: buildMediaNote(images, missingCopyrightCount)
   };
 }
