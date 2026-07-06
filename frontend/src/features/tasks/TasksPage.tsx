@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 
 import { DATA_TYPES } from '../../shared/config/constants';
 import { calculatePercent, formatNumber, formatPercent } from '../../shared/format/formatters';
-import { qualityCriteria } from '../../shared/legacy/quality';
 import { findQualityCriterion, isOpenDataRelevantCriterion } from '../../shared/quality/quality-criteria';
 import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
