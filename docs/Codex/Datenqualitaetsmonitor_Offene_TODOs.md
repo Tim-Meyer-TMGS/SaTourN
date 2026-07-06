@@ -1,6 +1,15 @@
 # Datenqualitätsmonitor – Offene TODOs
 
-Stand: 2026-06-30
+Stand: 2026-07-06
+
+Aktueller Hinweis:
+
+- Die bisher vorbereiteten Standard-Prüfungen für Hotel, Tour, Gastro und
+  Event wurden als zentrale Server-Scan-Regeln aktiviert. Sie sind damit für
+  Score, Pflegeaufgaben, Fehlerlisten und Detailansicht wirksam.
+- API-Pushdowns bleiben weiterhin nur dort aktiv, wo sie bereits verifiziert
+  waren. Nicht verifizierte Feld- oder Wildcard-Abfragen wurden nicht als
+  Pushdown reaktiviert.
 
 Diese Datei ist die kurze, aktive Arbeitsliste. Abgeschlossene Analysen und
 alte Nachweise liegen im Archiv.
@@ -98,6 +107,12 @@ Betroffene Dateien:
 ## Priorität B – Bewertungslogik erweitern
 
 ### 5. Weitere Kriterien sauber verifizieren und aktivieren
+
+Erledigt:
+
+- vorbereitete Hotel-, Gastro-, Tour- und Event-Kriterien als zentrale Server-Scan-Regeln aktiviert
+- Count, Fehlerliste, Detailseite und Score nutzen dieselbe Regelbasis
+- Event-Lizenzprüfung ist aktiv; ohne verifizierten Event-Pushdown läuft sie über Server-Scan-Fallback
 
 Offen:
 

@@ -281,6 +281,30 @@ export function hasPriceInfo(item = {}) {
   );
 }
 
+export function hasFeatureInfo(item = {}) {
+  return getFeatureValues(item).length > 0;
+}
+
+export function hasKitchenInfo(item = {}) {
+  return (
+    hasAnyValue(item, ['kitchenTimeIntervals', 'raw.kitchenTimeIntervals']) ||
+    hasTextByRel(item, 'KITCHEN_INFO') ||
+    hasTextByRel(item, 'kitchen') ||
+    hasFeatureInfo(item)
+  );
+}
+
+export function hasTourStartAndTargetInfo(item = {}) {
+  return hasTextByRel(item, 'start') && hasTextByRel(item, 'target');
+}
+
+export function hasPaymentInfo(item = {}, validatedValues = []) {
+  return (
+    hasAnyFeature(item, validatedValues) ||
+    hasAnyValue(item, ['paymentMethods', 'payment_old', 'payments', 'payment'])
+  );
+}
+
 export function hasSeasonInfo(item = {}) {
   return safeArray(item.seasons).some((entry) => hasValue(entry?.month) || hasValue(entry?.suitable))
     || safeArray(item.raw?.seasons).some((entry) => hasValue(entry?.month) || hasValue(entry?.suitable));
@@ -470,7 +494,8 @@ const VALIDATED_FEATURE_VALUES = Object.freeze({
   hotelParking: Object.freeze(['Parkpl\u00e4tze', 'Parkgarage / Tiefgarage', '\u00d6ffentliches Parkhaus fu\u00dfl\u00e4ufig', 'Busparkplatz (-pl\u00e4tze)', 'E-Lades\u00e4ulen']),
   gastroParking: Object.freeze(['PKW-Parkplatz am Haus']),
   gastroPayments: Object.freeze(['Barzahlung', 'EC-Karte']),
-  gastroLanguages: Object.freeze(['Englisch', 'Polnisch'])
+  gastroLanguages: Object.freeze(['Englisch', 'Polnisch']),
+  eventPayments: Object.freeze(['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'PayPal', 'kontaktlose Zahlung'])
 });
 
 const VALIDATED_CATEGORY_VALUES = Object.freeze({
@@ -749,8 +774,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'minimum',
       fieldCandidates: ['phone', 'phone2', 'addresses.phone'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_phone_missing',
       uiPriority: 'hoch',
       recommendation: 'Telefonnummer ergaenzen.'
     },
@@ -766,8 +791,8 @@ export const domainQualityModel = Object.freeze({
         prefixes: ['street'],
         confidence: 'documented_prefix'
       }),
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_street_missing',
       uiPriority: 'hoch',
       recommendation: 'Strasse oder Anschrift ergaenzen.'
     },
@@ -785,8 +810,8 @@ export const domainQualityModel = Object.freeze({
         confidence: 'existing_prefix_needs_type_verification',
         note: 'details ist fuer POI, Gastro und Tour bereits aktiv; Hotel muss mit echten positiven und negativen Datensaetzen verifiziert werden.'
       }),
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'description_missing',
       uiPriority: 'hoch',
       recommendation: 'Beschreibungstext ergaenzen.'
     },
@@ -796,8 +821,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'minimum',
       fieldCandidates: ['texts[rel=teaser]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_teaser_missing',
       uiPriority: 'hoch',
       recommendation: 'Teaser-Text ergaenzen.'
     },
@@ -807,8 +832,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'good',
       fieldCandidates: ['email', 'emailRequest', 'addresses.email'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_email_missing',
       uiPriority: 'mittel',
       recommendation: 'E-Mail-Adresse ergaenzen.'
     },
@@ -818,8 +843,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'good',
       fieldCandidates: ['web', 'website', 'url', 'addresses.web'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_website_missing',
       uiPriority: 'mittel',
       recommendation: 'Webseite ergaenzen.'
     },
@@ -829,8 +854,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'good',
       fieldCandidates: ['features', 'features_old'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_features_missing',
       uiPriority: 'mittel',
       recommendation: 'Merkmale pruefen und ergaenzen.'
     },
@@ -851,8 +876,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'good',
       fieldCandidates: ['prices', 'price', 'numbers', 'attributes'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_price_missing',
       uiPriority: 'mittel',
       recommendation: 'Preisinformation ergaenzen.'
     },
@@ -862,8 +887,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Hotel'],
       level: 'very_good',
       fieldCandidates: ['addresses[rel=contact_person]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'hotel_contact_person_missing',
       uiPriority: 'niedrig',
       recommendation: 'Ansprechperson ergaenzen.'
     },
@@ -940,8 +965,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Tour'],
       level: 'minimum',
       fieldCandidates: ['texts[rel=teaser]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'tour_teaser_missing',
       uiPriority: 'hoch',
       recommendation: 'Teaser-Text ergaenzen.'
     },
@@ -984,8 +1009,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Tour'],
       level: 'good',
       fieldCandidates: ['author', 'addresses[rel=author]', 'addresses[rel=organisation]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'tour_author_missing',
       uiPriority: 'mittel',
       recommendation: 'Autor oder Organisation ergaenzen.'
     },
@@ -995,8 +1020,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Tour'],
       level: 'very_good',
       fieldCandidates: ['texts[rel=start]', 'texts[rel=target]', 'texts[rel=directions]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'tour_start_target_missing',
       uiPriority: 'niedrig',
       recommendation: 'Start- und Zielbeschreibung ergaenzen.'
     },
@@ -1179,8 +1204,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'minimum',
       fieldCandidates: ['phone', 'phone2', 'addresses.phone'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_phone_missing',
       uiPriority: 'hoch',
       recommendation: 'Telefonnummer ergaenzen.'
     },
@@ -1196,8 +1221,8 @@ export const domainQualityModel = Object.freeze({
         prefixes: ['street'],
         confidence: 'documented_prefix'
       }),
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_street_missing',
       uiPriority: 'hoch',
       recommendation: 'Strasse oder Anschrift ergaenzen.'
     },
@@ -1218,8 +1243,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'minimum',
       fieldCandidates: ['texts[rel=teaser]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_teaser_missing',
       uiPriority: 'hoch',
       recommendation: 'Teaser-Text ergaenzen.'
     },
@@ -1229,8 +1254,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'good',
       fieldCandidates: ['email', 'addresses.email'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_email_missing',
       uiPriority: 'mittel',
       recommendation: 'E-Mail-Adresse ergaenzen.'
     },
@@ -1240,8 +1265,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'good',
       fieldCandidates: ['web', 'website', 'url', 'addresses.web'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_website_missing',
       uiPriority: 'mittel',
       recommendation: 'Webseite ergaenzen.'
     },
@@ -1329,8 +1354,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Gastro'],
       level: 'very_good',
       fieldCandidates: ['kitchenTimeIntervals', 'features', 'features_old'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'gastro_kitchen_missing',
       uiPriority: 'niedrig',
       recommendation: 'Kuecheninformationen ergaenzen.'
     },
@@ -1340,8 +1365,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'minimum',
       fieldCandidates: ['phone', 'phone2', 'addresses.phone'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'event_phone_missing',
       uiPriority: 'hoch',
       recommendation: 'Telefonnummer ergaenzen.'
     },
@@ -1357,8 +1382,8 @@ export const domainQualityModel = Object.freeze({
         prefixes: ['street'],
         confidence: 'documented_prefix'
       }),
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'event_street_missing',
       uiPriority: 'hoch',
       recommendation: 'Strasse oder Anschrift ergaenzen.'
     },
@@ -1376,8 +1401,8 @@ export const domainQualityModel = Object.freeze({
         confidence: 'existing_prefix_needs_type_verification',
         note: 'details ist fuer POI, Gastro und Tour bereits aktiv; Event muss mit echten positiven und negativen Datensaetzen verifiziert werden.'
       }),
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'description_missing',
       uiPriority: 'hoch',
       recommendation: 'Beschreibungstext ergaenzen.'
     },
@@ -1387,8 +1412,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'minimum',
       fieldCandidates: ['texts[rel=teaser]'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'event_teaser_missing',
       uiPriority: 'hoch',
       recommendation: 'Teaser-Text ergaenzen.'
     },
@@ -1398,8 +1423,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'good',
       fieldCandidates: ['email', 'addresses.email'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'event_email_missing',
       uiPriority: 'mittel',
       recommendation: 'E-Mail-Adresse ergaenzen.'
     },
@@ -1409,8 +1434,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'good',
       fieldCandidates: ['web', 'website', 'url', 'addresses.web'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'event_website_missing',
       uiPriority: 'mittel',
       recommendation: 'Webseite ergaenzen.'
     },
@@ -1420,8 +1445,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'good',
       fieldCandidates: ['prices', 'price', 'numbers', 'attributes'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'event_price_missing',
       uiPriority: 'mittel',
       recommendation: 'Preisinformation ergaenzen.'
     },
@@ -1431,8 +1456,8 @@ export const domainQualityModel = Object.freeze({
       types: ['Event'],
       level: 'very_good',
       fieldCandidates: ['paymentMethods', 'payment_old', 'features'],
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'event_payment_options_missing',
       uiPriority: 'niedrig',
       recommendation: 'Zahlungsmoeglichkeiten ergaenzen.'
     },
@@ -1450,8 +1475,8 @@ export const domainQualityModel = Object.freeze({
         confidence: 'existing_prefix_needs_type_verification',
         note: 'attribute_license ist fuer POI, Gastro, Tour, Hotel und Package bereits aktiv; Event muss mit echten Datensaetzen verifiziert werden.'
       }),
-      status: 'needs_verification',
-      activeCriterionId: null,
+      status: 'active',
+      activeCriterionId: 'license_missing',
       uiPriority: 'hoch',
       openDataRelevant: true,
       recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.'
@@ -1543,14 +1568,14 @@ export const qualityCriteria = Object.freeze([
   {
     id: 'license_missing',
     label: 'Lizenzangabe fehlt',
-    types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Package'],
+    types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event', 'Package'],
     priority: 'hoch',
     autoCheck: true,
     weight: 10,
     qualityLevel: 'very_good',
     uiSeverity: 'kritisch',
     openDataRelevant: true,
-    domainCriterionIds: ['hotel_license', 'tour_license', 'poi_license', 'gastro_license', 'package_license'],
+    domainCriterionIds: ['hotel_license', 'tour_license', 'poi_license', 'gastro_license', 'event_license', 'package_license'],
     fields: ['attributes[key=license]'],
     method: 'api_pushdown',
     api: {
@@ -1565,13 +1590,13 @@ export const qualityCriteria = Object.freeze([
   {
     id: 'description_missing',
     label: 'Beschreibung fehlt',
-    types: ['POI', 'Gastro', 'Tour'],
+    types: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event'],
     priority: 'hoch',
     autoCheck: true,
     weight: 8,
     qualityLevel: 'minimum',
     uiSeverity: 'kritisch',
-    domainCriterionIds: ['tour_details', 'poi_details', 'gastro_details'],
+    domainCriterionIds: ['hotel_details', 'tour_details', 'poi_details', 'gastro_details', 'event_details'],
     fields: ['texts[rel=details]'],
     method: 'server_scan',
     api: {
@@ -1583,6 +1608,171 @@ export const qualityCriteria = Object.freeze([
     },
     recommendation: 'Beschreibung oder Kurzbeschreibung ergaenzen.',
     check: (item) => !hasDescription(item)
+  },
+  {
+    id: 'hotel_street_missing',
+    label: 'Strasse fehlt',
+    types: ['Hotel'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 8,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['hotel_street'],
+    fields: ['street', 'address.street', 'addresses.street'],
+    method: 'server_scan',
+    recommendation: 'Strasse oder Anschrift ergaenzen.',
+    check: (item) => !hasStreetInfo(item)
+  },
+  {
+    id: 'hotel_phone_missing',
+    label: 'Telefon fehlt',
+    types: ['Hotel'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 6,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['hotel_phone'],
+    fields: ['phone', 'phone2', 'addresses.phone'],
+    method: 'server_scan',
+    recommendation: 'Telefonnummer ergaenzen.',
+    check: (item) => !hasPhoneInfo(item)
+  },
+  {
+    id: 'hotel_teaser_missing',
+    label: 'Teaser fehlt',
+    types: ['Hotel'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 6,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['hotel_teaser'],
+    fields: ['texts[rel=teaser]'],
+    method: 'server_scan',
+    recommendation: 'Teaser-Text ergaenzen.',
+    check: (item) => !hasTeaserText(item)
+  },
+  {
+    id: 'hotel_email_missing',
+    label: 'E-Mail fehlt',
+    types: ['Hotel'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_email'],
+    fields: ['email', 'emailRequest', 'addresses.email'],
+    method: 'server_scan',
+    recommendation: 'E-Mail-Adresse ergaenzen.',
+    check: (item) => !hasEmailInfo(item)
+  },
+  {
+    id: 'hotel_website_missing',
+    label: 'Webseite fehlt',
+    types: ['Hotel'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_website'],
+    fields: ['web', 'website', 'url', 'addresses.web'],
+    method: 'server_scan',
+    recommendation: 'Webseite ergaenzen.',
+    check: (item) => !hasWebsiteInfo(item)
+  },
+  {
+    id: 'hotel_features_missing',
+    label: 'Merkmale fehlen',
+    types: ['Hotel'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_features'],
+    fields: ['features', 'features_old'],
+    method: 'server_scan',
+    recommendation: 'Merkmale pruefen und ergaenzen.',
+    check: (item) => !hasFeatureInfo(item)
+  },
+  {
+    id: 'hotel_price_missing',
+    label: 'Preisinformation fehlt',
+    types: ['Hotel'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_price'],
+    fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
+    method: 'server_scan',
+    recommendation: 'Preisinformation ergaenzen.',
+    check: (item) => !hasPriceInfo(item)
+  },
+  {
+    id: 'hotel_contact_person_missing',
+    label: 'Ansprechperson fehlt',
+    types: ['Hotel'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 2,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['hotel_contact_person'],
+    fields: ['addresses[rel=contact_person]'],
+    method: 'server_scan',
+    recommendation: 'Ansprechperson ergaenzen.',
+    check: (item) => !hasAddressRel(item, ['contact_person'])
+  },
+  {
+    id: 'tour_teaser_missing',
+    label: 'Teaser fehlt',
+    types: ['Tour'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 6,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['tour_teaser'],
+    fields: ['texts[rel=teaser]'],
+    method: 'server_scan',
+    recommendation: 'Teaser-Text ergaenzen.',
+    check: (item) => !hasTeaserText(item)
+  },
+  {
+    id: 'tour_author_missing',
+    label: 'Autor oder Organisation fehlt',
+    types: ['Tour'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['tour_author'],
+    fields: ['author', 'addresses[rel=author]', 'addresses[rel=organisation]'],
+    method: 'server_scan',
+    recommendation: 'Autor oder Organisation ergaenzen.',
+    check: (item) => !hasAuthorOrOrganisation(item)
+  },
+  {
+    id: 'tour_start_target_missing',
+    label: 'Start- und Zielbeschreibung fehlt',
+    types: ['Tour'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['tour_start_target'],
+    fields: ['texts[rel=start]', 'texts[rel=target]', 'texts[rel=directions]'],
+    method: 'server_scan',
+    recommendation: 'Start- und Zielbeschreibung ergaenzen.',
+    check: (item) => !hasTourStartAndTargetInfo(item)
   },
   {
     id: 'poi_street_missing',
@@ -1927,6 +2117,81 @@ export const qualityCriteria = Object.freeze([
     check: (item) => !hasAnyFeature(item, VALIDATED_FEATURE_VALUES.poiSuitability)
   },
   {
+    id: 'gastro_street_missing',
+    label: 'Strasse fehlt',
+    types: ['Gastro'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 8,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['gastro_street'],
+    fields: ['street', 'address.street', 'addresses.street'],
+    method: 'server_scan',
+    recommendation: 'Strasse oder Anschrift ergaenzen.',
+    check: (item) => !hasStreetInfo(item)
+  },
+  {
+    id: 'gastro_phone_missing',
+    label: 'Telefon fehlt',
+    types: ['Gastro'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 6,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['gastro_phone'],
+    fields: ['phone', 'phone2', 'addresses.phone'],
+    method: 'server_scan',
+    recommendation: 'Telefonnummer ergaenzen.',
+    check: (item) => !hasPhoneInfo(item)
+  },
+  {
+    id: 'gastro_teaser_missing',
+    label: 'Teaser fehlt',
+    types: ['Gastro'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 6,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['gastro_teaser'],
+    fields: ['texts[rel=teaser]'],
+    method: 'server_scan',
+    recommendation: 'Teaser-Text ergaenzen.',
+    check: (item) => !hasTeaserText(item)
+  },
+  {
+    id: 'gastro_email_missing',
+    label: 'E-Mail fehlt',
+    types: ['Gastro'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['gastro_email'],
+    fields: ['email', 'addresses.email'],
+    method: 'server_scan',
+    recommendation: 'E-Mail-Adresse ergaenzen.',
+    check: (item) => !hasEmailInfo(item)
+  },
+  {
+    id: 'gastro_website_missing',
+    label: 'Webseite fehlt',
+    types: ['Gastro'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['gastro_website'],
+    fields: ['web', 'website', 'url', 'addresses.web'],
+    method: 'server_scan',
+    recommendation: 'Webseite ergaenzen.',
+    check: (item) => !hasWebsiteInfo(item)
+  },
+  {
     id: 'gastro_payment_options_missing',
     label: 'Keine der geprueften Zahlungsarten vorhanden',
     types: ['Gastro'],
@@ -2009,6 +2274,126 @@ export const qualityCriteria = Object.freeze([
     },
     recommendation: 'Mindestens eine gepruefte Kuechenart als Kategorie ergaenzen.',
     check: (item) => !hasAnyCategory(item, VALIDATED_CATEGORY_VALUES.gastroCuisine)
+  },
+  {
+    id: 'gastro_kitchen_missing',
+    label: 'Kuecheninformation fehlt',
+    types: ['Gastro'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['gastro_kitchen'],
+    fields: ['kitchenTimeIntervals', 'features', 'features_old'],
+    method: 'server_scan',
+    recommendation: 'Kuecheninformationen ergaenzen.',
+    check: (item) => !hasKitchenInfo(item)
+  },
+  {
+    id: 'event_street_missing',
+    label: 'Strasse fehlt',
+    types: ['Event'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 8,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['event_street'],
+    fields: ['street', 'address.street', 'addresses.street'],
+    method: 'server_scan',
+    recommendation: 'Strasse oder Anschrift ergaenzen.',
+    check: (item) => !hasStreetInfo(item)
+  },
+  {
+    id: 'event_phone_missing',
+    label: 'Telefon fehlt',
+    types: ['Event'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 6,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['event_phone'],
+    fields: ['phone', 'phone2', 'addresses.phone'],
+    method: 'server_scan',
+    recommendation: 'Telefonnummer ergaenzen.',
+    check: (item) => !hasPhoneInfo(item)
+  },
+  {
+    id: 'event_teaser_missing',
+    label: 'Teaser fehlt',
+    types: ['Event'],
+    priority: 'hoch',
+    autoCheck: true,
+    weight: 6,
+    qualityLevel: 'minimum',
+    uiSeverity: 'kritisch',
+    domainCriterionIds: ['event_teaser'],
+    fields: ['texts[rel=teaser]'],
+    method: 'server_scan',
+    recommendation: 'Teaser-Text ergaenzen.',
+    check: (item) => !hasTeaserText(item)
+  },
+  {
+    id: 'event_email_missing',
+    label: 'E-Mail fehlt',
+    types: ['Event'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['event_email'],
+    fields: ['email', 'addresses.email'],
+    method: 'server_scan',
+    recommendation: 'E-Mail-Adresse ergaenzen.',
+    check: (item) => !hasEmailInfo(item)
+  },
+  {
+    id: 'event_website_missing',
+    label: 'Webseite fehlt',
+    types: ['Event'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 5,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['event_website'],
+    fields: ['web', 'website', 'url', 'addresses.web'],
+    method: 'server_scan',
+    recommendation: 'Webseite ergaenzen.',
+    check: (item) => !hasWebsiteInfo(item)
+  },
+  {
+    id: 'event_price_missing',
+    label: 'Preisinformation fehlt',
+    types: ['Event'],
+    priority: 'mittel',
+    autoCheck: true,
+    weight: 4,
+    qualityLevel: 'good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['event_price'],
+    fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
+    method: 'server_scan',
+    recommendation: 'Preisinformation ergaenzen.',
+    check: (item) => !hasPriceInfo(item)
+  },
+  {
+    id: 'event_payment_options_missing',
+    label: 'Keine der geprueften Zahlungsarten vorhanden',
+    types: ['Event'],
+    priority: 'niedrig',
+    autoCheck: true,
+    weight: 3,
+    qualityLevel: 'very_good',
+    uiSeverity: 'kleines_problem',
+    domainCriterionIds: ['event_payment'],
+    fields: ['paymentMethods', 'payment_old', 'features'],
+    method: 'server_scan',
+    recommendation: 'Zahlungsmoeglichkeiten ergaenzen.',
+    check: (item) => !hasPaymentInfo(item, VALIDATED_FEATURE_VALUES.eventPayments)
   },
   {
     id: 'booking_link_missing',
