@@ -29,16 +29,15 @@ import {
 } from '../../shared/records/record-fields';
 import type { DetailCriteriaSection, DetailImage, DetailInfoEntry, DetailItem, DetailPrimarySystem, DetailUsability } from './record-detail-types';
 
-function legacyAssetUrl(path: string) {
+function publicAssetUrl(path: string) {
   const baseUrl = import.meta.env.BASE_URL || '/';
-  const appRoot = baseUrl.replace(/frontend-preview\/?$/, '');
-  return `${appRoot}${path.replace(/^\/+/, '')}`;
+  return `${baseUrl}${path.replace(/^\/+/, '')}`;
 }
 
 function buildPrimarySystemDisplay(system: { id: string; name: string; short: string }): DetailPrimarySystem {
   const logoBySystem: Record<string, string> = {
-    feratel: legacyAssetUrl('Statistik/assets/logos/feratel.png'),
-    outdooractive: legacyAssetUrl('Statistik/assets/logos/outdooractive.png')
+    feratel: publicAssetUrl('assets/logos/feratel.png'),
+    outdooractive: publicAssetUrl('assets/logos/outdooractive.png')
   };
 
   return {

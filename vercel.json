@@ -1,5 +1,5 @@
 {
-  "installCommand": "bundle install",
-  "buildCommand": "bundle exec jekyll build",
-  "outputDirectory": "_site"
+  "installCommand": "npm install --prefix frontend",
+  "buildCommand": "VITE_BASE_PATH=/ npm run --prefix frontend build",
+  "outputDirectory": "frontend/dist"
 }
