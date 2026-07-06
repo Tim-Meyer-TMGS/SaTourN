@@ -205,7 +205,7 @@ function getTaskProblem(id: string) {
     gastro_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
     gastro_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
     gastro_parking_feature_missing: 'Das Merkmal "PKW-Parkplatz am Haus" fehlt.',
-    gastro_cuisine_category_missing: 'Keine der geprüften Küchenarten ist als Kategorie hinterlegt.'
+    gastro_cuisine_category_missing: 'Keine der geprüften Küchenarten ist hinterlegt.'
   };
 
   return problems[id] || 'Für diese Datensätze fehlt eine für die Datenpflege relevante Angabe.';

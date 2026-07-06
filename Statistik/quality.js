@@ -426,6 +426,10 @@ export function getCategoryValues(item = {}) {
   return collectValueList(item, 'categories', 'categories_old');
 }
 
+export function getCuisineValues(item = {}) {
+  return collectValueList(item, 'cuisine', 'cuisine_old');
+}
+
 export function hasCategory(item = {}, value) {
   const target = normalizeComparable(value);
   if (!target) return false;
@@ -437,6 +441,13 @@ export function hasAnyCategory(item = {}, values = []) {
   if (!targets.length) return false;
   const targetSet = new Set(targets);
   return getCategoryValues(item).some((entry) => targetSet.has(normalizeComparable(entry)));
+}
+
+export function hasAnyCuisine(item = {}, values = []) {
+  const targets = safeArray(values).map(normalizeComparable).filter(Boolean);
+  if (!targets.length) return false;
+  const targetSet = new Set(targets);
+  return getCuisineValues(item).some((entry) => targetSet.has(normalizeComparable(entry)));
 }
 
 function textRelValues(item = {}, relValues = []) {
@@ -490,45 +501,10 @@ function unverifiedApiPushdownCandidate({
 }
 
 const API_PUSHDOWN_CANDIDATES = Object.freeze({
-  street: unverifiedApiPushdownCandidate({
-    positiveQuery: 'street:*',
-    missingQuery: 'all:all -street:*',
-    note: 'API-Pushdown-TODO: street:* typuebergreifend gegen echte Datensaetze verifizieren.'
-  }),
-  details: unverifiedApiPushdownCandidate({
-    positiveQuery: 'details:*',
-    missingQuery: 'all:all -details:*',
-    note: 'API-Pushdown-TODO: details:* typuebergreifend gegen sichtbaren Beschreibungstext verifizieren.'
-  }),
-  teaser: unverifiedApiPushdownCandidate({
-    positiveQuery: 'teaser:*',
-    missingQuery: 'all:all -teaser:*',
-    note: 'API-Pushdown-TODO: teaser:* typuebergreifend gegen sichtbaren Teaser-Text verifizieren.'
-  }),
-  email: unverifiedApiPushdownCandidate({
-    positiveQuery: 'email:*',
-    missingQuery: 'all:all -email:*',
-    note: 'API-Pushdown-TODO: email:* gegen sichtbare Datensatz-E-Mail verifizieren; falls noetig emailRequest:* separat pruefen.'
-  }),
-  website: unverifiedApiPushdownCandidate({
-    positiveQuery: 'web:*',
-    missingQuery: 'all:all -web:*',
-    note: 'API-Pushdown-TODO: web:* gegen sichtbare Webseite verifizieren; falls noetig url:* separat pruefen.'
-  }),
-  phone: unverifiedApiPushdownCandidate({
-    positiveQuery: 'phone:*',
-    missingQuery: 'all:all -phone:*',
-    note: 'API-Pushdown-TODO: phone:* gegen sichtbare Telefonnummer verifizieren; falls noetig phone2:* separat pruefen.'
-  }),
   openings: unverifiedApiPushdownCandidate({
     positiveQuery: 'openings:*',
     missingQuery: 'all:all -openings:*',
     note: 'API-Pushdown-TODO: openings:* nur fuer POI und Gastro verifizieren; Tour bleibt ausgeschlossen.'
-  }),
-  price: unverifiedApiPushdownCandidate({
-    positiveQuery: 'price:*',
-    missingQuery: 'all:all -price:*',
-    note: 'API-Pushdown-TODO: price:*, prices:* und ggf. PRICE_INFO:* gegen sichtbare Preisinformation verifizieren.'
   }),
   eventPayment: unverifiedApiPushdownCandidate({
     positiveQuery: buildQuotedOrQuery('feature', ['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'PayPal', 'kontaktlose Zahlung']),
@@ -539,11 +515,6 @@ const API_PUSHDOWN_CANDIDATES = Object.freeze({
     positiveQuery: 'feature:*',
     missingQuery: 'all:all -feature:*',
     note: 'API-Pushdown-TODO: generisches feature:* nur aktivieren, wenn es fachlich komplementaer und nicht zu breit ist.'
-  }),
-  kitchenTimeIntervals: unverifiedApiPushdownCandidate({
-    positiveQuery: 'kitchenTimeIntervals:*',
-    missingQuery: 'all:all -kitchenTimeIntervals:*',
-    note: 'API-Pushdown-TODO: kitchenTimeIntervals:* und passende Kuechen-Textrels gegen Gastro-Daten verifizieren.'
   })
 });
 
@@ -571,8 +542,8 @@ const VALIDATED_FEATURE_VALUES = Object.freeze({
   eventPayments: Object.freeze(['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'PayPal', 'kontaktlose Zahlung'])
 });
 
-const VALIDATED_CATEGORY_VALUES = Object.freeze({
-  gastroCuisine: Object.freeze(['vegetarisch', 'deutsch', 'italienisch'])
+const VALIDATED_CUISINE_VALUES = Object.freeze({
+  gastroCuisine: Object.freeze(['deutsch', 'italienisch', 'vegetarisch', 'sonstiges'])
 });
 
 const POI_EXCLUDED_CONTACT_AND_OPENING_CATEGORIES = Object.freeze([
@@ -862,7 +833,8 @@ export const domainQualityModel = Object.freeze({
         positiveQuery: 'street:*',
         missingQuery: 'all:all -street:*',
         prefixes: ['street'],
-        confidence: 'documented_prefix'
+        confidence: 'rejected',
+        note: 'Am 2026-07-06 mit Hotel und Gastro geprueft: Positive 0, Missing 0 bei vorhandener Baseline. Nicht als META-Pushdown verwenden.'
       }),
       status: 'active',
       activeCriterionId: 'hotel_street_missing',
@@ -879,9 +851,8 @@ export const domainQualityModel = Object.freeze({
         positiveQuery: 'details:*',
         missingQuery: 'all:all -details:*',
         prefixes: ['details'],
-        source: 'existing_quality_query',
-        confidence: 'existing_prefix_needs_type_verification',
-        note: 'details ist fuer POI, Gastro und Tour bereits aktiv; Hotel muss mit echten positiven und negativen Datensaetzen verifiziert werden.'
+        confidence: 'rejected',
+        note: 'Am 2026-07-06 mit Hotel und Event geprueft: details:* ist nicht komplementaer zur Baseline. Nicht als META-Pushdown verwenden.'
       }),
       status: 'active',
       activeCriterionId: 'description_missing',
@@ -1120,7 +1091,8 @@ export const domainQualityModel = Object.freeze({
         positiveQuery: 'street:*',
         missingQuery: 'all:all -street:*',
         prefixes: ['street'],
-        confidence: 'documented_prefix'
+        confidence: 'rejected',
+        note: 'Am 2026-07-06 mit Hotel und Gastro geprueft: Positive 0, Missing 0 bei vorhandener Baseline. Nicht als META-Pushdown verwenden.'
       }),
       status: 'active',
       activeCriterionId: 'poi_street_missing',
@@ -1292,7 +1264,8 @@ export const domainQualityModel = Object.freeze({
         positiveQuery: 'street:*',
         missingQuery: 'all:all -street:*',
         prefixes: ['street'],
-        confidence: 'documented_prefix'
+        confidence: 'rejected',
+        note: 'Am 2026-07-06 mit Hotel und Gastro geprueft: Positive 0, Missing 0 bei vorhandener Baseline. Nicht als META-Pushdown verwenden.'
       }),
       status: 'active',
       activeCriterionId: 'gastro_street_missing',
@@ -1382,11 +1355,11 @@ export const domainQualityModel = Object.freeze({
       label: 'Kuechenart',
       types: ['Gastro'],
       level: 'very_good',
-      fieldCandidates: ['cuisineTypes', 'cuisine_types_old', 'features'],
+      fieldCandidates: ['cuisine', 'cuisine_old'],
       status: 'active',
       activeCriterionId: 'gastro_cuisine_category_missing',
       uiPriority: 'niedrig',
-      recommendation: 'Gepruefte Kuechenarten als Kategorien ergaenzen.'
+      recommendation: 'Gepruefte Kuechenart ergaenzen.'
     },
     {
       id: 'gastro_languages',
@@ -1453,7 +1426,8 @@ export const domainQualityModel = Object.freeze({
         positiveQuery: 'street:*',
         missingQuery: 'all:all -street:*',
         prefixes: ['street'],
-        confidence: 'documented_prefix'
+        confidence: 'rejected',
+        note: 'Am 2026-07-06 mit Hotel und Gastro geprueft: Positive 0, Missing 0 bei vorhandener Baseline. Nicht als META-Pushdown verwenden.'
       }),
       status: 'active',
       activeCriterionId: 'event_street_missing',
@@ -1470,9 +1444,8 @@ export const domainQualityModel = Object.freeze({
         positiveQuery: 'details:*',
         missingQuery: 'all:all -details:*',
         prefixes: ['details'],
-        source: 'existing_quality_query',
-        confidence: 'existing_prefix_needs_type_verification',
-        note: 'details ist fuer POI, Gastro und Tour bereits aktiv; Event muss mit echten positiven und negativen Datensaetzen verifiziert werden.'
+        confidence: 'rejected',
+        note: 'Am 2026-07-06 mit Hotel und Event geprueft: details:* ist nicht komplementaer zur Baseline. Nicht als META-Pushdown verwenden.'
       }),
       status: 'active',
       activeCriterionId: 'description_missing',
@@ -1545,8 +1518,8 @@ export const domainQualityModel = Object.freeze({
         missingQuery: NON_OPEN_DATA_LICENSE_QUERY,
         prefixes: ['attribute_license'],
         source: 'existing_quality_query',
-        confidence: 'existing_prefix_needs_type_verification',
-        note: 'attribute_license ist fuer POI, Gastro, Tour, Hotel und Package bereits aktiv; Event muss mit echten Datensaetzen verifiziert werden.'
+        confidence: 'verified',
+        note: 'Am 2026-07-06 fuer Event geprueft: Positive 1378, Missing 0, Baseline 1378. Als META-Pushdown belastbar.'
       }),
       status: 'active',
       activeCriterionId: 'license_missing',
@@ -1649,7 +1622,7 @@ export const qualityCriteria = Object.freeze([
       positiveQuery: OPEN_DATA_LICENSE_QUERY,
       missingQuery: NON_OPEN_DATA_LICENSE_QUERY,
       verified: true,
-      verifiedForTypes: ['POI', 'Gastro', 'Tour', 'Hotel', 'Package']
+      verifiedForTypes: ['POI', 'Gastro', 'Tour', 'Hotel', 'Event', 'Package']
     },
     recommendation: 'Lizenzangabe ergaenzen oder Open-Data-Status pruefen.',
     check: (item) => !hasValidDatasetLicense(item)
@@ -1666,7 +1639,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_details', 'tour_details', 'poi_details', 'gastro_details', 'event_details'],
     fields: ['texts[rel=details]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.details,
     recommendation: 'Beschreibung oder Kurzbeschreibung ergaenzen.',
     check: (item) => !hasDescription(item)
   },
@@ -1682,7 +1654,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_street'],
     fields: ['street', 'address.street', 'addresses.street'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.street,
     recommendation: 'Strasse oder Anschrift ergaenzen.',
     check: (item) => !hasStreetInfo(item)
   },
@@ -1698,7 +1669,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_phone'],
     fields: ['phone', 'phone2', 'addresses.phone'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.phone,
     recommendation: 'Telefonnummer ergaenzen.',
     check: (item) => !hasPhoneInfo(item)
   },
@@ -1714,7 +1684,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -1730,7 +1699,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_email'],
     fields: ['email', 'emailRequest', 'addresses.email'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.email,
     recommendation: 'E-Mail-Adresse ergaenzen.',
     check: (item) => !hasEmailInfo(item)
   },
@@ -1746,7 +1714,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_website'],
     fields: ['web', 'website', 'url', 'addresses.web'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.website,
     recommendation: 'Webseite ergaenzen.',
     check: (item) => !hasWebsiteInfo(item)
   },
@@ -1778,7 +1745,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_price'],
     fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.price,
     recommendation: 'Preisinformation ergaenzen.',
     check: (item) => !hasPriceInfo(item)
   },
@@ -1809,7 +1775,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['tour_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -1855,7 +1820,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_street'],
     fields: ['street', 'address.street', 'addresses.street'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.street,
     recommendation: 'Strasse oder Anschrift ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_street_missing,
     check: (item) => !hasStreetInfo(item)
@@ -1872,7 +1836,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -1888,7 +1851,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_email'],
     fields: ['email', 'addresses.email'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.email,
     recommendation: 'E-Mail-Adresse ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_email_missing,
     check: (item) => !hasEmailInfo(item)
@@ -1905,7 +1867,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_website'],
     fields: ['web', 'website', 'url', 'addresses.web'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.website,
     recommendation: 'Webseite ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_website_missing,
     check: (item) => !hasWebsiteInfo(item)
@@ -1922,7 +1883,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_phone'],
     fields: ['phone', 'phone2', 'addresses.phone'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.phone,
     recommendation: 'Telefonnummer ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_phone_missing,
     check: (item) => !hasPhoneInfo(item)
@@ -2101,7 +2061,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_price'],
     fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.price,
     recommendation: 'Preis, Eintritt oder Kostenhinweis ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_price_missing,
     check: (item) => !hasPriceInfo(item)
@@ -2203,7 +2162,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_street'],
     fields: ['street', 'address.street', 'addresses.street'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.street,
     recommendation: 'Strasse oder Anschrift ergaenzen.',
     check: (item) => !hasStreetInfo(item)
   },
@@ -2219,7 +2177,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_phone'],
     fields: ['phone', 'phone2', 'addresses.phone'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.phone,
     recommendation: 'Telefonnummer ergaenzen.',
     check: (item) => !hasPhoneInfo(item)
   },
@@ -2235,7 +2192,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -2251,7 +2207,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_email'],
     fields: ['email', 'addresses.email'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.email,
     recommendation: 'E-Mail-Adresse ergaenzen.',
     check: (item) => !hasEmailInfo(item)
   },
@@ -2267,7 +2222,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_website'],
     fields: ['web', 'website', 'url', 'addresses.web'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.website,
     recommendation: 'Webseite ergaenzen.',
     check: (item) => !hasWebsiteInfo(item)
   },
@@ -2344,16 +2298,16 @@ export const qualityCriteria = Object.freeze([
     qualityLevel: 'very_good',
     uiSeverity: 'kleines_problem',
     domainCriterionIds: ['gastro_cuisine_type'],
-    fields: ['categories', 'categories_old'],
+    fields: ['cuisine', 'cuisine_old'],
     method: 'api_pushdown',
     api: {
-      positiveQuery: buildQuotedOrQuery('category', VALIDATED_CATEGORY_VALUES.gastroCuisine),
-      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('category', VALIDATED_CATEGORY_VALUES.gastroCuisine)),
+      positiveQuery: buildQuotedOrQuery('cuisine', VALIDATED_CUISINE_VALUES.gastroCuisine),
+      missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('cuisine', VALIDATED_CUISINE_VALUES.gastroCuisine)),
       verified: true,
       verifiedForTypes: ['Gastro']
     },
-    recommendation: 'Mindestens eine gepruefte Kuechenart als Kategorie ergaenzen.',
-    check: (item) => !hasAnyCategory(item, VALIDATED_CATEGORY_VALUES.gastroCuisine)
+    recommendation: 'Mindestens eine gepruefte Kuechenart ergaenzen.',
+    check: (item) => !hasAnyCuisine(item, VALIDATED_CUISINE_VALUES.gastroCuisine)
   },
   {
     id: 'gastro_kitchen_missing',
@@ -2367,7 +2321,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_kitchen'],
     fields: ['kitchenTimeIntervals', 'features', 'features_old'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.kitchenTimeIntervals,
     recommendation: 'Kuecheninformationen ergaenzen.',
     check: (item) => !hasKitchenInfo(item)
   },
@@ -2383,7 +2336,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_street'],
     fields: ['street', 'address.street', 'addresses.street'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.street,
     recommendation: 'Strasse oder Anschrift ergaenzen.',
     check: (item) => !hasStreetInfo(item)
   },
@@ -2399,7 +2351,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_phone'],
     fields: ['phone', 'phone2', 'addresses.phone'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.phone,
     recommendation: 'Telefonnummer ergaenzen.',
     check: (item) => !hasPhoneInfo(item)
   },
@@ -2415,7 +2366,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -2431,7 +2381,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_email'],
     fields: ['email', 'addresses.email'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.email,
     recommendation: 'E-Mail-Adresse ergaenzen.',
     check: (item) => !hasEmailInfo(item)
   },
@@ -2447,7 +2396,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_website'],
     fields: ['web', 'website', 'url', 'addresses.web'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.website,
     recommendation: 'Webseite ergaenzen.',
     check: (item) => !hasWebsiteInfo(item)
   },
@@ -2463,7 +2411,6 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_price'],
     fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
     method: 'server_scan',
-    api: API_PUSHDOWN_CANDIDATES.price,
     recommendation: 'Preisinformation ergaenzen.',
     check: (item) => !hasPriceInfo(item)
   },
@@ -3070,8 +3017,10 @@ export const qualityHelpers = Object.freeze({
   findMissingCopyrightMedia,
   getAreaValues,
   getCategoryValues,
+  getCuisineValues,
   hasCategory,
   hasAnyCategory,
+  hasAnyCuisine,
   getKeywordValues,
   hasKeyword,
   hasDescription,

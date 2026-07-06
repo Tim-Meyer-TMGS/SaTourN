@@ -114,7 +114,10 @@ Erledigt:
 
 - vorbereitete Hotel-, Gastro-, Tour- und Event-Kriterien als zentrale Server-Scan-Regeln aktiviert
 - Count, Fehlerliste, Detailseite und Score nutzen dieselbe Regelbasis
-- Event-Lizenzprüfung ist aktiv; ohne verifizierten Event-Pushdown läuft sie über Server-Scan-Fallback
+- Event-Lizenzprüfung ist aktiv und seit 2026-07-06 als API-Pushdown für `Event` verifiziert
+- Gastro-Küchenarten sind seit 2026-07-06 als API-Pushdown über eine
+  bestätigte `cuisine`-OR-Liste aktiv; allgemeine Kücheninformationen bleiben
+  `server_scan`
 
 Offen:
 
@@ -139,7 +142,9 @@ Nachweise:
 
 Offen:
 
-- Preisregel und weitere sichere POI-Ausschlüsse gegen echte Daten absichern
+- Preisregel und weitere sichere POI-Ausschlüsse fachlich gegen echte Daten
+  absichern; Preis-Pushdowns über `price:*`, `prices:*` und `PRICE_INFO:*`
+  sind verworfen
 - Ausschlüsse nur zentral in der Bewertungslogik erweitern, nicht im UI
 
 Betroffene Dateien:
