@@ -8,9 +8,23 @@ import {
   buildQualityStatusGradient,
   canShowQualityScore
 } from '../../shared/quality/quality-metrics';
-import { buildIssueRecordsUrl } from '../../shared/records/record-list-links';
+import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
-import { loadOverviewData, type OverviewData } from './overview-api';
+import { getTaskFamilyId, getTaskFamilyMeta } from '../../shared/tasks/task-families';
+import { loadOverviewData, type OverviewData, type OverviewIssue } from './overview-api';
+
+type OverviewTaskIssue = {
+  taskId: string;
+  criterionId: string;
+  criterionIds: string[];
+  criteriaByType: Record<string, string>;
+  label: string;
+  priority: string;
+  recommendation?: string;
+  affectedCount: number;
+  affectedTypes: string[];
+  iconCriterionId: string;
+};
 
 function priorityClass(priority: string) {
   return priority === 'hoch' ? 'critical' : 'review';
@@ -29,6 +43,69 @@ function taskIcon(criterionId: string) {
   if (criterionId.includes('booking')) return 'link';
   if (criterionId.includes('payment')) return 'payments';
   return 'assignment';
+}
+
+function priorityRank(priority: string) {
+  if (priority === 'hoch') return 3;
+  if (priority === 'mittel') return 2;
+  return 1;
+}
+
+function buildOverviewTaskIssues(issues: OverviewIssue[]): OverviewTaskIssue[] {
+  const grouped = new Map<string, {
+    taskId: string;
+    criterionId: string;
+    criterionIds: Set<string>;
+    criteriaByType: Record<string, string>;
+    label: string;
+    priority: string;
+    recommendation?: string;
+    affectedCount: number;
+    affectedTypes: Set<string>;
+    iconCriterionId: string;
+  }>();
+
+  for (const issue of issues) {
+    if (!issue.criterionId || issue.affectedCount <= 0) continue;
+    const taskFamily = getTaskFamilyId(issue.criterionId);
+    const familyMeta = getTaskFamilyMeta(taskFamily);
+    const current = grouped.get(taskFamily) || {
+      taskId: taskFamily,
+      criterionId: issue.criterionId,
+      criterionIds: new Set<string>(),
+      criteriaByType: {},
+      label: familyMeta?.label || issue.label,
+      priority: issue.priority,
+      recommendation: familyMeta?.recommendation || issue.recommendation,
+      affectedCount: 0,
+      affectedTypes: new Set<string>(),
+      iconCriterionId: familyMeta?.iconCriterionId || issue.criterionId
+    };
+
+    current.criterionIds.add(issue.criterionId);
+    current.affectedCount += issue.affectedCount;
+    if (priorityRank(issue.priority) > priorityRank(current.priority)) current.priority = issue.priority;
+
+    for (const type of issue.affectedTypes || []) {
+      if (!type) continue;
+      current.affectedTypes.add(type);
+      current.criteriaByType[type] = issue.criterionId;
+    }
+
+    grouped.set(taskFamily, current);
+  }
+
+  return Array.from(grouped.values())
+    .map((issue) => ({
+      ...issue,
+      criterionIds: Array.from(issue.criterionIds),
+      affectedTypes: Array.from(issue.affectedTypes).sort((left, right) => left.localeCompare(right, 'de'))
+    }))
+    .sort((left, right) => (
+      priorityRank(right.priority) - priorityRank(left.priority)
+      || right.affectedCount - left.affectedCount
+      || left.label.localeCompare(right.label, 'de')
+    ));
 }
 
 export function OverviewPage() {
@@ -69,7 +146,7 @@ export function OverviewPage() {
     return buildOpenDataSummary(rows);
   }, [data]);
 
-  const topIssues = useMemo(() => (data?.issues || []).slice(0, 5), [data]);
+  const topIssues = useMemo(() => buildOverviewTaskIssues(data?.issues || []).slice(0, 5), [data]);
   const qualitySummary = data?.qualitySummary || null;
   const canCalculateScore = canShowQualityScore(context.area, context.city);
   const hasQualitySummary = Boolean(qualitySummary);
@@ -151,8 +228,8 @@ export function OverviewPage() {
               <div className="empty-note">Für die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>
             ) : null}
             {!loading && topIssues.map((issue) => (
-              <Link className="task-row" to={buildIssueRecordsUrl(issue, context.type)} key={issue.criterionId}>
-                <span className={`task-icon ${priorityClass(issue.priority)} material-icons`} aria-hidden="true">{taskIcon(issue.criterionId)}</span>
+              <Link className="task-row" to={buildTaskRecordsUrl(issue, context.type)} key={issue.taskId}>
+                <span className={`task-icon ${priorityClass(issue.priority)} material-icons`} aria-hidden="true">{taskIcon(issue.iconCriterionId)}</span>
                 <span className="task-copy">
                   <strong>{issue.label}</strong>
                   <small>{issue.recommendation || 'Bitte im Pflegesystem prüfen und ergänzen.'}</small>

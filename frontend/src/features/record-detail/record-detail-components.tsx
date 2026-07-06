@@ -250,10 +250,12 @@ export function DetailCenterColumn({ item }: { item: DetailItem }) {
         {item.mediaImages.length ? <p className="data-note">{item.mediaNote}</p> : null}
       </article>
 
-      <article className="panel-card">
-        <header className="panel-head"><h2>Öffnungszeiten</h2></header>
-        <div className="detail-text"><p>{item.openings}</p></div>
-      </article>
+      {item.openings ? (
+        <article className="panel-card">
+          <header className="panel-head"><h2>Öffnungszeiten</h2></header>
+          <div className="detail-text"><p>{item.openings}</p></div>
+        </article>
+      ) : null}
 
       <article className="panel-card">
         <header className="panel-head"><h2>ÖPNV-Anreise</h2></header>
