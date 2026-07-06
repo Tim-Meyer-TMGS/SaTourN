@@ -218,7 +218,7 @@ textarea {
   height: 42px;
   display: block;
   flex: 0 0 auto;
-  background: url("/SaTourN/SaTourN-RGB.png") left center / contain no-repeat;
+  background: url("../assets/brand/SaTourN-RGB.png") left center / contain no-repeat;
 }
 
 .brand strong {

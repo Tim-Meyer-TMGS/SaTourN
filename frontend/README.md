@@ -34,6 +34,25 @@ https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/#/tasks
 Die bestehende Live-Seite unter `/SaTourN/Statistik/index.html` bleibt davon
 unberührt.
 
+## Vercel-Deployment
+
+Vercel baut das React-Frontend direkt aus `frontend/` und liefert `frontend/dist`
+aus. Der Base-Pfad muss dort `/` sein, sonst werden CSS- und JavaScript-Dateien
+unter dem GitHub-Pages-Pfad gesucht.
+
+Die Root-Konfiguration liegt in `../vercel.json`:
+
+```json
+{
+  "installCommand": "npm install --prefix frontend",
+  "buildCommand": "VITE_BASE_PATH=/ npm run --prefix frontend build",
+  "outputDirectory": "frontend/dist"
+}
+```
+
+GitHub Pages bleibt davon getrennt. Ohne `VITE_BASE_PATH` nutzt der normale
+Build weiterhin `/SaTourN/frontend-preview/`.
+
 ## Aktueller Stand
 
 - React-/Vite-/TypeScript-Grundgerüst angelegt
