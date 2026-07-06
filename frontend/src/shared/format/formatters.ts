@@ -1,3 +1,19 @@
+export function formatNumber(value: number) {
+  return new Intl.NumberFormat('de-DE').format(value);
+}
+
+export function calculatePercent(value: number, total: number) {
+  return total > 0 ? (value / total) * 100 : 0;
+}
+
+export function formatPercent(value: number) {
+  return `${value.toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
+}
+
+export function clampPercent(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
+
 export function formatRecordDate(value: unknown) {
   if (!value) return '-';
 

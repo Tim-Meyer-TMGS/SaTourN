@@ -1,6 +1,6 @@
 import { fetchJson } from '../api/http-client';
 import { getRuntimeConfig } from '../api/runtime-config';
-import { qualityCriteria } from '../legacy/quality';
+import { findQualityCriterion } from '../quality/quality-criteria';
 
 export type MailDraftRecord = {
   id: string;
@@ -73,7 +73,7 @@ function selectRelevantCriterionIds(record: MailDraftRecord, selectedCriterionId
 function buildMailDraftIssues(criterionIds: string[]) {
   return criterionIds
     .map((criterionId) => {
-      const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
+      const criterion = findQualityCriterion(criterionId);
       if (!criterion) return null;
       return {
         criterionId,

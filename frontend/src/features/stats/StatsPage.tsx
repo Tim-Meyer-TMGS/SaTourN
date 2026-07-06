@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { calculatePercent, clampPercent, formatNumber, formatPercent } from '../../shared/format/formatters';
+import { buildOpenDataSummary } from '../../shared/quality/quality-metrics';
+import { buildNonOpenDataRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { loadOverviewData, type OverviewData, type OverviewStatisticRow } from '../overview/overview-api';
 
@@ -23,18 +26,6 @@ type StatsSummary = {
   nonOpenDataQuote: number;
 };
 
-function formatNumber(value: number) {
-  return new Intl.NumberFormat('de-DE').format(value);
-}
-
-function percent(value: number, total: number) {
-  return total > 0 ? (value / total) * 100 : 0;
-}
-
-function formatPercent(value: number) {
-  return `${value.toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
-}
-
 function mapStatsRows(rows: OverviewStatisticRow[]): StatsRow[] {
   const totalRecords = rows.reduce((sum, row) => sum + row.total, 0);
 
@@ -45,27 +36,21 @@ function mapStatsRows(rows: OverviewStatisticRow[]): StatsRow[] {
       total: row.total,
       openData: row.openData,
       nonOpenData: Math.max(0, row.total - row.openData),
-      openDataQuote: percent(row.openData, row.total),
-      inventoryShare: percent(row.total, totalRecords)
+      openDataQuote: calculatePercent(row.openData, row.total),
+      inventoryShare: calculatePercent(row.total, totalRecords)
     }));
 }
 
 function buildStatsSummary(rows: StatsRow[]): StatsSummary {
-  const totalRecords = rows.reduce((sum, row) => sum + row.total, 0);
-  const openDataRecords = rows.reduce((sum, row) => sum + row.openData, 0);
-  const nonOpenDataRecords = Math.max(0, totalRecords - openDataRecords);
+  const summary = buildOpenDataSummary(rows);
 
   return {
-    totalRecords,
-    openDataRecords,
-    nonOpenDataRecords,
-    openDataQuote: percent(openDataRecords, totalRecords),
-    nonOpenDataQuote: percent(nonOpenDataRecords, totalRecords)
+    totalRecords: summary.total,
+    openDataRecords: summary.openData,
+    nonOpenDataRecords: summary.notOpenData,
+    openDataQuote: summary.openDataQuote,
+    nonOpenDataQuote: summary.notOpenDataQuote
   };
-}
-
-function clampPercent(value: number) {
-  return Math.max(0, Math.min(100, value));
 }
 
 function buildTypeDonutBackground(rows: StatsRow[]) {
@@ -90,20 +75,6 @@ function buildStatsPageModel(data: OverviewData | null) {
     fallbackTypes: rows.map((row) => row.type),
     donutBackground: buildTypeDonutBackground(rows)
   };
-}
-
-function buildLicenseTaskUrl(fallbackTypes: string[], contextType: string) {
-  const params = new URLSearchParams();
-  params.set('list', 'non_open_data');
-  params.set('from', 'stats');
-
-  if (contextType) {
-    params.set('type', contextType);
-  } else {
-    if (fallbackTypes.length) params.set('types', fallbackTypes.join(','));
-  }
-
-  return `/records?${params.toString()}`;
 }
 
 export function StatsPage() {
@@ -248,7 +219,7 @@ export function StatsPage() {
             <strong>{formatNumber(summary.nonOpenDataRecords)}</strong>
             <small>{formatPercent(summary.nonOpenDataQuote)} nicht Open-Data-fähig</small>
           </div>
-          <Link className="primary-action stats-task-link" to={buildLicenseTaskUrl(fallbackTypes, context.type)}>
+          <Link className="primary-action stats-task-link" to={buildNonOpenDataRecordsUrl(fallbackTypes, context.type)}>
             Pflegeaufgabe öffnen
             <span className="material-icons" aria-hidden="true">arrow_forward</span>
           </Link>

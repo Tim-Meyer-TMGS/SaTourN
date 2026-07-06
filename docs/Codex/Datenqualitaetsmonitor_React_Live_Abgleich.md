@@ -1,6 +1,6 @@
 # Datenqualitätsmonitor – React-Preview gegen Live-Seite abgleichen
 
-Stand: 2026-06-26
+Stand: 2026-06-30
 
 ## Ziel
 
@@ -155,6 +155,52 @@ Eine Seite gilt als abnahmefähig, wenn:
 - keine Mojibake-Texte sichtbar sind
 - keine Console-Fehler aus dem Anwendungscode auftreten
 
+## Aktueller Logikstand
+
+Stand 2026-06-30 sind die zentralen React-Preview-Logiken manuell gegen die
+Anwendung geprüft:
+
+- Pflegeaufgaben öffnen korrekt die gefilterte Datensatzliste
+- Datensatzliste lädt Pflegeaufgabenfilter, normale Suche, KI-Suche und
+  Nicht-Open-Data-Listen
+- KI-Suchergebnisse laufen durch die Qualitätsbewertung
+- Detailseite lädt aus Datensatzlisten heraus korrekt
+- Detailseite erhält Zurück, Vorheriger und Nächster aus dem gespeicherten
+  Listenstand
+- Mailentwurf wird in der Detailseite über `Aktionen` angestoßen und erzeugt
+  nur einen lokalen Mailentwurf
+- Open-Data-Statistik öffnet die Nicht-Open-Data-Liste über
+  `list=non_open_data`
+
+Damit gilt die fachliche Verlinkungs- und Lade-Logik der Hauptseiten als
+stabil genug für den nächsten Schritt.
+
+## Umgesetzt am 2026-07-06
+
+- Render-Warmup wurde in `frontend/src/shared/api/server-warmup.ts` gekapselt.
+- Die App startet jetzt mit einem robusteren Health-Check gegen `/health`,
+  inklusive Timeout, Wiederholungen und sichtbarem Ladehinweis.
+- Mobile Layouts für Header, Arbeitskontext, Navigation, Filter, Tabellen,
+  Karten, Detailansicht und Statistik wurden nachgezogen.
+- Die Layoutklassen der Hauptseiten sind vereinheitlicht; die Übersicht nutzt
+  jetzt eine eigene `overview-main`-Klasse.
+- UI-Abgleich bleibt rein visuell; Score-, Such-, Pflegeaufgaben- und
+  Detail-Logik wurden dabei nicht verändert.
+
+## Umgesetzt am 2026-07-06: zentrale Frontend-Logik
+
+- Zahlen- und Prozentformatierung liegen zentral in
+  `frontend/src/shared/format/formatters.ts`.
+- Open-Data- und Qualitäts-Kennzahlen liegen zentral in
+  `frontend/src/shared/quality/quality-metrics.ts`.
+- Kriterienzugriffe für Label, Fachobjekt und Open-Data-Relevanz liegen zentral
+  in `frontend/src/shared/quality/quality-criteria.ts`.
+- Links aus Übersicht, Pflegeaufgaben, Statistik und Datensatzliste in die
+  Datensatzliste bzw. Detailseite liegen zentral in
+  `frontend/src/shared/records/record-list-links.ts`.
+- Seitenkomponenten behalten nur noch Seitendarstellung und lokale UI-Zustände;
+  wiederverwendete Berechnungs- und Linklogik ist in `shared` verschoben.
+
 ## Bekannte Browser-Noise
 
 Die Chrome-Meldung
@@ -169,6 +215,8 @@ App-Fehler und API-Fehler in der Console sichtbar bleiben.
 
 ## Aktueller nächster Schritt
 
-Mit `Datensätze` und `Datensatz-Detail` beginnen, weil dort Suche,
-Pflegeaufgabenfilter, KI-Suche, Qualitätsbewertung und Navigation
-zusammenlaufen.
+1. GitHub-Build der React-Preview prüfen und TypeScript-Fehler zuerst
+   bereinigen
+2. React-Preview im GitHub-Pages-Build auf Desktop und Mobile visuell prüfen
+3. Detailseite und Fehlerlistenansicht gegen mehrere echte Datensätze testen
+4. Übergabedokumentation für Entwickler ergänzen

@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { DATA_TYPES } from '../../shared/config/constants';
+import { calculatePercent, formatNumber, formatPercent } from '../../shared/format/formatters';
 import { qualityCriteria } from '../../shared/legacy/quality';
+import { findQualityCriterion, isOpenDataRelevantCriterion } from '../../shared/quality/quality-criteria';
+import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { loadOverviewData, type OverviewData, type OverviewIssue } from '../overview/overview-api';
 
@@ -96,18 +99,6 @@ type TaskGroupDraft = {
   affectedTypes: Set<string>;
 };
 
-function formatNumber(value: number) {
-  return new Intl.NumberFormat('de-DE').format(value);
-}
-
-function percent(value: number, total: number) {
-  return total > 0 ? (value / total) * 100 : 0;
-}
-
-function formatPercent(value: number) {
-  return `${value.toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
-}
-
 function priorityRank(priority: string) {
   if (priority === 'hoch') return 3;
   if (priority === 'mittel') return 2;
@@ -154,11 +145,6 @@ function getTaskFamilyId(criterionId: string) {
 
 function getTaskFamilyMeta(taskFamily: string) {
   return TASK_FAMILY_META[taskFamily] || null;
-}
-
-function isOpenDataRelevantCriterion(criterionId: string) {
-  const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
-  return criterion?.openDataRelevant === true || ['license_missing', 'image_author_missing'].includes(criterionId);
 }
 
 function computeTaskImpact(priority: string, openDataRelevant: boolean, affectedCount: number): TaskRow['impact'] {
@@ -295,7 +281,7 @@ function addIssueToTaskGroup(group: TaskGroupDraft, issue: OverviewIssue) {
 }
 
 function buildTaskRow(group: TaskGroupDraft): TaskRow {
-  const criterion = qualityCriteria.find((item) => item.id === group.criterionId);
+  const criterion = findQualityCriterion(group.criterionId);
   const familyMeta = getTaskFamilyMeta(group.taskFamily);
   const affectedTypes = Array.from(group.affectedTypes).sort((left, right) => left.localeCompare(right, 'de'));
   const openDataRelevant = Array.from(group.criterionIds).some(isOpenDataRelevantCriterion);
@@ -356,23 +342,6 @@ function computePotential(tasks: TaskRow[]) {
   if (tasks.some((task) => task.impact === 'mittel')) return 'Mittel';
   if (tasks.length) return 'Niedrig';
   return '-';
-}
-
-function buildTaskRecordsUrl(task: TaskRow, contextType: string, type = '') {
-  const params = new URLSearchParams();
-  params.set('criterionId', type ? (task.criteriaByType[type] || task.criterionId) : task.criterionId);
-  if (task.criterionIds.length > 1) params.set('criterionIds', task.criterionIds.join(','));
-  params.set('from', 'tasks');
-
-  if (type) {
-    params.set('type', type);
-  } else if (contextType) {
-    params.set('type', contextType);
-  } else if (task.affectedTypes.length) {
-    params.set('types', task.affectedTypes.join(','));
-  }
-
-  return `/records?${params.toString()}`;
 }
 
 export function TasksPage() {
@@ -475,7 +444,7 @@ export function TasksPage() {
           <div>
             <span>Hohe Priorität</span>
             <strong>{loading ? '...' : formatNumber(summary.highTasks)}</strong>
-            <small>{summary.totalTasks ? `${formatPercent(percent(summary.highTasks, summary.totalTasks))} der Aufgaben` : '-'}</small>
+            <small>{summary.totalTasks ? `${formatPercent(calculatePercent(summary.highTasks, summary.totalTasks))} der Aufgaben` : '-'}</small>
           </div>
         </article>
         <article className="task-kpi-card">
@@ -490,7 +459,7 @@ export function TasksPage() {
           <span className="task-kpi-icon good material-icons" aria-hidden="true">pie_chart</span>
           <div>
             <span>Open-Data-Relevanz</span>
-            <strong>{loading ? '...' : formatPercent(percent(summary.openDataHits, summary.affectedHits))}</strong>
+            <strong>{loading ? '...' : formatPercent(calculatePercent(summary.openDataHits, summary.affectedHits))}</strong>
             <small>Der betroffenen Treffer</small>
           </div>
         </article>

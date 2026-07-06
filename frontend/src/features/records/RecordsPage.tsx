@@ -3,7 +3,8 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 import { DATA_TYPES } from '../../shared/config/constants';
 import { formatRecordDate } from '../../shared/format/formatters';
-import { qualityCriteria } from '../../shared/legacy/quality';
+import { getQualityCriterionLabel } from '../../shared/quality/quality-criteria';
+import { buildTaskAwareRecordDetailUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import {
   loadCriterionRecordsForFrontend,
@@ -123,18 +124,6 @@ function shouldResetLoadedRows(mode: RecordSearchMeta['mode']) {
   return mode === 'ai_search' || mode === 'criterion' || mode === 'non_open_data';
 }
 
-function buildTaskAwareDetailUrl(
-  row: RecordRow,
-  criterionId: string,
-  criterionLabel: string
-) {
-  const url = new URL(row.detailUrl, 'https://satourn.local');
-  url.searchParams.set('source', 'task');
-  url.searchParams.set('criterion_id', criterionId);
-  url.searchParams.set('criterion_label', criterionLabel);
-  return `${url.pathname}${url.search}`;
-}
-
 export function RecordsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
@@ -180,7 +169,7 @@ export function RecordsPage() {
     return Array.from(new Set(rows.flatMap((row) => row.missingCriteria)))
       .map((criterionId) => ({
         id: criterionId,
-        label: qualityCriteria.find((entry) => entry.id === criterionId)?.label || criterionId
+        label: getQualityCriterionLabel(criterionId)
       }))
       .sort((left, right) => left.label.localeCompare(right.label, 'de'));
   }, [rows]);
@@ -237,8 +226,8 @@ export function RecordsPage() {
     const rowCriterionId = resolveRowCriterionId(row);
     if (!rowCriterionId) return row.detailUrl;
 
-    const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || row.primaryIssue || rowCriterionId;
-    return buildTaskAwareDetailUrl(row, rowCriterionId, criterionLabel);
+    const criterionLabel = getQualityCriterionLabel(rowCriterionId, row.primaryIssue || rowCriterionId);
+    return buildTaskAwareRecordDetailUrl(row.detailUrl, rowCriterionId, criterionLabel);
   }
 
   useEffect(() => {
@@ -289,8 +278,8 @@ export function RecordsPage() {
             ? (row.missingCriteria.includes('license_missing') ? 'license_missing' : '')
             : activeUrlCriterionIds.find((criterionId) => row.missingCriteria.includes(criterionId)) || urlCriterionId;
           if (rowCriterionId) {
-            const criterionLabel = qualityCriteria.find((entry) => entry.id === rowCriterionId)?.label || result.meta.criterionLabel || rowCriterionId;
-            return buildTaskAwareDetailUrl(row, rowCriterionId, criterionLabel);
+            const criterionLabel = getQualityCriterionLabel(rowCriterionId, result.meta.criterionLabel || rowCriterionId);
+            return buildTaskAwareRecordDetailUrl(row.detailUrl, rowCriterionId, criterionLabel);
           }
           return row.detailUrl;
         });

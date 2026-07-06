@@ -1,13 +1,41 @@
 # Datenqualitätsmonitor – Offene TODOs
 
-Stand: 2026-06-23
+Stand: 2026-06-30
 
 Diese Datei ist die kurze, aktive Arbeitsliste. Abgeschlossene Analysen und
 alte Nachweise liegen im Archiv.
 
 ## Priorität A – Als Nächstes
 
-### 1. one.intelligence Mailfunktion produktionsreif machen
+### 1. React-Preview Build und UI-Abgleich absichern
+
+Erledigt:
+
+- Render-Warmup beim App-Start als eigener Client gekapselt
+- sichtbarer Ladehinweis für Render-Kaltstart ergänzt
+- mobile CSS-Regeln für Header, Navigation, Filter, Tabellen, Karten,
+  Detailansicht und Statistik nachgezogen
+- Hauptseiten-Layoutklassen vereinheitlicht
+- gemeinsame Formatierungs-, Qualitäts-, Kriterien- und Linkbuilding-Helfer
+  in `frontend/src/shared/` zentralisiert
+
+Offen:
+
+- GitHub-Actions-Build der React-Preview prüfen
+- TypeScript-/Vite-Fehler vor weiterem Refactoring beheben
+- UI-Abstände, Karten, Tabellen und Detailansicht im GitHub-Pages-Preview
+  final visuell mit Live-Seite abgleichen
+- mobile Darstellung aller Hauptseiten im Browser prüfen
+- Light Mode und Dark Mode gegen lange Inhalte testen
+- GitHub-Build nach der Shared-Logik-Zentralisierung prüfen
+
+Betroffene Dateien:
+
+- `frontend/src/features/`
+- `frontend/src/styles/global.css`
+- `docs/Codex/Datenqualitaetsmonitor_React_Live_Abgleich.md`
+
+### 2. one.intelligence Mailfunktion fachlich finalisieren
 
 Offen:
 
@@ -18,28 +46,33 @@ Offen:
 
 Betroffene Dateien:
 
-- `Statistik/records/record-communication.js`
+- `frontend/src/shared/records/record-mail-draft.ts`
+- `frontend/src/features/record-detail/RecordDetailPage.tsx`
 - `routes/oi.js`
 - `docs/Codex/Render_OI_Einrichtung.md`
 
-### 2. KI-Suche im Frontend fachlich gegen echte Suchfälle testen
+### 3. KI-Suche UX-seitig schärfen
+
+Erledigt:
+
+- KI-Suche liefert IDs über one.intelligence
+- IDs werden in Datensätze aufgelöst
+- KI-Treffer laufen in der React-Preview durch die Qualitätskriterien
 
 Offen:
 
-- reale Themenanfragen durchtesten:
+- reale Themenanfragen weiter dokumentiert testen:
   `Museum`, `Wanderwege mit Hund`, `Familienausflug`, `Wellnesshotel`
-- prüfen, ob OI-IDs immer sauber in Datensätze aufgelöst werden
-- prüfen, ob KI-Treffer in allen Fällen sauber durch die Prüfkriterien laufen
 - leere Ergebnisse, mehrdeutige Suchanfragen und Fehlermeldungen UX-seitig schärfen
+- Ladezustände und Ergebniszusammenfassung weiter glätten
 
 Betroffene Dateien:
 
-- `Statistik/records.html`
-- `Statistik/records/records-actions.js`
-- `Statistik/records/records-data.js`
+- `frontend/src/features/records/RecordsPage.tsx`
+- `frontend/src/features/records/records-api.ts`
 - `routes/oi.js`
 
-### 3. KI-Texte auf den aktuellen Produktstand ziehen
+### 4. KI-Texte auf den aktuellen Produktstand ziehen
 
 Offen:
 
@@ -61,7 +94,7 @@ Betroffene Dateien:
 
 ## Priorität B – Bewertungslogik erweitern
 
-### 4. Weitere Kriterien sauber verifizieren und aktivieren
+### 5. Weitere Kriterien sauber verifizieren und aktivieren
 
 Offen:
 
@@ -82,7 +115,7 @@ Nachweise:
 
 - Archivdokumente unter `Archiv/2026-06-15_Analyse-und-Nachweise/`
 
-### 5. POI-Ausschlusslogik gezielt erweitern
+### 6. POI-Ausschlusslogik gezielt erweitern
 
 Offen:
 
@@ -96,7 +129,7 @@ Betroffene Dateien:
 
 ## Priorität C – UI und Betrieb
 
-### 6. UI weiter glätten
+### 7. UI weiter glätten
 
 Offen:
 
@@ -105,7 +138,7 @@ Offen:
 - Statistikseite weiter entschlacken
 - Zustände, Ladeanimationen und Fehlermeldungen vereinheitlichen
 
-### 7. Betrieb und Plattform
+### 8. Betrieb und Plattform
 
 Offen:
 
@@ -115,7 +148,7 @@ Offen:
 
 ## Priorität D – Architektur, Framework und Übergabe
 
-### 8. Zielarchitektur für Übergabe und Eigenhosting festziehen
+### 9. Zielarchitektur für Übergabe und Eigenhosting festziehen
 
 Erledigt:
 
@@ -128,7 +161,7 @@ Ergebnis:
 
 - `docs/Codex/Datenqualitaetsmonitor_Architektur_und_Zielbild.md`
 
-### 9. Frontend-Migration auf Framework vorbereiten
+### 10. Frontend-Migration auf Framework vorbereiten
 
 Festgelegte Zielrichtung:
 
@@ -151,7 +184,7 @@ Ergebnis:
 
 - `docs/Codex/Datenqualitaetsmonitor_Frontend_Migrationsplan.md`
 
-### 10. Vor der Framework-Migration weitere Entkopplung im Bestand umsetzen
+### 11. Vor der Framework-Migration weitere Entkopplung im Bestand umsetzen
 
 Ziel:
 
@@ -210,7 +243,7 @@ Betroffene Dateien:
 - `Statistik/tasks/`
 - `Statistik/core/`
 
-### 11. Framework-Übergang konkret vorbereiten
+### 12. Framework-Übergang konkret vorbereiten
 
 Bereits umgesetzt:
 
@@ -239,15 +272,15 @@ Aktueller Teilstand:
 - alle heutigen Hauptseiten existieren als React-Pilotseiten
 - die produktive Seite unter `Statistik/` bleibt unverändert aktiv
 - der Preview-Pfad bleibt getrennt unter `/frontend-preview/`
-- der nächste Schwerpunkt ist fachliche Gleichheit, nicht weitere Seitenmigration
+- die zentralen Logikübergänge wurden am 2026-06-30 manuell als funktionierend bestätigt
+- der nächste Schwerpunkt ist Build-Absicherung, UI-Abgleich und Übergabefähigkeit
 
 Offene Prüfpunkte:
 
-- Datensatzliste: Suche, KI-Suche, Pflegeaufgabenfilter, CSV und Mailaktion gegen echte Fälle prüfen
-- Detailseite: lange Texte, viele Medien, fehlende Felder, externe IDs und Pflegesysteme prüfen
-- Übersicht: Kennzahlen für Sachsen vs. konkrete Gebiete gegen Live-Zahlen prüfen
-- Pflegeaufgaben: Gruppierung, Typfilter und Sprung in Datensatzlisten prüfen
-- Statistik: Open-Data-Zahlen und Lizenz-Pflegehinweis gegen Live-Seite prüfen
+- GitHub-Build und Preview-Deployment prüfen
+- Detailseite: lange Texte, viele Medien, fehlende Felder, externe IDs und Pflegesysteme visuell prüfen
+- Übersicht: Kennzahlen für Sachsen vs. konkrete Gebiete weiter gegen Live-Zahlen beobachten
+- Statistik: Open-Data-Zahlen und Lizenz-Pflegehinweis optisch gegen Live-Seite prüfen
 - Hilfe: Verständlichkeit und Gewichtungslogik nach neuer fachlicher Gewichtung erneut prüfen
 - Autocomplete im neuen Frontend nachziehen
 - mobile Darstellung aller Seiten prüfen
@@ -262,7 +295,7 @@ Wichtig:
 - Backend-Routen und Render-Konfiguration bleiben zunächst unverändert
 - Qualitätslogik bleibt fachlich führend
 
-### 12. Übergabedokumentation für Entwickler vorbereiten
+### 13. Übergabedokumentation für Entwickler vorbereiten
 
 Offen:
 
