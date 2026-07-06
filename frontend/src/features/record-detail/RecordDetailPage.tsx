@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { fetchJson } from '../../shared/api/http-client';
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
-import { qualityCriteria } from '../../shared/legacy/quality';
+import { findQualityCriterion } from '../../shared/quality/quality-criteria';
 import {
   buildMailDraftUrl,
   openMailDraftInMailClient,
@@ -82,7 +82,7 @@ function buildMissingIssues(item: DetailItem | null): MissingIssue[] {
 
   return item.missingCriteria
     .map((criterionId) => {
-      const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
+      const criterion = findQualityCriterion(criterionId);
       return {
         id: criterionId,
         label: criterion?.label || criterionId,

@@ -1,7 +1,8 @@
 import { fetchJson } from '../../shared/api/http-client';
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
-import { evaluateAllItems, qualityCriteria, type QualityCriterion } from '../../shared/legacy/quality';
+import { evaluateAllItems, type QualityCriterion } from '../../shared/legacy/quality';
+import { findQualityCriterion } from '../../shared/quality/quality-criteria';
 import {
   buildQualityEvaluationInput,
   buildRecordDetailUrl,
@@ -129,8 +130,8 @@ function toRecordRow(item: Record<string, unknown>): RecordRow {
     : [];
 
   const primaryIssueId = [...missingCriteria].sort((left, right) => {
-    const leftCriterion = qualityCriteria.find((entry) => entry.id === left);
-    const rightCriterion = qualityCriteria.find((entry) => entry.id === right);
+    const leftCriterion = findQualityCriterion(left);
+    const rightCriterion = findQualityCriterion(right);
     return priorityRank(String(rightCriterion?.priority || '')) - priorityRank(String(leftCriterion?.priority || ''));
   })[0] || '';
 
@@ -145,7 +146,7 @@ function toRecordRow(item: Record<string, unknown>): RecordRow {
     updatedAt: String(item.updatedAt || ''),
     qualityStatus: String(item.qualityStatus || 'nicht berechenbar'),
     qualityScore: Number.isFinite(Number(item.qualityScore)) ? Number(item.qualityScore) : null,
-    primaryIssue: qualityCriteria.find((entry) => entry.id === primaryIssueId)?.label || '-',
+    primaryIssue: findQualityCriterion(primaryIssueId)?.label || '-',
     missingCriteria,
     email: getRecordEmail(item.raw),
     web: getRecordWeb(item.raw),
@@ -407,9 +408,9 @@ export async function loadCriterionRecordsForFrontend(options: {
   selectedTypes?: string[];
 }) {
   const { criterionId, criterionIds = [], context, selectedType, selectedTypes = [] } = options;
-  const criterion = qualityCriteria.find((entry) => entry.id === criterionId);
+  const criterion = findQualityCriterion(criterionId);
   const criteria = Array.from(new Set((criterionIds.length ? criterionIds : [criterionId]).filter(Boolean)))
-    .map((id) => qualityCriteria.find((entry) => entry.id === id))
+    .map((id) => findQualityCriterion(id))
     .filter((entry): entry is QualityCriterion => Boolean(entry));
   const explicitTypes = (selectedTypes.length ? selectedTypes : [selectedType]).filter(Boolean);
   const criterionTypes = criteria.length

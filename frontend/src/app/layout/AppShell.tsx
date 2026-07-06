@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
+import { wakeRenderServer } from '../../shared/api/server-warmup';
 import { AREAS, DATA_TYPES } from '../../shared/config/constants';
 import { useContextStore } from '../../shared/state/context-store';
 import type { DataType, WorkContext } from '../../shared/types/context';
@@ -34,6 +35,7 @@ function getInitialTheme(): ThemeMode {
 }
 
 function getMainClassName(pathname: string) {
+  if (pathname === '/') return 'overview-main';
   if (pathname.startsWith('/record-detail')) return 'record-detail-main';
   if (pathname.startsWith('/tasks')) return 'tasks-main';
   if (pathname.startsWith('/stats')) return 'stats-main';
@@ -42,9 +44,9 @@ function getMainClassName(pathname: string) {
 }
 
 function getServerWarmupLabel(state: ServerWarmupState) {
-  if (state === 'warming') return 'Server startet';
+  if (state === 'warming') return 'Server wird geweckt';
   if (state === 'ready') return 'Server bereit';
-  if (state === 'failed') return 'Server prüfen';
+  if (state === 'failed') return 'Server braucht länger';
   return 'Server';
 }
 
@@ -83,14 +85,10 @@ export function AppShell() {
 
       try {
         const runtime = getRuntimeConfig();
-        const response = await fetch(runtime.warmupApiBase, {
-          method: 'GET',
-          signal: controller.signal,
-          cache: 'no-store'
-        });
+        const result = await wakeRenderServer(runtime.warmupApiBase, controller.signal);
 
         if (!active) return;
-        setServerWarmupState(response.ok ? 'ready' : 'failed');
+        setServerWarmupState(result.ok ? 'ready' : 'failed');
       } catch {
         if (!active || controller.signal.aborted) return;
         setServerWarmupState('failed');
@@ -165,6 +163,11 @@ export function AppShell() {
         </nav>
 
         <main className={mainClassName}>
+          {serverWarmupState === 'warming' ? (
+            <div className="warmup-banner" role="status">
+              <span className="loading-line">Render-Server wird vorbereitet. Die ersten Daten können einen Moment dauern.</span>
+            </div>
+          ) : null}
           <Outlet />
         </main>
       </div>

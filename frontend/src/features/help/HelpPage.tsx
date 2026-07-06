@@ -1,4 +1,5 @@
 import { DATA_TYPES } from '../../shared/config/constants';
+import { formatNumber } from '../../shared/format/formatters';
 import { getDomainCriteriaForType, qualityCriteria, type QualityCriterion } from '../../shared/legacy/quality';
 
 type HelpSeverity = 'critical' | 'error' | 'optimization';
@@ -390,8 +391,4 @@ function fallbackRecommendation(severity: HelpSeverity) {
   if (severity === 'critical') return 'Diese Angabe sollte zuerst gepflegt werden.';
   if (severity === 'error') return 'Diese Angabe verbessert die Nutzbarkeit des Datensatzes deutlich.';
   return 'Diese Angabe rundet den Datensatz zusätzlich ab.';
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(value);
 }
