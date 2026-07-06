@@ -10,6 +10,8 @@ Aktueller Hinweis:
 - API-Pushdowns bleiben weiterhin nur dort aktiv, wo sie bereits verifiziert
   waren. Nicht verifizierte Feld- oder Wildcard-Abfragen wurden nicht als
   Pushdown reaktiviert.
+- Die konkrete Prüfliste für schnellere API-Pushdowns liegt in
+  `docs/Codex/Datenqualitaetsmonitor_API_Pushdown_TODOs.md`.
 
 Diese Datei ist die kurze, aktive Arbeitsliste. Abgeschlossene Analysen und
 alte Nachweise liegen im Archiv.

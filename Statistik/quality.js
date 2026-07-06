@@ -2203,6 +2203,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_street'],
     fields: ['street', 'address.street', 'addresses.street'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.street,
     recommendation: 'Strasse oder Anschrift ergaenzen.',
     check: (item) => !hasStreetInfo(item)
   },
@@ -2218,6 +2219,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_phone'],
     fields: ['phone', 'phone2', 'addresses.phone'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.phone,
     recommendation: 'Telefonnummer ergaenzen.',
     check: (item) => !hasPhoneInfo(item)
   },
@@ -2233,6 +2235,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -2248,6 +2251,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_email'],
     fields: ['email', 'addresses.email'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.email,
     recommendation: 'E-Mail-Adresse ergaenzen.',
     check: (item) => !hasEmailInfo(item)
   },
@@ -2263,6 +2267,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_website'],
     fields: ['web', 'website', 'url', 'addresses.web'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.website,
     recommendation: 'Webseite ergaenzen.',
     check: (item) => !hasWebsiteInfo(item)
   },
@@ -2362,6 +2367,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['gastro_kitchen'],
     fields: ['kitchenTimeIntervals', 'features', 'features_old'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.kitchenTimeIntervals,
     recommendation: 'Kuecheninformationen ergaenzen.',
     check: (item) => !hasKitchenInfo(item)
   },
@@ -2377,6 +2383,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_street'],
     fields: ['street', 'address.street', 'addresses.street'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.street,
     recommendation: 'Strasse oder Anschrift ergaenzen.',
     check: (item) => !hasStreetInfo(item)
   },
@@ -2392,6 +2399,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_phone'],
     fields: ['phone', 'phone2', 'addresses.phone'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.phone,
     recommendation: 'Telefonnummer ergaenzen.',
     check: (item) => !hasPhoneInfo(item)
   },
@@ -2407,6 +2415,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -2422,6 +2431,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_email'],
     fields: ['email', 'addresses.email'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.email,
     recommendation: 'E-Mail-Adresse ergaenzen.',
     check: (item) => !hasEmailInfo(item)
   },
@@ -2437,6 +2447,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_website'],
     fields: ['web', 'website', 'url', 'addresses.web'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.website,
     recommendation: 'Webseite ergaenzen.',
     check: (item) => !hasWebsiteInfo(item)
   },
@@ -2452,6 +2463,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_price'],
     fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.price,
     recommendation: 'Preisinformation ergaenzen.',
     check: (item) => !hasPriceInfo(item)
   },
@@ -2467,6 +2479,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['event_payment'],
     fields: ['paymentMethods', 'payment_old', 'features'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.eventPayment,
     recommendation: 'Zahlungsmoeglichkeiten ergaenzen.',
     check: (item) => !hasPaymentInfo(item, VALIDATED_FEATURE_VALUES.eventPayments)
   },
