@@ -474,6 +474,79 @@ function buildMissingPushdownQuery(query) {
   return `all:all -${normalized}`;
 }
 
+function unverifiedApiPushdownCandidate({
+  positiveQuery,
+  missingQuery,
+  note
+}) {
+  return Object.freeze({
+    method: 'api_pushdown',
+    positiveQuery,
+    missingQuery,
+    verified: false,
+    verifiedForTypes: [],
+    note
+  });
+}
+
+const API_PUSHDOWN_CANDIDATES = Object.freeze({
+  street: unverifiedApiPushdownCandidate({
+    positiveQuery: 'street:*',
+    missingQuery: 'all:all -street:*',
+    note: 'API-Pushdown-TODO: street:* typuebergreifend gegen echte Datensaetze verifizieren.'
+  }),
+  details: unverifiedApiPushdownCandidate({
+    positiveQuery: 'details:*',
+    missingQuery: 'all:all -details:*',
+    note: 'API-Pushdown-TODO: details:* typuebergreifend gegen sichtbaren Beschreibungstext verifizieren.'
+  }),
+  teaser: unverifiedApiPushdownCandidate({
+    positiveQuery: 'teaser:*',
+    missingQuery: 'all:all -teaser:*',
+    note: 'API-Pushdown-TODO: teaser:* typuebergreifend gegen sichtbaren Teaser-Text verifizieren.'
+  }),
+  email: unverifiedApiPushdownCandidate({
+    positiveQuery: 'email:*',
+    missingQuery: 'all:all -email:*',
+    note: 'API-Pushdown-TODO: email:* gegen sichtbare Datensatz-E-Mail verifizieren; falls noetig emailRequest:* separat pruefen.'
+  }),
+  website: unverifiedApiPushdownCandidate({
+    positiveQuery: 'web:*',
+    missingQuery: 'all:all -web:*',
+    note: 'API-Pushdown-TODO: web:* gegen sichtbare Webseite verifizieren; falls noetig url:* separat pruefen.'
+  }),
+  phone: unverifiedApiPushdownCandidate({
+    positiveQuery: 'phone:*',
+    missingQuery: 'all:all -phone:*',
+    note: 'API-Pushdown-TODO: phone:* gegen sichtbare Telefonnummer verifizieren; falls noetig phone2:* separat pruefen.'
+  }),
+  openings: unverifiedApiPushdownCandidate({
+    positiveQuery: 'openings:*',
+    missingQuery: 'all:all -openings:*',
+    note: 'API-Pushdown-TODO: openings:* nur fuer POI und Gastro verifizieren; Tour bleibt ausgeschlossen.'
+  }),
+  price: unverifiedApiPushdownCandidate({
+    positiveQuery: 'price:*',
+    missingQuery: 'all:all -price:*',
+    note: 'API-Pushdown-TODO: price:*, prices:* und ggf. PRICE_INFO:* gegen sichtbare Preisinformation verifizieren.'
+  }),
+  eventPayment: unverifiedApiPushdownCandidate({
+    positiveQuery: buildQuotedOrQuery('feature', ['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'PayPal', 'kontaktlose Zahlung']),
+    missingQuery: buildMissingPushdownQuery(buildQuotedOrQuery('feature', ['Barzahlung', 'EC-Karte', 'Visa', 'Mastercard', 'PayPal', 'kontaktlose Zahlung'])),
+    note: 'API-Pushdown-TODO: Event-Zahlungsarten als feature-OR-Liste verifizieren.'
+  }),
+  featurePresence: unverifiedApiPushdownCandidate({
+    positiveQuery: 'feature:*',
+    missingQuery: 'all:all -feature:*',
+    note: 'API-Pushdown-TODO: generisches feature:* nur aktivieren, wenn es fachlich komplementaer und nicht zu breit ist.'
+  }),
+  kitchenTimeIntervals: unverifiedApiPushdownCandidate({
+    positiveQuery: 'kitchenTimeIntervals:*',
+    missingQuery: 'all:all -kitchenTimeIntervals:*',
+    note: 'API-Pushdown-TODO: kitchenTimeIntervals:* und passende Kuechen-Textrels gegen Gastro-Daten verifizieren.'
+  })
+});
+
 export function getKeywordValues(item = {}) {
   return collectValueList(item, 'keywords', 'keywords_old');
 }
@@ -1554,13 +1627,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_opening_hours', 'gastro_opening_hours'],
     fields: ['texts[rel=openings]', 'timeIntervals', 'alwaysOpen'],
     method: 'server_scan',
-    api: {
-      positiveQuery: 'openings:*',
-      missingQuery: 'all:all -openings:*',
-      verified: false,
-      verifiedForTypes: [],
-      note: 'Wildcard-Pushdown fachlich verworfen; Oeffnungszeiten werden ueber Server-Scan bewertet.'
-    },
+    api: API_PUSHDOWN_CANDIDATES.openings,
     recommendation: 'Oeffnungszeiten ergaenzen oder aktualisieren.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.opening_hours_missing,
     check: (item) => !hasOpeningHours(item)
@@ -1599,13 +1666,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_details', 'tour_details', 'poi_details', 'gastro_details', 'event_details'],
     fields: ['texts[rel=details]'],
     method: 'server_scan',
-    api: {
-      positiveQuery: 'details:*',
-      missingQuery: 'all:all -details:*',
-      verified: false,
-      verifiedForTypes: [],
-      note: 'Wildcard-Pushdown fachlich verworfen; Beschreibung wird ueber Server-Scan bewertet.'
-    },
+    api: API_PUSHDOWN_CANDIDATES.details,
     recommendation: 'Beschreibung oder Kurzbeschreibung ergaenzen.',
     check: (item) => !hasDescription(item)
   },
@@ -1621,6 +1682,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_street'],
     fields: ['street', 'address.street', 'addresses.street'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.street,
     recommendation: 'Strasse oder Anschrift ergaenzen.',
     check: (item) => !hasStreetInfo(item)
   },
@@ -1636,6 +1698,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_phone'],
     fields: ['phone', 'phone2', 'addresses.phone'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.phone,
     recommendation: 'Telefonnummer ergaenzen.',
     check: (item) => !hasPhoneInfo(item)
   },
@@ -1651,6 +1714,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -1666,6 +1730,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_email'],
     fields: ['email', 'emailRequest', 'addresses.email'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.email,
     recommendation: 'E-Mail-Adresse ergaenzen.',
     check: (item) => !hasEmailInfo(item)
   },
@@ -1681,6 +1746,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_website'],
     fields: ['web', 'website', 'url', 'addresses.web'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.website,
     recommendation: 'Webseite ergaenzen.',
     check: (item) => !hasWebsiteInfo(item)
   },
@@ -1696,6 +1762,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_features'],
     fields: ['features', 'features_old'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.featurePresence,
     recommendation: 'Merkmale pruefen und ergaenzen.',
     check: (item) => !hasFeatureInfo(item)
   },
@@ -1711,6 +1778,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['hotel_price'],
     fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.price,
     recommendation: 'Preisinformation ergaenzen.',
     check: (item) => !hasPriceInfo(item)
   },
@@ -1741,6 +1809,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['tour_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -1786,6 +1855,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_street'],
     fields: ['street', 'address.street', 'addresses.street'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.street,
     recommendation: 'Strasse oder Anschrift ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_street_missing,
     check: (item) => !hasStreetInfo(item)
@@ -1802,6 +1872,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_teaser'],
     fields: ['texts[rel=teaser]'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.teaser,
     recommendation: 'Teaser-Text ergaenzen.',
     check: (item) => !hasTeaserText(item)
   },
@@ -1817,6 +1888,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_email'],
     fields: ['email', 'addresses.email'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.email,
     recommendation: 'E-Mail-Adresse ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_email_missing,
     check: (item) => !hasEmailInfo(item)
@@ -1833,6 +1905,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_website'],
     fields: ['web', 'website', 'url', 'addresses.web'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.website,
     recommendation: 'Webseite ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_website_missing,
     check: (item) => !hasWebsiteInfo(item)
@@ -1849,6 +1922,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_phone'],
     fields: ['phone', 'phone2', 'addresses.phone'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.phone,
     recommendation: 'Telefonnummer ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_phone_missing,
     check: (item) => !hasPhoneInfo(item)
@@ -2027,6 +2101,7 @@ export const qualityCriteria = Object.freeze([
     domainCriterionIds: ['poi_price'],
     fields: ['prices', 'price', 'texts[rel=PRICE_INFO]', 'texts[rel=PRICE_REDUCEDINFO]'],
     method: 'server_scan',
+    api: API_PUSHDOWN_CANDIDATES.price,
     recommendation: 'Preis, Eintritt oder Kostenhinweis ergaenzen.',
     excludedCategories: POI_EXCLUSION_BY_CRITERION.poi_price_missing,
     check: (item) => !hasPriceInfo(item)
