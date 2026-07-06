@@ -1,35 +1,36 @@
 # Datenqualitäts-Monitor - Pflegeaufgaben je Datentyp
 
-Stand: 2026-06-12
+Stand: 2026-07-06
 
 Diese Liste fasst zusammen, welche Pflegeaufgaben pro Datentyp fachlich
-vorkommen können. Sie basiert auf dem `domainQualityModel` in
-`Statistik/quality.js`.
+vorkommen können. Sie basiert auf dem `domainQualityModel` und der operativen
+Liste `qualityCriteria` in `Statistik/quality.js`.
 
-Legende:
+## Legende
 
-- `aktiv`: bereits technisch angebunden
-- `vorbereitet`: fachlich gültig, aber technisch noch nicht voll verifiziert
-- `manüll`: keine automatische Pflegeaufgabe, nur redaktionell prüfbar
-- `qüllseitig`: fachlich relevant, wird aber nicht als normale Pflegeaufgabe
+- `aktiv`: technisch angebunden und score-/listenwirksam
+- `manuell`: keine automatische Pflegeaufgabe, nur redaktionell prüfbar
+- `quellseitig`: fachlich relevant, wird aber nicht als normale Pflegeaufgabe
   im Monitor geführt
 
-Hinweis:
-
-- Diese Liste ist die richtige Grundlage für deine künftige Gewichtung.
-- `Score-Status` und künftige Fehler-Ebenen sind davon getrennt.
-- Aufgaben wie `Geo-Information fehlt` oder `Tour-Basisdaten unvollständig`
-  stehen hier bewusst mit drin, auch wenn sie derzeit nicht als normale
-  Pflegeaufgabe ausgespielt werden.
-- Der aktülle UI-Stand zeigt vorbereitete Prüfungen bereits in der Hilfe
-  und auf der Datensatz-Detailseite, aber noch nicht als automatische
-  Pflegeaufgabe oder Score-Abzug.
+Hinweis: Die früher vorbereiteten Standardkriterien wurden am 2026-07-06 als
+Server-Scan-Regeln aktiviert. API-Pushdowns bleiben nur dort aktiv, wo sie
+bereits belastbar geprüft waren.
 
 ## Hotel
 
 ### Aktiv
 
+- Telefon
+- Straße
+- Beschreibungstext
+- Teaser-Text
+- E-Mail
+- Webseite
+- Merkmale
 - Zahlungsmöglichkeiten
+- Preisinformation
+- Ansprechperson
 - Erreichbarkeit per ÖPNV
 - Fremdsprachenkenntnisse
 - CC-Lizenz
@@ -37,23 +38,11 @@ Hinweis:
 - Buchungslink
 - Bildurheber
 
-### Vorbereitet
-
-- Telefon
-- Strasse
-- Beschreibungstext
-- Teaser-Text
-- E-Mail
-- Webseite
-- Merkmale
-- Preisinformation
-- Ansprechperson
-
-### Manüll
+### Manuell
 
 - Bildqualität redaktionell prüfen
 
-### Qüllseitig / nicht als normale Pflegeaufgabe
+### Quellseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 
@@ -62,24 +51,21 @@ Hinweis:
 ### Aktiv
 
 - Beschreibungstext
+- Teaser-Text
 - Eignung oder Jahreszeit
 - Anreise mit ÖPNV
 - Parken
+- Autor oder Organisation
+- Start- und Zielbeschreibungen
 - CC-Lizenz
 - Bildmaterial
 - Bildurheber
 
-### Vorbereitet
-
-- Teaser-Text
-- Autor oder Organisation
-- Start- und Zielbeschreibungen
-
-### Manüll
+### Manuell
 
 - Bildqualität redaktionell prüfen
 
-### Qüllseitig / nicht als normale Pflegeaufgabe
+### Quellseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 - Tour-Basisdaten unvollständig
@@ -88,7 +74,7 @@ Hinweis:
 
 ### Aktiv
 
-- Strasse
+- Straße
 - Beschreibungstext
 - Teaser-Text
 - E-Mail
@@ -105,15 +91,11 @@ Hinweis:
 - Bildmaterial
 - Bildurheber
 
-### Vorbereitet
-
-- keine weiteren fachlich vorbereiteten Standard-Pflegeaufgaben im aktüllen Modell
-
-### Manüll
+### Manuell
 
 - Bildqualität redaktionell prüfen
 
-### Qüllseitig / nicht als normale Pflegeaufgabe
+### Quellseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 
@@ -121,7 +103,12 @@ Hinweis:
 
 ### Aktiv
 
+- Telefon
+- Straße
 - Beschreibungstext
+- Teaser-Text
+- E-Mail
+- Webseite
 - Öffnungszeiten
 - Zahlungsmöglichkeiten
 - CC-Lizenz
@@ -129,23 +116,15 @@ Hinweis:
 - Fremdsprachenkenntnisse
 - Anfahrt
 - Parkplätze
+- Küche
 - Bildmaterial
 - Bildurheber
 
-### Vorbereitet
-
-- Telefon
-- Strasse
-- Teaser-Text
-- E-Mail
-- Webseite
-- Küche
-
-### Manüll
+### Manuell
 
 - Bildqualität redaktionell prüfen
 
-### Qüllseitig / nicht als normale Pflegeaufgabe
+### Quellseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 
@@ -153,13 +132,8 @@ Hinweis:
 
 ### Aktiv
 
-- ÖPNV-Anreise
-- Bildurheber
-
-### Vorbereitet
-
 - Telefon
-- Strasse
+- Straße
 - Beschreibungstext
 - Teaser-Text
 - E-Mail
@@ -167,12 +141,14 @@ Hinweis:
 - Preisinformationen
 - Zahlungsmöglichkeiten
 - CC-Lizenz
+- ÖPNV-Anreise
+- Bildurheber
 
-### Manüll
+### Manuell
 
 - Bildqualität redaktionell prüfen
 
-### Qüllseitig / nicht als normale Pflegeaufgabe
+### Quellseitig / nicht als normale Pflegeaufgabe
 
 - Geo-Information fehlt
 
@@ -184,23 +160,19 @@ Hinweis:
 - Buchungslink
 - Bildurheber
 
-### Vorbereitet
-
-- keine weiteren fachlich vorbereiteten Standard-Pflegeaufgaben im aktüllen Modell
-
-### Manüll
+### Manuell
 
 - Bildqualität redaktionell prüfen
 
-## Datentyp-übergreifende Qürschnittsaufgaben
+## Datentypübergreifende Querschnittsaufgaben
 
-Diese Aufgaben kommen in mehreren Datentypen vor und sollten bei der
-Gewichtung möglichst konsistent behandelt werden:
+Diese Aufgaben kommen in mehreren Datentypen vor und sollten bei der Gewichtung
+möglichst konsistent behandelt werden:
 
 - Beschreibungstext
 - Teaser-Text
 - Telefon
-- Strasse
+- Straße
 - E-Mail
 - Webseite
 - Öffnungszeiten
@@ -214,19 +186,15 @@ Gewichtung möglichst konsistent behandelt werden:
 - Bildmaterial
 - Bildurheber
 
-## Technischer Bezug für die spätere Gewichtung
+## Technischer Bezug für die Gewichtung
 
-Wenn du mir als Nächstes die Gewichtung gibst, sind für jede Aufgabe diese
-Felder relevant:
+Für jede Aufgabe sind diese Felder relevant:
 
 - Datentyp
 - Aufgabenname
-- Statusgruppe:
-  `aktiv`, `vorbereitet`, `manüll`, `qüllseitig`
-- fachliches Level im Modell:
-  `minimum`, `good`, `very_good`, `supporting`
-- aktülle UI-Priorität:
-  `hoch`, `mittel`, `niedrig`
+- Statusgruppe: `aktiv`, `manuell`, `quellseitig`
+- fachliches Level im Modell: `minimum`, `good`, `very_good`, `supporting`
+- aktuelle UI-Priorität: `hoch`, `mittel`, `niedrig`
 
-Darauf kann ich dir dann sauber die neü 3-Ebenen-Logik
-`Kritische Fehler | Fehler | Leichte Optimierungen` aufbaün.
+Darauf kann die 3-Ebenen-Logik
+`Kritische Fehler | Fehler | Leichte Optimierungen` sauber aufgebaut werden.

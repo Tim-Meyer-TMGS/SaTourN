@@ -1,6 +1,17 @@
 # Datenqualitätsmonitor – Offene TODOs
 
-Stand: 2026-06-30
+Stand: 2026-07-06
+
+Aktueller Hinweis:
+
+- Die bisher vorbereiteten Standard-Prüfungen für Hotel, Tour, Gastro und
+  Event wurden als zentrale Server-Scan-Regeln aktiviert. Sie sind damit für
+  Score, Pflegeaufgaben, Fehlerlisten und Detailansicht wirksam.
+- API-Pushdowns bleiben weiterhin nur dort aktiv, wo sie bereits verifiziert
+  waren. Nicht verifizierte Feld- oder Wildcard-Abfragen wurden nicht als
+  Pushdown reaktiviert.
+- Die konkrete Prüfliste für schnellere API-Pushdowns liegt in
+  `docs/Codex/Datenqualitaetsmonitor_API_Pushdown_TODOs.md`.
 
 Diese Datei ist die kurze, aktive Arbeitsliste. Abgeschlossene Analysen und
 alte Nachweise liegen im Archiv.
@@ -99,6 +110,15 @@ Betroffene Dateien:
 
 ### 5. Weitere Kriterien sauber verifizieren und aktivieren
 
+Erledigt:
+
+- vorbereitete Hotel-, Gastro-, Tour- und Event-Kriterien als zentrale Server-Scan-Regeln aktiviert
+- Count, Fehlerliste, Detailseite und Score nutzen dieselbe Regelbasis
+- Event-Lizenzprüfung ist aktiv und seit 2026-07-06 als API-Pushdown für `Event` verifiziert
+- Gastro-Küchenarten sind seit 2026-07-06 als API-Pushdown über eine
+  bestätigte `cuisine`-OR-Liste aktiv; allgemeine Kücheninformationen bleiben
+  `server_scan`
+
 Offen:
 
 - weitere Hotel-, Gastro-, Tour-, Event- und Package-Kriterien gezielt gegen echte Daten prüfen
@@ -122,7 +142,9 @@ Nachweise:
 
 Offen:
 
-- Preisregel und weitere sichere POI-Ausschlüsse gegen echte Daten absichern
+- Preisregel und weitere sichere POI-Ausschlüsse fachlich gegen echte Daten
+  absichern; Preis-Pushdowns über `price:*`, `prices:*` und `PRICE_INFO:*`
+  sind verworfen
 - Ausschlüsse nur zentral in der Bewertungslogik erweitern, nicht im UI
 
 Betroffene Dateien:

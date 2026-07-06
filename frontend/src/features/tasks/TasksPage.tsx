@@ -23,13 +23,38 @@ const TASK_FAMILY_BY_CRITERION: Record<string, string> = {
   hotel_payment_cash_missing: 'payment_options_missing',
   poi_payment_options_missing: 'payment_options_missing',
   gastro_payment_options_missing: 'payment_options_missing',
+  event_payment_options_missing: 'payment_options_missing',
   hotel_language_english_missing: 'languages_missing',
   poi_languages_missing: 'languages_missing',
   gastro_languages_missing: 'languages_missing',
   hotel_parking_feature_missing: 'parking_missing',
   tour_parking_missing: 'parking_missing',
   poi_parking_feature_missing: 'parking_missing',
-  gastro_parking_feature_missing: 'parking_missing'
+  gastro_parking_feature_missing: 'parking_missing',
+  poi_street_missing: 'street_missing',
+  hotel_street_missing: 'street_missing',
+  gastro_street_missing: 'street_missing',
+  event_street_missing: 'street_missing',
+  poi_phone_missing: 'phone_missing',
+  hotel_phone_missing: 'phone_missing',
+  gastro_phone_missing: 'phone_missing',
+  event_phone_missing: 'phone_missing',
+  poi_email_missing: 'email_missing',
+  hotel_email_missing: 'email_missing',
+  gastro_email_missing: 'email_missing',
+  event_email_missing: 'email_missing',
+  poi_website_missing: 'website_missing',
+  hotel_website_missing: 'website_missing',
+  gastro_website_missing: 'website_missing',
+  event_website_missing: 'website_missing',
+  poi_teaser_missing: 'teaser_missing',
+  hotel_teaser_missing: 'teaser_missing',
+  tour_teaser_missing: 'teaser_missing',
+  gastro_teaser_missing: 'teaser_missing',
+  event_teaser_missing: 'teaser_missing',
+  poi_price_missing: 'price_missing',
+  hotel_price_missing: 'price_missing',
+  event_price_missing: 'price_missing'
 };
 
 const TASK_FAMILY_META: Record<string, TaskFamilyMeta> = {
@@ -180,7 +205,7 @@ function getTaskProblem(id: string) {
     gastro_payment_options_missing: 'Keine der geprüften Zahlungsarten ist als Merkmal hinterlegt.',
     gastro_languages_missing: 'Keine der geprüften Fremdsprachen ist als Merkmal hinterlegt.',
     gastro_parking_feature_missing: 'Das Merkmal "PKW-Parkplatz am Haus" fehlt.',
-    gastro_cuisine_category_missing: 'Keine der geprüften Küchenarten ist als Kategorie hinterlegt.'
+    gastro_cuisine_category_missing: 'Keine der geprüften Küchenarten ist hinterlegt.'
   };
 
   return problems[id] || 'Für diese Datensätze fehlt eine für die Datenpflege relevante Angabe.';
