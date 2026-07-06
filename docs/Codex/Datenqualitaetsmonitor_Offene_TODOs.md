@@ -18,6 +18,9 @@ Erledigt:
 - Hauptseiten-Layoutklassen vereinheitlicht
 - gemeinsame Formatierungs-, Qualitäts-, Kriterien- und Linkbuilding-Helfer
   in `frontend/src/shared/` zentralisiert
+- wichtigste Pflegeaufgaben in der Übersicht werden nach Aufgabenfamilien
+  gruppiert, damit gleiche Aufgaben über mehrere Datentypen nicht doppelt
+  angezeigt werden
 
 Offen:
 

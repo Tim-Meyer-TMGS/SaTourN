@@ -22,6 +22,10 @@ export function textValue(value: unknown): string {
       || textValue(candidate.label)
       || textValue(candidate.value)
       || textValue(candidate.text)
+      || textValue(candidate.content)
+      || textValue(candidate.html)
+      || textValue(candidate.body)
+      || textValue(candidate.description)
       || ''
     );
   }

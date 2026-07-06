@@ -59,6 +59,10 @@ function htmlToPlainText(value: unknown) {
     .trim();
 }
 
+function plainTextValue(value: unknown) {
+  return htmlToPlainText(textValue(value));
+}
+
 function textTypeRank(type: unknown) {
   const normalized = String(type || '').toLowerCase();
   if (normalized === 'text/html') return 0;
@@ -69,7 +73,7 @@ function textTypeRank(type: unknown) {
 function getTextByRel(raw: unknown, rel: string) {
   return getTextsByRel(raw, rel)
     .sort((left, right) => textTypeRank((left as Record<string, unknown>)?.type) - textTypeRank((right as Record<string, unknown>)?.type))
-    .map((entry) => htmlToPlainText((entry as Record<string, unknown>)?.value || (entry as Record<string, unknown>)?.text || (entry as Record<string, unknown>)?.content || entry))
+    .map((entry) => plainTextValue((entry as Record<string, unknown>)?.value || (entry as Record<string, unknown>)?.text || (entry as Record<string, unknown>)?.content || entry))
     .filter(Boolean)[0] || '';
 }
 
@@ -177,6 +181,10 @@ function getOpeningHoursSummary(raw: unknown) {
   return rows.length ? rows.join('\n') : 'Keine Öffnungszeiten angegeben.';
 }
 
+function typeSupportsOpeningHours(type: string) {
+  return ['POI', 'Gastro'].includes(type);
+}
+
 function buildCriteriaSections(item: {
   type: string;
   missingCriteria: string[];
@@ -196,7 +204,7 @@ function buildCriteriaSections(item: {
     status: missing.has(criterion.id)
       ? 'fehlt'
       : fulfilled.has(criterion.id)
-        ? 'erfuellt'
+        ? 'erfüllt'
         : manual.has(criterion.id)
           ? 'nicht bewertbar'
           : 'nicht relevant'
@@ -293,6 +301,7 @@ function buildUsability(raw: unknown, itemType: string, images: DetailImage[]): 
   const hasTransport = hasPublicTransportFeature(raw);
   const bookingRelevant = ['Hotel', 'Package'].includes(itemType);
   const hasBooking = hasBookingLink(raw);
+  const supportsOpeningHours = typeSupportsOpeningHours(itemType);
 
   return [
     { label: 'Open Data', value: licenseOk ? 'ja' : 'nein', ok: licenseOk },
@@ -311,8 +320,10 @@ function buildUsability(raw: unknown, itemType: string, images: DetailImage[]): 
       ok: !bookingRelevant || hasBooking,
       relevant: bookingRelevant
     },
-    { label: 'Öffnungszeiten', value: hasOpeningsValue ? 'vorhanden' : 'fehlt', ok: hasOpeningsValue }
-  ];
+    supportsOpeningHours
+      ? { label: 'Öffnungszeiten', value: hasOpeningsValue ? 'vorhanden' : 'fehlt', ok: hasOpeningsValue }
+      : null
+  ].filter((entry): entry is DetailUsability => Boolean(entry));
 }
 
 export function priorityRank(priority: string | undefined) {
@@ -367,12 +378,12 @@ export function normalizeDetailItem(rawInput: unknown, fallbackType: string): De
     missingCriteria,
     fulfilledCriteria,
     manualCriteria,
-    description: getTextByRel(raw, 'details') || getFirst(raw, ['description', 'details', 'longDescription', 'texts.description', 'presentation.description']),
-    teaser: getTextByRel(raw, 'teaser') || getFirst(raw, ['teaser', 'shortDescription', 'texts.teaser', 'presentation.teaser']),
-    openings: getOpeningHoursSummary(raw),
+    description: getTextByRel(raw, 'details') || plainTextValue(getFirst(raw, ['description', 'details', 'longDescription', 'texts.description', 'presentation.description'])),
+    teaser: getTextByRel(raw, 'teaser') || plainTextValue(getFirst(raw, ['teaser', 'shortDescription', 'texts.teaser', 'presentation.teaser'])),
+    openings: typeSupportsOpeningHours(evaluatedType) ? getOpeningHoursSummary(raw) : '',
     directions: getTextByRel(raw, 'directions') || (hasPublicTransportFeature(raw) ? 'ÖPNV-Information vorhanden.' : 'Keine ÖPNV-Information vorhanden.'),
-    price: getTextByRel(raw, 'PRICE_INFO') || getFirst(raw, ['price', 'prices', 'priceInfo', 'texts.price']),
-    priceReduced: getTextByRel(raw, 'PRICE_REDUCEDINFO') || getFirst(raw, ['priceReduced', 'reducedPrice', 'texts.priceReduced']),
+    price: getTextByRel(raw, 'PRICE_INFO') || plainTextValue(getFirst(raw, ['price', 'prices', 'priceInfo', 'texts.price'])),
+    priceReduced: getTextByRel(raw, 'PRICE_REDUCEDINFO') || plainTextValue(getFirst(raw, ['priceReduced', 'reducedPrice', 'texts.priceReduced'])),
     et4Url: buildVerifiedEt4Url({ type: evaluatedType, globalId: evaluatedGlobalId }) || getFirst(raw, ['et4Url', 'urls.et4', 'links.et4', 'link']),
     web: getRecordWeb(raw),
     email: getRecordEmail(raw),

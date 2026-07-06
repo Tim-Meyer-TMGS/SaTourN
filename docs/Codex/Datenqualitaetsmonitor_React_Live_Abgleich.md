@@ -200,6 +200,9 @@ stabil genug für den nächsten Schritt.
   `frontend/src/shared/records/record-list-links.ts`.
 - Seitenkomponenten behalten nur noch Seitendarstellung und lokale UI-Zustände;
   wiederverwendete Berechnungs- und Linklogik ist in `shared` verschoben.
+- Die Übersicht gruppiert die wichtigsten Pflegeaufgaben jetzt nach denselben
+  fachlichen Aufgabenfamilien wie die Pflegeaufgaben-Seite, damit z. B.
+  Zahlungsarten nicht pro Datentyp doppelt erscheinen.
 
 ## Bekannte Browser-Noise
 

@@ -3,9 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
+    <link rel="shortcut icon" href="%BASE_URL%favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Material+Icons&family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet" />
+    <script>
+      window.addEventListener('unhandledrejection', function (event) {
+        var message = event && event.reason && (event.reason.message || String(event.reason));
+        if (message && message.indexOf('A listener indicated an asynchronous response by returning true') !== -1) {
+          event.preventDefault();
+        }
+      });
+    </script>
     <title>SaTourN Datenqualitätsmonitor</title>
   </head>
   <body>

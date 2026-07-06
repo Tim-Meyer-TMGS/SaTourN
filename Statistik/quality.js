@@ -49,7 +49,7 @@ function normalizeString(value) {
   }
 
   if (typeof value === 'object') {
-    for (const key of ['title', 'Title', 'name', 'Name', 'label', 'Label', 'value', 'Value', 'text', 'Text', 'id', 'ID']) {
+    for (const key of ['title', 'Title', 'name', 'Name', 'label', 'Label', 'value', 'Value', 'text', 'Text', 'content', 'Content', 'html', 'HTML', 'body', 'Body', 'description', 'Description', 'id', 'ID']) {
       const nested = normalizeString(value[key]);
       if (nested) return nested;
     }
