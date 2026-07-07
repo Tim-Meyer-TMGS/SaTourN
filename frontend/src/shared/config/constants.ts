@@ -6,15 +6,15 @@ export const STORAGE_KEYS = {
 
 export const AREAS = [
   ['Sachsen', ''],
-  ['Leipzig', 'Leipzig'],
-  ['Leipzig Region', 'Leipzig Region'],
-  ['Vogtland', 'Vogtland'],
-  ['Erzgebirge', 'Erzgebirge'],
-  ['Oberlausitz', 'Oberlausitz'],
-  ['Sächsische Schweiz', 'Sächsische Schweiz'],
+  ['Chemnitz', 'Chemnitz'],
   ['Dresden', 'Dresden'],
   ['Dresden Elbland', 'Dresden Elbland'],
-  ['Chemnitz', 'Chemnitz']
+  ['Erzgebirge', 'Erzgebirge'],
+  ['Leipzig', 'Leipzig'],
+  ['Leipzig Region', 'Leipzig Region'],
+  ['Oberlausitz', 'Oberlausitz'],
+  ['Sächsische Schweiz', 'Sächsische Schweiz'],
+  ['Vogtland', 'Vogtland']
 ] as const;
 
 export const DATA_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'] as const;

@@ -19,13 +19,13 @@ export const REQUEST_CACHE_TTL_MS = Object.freeze({
 
 export const AREAS = Object.freeze([
   ['Sachsen', ''],
-  ['Leipzig', 'Leipzig'],
-  ['Leipzig Region', 'Leipzig Region'],
-  ['Vogtland', 'Vogtland'],
-  ['Erzgebirge', 'Erzgebirge'],
-  ['Oberlausitz', 'Oberlausitz'],
-  ['Sächsische Schweiz', 'Sächsische Schweiz'],
+  ['Chemnitz', 'Chemnitz'],
   ['Dresden', 'Dresden'],
   ['Dresden Elbland', 'Dresden Elbland'],
-  ['Chemnitz', 'Chemnitz']
+  ['Erzgebirge', 'Erzgebirge'],
+  ['Leipzig', 'Leipzig'],
+  ['Leipzig Region', 'Leipzig Region'],
+  ['Oberlausitz', 'Oberlausitz'],
+  ['Sächsische Schweiz', 'Sächsische Schweiz'],
+  ['Vogtland', 'Vogtland']
 ]);

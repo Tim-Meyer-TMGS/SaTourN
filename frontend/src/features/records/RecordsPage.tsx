@@ -6,6 +6,7 @@ import { formatRecordDate } from '../../shared/format/formatters';
 import { getQualityCriterionLabel } from '../../shared/quality/quality-criteria';
 import { buildTaskAwareRecordDetailUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
+import { InlineLoading, LoadingLine } from '../../shared/ui/LoadingIndicators';
 import {
   loadCriterionRecordsForFrontend,
   loadNonOpenDataRecordsForFrontend,
@@ -151,7 +152,7 @@ export function RecordsPage() {
   const urlTypes = useMemo(() => parseSelectedTypes(urlTypesParam), [urlTypesParam]);
 
   const resultSummary = useMemo(() => {
-    if (loading) return 'Datensätze werden geladen ...';
+    if (loading) return '';
     if (error) return error;
     if (meta.mode === 'ai_search' && meta.prompt) return `KI-Suche: ${rows.length} Datensätze geladen`;
     if (meta.mode === 'non_open_data') return `Nicht Open-Data-fähig: ${rows.length} Datensätze geladen`;
@@ -410,11 +411,11 @@ export function RecordsPage() {
           </label>
           <div className="record-search-actions">
             <button className="context-edit" type="button" disabled={loading} onClick={() => void runRecordSearch('search')}>
-              {loading && mode === 'search' ? 'Sucht ...' : 'Suchen'}
+              {loading && mode === 'search' ? <InlineLoading className="button-loading">Sucht</InlineLoading> : 'Suchen'}
             </button>
             <button className="plain-button icon-text-button" type="button" disabled={loading} onClick={() => void runRecordSearch('ai_search')}>
               <span className="material-icons" aria-hidden="true">auto_awesome</span>
-              {loading && mode === 'ai_search' ? 'KI sucht ...' : 'AI-Search'}
+              {loading && mode === 'ai_search' ? <InlineLoading className="button-loading">KI sucht</InlineLoading> : 'AI-Search'}
             </button>
           </div>
           <small>Du kannst auch direkt eine ID oder global_id eingeben.</small>
@@ -485,7 +486,7 @@ export function RecordsPage() {
       {error ? <div className="overview-message">{error}</div> : null}
 
       <section className="record-result-head">
-        <p>{resultSummary}</p>
+        <p>{loading ? <InlineLoading>Datensätze werden geladen</InlineLoading> : resultSummary}</p>
         <div className="record-actions">
           <button className="context-edit icon-text-button" type="button" disabled={!filteredRows.length} onClick={exportFilteredRowsAsCsv}>
             <span className="material-icons" aria-hidden="true">file_download</span>
@@ -514,7 +515,7 @@ export function RecordsPage() {
               {!pagedRows.length ? (
                 <tr>
                   <td colSpan={9} className="table-empty">
-                    {loading ? <span className="loading-line">Datensätze werden geladen ...</span> : 'Keine Datensätze geladen.'}
+                    {loading ? <LoadingLine>Datensätze werden geladen</LoadingLine> : 'Keine Datensätze geladen.'}
                   </td>
                 </tr>
               ) : pagedRows.map((row) => (

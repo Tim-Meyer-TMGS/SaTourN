@@ -11,6 +11,7 @@ import {
 import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { getTaskFamilyId, getTaskFamilyMeta } from '../../shared/tasks/task-families';
+import { InlineLoading, MetricLoading } from '../../shared/ui/LoadingIndicators';
 import { loadOverviewData, type OverviewData, type OverviewIssue } from './overview-api';
 
 type OverviewTaskIssue = {
@@ -175,41 +176,41 @@ export function OverviewPage() {
       <section className="kpi-grid" aria-label="Kennzahlen">
         <article className="kpi-card">
           <div className="card-label">Qualitäts-Score <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value"><span>{loading ? '...' : (qualityScore ?? '-')}</span> <small>/ 100</small></div>
+          <div className="kpi-value"><span>{loading ? <MetricLoading /> : (qualityScore ?? '-')}</span> <small>/ 100</small></div>
           <div className="score-track"><span style={{ width: `${scoreWidth}%` }} /></div>
           <p>Gesamtbewertung der Datenqualität</p>
         </article>
 
         <article className="kpi-card">
           <div className="card-label">Gesamt-Datensätze <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value">{loading ? '...' : formatNumber(summary.total)}</div>
+          <div className="kpi-value">{loading ? <MetricLoading /> : formatNumber(summary.total)}</div>
           <p>Aktueller Datenbestand</p>
         </article>
 
         <article className="kpi-card">
           <div className="card-label">Gute Datensätze <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value">{loading ? '...' : (hasQualitySummary ? formatNumber(qualitySummary?.good || 0) : '-')}</div>
+          <div className="kpi-value">{loading ? <MetricLoading /> : (hasQualitySummary ? formatNumber(qualitySummary?.good || 0) : '-')}</div>
           <strong>{hasQualitySummary ? `${formatPercent(calculatePercent(qualitySummary?.good || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
           <p>Vollständig und aktuell</p>
         </article>
 
         <article className="kpi-card">
           <div className="card-label">Mit Pflegebedarf <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value">{loading ? '...' : (hasQualitySummary ? formatNumber(qualitySummary?.withIssues || 0) : '-')}</div>
+          <div className="kpi-value">{loading ? <MetricLoading /> : (hasQualitySummary ? formatNumber(qualitySummary?.withIssues || 0) : '-')}</div>
           <strong>{hasQualitySummary ? `${formatPercent(calculatePercent(qualitySummary?.withIssues || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
           <p>Ergänzungen empfohlen</p>
         </article>
 
         <article className="kpi-card">
           <div className="card-label">Kritische Datensätze <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value">{loading ? '...' : (hasQualitySummary ? formatNumber(qualitySummary?.critical || 0) : '-')}</div>
+          <div className="kpi-value">{loading ? <MetricLoading /> : (hasQualitySummary ? formatNumber(qualitySummary?.critical || 0) : '-')}</div>
           <strong>{hasQualitySummary ? `${formatPercent(calculatePercent(qualitySummary?.critical || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
           <p>Dringender Handlungsbedarf</p>
         </article>
 
         <article className="kpi-card">
           <div className="card-label">Open-Data-Quote <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value">{loading ? '...' : formatPercent(summary.openDataQuote)}</div>
+          <div className="kpi-value">{loading ? <MetricLoading /> : formatPercent(summary.openDataQuote)}</div>
           <strong>{loading ? '-' : `${formatNumber(summary.openData)} von ${formatNumber(summary.total)}`}</strong>
           <p>Open-Data-fähige Datensätze</p>
         </article>
@@ -223,7 +224,7 @@ export function OverviewPage() {
             <h2>Wichtigste Pflegeaufgaben</h2>
           </header>
           <div className="task-list" aria-live="polite">
-            {loading ? <div className="inline-loading">Pflegeaufgaben werden geladen ...</div> : null}
+            {loading ? <InlineLoading>Pflegeaufgaben werden geladen</InlineLoading> : null}
             {!loading && !topIssues.length ? (
               <div className="empty-note">Für die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</div>
             ) : null}

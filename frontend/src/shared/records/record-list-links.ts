@@ -26,14 +26,15 @@ export function buildIssueRecordsUrl(issue: IssueLinkInput, contextType: string)
 
 export function buildTaskRecordsUrl(task: TaskLinkInput, contextType: string, type = '') {
   const params = new URLSearchParams();
-  params.set('criterionId', type ? (task.criteriaByType[type] || task.criterionId) : task.criterionId);
+  const selectedType = type || contextType;
+  const criterionId = selectedType ? (task.criteriaByType[selectedType] || task.criterionId) : task.criterionId;
+
+  params.set('criterionId', criterionId);
   if (task.criterionIds.length > 1) params.set('criterionIds', task.criterionIds.join(','));
   params.set('from', 'tasks');
 
-  if (type) {
-    params.set('type', type);
-  } else if (contextType) {
-    params.set('type', contextType);
+  if (selectedType) {
+    params.set('type', selectedType);
   } else if (task.affectedTypes.length) {
     params.set('types', task.affectedTypes.join(','));
   }
