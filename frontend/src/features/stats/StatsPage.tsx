@@ -173,8 +173,8 @@ export function StatsPage() {
                   <tr>
                     <th>Datentyp</th>
                     <th>Anzahl</th>
-                    <th>Open-Data-fähig</th>
-                    <th>Nicht Open-Data-fähig</th>
+                    <th>Open-Data-Lizenz</th>
+                    <th>Keine Open-Data-Lizenz</th>
                     <th>Anteil</th>
                   </tr>
                 </thead>
@@ -236,7 +236,7 @@ export function StatsPage() {
       ) : null}
 
       <section className="stats-data-note" aria-label="Datenbasis">
-        <span><span className="material-icons" aria-hidden="true">info</span>Die dargestellten Zahlen basieren auf allen verfügbaren Daten in Ihrem Arbeitskontext.</span>
+        <span><span className="material-icons" aria-hidden="true">info</span>Die Open-Data-Zahlen basieren auf der Datensatzlizenz, nicht auf dem Terminstatus von Veranstaltungen.</span>
         <strong><span className="material-icons" aria-hidden="true">check_circle</span>Datenbasis: Vollständig</strong>
       </section>
     </>
