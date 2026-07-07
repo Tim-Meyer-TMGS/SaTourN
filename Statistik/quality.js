@@ -2881,7 +2881,7 @@ export function getMostCommonMissingCriterion(items = []) {
 }
 
 export function getOpenDataCapableCount(items = []) {
-  return safeArray(items).filter((item) => item?.isOpenData === true).length;
+  return safeArray(items).filter((item) => hasValidDatasetLicense(item?.raw || item)).length;
 }
 
 export function getAutoCheckCriteriaCount() {
