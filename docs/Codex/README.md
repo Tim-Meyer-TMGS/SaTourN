@@ -1,46 +1,45 @@
 # Codex-Dokumentation
 
-Stand: 2026-06-22
+Stand: 2026-07-06
 
-Diese Datei beschreibt, welche Codex-Dokumente aktiv genutzt werden und was
-nur noch als Archivmaterial vorliegt.
+Diese Datei beschreibt den aktuellen Einstieg in die Codex-Dokumentation. Ziel
+ist ein kleiner Kontext für neue Arbeitssitzungen.
 
-## Standardkontext für neue Arbeitssitzungen
-
-Diese beiden Dateien zuerst lesen:
+## Immer zuerst lesen
 
 1. `Datenqualitaetsmonitor_Aktueller_Projektstand.md`
 2. `Datenqualitaetsmonitor_Offene_TODOs.md`
 
-## Aktive Fachdokumente bei Bedarf
+## Aktive Arbeitsdokumente
 
-- `Datenqualitaetsmonitor_Entscheidungen.md`
-  Architektur-, API-, UI- und Bewertungsentscheidungen.
+- `Datenqualitaetsmonitor_API_Pushdown_TODOs.md`
+  offene API-Pushdown-Prüfungen, aktivierte Pushdowns und verworfene Prefixe
+
+- `Datenqualitaetsmonitor_React_Live_Abgleich.md`
+  Abgleich React-Preview gegen produktive Live-Seite
+
 - `Datenqualitaetsmonitor_Architektur_und_Zielbild.md`
-  aktuelle Systemarchitektur, Zielstruktur für Framework-Migration,
-  Übergabe und späteres Eigenhosting.
-- `Datenqualitaetsmonitor_Frontend_Migrationsplan.md`
-  konkrete Zielarchitektur für `React + Vite + TypeScript`, Migrationsreihenfolge,
-  Frontend-Grenzen und Pilotmigration.
-- `GitHub_Pages_Frontend_Preview.md`
-  Einrichtung und Test-URL für die parallele GitHub-Pages-Preview des neuen
-  React-Frontends.
+  Architektur, Zielbild für Übergabe und späteres Eigenhosting
+
 - `Datenqualitaetsmonitor_Pflegeaufgaben_je_Datentyp.md`
-  Übersicht, welche Pflegeaufgaben pro Datentyp fachlich vorkommen können.
+  Pflegeaufgaben nach Datentyp als Grundlage für Gewichtung und Hilfetexte
+
 - `one_intelligence_Kontext_und_Fehlerbilder.md`
-  Kontext für KI-Modelle, Mailentwürfe und Fehlerbeschreibungen.
+  fachlicher Kontext für KI-Mailentwürfe und KI-Suche
+
 - `Render_OI_Einrichtung.md`
-  produktive Einrichtung der one.intelligence-Anbindung in Render.
+  Render-Konfiguration für one.intelligence
 
 ## Archiv
 
-Nicht mehr automatisch laden. Nur gezielt nachschlagen:
+Nicht automatisch laden. Nur gezielt lesen, wenn ein historischer Nachweis
+gebraucht wird:
 
 - `Archiv/2026-06-15_Analyse-und-Nachweise/`
-  historische API-Prüfungen, Pushdown-Nachweise und Kriterienmatrix
+- `Archiv/2026-07-06_Doku-Aufraeumung/`
 
 ## Arbeitsregel
 
-Neue Codex-Sitzungen starten mit Projektstand und offener TODO-Liste.
-Archivdokumente nur dann lesen, wenn eine konkrete technische oder fachliche
-Nachweisfrage offen ist.
+Neue Codex-Sitzungen starten mit Projektstand und offener TODO-Liste. Danach
+nur das konkrete Fach- oder Technikdokument öffnen, das für die aktuelle
+Aufgabe nötig ist.

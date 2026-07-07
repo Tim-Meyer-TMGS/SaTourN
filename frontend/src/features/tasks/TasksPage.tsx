@@ -6,6 +6,7 @@ import { calculatePercent, formatNumber, formatPercent } from '../../shared/form
 import { findQualityCriterion, isOpenDataRelevantCriterion } from '../../shared/quality/quality-criteria';
 import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
+import { InlineLoading, LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
 import { loadOverviewData, type OverviewData, type OverviewIssue } from '../overview/overview-api';
 
 const ROWS_PER_PAGE = 10;
@@ -459,7 +460,7 @@ export function TasksPage() {
           <span className="task-kpi-icon critical material-icons" aria-hidden="true">flag</span>
           <div>
             <span>Offene Aufgaben</span>
-            <strong>{loading ? '...' : formatNumber(summary.totalTasks)}</strong>
+            <strong>{loading ? <MetricLoading /> : formatNumber(summary.totalTasks)}</strong>
             <small>Offene Pflegeaufgaben</small>
           </div>
         </article>
@@ -467,7 +468,7 @@ export function TasksPage() {
           <span className="task-kpi-icon critical material-icons" aria-hidden="true">priority_high</span>
           <div>
             <span>Hohe Priorität</span>
-            <strong>{loading ? '...' : formatNumber(summary.highTasks)}</strong>
+            <strong>{loading ? <MetricLoading /> : formatNumber(summary.highTasks)}</strong>
             <small>{summary.totalTasks ? `${formatPercent(calculatePercent(summary.highTasks, summary.totalTasks))} der Aufgaben` : '-'}</small>
           </div>
         </article>
@@ -475,7 +476,7 @@ export function TasksPage() {
           <span className="task-kpi-icon review material-icons" aria-hidden="true">groups</span>
           <div>
             <span>Betroffene Datensätze</span>
-            <strong>{loading ? '...' : formatNumber(summary.affectedHits)}</strong>
+            <strong>{loading ? <MetricLoading /> : formatNumber(summary.affectedHits)}</strong>
             <small>Treffer in Pflegeaufgaben</small>
           </div>
         </article>
@@ -483,7 +484,7 @@ export function TasksPage() {
           <span className="task-kpi-icon good material-icons" aria-hidden="true">pie_chart</span>
           <div>
             <span>Open-Data-Relevanz</span>
-            <strong>{loading ? '...' : formatPercent(calculatePercent(summary.openDataHits, summary.affectedHits))}</strong>
+            <strong>{loading ? <MetricLoading /> : formatPercent(calculatePercent(summary.openDataHits, summary.affectedHits))}</strong>
             <small>Der betroffenen Treffer</small>
           </div>
         </article>
@@ -491,7 +492,7 @@ export function TasksPage() {
           <span className="task-kpi-icon blue material-icons" aria-hidden="true">track_changes</span>
           <div>
             <span>Potenzial</span>
-            <strong>{loading ? '...' : summary.potential}</strong>
+            <strong>{loading ? <MetricLoading /> : summary.potential}</strong>
             <small>Durch Pflege erreichbar</small>
           </div>
         </article>
@@ -557,7 +558,7 @@ export function TasksPage() {
               </thead>
               <tbody aria-live="polite">
                 {loading ? (
-                  <tr><td colSpan={6} className="table-empty">Pflegeaufgaben werden geladen ...</td></tr>
+                  <tr><td colSpan={6} className="table-empty"><LoadingLine>Pflegeaufgaben werden geladen</LoadingLine></td></tr>
                 ) : null}
                 {!loading && !visibleTasks.length ? (
                   <tr><td colSpan={6} className="table-empty">Für die aktuelle Auswahl wurden keine Pflegeaufgaben gefunden.</td></tr>
@@ -596,7 +597,7 @@ export function TasksPage() {
             </table>
           </div>
           <footer className="table-footer">
-            <span>{loading ? '-' : `${formatNumber(filteredTasks.length)} Pflegeaufgaben`}</span>
+            <span>{loading ? <InlineLoading>Lädt</InlineLoading> : `${formatNumber(filteredTasks.length)} Pflegeaufgaben`}</span>
             <div className="pager" aria-label="Pflegeaufgaben Seiten">
               <button className="icon-button" type="button" aria-label="Vorherige Seite" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>
                 <span className="material-icons" aria-hidden="true">chevron_left</span>

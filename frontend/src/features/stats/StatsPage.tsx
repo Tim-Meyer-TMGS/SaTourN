@@ -5,6 +5,7 @@ import { calculatePercent, clampPercent, formatNumber, formatPercent } from '../
 import { buildOpenDataSummary } from '../../shared/quality/quality-metrics';
 import { buildNonOpenDataRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
+import { LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
 import { loadOverviewData, type OverviewData, type OverviewStatisticRow } from '../overview/overview-api';
 
 const TYPE_COLORS = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9'];
@@ -128,7 +129,7 @@ export function StatsPage() {
           <span className="stats-kpi-icon blue material-icons" aria-hidden="true">storage</span>
           <div>
             <span>Gesamtzahl Datensätze</span>
-            <strong>{loading ? '...' : formatNumber(summary.totalRecords)}</strong>
+            <strong>{loading ? <MetricLoading /> : formatNumber(summary.totalRecords)}</strong>
             <small>100 % aller Datensätze</small>
           </div>
         </article>
@@ -136,15 +137,15 @@ export function StatsPage() {
           <span className="stats-kpi-icon green material-icons" aria-hidden="true">lock_open</span>
           <div>
             <span>Open-Data-fähig</span>
-            <strong>{loading ? '...' : formatNumber(summary.openDataRecords)}</strong>
-            <small>{loading ? '...' : `${formatPercent(summary.openDataQuote)} aller Datensätze`}</small>
+            <strong>{loading ? <MetricLoading /> : formatNumber(summary.openDataRecords)}</strong>
+            <small>{loading ? <MetricLoading /> : `${formatPercent(summary.openDataQuote)} aller Datensätze`}</small>
           </div>
         </article>
         <article className="stats-kpi-card">
           <span className="stats-kpi-icon purple material-icons" aria-hidden="true">percent</span>
           <div>
             <span>Open-Data-Quote</span>
-            <strong>{loading ? '...' : formatPercent(summary.openDataQuote)}</strong>
+            <strong>{loading ? <MetricLoading /> : formatPercent(summary.openDataQuote)}</strong>
             <small>Verhältnis Open-Data-fähig</small>
           </div>
         </article>
@@ -152,8 +153,8 @@ export function StatsPage() {
           <span className="stats-kpi-icon amber material-icons" aria-hidden="true">pie_chart</span>
           <div>
             <span>Nicht Open-Data-fähig</span>
-            <strong>{loading ? '...' : formatNumber(summary.nonOpenDataRecords)}</strong>
-            <small>{loading ? '...' : `${formatPercent(summary.nonOpenDataQuote)} aller Datensätze`}</small>
+            <strong>{loading ? <MetricLoading /> : formatNumber(summary.nonOpenDataRecords)}</strong>
+            <small>{loading ? <MetricLoading /> : `${formatPercent(summary.nonOpenDataQuote)} aller Datensätze`}</small>
           </div>
         </article>
       </section>
@@ -163,25 +164,33 @@ export function StatsPage() {
           <header className="panel-head"><h2>Verteilung nach Datentyp (Anzahl)</h2></header>
           <div className="stats-donut-layout">
             <div className="stats-type-donut" aria-label="Verteilung nach Datentyp" style={{ background: donutBackground }}>
-              <span>{loading ? '...' : formatNumber(summary.totalRecords)}</span>
+              <span>{loading ? <MetricLoading /> : formatNumber(summary.totalRecords)}</span>
               <small>Gesamt</small>
             </div>
             <div className="stats-chart-table-wrap">
               <table className="stats-mini-table">
                 <thead>
-                  <tr><th>Datentyp</th><th>Anzahl</th><th>Anteil</th></tr>
+                  <tr>
+                    <th>Datentyp</th>
+                    <th>Anzahl</th>
+                    <th>Open-Data-fähig</th>
+                    <th>Nicht Open-Data-fähig</th>
+                    <th>Anteil</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={3} className="table-empty">Statistik wird geladen ...</td></tr>
+                    <tr><td colSpan={5} className="table-empty"><LoadingLine>Statistik wird geladen</LoadingLine></td></tr>
                   ) : null}
                   {!loading && !rows.length ? (
-                    <tr><td colSpan={3} className="table-empty">Keine Daten gefunden.</td></tr>
+                    <tr><td colSpan={5} className="table-empty">Keine Daten gefunden.</td></tr>
                   ) : null}
                   {!loading && rows.map((row, index) => (
                     <tr key={row.type}>
                       <td><span className="legend-dot" style={{ background: TYPE_COLORS[index % TYPE_COLORS.length] }} />{row.type}</td>
                       <td>{formatNumber(row.total)}</td>
+                      <td>{formatNumber(row.openData)}</td>
+                      <td>{formatNumber(row.nonOpenData)}</td>
                       <td>{formatPercent(row.inventoryShare)}</td>
                     </tr>
                   ))}

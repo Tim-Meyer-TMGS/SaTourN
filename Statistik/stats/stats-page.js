@@ -57,6 +57,8 @@ function renderStatsTypeDistribution({
       <tr>
         <td><span class="legend-dot" style="background:${palette[index % palette.length]}"></span>${escapeHtml(row.type)}</td>
         <td>${formatNumber(row.statistikCount)}</td>
+        <td>${formatNumber(row.openDataCount)}</td>
+        <td>${formatNumber(row.nonOpenDataCount)}</td>
         <td>${formatPercent(row.inventoryShare)}</td>
       </tr>
     `).join('');
