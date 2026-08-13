@@ -6,7 +6,7 @@ import { buildOpenDataSummary } from '../../shared/quality/quality-metrics';
 import { buildNonOpenDataRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
-import { loadOverviewData, type OverviewData, type OverviewStatisticRow } from '../overview/overview-api';
+import { loadStatisticRows, type OverviewStatisticRow } from '../overview/overview-api';
 
 const TYPE_COLORS = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9'];
 
@@ -68,8 +68,8 @@ function buildTypeDonutBackground(rows: StatsRow[]) {
   return `conic-gradient(${segments.join(', ')})`;
 }
 
-function buildStatsPageModel(data: OverviewData | null) {
-  const rows = mapStatsRows(data?.statisticRows || []);
+function buildStatsPageModel(statisticRows: OverviewStatisticRow[]) {
+  const rows = mapStatsRows(statisticRows);
   return {
     rows,
     summary: buildStatsSummary(rows),
@@ -80,7 +80,7 @@ function buildStatsPageModel(data: OverviewData | null) {
 
 export function StatsPage() {
   const { context } = useContextStore();
-  const [data, setData] = useState<OverviewData | null>(null);
+  const [statisticRows, setStatisticRows] = useState<OverviewStatisticRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -92,12 +92,12 @@ export function StatsPage() {
       setError('');
 
       try {
-        const result = await loadOverviewData(context);
+        const result = await loadStatisticRows(context);
         if (!active) return;
-        setData(result);
+        setStatisticRows(result);
       } catch (caughtError) {
         if (!active) return;
-        setData(null);
+        setStatisticRows([]);
         setError(caughtError instanceof Error ? caughtError.message : 'Open-Data-Statistik konnte nicht geladen werden.');
       } finally {
         if (active) setLoading(false);
@@ -111,7 +111,7 @@ export function StatsPage() {
     };
   }, [context]);
 
-  const statsModel = useMemo(() => buildStatsPageModel(data), [data]);
+  const statsModel = useMemo(() => buildStatsPageModel(statisticRows), [statisticRows]);
   const { rows, summary, fallbackTypes, donutBackground } = statsModel;
   const showLicenseTask = !loading && summary.nonOpenDataRecords > 0;
 

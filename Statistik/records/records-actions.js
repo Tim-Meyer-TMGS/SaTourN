@@ -53,6 +53,7 @@ export async function handleRecordAiSearchSubmit({
 
     if (els.recordSearchInput) els.recordSearchInput.value = '';
     if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
+    if (els.recordAuthorshipFilter) els.recordAuthorshipFilter.value = '';
     if (els.recordStatusFilter) els.recordStatusFilter.value = '';
     if (els.recordIssueFilter) els.recordIssueFilter.value = '';
     hideRecordAutocomplete();

@@ -9,14 +9,29 @@ export function setRecordCountText(node, value, formatNumber) {
 }
 
 export function fillRecordDynamicFiltersState({ els, rows }) {
-  if (!els.recordCategoryFilter) return;
-  const current = els.recordCategoryFilter.value;
+  const current = els.recordCategoryFilter?.value || '';
   const categories = Array.from(new Set(rows.map((row) => row.category).filter(Boolean)))
     .sort((a, b) => a.localeCompare(b, 'de'))
     .slice(0, 80);
-  els.recordCategoryFilter.replaceChildren(new Option('Kategorie: Alle', ''));
-  categories.forEach((category) => els.recordCategoryFilter.append(new Option(`Kategorie: ${category}`, category)));
-  if (categories.includes(current)) els.recordCategoryFilter.value = current;
+  if (els.recordCategoryFilter) {
+    els.recordCategoryFilter.replaceChildren(new Option('Kategorie: Alle', ''));
+    categories.forEach((category) => els.recordCategoryFilter.append(new Option(`Kategorie: ${category}`, category)));
+    if (categories.includes(current)) els.recordCategoryFilter.value = current;
+  }
+
+  if (els.recordAuthorshipFilter) {
+    const selectedAuthorship = els.recordAuthorshipFilter.value;
+    const authorships = Array.from(new Set(rows.flatMap((row) => row.authorships || [])))
+      .sort((a, b) => a.localeCompare(b, 'de'));
+    els.recordAuthorshipFilter.replaceChildren(new Option('Autorschaft: Alle', ''));
+    authorships.forEach((authorship) => {
+      const label = /tourismus marketing gesellschaft sachsen/i.test(authorship)
+        ? `TMGS (${authorship})`
+        : authorship;
+      els.recordAuthorshipFilter.append(new Option(label, authorship));
+    });
+    if (authorships.includes(selectedAuthorship)) els.recordAuthorshipFilter.value = selectedAuthorship;
+  }
 }
 
 export function applyPendingRecordViewState({ els, state, types }) {
@@ -61,6 +76,7 @@ export function applyRecordFiltersState({
   const query = (els.recordSearchInput?.value || '').trim();
   const type = els.recordTypeFilter?.value || '';
   const category = els.recordCategoryFilter?.value || '';
+  const authorship = els.recordAuthorshipFilter?.value || '';
   const status = els.recordStatusFilter?.value || '';
   const issue = els.recordIssueFilter?.value || '';
 
@@ -68,6 +84,7 @@ export function applyRecordFiltersState({
     query,
     type,
     category,
+    authorship,
     status,
     issue,
     qualityCriteria,
@@ -94,6 +111,7 @@ export function resetRecordFiltersState({
   if (els.recordAiSearchInput) els.recordAiSearchInput.value = '';
   if (els.recordTypeFilter) els.recordTypeFilter.value = '';
   if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
+  if (els.recordAuthorshipFilter) els.recordAuthorshipFilter.value = '';
   if (els.recordStatusFilter) els.recordStatusFilter.value = '';
   if (els.recordIssueFilter) els.recordIssueFilter.value = '';
   state.recordServerSearchKeys = new Set();
@@ -118,6 +136,7 @@ export function applyQuickRecordFilterState({
 }) {
   if (els.recordSearchInput) els.recordSearchInput.value = '';
   if (els.recordCategoryFilter) els.recordCategoryFilter.value = '';
+  if (els.recordAuthorshipFilter) els.recordAuthorshipFilter.value = '';
   if (els.recordStatusFilter) els.recordStatusFilter.value = '';
   if (els.recordIssueFilter) els.recordIssueFilter.value = '';
   state.recordServerSearchKeys = new Set();

@@ -6,6 +6,7 @@ export type RecordRow = {
   city: string;
   region: string;
   category: string;
+  authorships: string[];
   updatedAt: string;
   qualityStatus: string;
   qualityScore: number | null;
@@ -23,5 +24,7 @@ export type RecordSearchMeta = {
   criterionId?: string;
   criterionLabel?: string;
   estimatedTotalItems: number;
+  nextCursor?: string | number | null;
+  supportsPagination?: boolean;
   truncated: boolean;
 };

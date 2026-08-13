@@ -56,6 +56,7 @@ function buildRecordsCsv(rows: RecordRow[]) {
     'Ort',
     'Gebiet',
     'Kategorie',
+    'Autorschaft',
     'Status',
     'Score',
     'Hauptproblem',
@@ -72,6 +73,7 @@ function buildRecordsCsv(rows: RecordRow[]) {
     row.city,
     row.region,
     row.category,
+    row.authorships.join(', '),
     row.qualityStatus,
     row.qualityScore ?? '',
     row.primaryIssue,
@@ -121,8 +123,27 @@ function parseSelectedTypes(value: string) {
   return splitUniqueValues(value).filter((entry) => DATA_TYPE_SET.has(entry));
 }
 
+function mergeUniqueRecordRows(existingRows: RecordRow[], nextRows: RecordRow[]) {
+  const seen = new Set(existingRows.map((row) => row.globalId || `${row.type}:${row.id}`));
+  const mergedRows = [...existingRows];
+
+  nextRows.forEach((row) => {
+    const key = row.globalId || `${row.type}:${row.id}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    mergedRows.push(row);
+  });
+
+  return mergedRows;
+}
+
 function shouldResetLoadedRows(mode: RecordSearchMeta['mode']) {
   return mode === 'ai_search' || mode === 'criterion' || mode === 'non_open_data';
+}
+
+function formatAuthorshipLabel(name: string) {
+  if (/tourismus marketing gesellschaft sachsen/i.test(name)) return `TMGS (${name})`;
+  return name;
 }
 
 export function RecordsPage() {
@@ -138,8 +159,10 @@ export function RecordsPage() {
     truncated: false
   });
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [authorshipFilter, setAuthorshipFilter] = useState('');
   const [issueFilter, setIssueFilter] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(25);
@@ -150,17 +173,20 @@ export function RecordsPage() {
   const urlCriterionIds = useMemo(() => splitUniqueValues(urlCriterionIdsParam), [urlCriterionIdsParam]);
   const urlType = searchParams.get('type') || '';
   const urlTypes = useMemo(() => parseSelectedTypes(urlTypesParam), [urlTypesParam]);
-
   const resultSummary = useMemo(() => {
     if (loading) return '';
     if (error) return error;
     if (meta.mode === 'ai_search' && meta.prompt) return `KI-Suche: ${rows.length} Datensätze geladen`;
-    if (meta.mode === 'non_open_data') return `Nicht Open-Data-fähig: ${rows.length} Datensätze geladen`;
-    if (meta.mode === 'criterion') return `Gefiltert nach Pflegeaufgabe: ${meta.criterionLabel || meta.criterionId || 'Auswahl'} - ${rows.length} Datensätze geladen`;
+    if (meta.mode === 'non_open_data') return `Nicht Open-Data-fähig: Seite ${page} mit ${rows.length} von ${meta.estimatedTotalItems} Datensätzen`;
+    if (meta.mode === 'criterion' && meta.supportsPagination === false) {
+      const extra = meta.truncated ? ' - weitere Treffer benötigen einen Server-Scan' : '';
+      return `Gefiltert nach Pflegeaufgabe: ${meta.criterionLabel || meta.criterionId || 'Auswahl'} - ${rows.length} erste Treffer geladen${extra}`;
+    }
+    if (meta.mode === 'criterion') return `Gefiltert nach Pflegeaufgabe: ${meta.criterionLabel || meta.criterionId || 'Auswahl'} - Seite ${page} mit ${rows.length} von ${meta.estimatedTotalItems} Datensätzen`;
     if (!rows.length) return 'Noch keine Datensätze geladen.';
     const extra = meta.truncated ? ' - Ergebnisliste gekürzt' : '';
     return `${rows.length} Datensätze geladen${extra}`;
-  }, [error, loading, meta, rows.length]);
+  }, [error, loading, meta, page, rows.length]);
 
   const categories = useMemo(() => {
     return Array.from(new Set(rows.map((row) => row.category).filter(Boolean))).sort((left, right) => left.localeCompare(right, 'de'));
@@ -175,6 +201,11 @@ export function RecordsPage() {
       .sort((left, right) => left.label.localeCompare(right.label, 'de'));
   }, [rows]);
 
+  const authorships = useMemo(() => {
+    return Array.from(new Set([authorshipFilter, ...rows.flatMap((row) => row.authorships)].filter(Boolean)))
+      .sort((left, right) => formatAuthorshipLabel(left).localeCompare(formatAuthorshipLabel(right), 'de'));
+  }, [authorshipFilter, rows]);
+
   const activeTypeFilter = urlCriterionId
     ? urlType
     : context.type;
@@ -183,10 +214,11 @@ export function RecordsPage() {
     return rows.filter((row) => {
       if (activeTypeFilter && row.type !== activeTypeFilter) return false;
       if (categoryFilter && row.category !== categoryFilter) return false;
+      if (authorshipFilter && !row.authorships.includes(authorshipFilter)) return false;
       if (issueFilter && !row.missingCriteria.includes(issueFilter)) return false;
       return true;
     });
-  }, [activeTypeFilter, categoryFilter, issueFilter, rows]);
+  }, [activeTypeFilter, authorshipFilter, categoryFilter, issueFilter, rows]);
 
   const quickCounts = useMemo(() => {
     return Object.fromEntries(
@@ -196,27 +228,50 @@ export function RecordsPage() {
       ])
     ) as Record<(typeof QUICK_FILTERS)[number]['id'], number>;
   }, [rows]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const usesServerPagination = (meta.mode === 'criterion' || meta.mode === 'non_open_data') && meta.supportsPagination !== false;
+  const canLoadMoreServerScanRows = meta.mode === 'criterion'
+    && meta.supportsPagination === false
+    && meta.nextCursor !== null
+    && meta.nextCursor !== undefined
+    && !loadingMore
+    && !loading;
+  const totalVisibleRows = usesServerPagination ? Math.max(meta.estimatedTotalItems, filteredRows.length) : filteredRows.length;
+  const pageCount = Math.max(1, Math.ceil(totalVisibleRows / pageSize));
   const currentPage = Math.min(page, pageCount);
+  const remotePage = usesServerPagination ? currentPage : 1;
 
   const pagedRows = useMemo(() => {
+    if (usesServerPagination) return filteredRows;
     const startIndex = (currentPage - 1) * pageSize;
     return filteredRows.slice(startIndex, startIndex + pageSize);
-  }, [currentPage, filteredRows, pageSize]);
+  }, [currentPage, filteredRows, pageSize, usesServerPagination]);
 
   const pageRangeText = useMemo(() => {
     if (!filteredRows.length) return '0 Datensätze';
+    if (usesServerPagination && (categoryFilter || authorshipFilter || issueFilter)) {
+      return `${filteredRows.length} Treffer auf dieser Seite`;
+    }
     const startIndex = (currentPage - 1) * pageSize + 1;
-    const endIndex = Math.min(filteredRows.length, currentPage * pageSize);
-    return `${startIndex}-${endIndex} von ${filteredRows.length}`;
-  }, [currentPage, filteredRows.length, pageSize]);
-
+    const endIndex = usesServerPagination
+      ? Math.min(totalVisibleRows, startIndex + filteredRows.length - 1)
+      : Math.min(filteredRows.length, currentPage * pageSize);
+    return `${startIndex}-${endIndex} von ${totalVisibleRows}`;
+  }, [authorshipFilter, categoryFilter, currentPage, filteredRows.length, issueFilter, pageSize, totalVisibleRows, usesServerPagination]);
   const activeUrlCriterionIds = useMemo(() => {
     if (urlCriterionIds.length) return urlCriterionIds;
     return urlCriterionId ? [urlCriterionId] : [];
   }, [urlCriterionId, urlCriterionIds]);
   const currentListUrl = `${location.pathname}${location.search}`;
+  const requestedListKey = [
+    urlListMode,
+    urlCriterionId,
+    urlCriterionIdsParam,
+    urlType,
+    urlTypesParam,
+    context.area,
+    context.city,
+    context.type
+  ].join('|');
 
   function resolveRowCriterionId(row: RecordRow) {
     if (issueFilter && row.missingCriteria.includes(issueFilter)) return issueFilter;
@@ -238,6 +293,13 @@ export function RecordsPage() {
   }, [currentListUrl, filteredRows, issueFilter, rows.length]);
 
   useEffect(() => {
+    setPage(1);
+    setCategoryFilter('');
+    setAuthorshipFilter('');
+    setIssueFilter('');
+  }, [requestedListKey]);
+
+  useEffect(() => {
     let active = true;
 
     async function loadRequestedRecordList() {
@@ -254,26 +316,27 @@ export function RecordsPage() {
       setLoading(true);
       setError('');
       setMode('search');
-      setPage(1);
-      setIssueFilter('');
 
       try {
         const result = urlListMode === 'non_open_data'
           ? await loadNonOpenDataRecordsForFrontend({
             context,
-            selectedTypes: selectedTypes.length ? selectedTypes : (context.type ? [context.type] : [])
+            selectedTypes: selectedTypes.length ? selectedTypes : (context.type ? [context.type] : []),
+            page: remotePage,
+            pageSize
           })
           : await loadCriterionRecordsForFrontend({
             criterionId: urlCriterionId,
             criterionIds: urlCriterionIds,
             context,
             selectedType: selectedTypes[0] || '',
-            selectedTypes
+            selectedTypes,
+            page: remotePage,
+            pageSize
           });
         if (!active) return;
         setRows(result.rows);
         setMeta(result.meta);
-        setCategoryFilter('');
         saveRecordListState(result.rows, currentListUrl, (row) => {
           const rowCriterionId = urlListMode === 'non_open_data'
             ? (row.missingCriteria.includes('license_missing') ? 'license_missing' : '')
@@ -310,12 +373,50 @@ export function RecordsPage() {
     context.city,
     context.type,
     currentListUrl,
+    remotePage,
+    pageSize,
     urlListMode,
     urlCriterionId,
     urlCriterionIds,
     urlType,
     urlTypes
   ]);
+
+  async function loadMoreServerScanRows() {
+    if (!canLoadMoreServerScanRows || !urlCriterionId) return;
+
+    const selectedTypes = urlTypes.length
+      ? urlTypes
+      : [urlType].filter((entry) => DATA_TYPE_SET.has(entry));
+
+    setLoadingMore(true);
+    setError('');
+
+    try {
+      const result = await loadCriterionRecordsForFrontend({
+        criterionId: urlCriterionId,
+        criterionIds: urlCriterionIds,
+        context,
+        selectedType: selectedTypes[0] || '',
+        selectedTypes,
+        page: 1,
+        pageSize,
+        cursor: meta.nextCursor
+      });
+
+      const mergedRows = mergeUniqueRecordRows(rows, result.rows);
+      setRows(mergedRows);
+      setMeta({
+        ...result.meta,
+        estimatedTotalItems: Math.max(result.meta.estimatedTotalItems, mergedRows.length)
+      });
+      saveRecordListState(mergedRows, currentListUrl, buildDetailUrl);
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Weitere Treffer konnten nicht geladen werden.');
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function runRecordSearch(nextMode: 'search' | 'ai_search') {
     const trimmedQuery = query.trim();
@@ -334,12 +435,15 @@ export function RecordsPage() {
         mode: nextMode,
         query: trimmedQuery,
         context,
-        selectedType: context.type
+        selectedType: context.type,
+        page: 1,
+        pageSize
       });
       saveRecordListState(result.rows, currentListUrl);
       setRows(result.rows);
       setMeta(result.meta);
       setCategoryFilter('');
+      setAuthorshipFilter('');
       setIssueFilter('');
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : 'Datensätze konnten nicht geladen werden.';
@@ -363,6 +467,7 @@ export function RecordsPage() {
 
   function resetRecordFilters() {
     setCategoryFilter('');
+    setAuthorshipFilter('');
     setIssueFilter('');
     setPage(1);
 
@@ -440,6 +545,19 @@ export function RecordsPage() {
             <option value="">Kategorie: Alle</option>
             {categories.map((category) => (
               <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          <span>Autorschaft</span>
+          <select value={authorshipFilter} onChange={(event) => {
+            setAuthorshipFilter(event.target.value);
+            setPage(1);
+          }}>
+            <option value="">Autorschaft: Alle</option>
+            {authorships.map((authorship) => (
+              <option key={authorship} value={authorship}>{formatAuthorshipLabel(authorship)}</option>
             ))}
           </select>
         </label>
@@ -562,6 +680,12 @@ export function RecordsPage() {
               ))}
             </select>
           </label>
+          {canLoadMoreServerScanRows ? (
+            <button className="plain-button icon-text-button" type="button" disabled={loadingMore} onClick={() => void loadMoreServerScanRows()}>
+              <span className="material-icons" aria-hidden="true">expand_more</span>
+              {loadingMore ? <InlineLoading className="button-loading">Lädt weitere Treffer</InlineLoading> : 'Weitere Treffer laden'}
+            </button>
+          ) : null}
           <div className="pager" aria-label="Datensatz Seiten">
             <button className="icon-button" type="button" aria-label="Vorherige Seite" disabled={currentPage <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
               <span className="material-icons" aria-hidden="true">chevron_left</span>

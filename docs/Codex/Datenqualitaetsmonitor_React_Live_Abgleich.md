@@ -223,3 +223,61 @@ App-Fehler und API-Fehler in der Console sichtbar bleiben.
 2. React-Preview im GitHub-Pages-Build auf Desktop und Mobile visuell prüfen
 3. Detailseite und Fehlerlistenansicht gegen mehrere echte Datensätze testen
 4. Übergabedokumentation für Entwickler ergänzen
+
+## Umgesetzt am 2026-07-07: Count- und Listenabrufe getrennt
+
+- Die React-Statistik lädt nur noch Statistik-Counts über `loadStatisticRows`.
+- Die React-Pflegeaufgaben laden nur noch Pflegeaufgaben-/Issue-Counts über `loadOverviewIssues`.
+- Die kombinierte Übersicht nutzt weiterhin `loadOverviewData`, weil sie Kennzahlen und Aufgaben nebeneinander darstellen muss.
+- Vollständige Datensatzlisten werden weiterhin nur in der Datensatzansicht geladen, zum Beispiel beim Öffnen einer Pflegeaufgabe oder einer Nicht-Open-Data-Liste.
+- Kein Backend-Cache wurde ergänzt, da die kostenlose Betriebsvariante dafür nicht als Grundlage genutzt werden soll.
+
+## Umgesetzt am 2026-07-07: Datensatzlisten paginiert laden
+
+- Die React-Datensatzliste lädt Pflegeaufgabenlisten und Nicht-Open-Data-Listen jetzt seitenweise.
+- `RecordsPage` gibt `page` und `pageSize` an die Datenloader weiter und lädt beim Blättern erneut vom Server.
+- `records-api.ts` nutzt für `/api/quality/scan` und Search-Aufrufe `limit` und `offset`, statt große Listen vollständig vorzuhalten.
+- Normale Suche, ID-Suche und KI-Suche bleiben funktional erhalten; die teuren Listenmodi sind die erste Optimierungsstufe.
+- Bei gruppierten Pflegeaufgaben über mehrere Kriterien oder Typen wird die Seitenmenge pro Teilrequest begrenzt und anschließend dedupliziert.
+
+## Umgesetzt am 2026-07-07: Pagination nur für pushdown-fähige Fehlerlisten
+
+Die Datensatzlisten verwenden jetzt eine hybride Pagination:
+
+- API-Pushdown-fähige Pflegeaufgaben nutzen echte serverseitige Seiten über `limit` und `offset`.
+- Nicht Open-Data-fähige Listen nutzen ebenfalls serverseitige Pagination.
+- `server_scan`-Pflegeaufgaben verwenden keinen Ergebnis-Offset, weil der Server erst nach dem Laden der Quelldaten bewertet. Ein Offset würde dort nicht die nächste Fehlerseite laden, sondern einen anderen Ausschnitt der Rohdaten und wäre fachlich falsch.
+
+Für `server_scan`-Pflegeaufgaben zeigt die React-Ansicht deshalb eine begrenzte erste Trefferliste ohne normale Seiten-Navigation. Ein späterer Ausbau sollte hier cursorbasiert erfolgen, z. B. über einen expliziten `nextCursor` aus `/api/quality/scan`.
+## Umgesetzt am 2026-07-07: Request-Deduplizierung und Parallelitätslimit
+
+Der React-API-Client `frontend/src/shared/api/http-client.ts` bündelt jetzt identische laufende Requests und begrenzt parallele Netzwerkaufrufe auf vier gleichzeitige Requests.
+
+Ziel:
+
+- weniger doppelte Abrufe beim Seitenwechsel und Re-Render
+- weniger Last auf Render und der META-API
+- weniger abgebrochene Requests durch Request-Spitzen
+- keine Änderung an fachlicher Qualitätslogik, Scoreberechnung oder API-Pushdown-Entscheidungen
+
+Wichtig:
+
+- Es handelt sich nicht um einen dauerhaften Ergebnis-Cache.
+- Sobald ein Request abgeschlossen ist, wird er aus der In-Flight-Liste entfernt.
+- Requests mit eigenem `AbortSignal` werden nicht dedupliziert, damit ein abgebrochener Aufrufer keinen gemeinsam genutzten Request beendet.
+
+## Umgesetzt am 2026-07-07: Cursor-Nachladen für Server-Scan-Fehlerlisten
+
+Nicht pushdown-fähige Pflegeaufgaben werden in der React-Datensatzliste jetzt cursorbasiert nachgeladen.
+
+Verhalten:
+
+- API-Pushdown-Listen behalten normale Seitenzahlen über `limit` und `offset`.
+- Nicht-Open-Data-Listen behalten normale Seitenzahlen.
+- `server_scan`-Listen nutzen `page.nextCursor` aus `/api/quality/scan` und zeigen `Weitere Treffer laden`.
+- Neue Treffer werden an die vorhandene Liste angehängt und nach `global_id` bzw. `type:id` dedupliziert.
+
+Einschränkung:
+
+- Cursor-Nachladen wird nur für genau eine Kriterium-Typ-Kombination aktiviert.
+- Gruppierte Pflegeaufgaben über mehrere Kriterien oder Datentypen bleiben auf eine begrenzte erste Trefferliste beschränkt, weil dafür mehrere Cursor nötig wären.

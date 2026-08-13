@@ -7,7 +7,7 @@ import { findQualityCriterion, isOpenDataRelevantCriterion } from '../../shared/
 import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { InlineLoading, LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
-import { loadOverviewData, type OverviewData, type OverviewIssue } from '../overview/overview-api';
+import { loadOverviewIssues, type OverviewIssue } from '../overview/overview-api';
 
 const ROWS_PER_PAGE = 10;
 
@@ -371,7 +371,7 @@ function computePotential(tasks: TaskRow[]) {
 
 export function TasksPage() {
   const { context } = useContextStore();
-  const [data, setData] = useState<OverviewData | null>(null);
+  const [issues, setIssues] = useState<OverviewIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<TaskFilters>({ query: '', priority: '', type: '', impact: '' });
@@ -386,12 +386,12 @@ export function TasksPage() {
       setError('');
 
       try {
-        const result = await loadOverviewData(context);
+        const result = await loadOverviewIssues(context);
         if (!active) return;
-        setData(result);
+        setIssues(result.issues);
       } catch (caughtError) {
         if (!active) return;
-        setData(null);
+        setIssues([]);
         setError(caughtError instanceof Error ? caughtError.message : 'Pflegeaufgaben konnten nicht geladen werden.');
       } finally {
         if (active) setLoading(false);
@@ -405,7 +405,7 @@ export function TasksPage() {
     };
   }, [context]);
 
-  const tasks = useMemo(() => buildTaskRows(data?.issues || []), [data]);
+  const tasks = useMemo(() => buildTaskRows(issues), [issues]);
   const filteredTasks = useMemo(() => filterTasks(tasks, filters), [tasks, filters]);
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / ROWS_PER_PAGE));
   const visibleTasks = filteredTasks.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);

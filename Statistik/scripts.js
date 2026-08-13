@@ -519,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
     recordAutocompleteList: document.getElementById('record-autocomplete-list'),
     recordTypeFilter: document.getElementById('record-type-filter'),
     recordCategoryFilter: document.getElementById('record-category-filter'),
+    recordAuthorshipFilter: document.getElementById('record-authorship-filter'),
     recordStatusFilter: document.getElementById('record-status-filter'),
     recordIssueFilter: document.getElementById('record-issue-filter'),
     recordResetFilters: document.getElementById('record-reset-filters'),
@@ -1928,13 +1929,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function exportRecordListCsv() {
     if (!state.filteredRecordRows.length) return;
     const rows = [
-      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'Qualitätsstatus', 'Qualitäts-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
+      ['Titel', 'Typ', 'Ort', 'Gebiet', 'Kategorie', 'Autorschaft', 'Qualitätsstatus', 'Qualitäts-Score', 'Hauptproblem', 'Fehlende Kriterien', 'ID', 'global_id', 'Aktualisiert', 'Datenbasis'],
       ...state.filteredRecordRows.map((row) => [
         row.title,
         row.type,
         row.city,
         row.region,
         row.category,
+        (row.authorships || []).join(', '),
         row.qualityStatus,
         row.qualityScore ?? '',
         row.primaryIssue,

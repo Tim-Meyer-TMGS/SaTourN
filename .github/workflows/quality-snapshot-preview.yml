@@ -1,0 +1,38 @@
+name: Build quality snapshot preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-snapshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Build static quality snapshots
+        env:
+          QUALITY_SNAPSHOT_SOURCE: proxy
+          QUALITY_SNAPSHOT_SEARCH_PROXY_URL: https://satourn.onrender.com/api/search
+          QUALITY_SNAPSHOT_REQUEST_DELAY_MS: 50
+        run: npm run quality:snapshot:files
+
+      - name: Upload snapshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-snapshot-preview
+          path: frontend/public/quality-snapshots
+          if-no-files-found: error
+          retention-days: 7

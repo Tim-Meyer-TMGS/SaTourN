@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "check": "node --check index.js && node --check lib/config.js && node --check lib/oi-config.js && node --check lib/cache.js && node --check lib/kv-store.js && node --check lib/quality-cache.js && node --check lib/open-data-rules.js && node --check lib/search-utils.js && node --check routes/search.js && node --check routes/records.js && node --check routes/oi.js && node --check routes/quality.js && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs && node --check scripts/run-quality-snapshot.mjs",
+    "check": "node --check index.js && node --check lib/config.js && node --check lib/oi-config.js && node --check lib/cache.js && node --check lib/kv-store.js && node --check lib/file-key-value-store.js && node --check lib/quality-cache.js && node --check lib/quality-snapshot-contract.js && node --check lib/quality-snapshot-store.js && node --check lib/open-data-rules.js && node --check lib/search-utils.js && node --check routes/search.js && node --check routes/records.js && node --check routes/oi.js && node --check routes/quality.js && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs && node --check scripts/run-quality-snapshot.mjs && node --check scripts/run-quality-snapshot-cli.mjs && node --check scripts/test-quality-snapshot-storage.mjs",
     "diagnose:quality-examples": "node scripts/diagnose-quality-examples.mjs",
     "diagnose:quality-examples:json": "node scripts/diagnose-quality-examples.mjs --json",
-    "quality:snapshot": "node scripts/run-quality-snapshot.mjs",
+    "quality:snapshot": "node scripts/run-quality-snapshot-cli.mjs",
+    "quality:snapshot:files": "node scripts/run-quality-snapshot-cli.mjs --output-dir frontend/public/quality-snapshots --contexts-file config/quality-snapshot-contexts.json",
+    "test:snapshot-storage": "node scripts/test-quality-snapshot-storage.mjs",
     "update:pagesbuilder-json": "node Pages-Builder/scripts/update-pagesbuilder-json.mjs"
   },
   "dependencies": {

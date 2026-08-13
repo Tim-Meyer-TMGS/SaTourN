@@ -110,7 +110,7 @@ export function initRecords({
   documentObject.addEventListener('click', (event) => {
     if (!event.target.closest?.('.record-search-block')) hideRecordAutocomplete();
   });
-  [els.recordTypeFilter, els.recordCategoryFilter, els.recordStatusFilter, els.recordIssueFilter].forEach((node) => {
+  [els.recordTypeFilter, els.recordCategoryFilter, els.recordAuthorshipFilter, els.recordStatusFilter, els.recordIssueFilter].forEach((node) => {
     node?.addEventListener('change', () => {
       state.recordPage = 1;
       if ((node === els.recordIssueFilter || node === els.recordTypeFilter) && els.recordIssueFilter?.value) {

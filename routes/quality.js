@@ -116,6 +116,21 @@ function getKeywordValues(rawItem) {
   ];
 }
 
+function getRecordAuthorships(rawItem) {
+  const addresses = Array.isArray(rawItem?.addresses) ? rawItem.addresses : [];
+  const addressNames = addresses.flatMap((entry) => {
+    const relation = firstText(entry, ['rel'])?.toLowerCase();
+    if (relation !== 'author' && relation !== 'organisation' && relation !== 'organization') return [];
+    const name = firstText(entry, ['name', 'company', 'title', 'value']);
+    return name ? [name] : [];
+  });
+  const directNames = [
+    firstText(rawItem, ['author']),
+    firstText(rawItem, ['organisation', 'organization'])
+  ];
+  return Array.from(new Set([...addressNames, ...directNames].filter(Boolean)));
+}
+
 function normalizeEt4PageType(type) {
   const normalized = String(type || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
   if (normalized === 'poi' || normalized === 'pointofinterest') return 'POI';
@@ -146,6 +161,7 @@ function reduceItemForResponse(item, criterion) {
     title: firstText(item, ['title', 'Title', 'name', 'Name', 'headline', 'presentation.title', 'raw.title', 'raw.name', 'raw.presentation.title']) || 'Ohne Titel',
     type,
     category,
+    authorships: getRecordAuthorships(raw),
     region,
     city: firstText(item, ['city', 'place', 'town', 'municipality', 'address.city', 'raw.city', 'raw.place']),
     license,

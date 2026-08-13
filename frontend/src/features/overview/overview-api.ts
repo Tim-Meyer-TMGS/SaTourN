@@ -104,6 +104,11 @@ async function loadStatisticRow(type: string, context: WorkContext): Promise<Ove
   };
 }
 
+export async function loadStatisticRows(context: WorkContext): Promise<OverviewStatisticRow[]> {
+  const targetTypes = context.type ? [context.type] : [...DATA_TYPES];
+  return Promise.all(targetTypes.map((type) => loadStatisticRow(type, context)));
+}
+
 async function loadQualitySummary(context: WorkContext): Promise<OverviewQualitySummary | null> {
   if (!hasConcreteQualityContext(context)) return null;
 
@@ -133,17 +138,16 @@ async function loadIssueCount(criterionId: string, type: string, context: WorkCo
   return extractTotal(payload);
 }
 
-export async function loadOverviewData(context: WorkContext): Promise<OverviewData> {
+export async function loadOverviewIssues(context: WorkContext): Promise<{
+  issues: OverviewIssue[];
+  qualitySummary: OverviewQualitySummary | null;
+  qualitySummaryAvailable: boolean;
+}> {
   const targetTypes = context.type ? [context.type] : [...DATA_TYPES];
-
-  const [statisticRows, qualitySummary] = await Promise.all([
-    Promise.all(targetTypes.map((type) => loadStatisticRow(type, context))),
-    loadQualitySummary(context).catch(() => null)
-  ]);
+  const qualitySummary = await loadQualitySummary(context).catch(() => null);
 
   if (qualitySummary) {
     return {
-      statisticRows,
       issues: qualitySummary.issueSummary || [],
       qualitySummary,
       qualitySummaryAvailable: true
@@ -187,9 +191,20 @@ export async function loadOverviewData(context: WorkContext): Promise<OverviewDa
     ));
 
   return {
-    statisticRows,
     issues,
     qualitySummary: null,
     qualitySummaryAvailable: false
+  };
+}
+
+export async function loadOverviewData(context: WorkContext): Promise<OverviewData> {
+  const [statisticRows, issueData] = await Promise.all([
+    loadStatisticRows(context),
+    loadOverviewIssues(context)
+  ]);
+
+  return {
+    statisticRows,
+    ...issueData
   };
 }
