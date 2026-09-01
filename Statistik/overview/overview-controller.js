@@ -69,7 +69,9 @@ export async function loadOverviewDataAsync({
     if (statisticResult.status === 'fulfilled') {
       state.latestRows = statisticResult.value;
     } else if (!isAbortLikeError(statisticResult.reason)) {
+      state.latestRows = [];
       console.error('Statistik-Counts konnten nicht geladen werden.', statisticResult.reason);
+      showMessage('Die Statistik-Counts konnten nicht vollständig geladen werden.');
     }
 
     if (qualityResult.status === 'fulfilled') {

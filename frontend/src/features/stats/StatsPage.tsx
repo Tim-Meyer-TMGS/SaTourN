@@ -6,14 +6,17 @@ import { buildOpenDataSummary } from '../../shared/quality/quality-metrics';
 import { buildNonOpenDataRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
+import { PageGuidance } from '../../shared/ui/PageGuidance';
 import { loadStatisticRows, type OverviewStatisticRow } from '../overview/overview-api';
 
-const TYPE_COLORS = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9'];
+const TYPE_COLORS = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9', '#64748b'];
 
 type StatsRow = {
   type: string;
   total: number;
   openData: number;
+  licensed: number;
+  isOther: boolean;
   nonOpenData: number;
   openDataQuote: number;
   inventoryShare: number;
@@ -25,6 +28,7 @@ type StatsSummary = {
   nonOpenDataRecords: number;
   openDataQuote: number;
   nonOpenDataQuote: number;
+  licenseMissingRecords: number;
 };
 
 function mapStatsRows(rows: OverviewStatisticRow[]): StatsRow[] {
@@ -36,6 +40,8 @@ function mapStatsRows(rows: OverviewStatisticRow[]): StatsRow[] {
       type: row.type,
       total: row.total,
       openData: row.openData,
+      licensed: row.licensed,
+      isOther: row.isOther === true,
       nonOpenData: Math.max(0, row.total - row.openData),
       openDataQuote: calculatePercent(row.openData, row.total),
       inventoryShare: calculatePercent(row.total, totalRecords)
@@ -50,7 +56,10 @@ function buildStatsSummary(rows: StatsRow[]): StatsSummary {
     openDataRecords: summary.openData,
     nonOpenDataRecords: summary.notOpenData,
     openDataQuote: summary.openDataQuote,
-    nonOpenDataQuote: summary.notOpenDataQuote
+    nonOpenDataQuote: summary.notOpenDataQuote,
+    licenseMissingRecords: rows
+      .filter((row) => !row.isOther)
+      .reduce((sum, row) => sum + Math.max(0, row.total - row.licensed), 0)
   };
 }
 
@@ -73,7 +82,7 @@ function buildStatsPageModel(statisticRows: OverviewStatisticRow[]) {
   return {
     rows,
     summary: buildStatsSummary(rows),
-    fallbackTypes: rows.map((row) => row.type),
+    fallbackTypes: rows.filter((row) => !row.isOther).map((row) => row.type),
     donutBackground: buildTypeDonutBackground(rows)
   };
 }
@@ -97,8 +106,9 @@ export function StatsPage() {
         setStatisticRows(result);
       } catch (caughtError) {
         if (!active) return;
+        console.error('Open-Data-Statistik konnte nicht geladen werden.', caughtError);
         setStatisticRows([]);
-        setError(caughtError instanceof Error ? caughtError.message : 'Open-Data-Statistik konnte nicht geladen werden.');
+        setError('Open-Data-Statistik konnte nicht geladen werden. Bitte aktualisiere die Seite.');
       } finally {
         if (active) setLoading(false);
       }
@@ -113,14 +123,18 @@ export function StatsPage() {
 
   const statsModel = useMemo(() => buildStatsPageModel(statisticRows), [statisticRows]);
   const { rows, summary, fallbackTypes, donutBackground } = statsModel;
-  const showLicenseTask = !loading && summary.nonOpenDataRecords > 0;
+  const showLicenseTask = !loading && summary.licenseMissingRecords > 0;
 
   return (
     <>
       <section className="overview-hero">
         <h1>Open-Data-Statistik</h1>
-        <p>Aggregierte Kennzahlen für Ihren Arbeitskontext.</p>
+        <p>Aggregierte Kennzahlen für deinen Arbeitskontext.</p>
       </section>
+
+      <PageGuidance title="Hier zählt die tatsächliche Open-Data-Veröffentlichung" icon="published_with_changes">
+        Die Open-Data-Zahl kommt aus der öffentlichen Sachsen-Experience. Datensätze ohne gültige offene Lizenz sind eine separate Pflegegruppe und deshalb nicht mit der Differenz zum Gesamtbestand gleichzusetzen.
+      </PageGuidance>
 
       {error ? <div className="overview-message">{error}</div> : null}
 
@@ -136,7 +150,7 @@ export function StatsPage() {
         <article className="stats-kpi-card">
           <span className="stats-kpi-icon green material-icons" aria-hidden="true">lock_open</span>
           <div>
-            <span>Open-Data-fähig</span>
+            <span>Offene Daten</span>
             <strong>{loading ? <MetricLoading /> : formatNumber(summary.openDataRecords)}</strong>
             <small>{loading ? <MetricLoading /> : `${formatPercent(summary.openDataQuote)} aller Datensätze`}</small>
           </div>
@@ -146,13 +160,13 @@ export function StatsPage() {
           <div>
             <span>Open-Data-Quote</span>
             <strong>{loading ? <MetricLoading /> : formatPercent(summary.openDataQuote)}</strong>
-            <small>Verhältnis Open-Data-fähig</small>
+            <small>Anteil der veröffentlichten offenen Daten</small>
           </div>
         </article>
         <article className="stats-kpi-card">
           <span className="stats-kpi-icon amber material-icons" aria-hidden="true">pie_chart</span>
           <div>
-            <span>Nicht Open-Data-fähig</span>
+            <span>Nicht als Open Data veröffentlicht</span>
             <strong>{loading ? <MetricLoading /> : formatNumber(summary.nonOpenDataRecords)}</strong>
             <small>{loading ? <MetricLoading /> : `${formatPercent(summary.nonOpenDataQuote)} aller Datensätze`}</small>
           </div>
@@ -173,8 +187,8 @@ export function StatsPage() {
                   <tr>
                     <th>Datentyp</th>
                     <th>Anzahl</th>
-                    <th>Open-Data-Lizenz</th>
-                    <th>Keine Open-Data-Lizenz</th>
+                    <th>Offene Daten</th>
+                    <th>Nicht veröffentlicht</th>
                     <th>Anteil</th>
                   </tr>
                 </thead>
@@ -225,8 +239,8 @@ export function StatsPage() {
             <p className="stats-task-copy">Datensätze ohne gültige Open-Data-Lizenz direkt in den Pflegeaufgaben bearbeiten.</p>
           </div>
           <div className="stats-task-metric">
-            <strong>{formatNumber(summary.nonOpenDataRecords)}</strong>
-            <small>{formatPercent(summary.nonOpenDataQuote)} nicht Open-Data-fähig</small>
+            <strong>{formatNumber(summary.licenseMissingRecords)}</strong>
+            <small>ohne gültige Open-Data-Lizenz</small>
           </div>
           <Link className="primary-action stats-task-link" to={buildNonOpenDataRecordsUrl(fallbackTypes, context.type)}>
             Pflegeaufgabe öffnen
@@ -236,8 +250,11 @@ export function StatsPage() {
       ) : null}
 
       <section className="stats-data-note" aria-label="Datenbasis">
-        <span><span className="material-icons" aria-hidden="true">info</span>Die Open-Data-Zahlen basieren auf der Datensatzlizenz, nicht auf dem Terminstatus von Veranstaltungen.</span>
-        <strong><span className="material-icons" aria-hidden="true">check_circle</span>Datenbasis: Vollständig</strong>
+        <span><span className="material-icons" aria-hidden="true">info</span>Die Zahl der offenen Daten stammt aus der Experience open-data-sachsen-tourismus. Die Lizenz-Pflegeaufgabe wird separat im Statistikbestand ermittelt.</span>
+        <strong>
+          <span className="material-icons" aria-hidden="true">{error ? 'error_outline' : loading ? 'hourglass_top' : 'check_circle'}</span>
+          {error ? 'Datenbasis: nicht vollständig' : loading ? 'Datenbasis wird geladen' : 'Datenbasis: vollständig'}
+        </strong>
       </section>
     </>
   );

@@ -6,7 +6,9 @@ import { pathToFileURL } from 'url';
 import {
   API_KEY,
   BASE_URL,
+  COUNT_TEMPLATE,
   EXPERIENCE,
+  OPEN_DATA_EXPERIENCE,
   REQUEST_TIMEOUT_MS,
   TEMPLATE
 } from '../lib/config.js';
@@ -31,7 +33,8 @@ import {
   combineSearchQueries,
   normalizeOffsetParam,
   normalizeQueryParam,
-  OPEN_DATA_LICENSE_QUERY
+  OPEN_DATA_LICENSE_QUERY,
+  parseMetaResponseText
 } from '../lib/search-utils.js';
 import {
   evaluateQualityForItem,
@@ -114,9 +117,9 @@ function buildContextQuery({ area = '', city = '' } = {}) {
   return parts.join(' AND ');
 }
 
-async function fetchJsonPage({ type, query, limit, offset }) {
+async function fetchJsonPage({ type, query, limit, offset, openDataPublished = false, countOnly = false }) {
   await sleep(REQUEST_DELAY_MS);
-  const targetUrl = buildSnapshotSearchUrl({ type, query, limit, offset });
+  const targetUrl = buildSnapshotSearchUrl({ type, query, limit, offset, openDataPublished, countOnly });
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -129,24 +132,24 @@ async function fetchJsonPage({ type, query, limit, offset }) {
     if (!response.ok) {
       throw new Error(`Snapshot source HTTP ${response.status}: ${text.slice(0, 300)}`);
     }
-    return JSON.parse(text.trim());
+    return parseMetaResponseText(text);
   } finally {
     clearTimeout(timeout);
   }
 }
 
-function buildSnapshotSearchUrl({ type, query, limit, offset }) {
+function buildSnapshotSearchUrl({ type, query, limit, offset, openDataPublished = false, countOnly = false }) {
   if (SNAPSHOT_SOURCE_MODE === 'direct') {
-    if (!API_KEY) throw new Error('LICENSEKEY is required for direct snapshot requests.');
+    if (!openDataPublished && !API_KEY) throw new Error('LICENSEKEY is required for protected direct snapshot requests.');
     return buildSearchUrl({
       baseUrl: BASE_URL,
-      experience: EXPERIENCE,
-      template: TEMPLATE,
+      experience: openDataPublished ? OPEN_DATA_EXPERIENCE : EXPERIENCE,
+      template: countOnly ? COUNT_TEMPLATE : TEMPLATE,
       type,
       qParam: query,
       limit,
       offset,
-      apiKey: API_KEY
+      apiKey: openDataPublished ? '' : API_KEY
     });
   }
 
@@ -158,11 +161,13 @@ function buildSnapshotSearchUrl({ type, query, limit, offset }) {
   url.searchParams.set('query', query || '');
   url.searchParams.set('limit', String(limit));
   url.searchParams.set('offset', String(offset || 0));
+  if (openDataPublished) url.searchParams.set('openDataPublished', 'true');
+  if (countOnly) url.searchParams.set('countOnly', 'true');
   return url.toString();
 }
 
-async function fetchCount(type, query) {
-  const payload = await fetchJsonPage({ type, query, limit: 1, offset: 0 });
+async function fetchCount(type, query, { openDataPublished = false } = {}) {
+  const payload = await fetchJsonPage({ type, query, limit: 1, offset: 0, openDataPublished, countOnly: true });
   return Number(extractTotal(payload) || 0);
 }
 
@@ -348,12 +353,13 @@ function addListItem(listBuckets, criterion, type, query, item) {
 
 async function scanType({ type, query, rows, issueMap, listBuckets, overallStatusCounts }) {
   const openDataQuery = combineSearchQueries(query, OPEN_DATA_LICENSE_QUERY);
-  const [statistikCount, openDataCount] = await Promise.all([
+  const [statistikCount, openDataCount, licensedCount] = await Promise.all([
     fetchCount(type, query),
+    fetchCount(type, query, { openDataPublished: true }),
     fetchCount(type, openDataQuery)
   ]);
 
-  rows.push({ type, statistikCount, openDataCount });
+  rows.push({ type, statistikCount, openDataCount, licensedCount });
 
   const typeStats = {
     type,
@@ -517,6 +523,23 @@ async function buildSnapshotForContext(store, context) {
     }
   }
 
+  if (!context.type) {
+    const openDataQuery = combineSearchQueries(context.query, OPEN_DATA_LICENSE_QUERY);
+    const [aggregateTotal, aggregateOpenData, aggregateLicensed] = await Promise.all([
+      fetchCount('', context.query),
+      fetchCount('', context.query, { openDataPublished: true }),
+      fetchCount('', openDataQuery)
+    ]);
+    const otherRow = {
+      type: 'Weitere (City, Area, Article, Web)',
+      statistikCount: Math.max(0, aggregateTotal - rows.reduce((sum, row) => sum + row.statistikCount, 0)),
+      openDataCount: Math.max(0, aggregateOpenData - rows.reduce((sum, row) => sum + row.openDataCount, 0)),
+      licensedCount: Math.max(0, aggregateLicensed - rows.reduce((sum, row) => sum + row.licensedCount, 0)),
+      isOther: true
+    };
+    if (otherRow.statistikCount || otherRow.openDataCount) rows.push(otherRow);
+  }
+
   const listCache = await storeLists(store, context, listBuckets, typeStatsByType);
   const finishedAt = new Date();
   const complete = typeStats.every((entry) => entry.complete);
@@ -538,6 +561,7 @@ async function buildSnapshotForContext(store, context) {
       averageQualityScore: scoreCount ? Math.round(scoreSum / scoreCount) : null,
       qualityStatusCounts: overallStatusCounts,
       openDataCapableCount: openDataRecords,
+      openDataPublishedCount: openDataRecords,
       issueSummary,
       typeSummary: typeStats.map((entry) => ({
         type: entry.type,

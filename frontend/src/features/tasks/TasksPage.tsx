@@ -7,6 +7,7 @@ import { findQualityCriterion, isOpenDataRelevantCriterion } from '../../shared/
 import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { InlineLoading, LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
+import { PageGuidance } from '../../shared/ui/PageGuidance';
 import { loadOverviewIssues, type OverviewIssue } from '../overview/overview-api';
 
 const ROWS_PER_PAGE = 10;
@@ -391,8 +392,9 @@ export function TasksPage() {
         setIssues(result.issues);
       } catch (caughtError) {
         if (!active) return;
+        console.error('Pflegeaufgaben konnten nicht geladen werden.', caughtError);
         setIssues([]);
-        setError(caughtError instanceof Error ? caughtError.message : 'Pflegeaufgaben konnten nicht geladen werden.');
+        setError('Pflegeaufgaben konnten nicht geladen werden. Bitte versuche es erneut.');
       } finally {
         if (active) setLoading(false);
       }
@@ -455,6 +457,10 @@ export function TasksPage() {
         <p>Übersicht der offenen Pflegeaufgaben nach Priorität und Auswirkung.</p>
       </section>
 
+      <PageGuidance title="Eine Aufgabe auswählen, dann konkrete Datensätze bearbeiten">
+        Die Zahlen sind Treffer je Pflegeaufgabe. Ein Datensatz mit mehreren Lücken kann mehrfach vorkommen; die konkrete Arbeitsliste öffnet sich über den Pfeil oder „Datensätze anzeigen“.
+      </PageGuidance>
+
       <section className="task-kpi-grid" aria-label="Pflegeaufgaben Kennzahlen">
         <article className="task-kpi-card">
           <span className="task-kpi-icon critical material-icons" aria-hidden="true">flag</span>
@@ -475,9 +481,9 @@ export function TasksPage() {
         <article className="task-kpi-card">
           <span className="task-kpi-icon review material-icons" aria-hidden="true">groups</span>
           <div>
-            <span>Betroffene Datensätze</span>
+            <span>Betroffene Treffer</span>
             <strong>{loading ? <MetricLoading /> : formatNumber(summary.affectedHits)}</strong>
-            <small>Treffer in Pflegeaufgaben</small>
+            <small>Mehrfachtreffer sind möglich</small>
           </div>
         </article>
         <article className="task-kpi-card">
@@ -485,7 +491,7 @@ export function TasksPage() {
           <div>
             <span>Open-Data-Relevanz</span>
             <strong>{loading ? <MetricLoading /> : formatPercent(calculatePercent(summary.openDataHits, summary.affectedHits))}</strong>
-            <small>Der betroffenen Treffer</small>
+            <small>Anteil der Aufgabentreffer</small>
           </div>
         </article>
         <article className="task-kpi-card">
@@ -549,7 +555,7 @@ export function TasksPage() {
               <thead>
                 <tr>
                   <th>Pflegeaufgabe</th>
-                  <th>Betroffene Datensätze</th>
+                  <th>Treffer</th>
                   <th>Priorität</th>
                   <th>Betroffene Typen</th>
                   <th>Auswirkung</th>

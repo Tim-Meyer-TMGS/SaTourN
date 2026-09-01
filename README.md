@@ -72,7 +72,9 @@ CACHE_TTL_MS
 REQUEST_TIMEOUT_MS
 DESTINATION_ONE_BASE_URL
 DESTINATION_ONE_EXPERIENCE
+DESTINATION_ONE_OPEN_DATA_EXPERIENCE
 DESTINATION_ONE_TEMPLATE
+DESTINATION_ONE_COUNT_TEMPLATE
 OI_API_BASE
 OI_MAIL_CC
 OI_MAIL_BCC
@@ -86,6 +88,29 @@ window.SATOURN_SEARCH_API_BASE = 'https://satourn.onrender.com/api/search';
 window.SATOURN_STATISTIK_CONCURRENCY = 6;
 window.SATOURN_STATISTIK_WARN_REQUESTS = 120;
 ```
+
+### Strukturierte META-Filter
+
+Der Search-Proxy akzeptiert neben `query` auch wiederholbare strukturierte
+Filterparameter:
+
+```text
+area, city, category, feature, keyword, zip, globalId, id
+```
+
+Mehrere Werte desselben Feldes werden standardmäßig mit `OR` verbunden,
+verschiedene Felder mit `AND`. Für Kategorien und Merkmale kann über
+`categoryOperator=AND` beziehungsweise `featureOperator=AND` umgestellt
+werden. Ausschlüsse verwenden beispielsweise `excludeCategory` oder
+`excludeFeature`.
+
+```text
+/api/search?type=POI&countOnly=true&city=Leipzig&city=Dresden&category=Museum
+```
+
+Leere Filter senden kein `q`. Gesamtabfragen werden gegen `type=All`
+ausgeführt. `countOnly=true` erzwingt `limit=1` und verwendet das schlanke
+Count-Template.
 
 ## Statistik und Python
 

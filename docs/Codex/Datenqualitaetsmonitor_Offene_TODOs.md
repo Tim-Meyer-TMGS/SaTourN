@@ -119,6 +119,15 @@ Nachweis:
 
 ## Zuletzt erledigt
 
+- Nutzerzentrierte Orientierung auf Übersicht, Pflegeaufgaben, Datensätzen und
+  Statistik ergänzt
+- Datensatz-Arbeitsliste auf sechs entscheidungsrelevante Spalten reduziert
+- Aufgabentreffer, Open-Data-Veröffentlichung und Lizenz-Pflegebedarf im UI
+  fachlich eindeutig benannt
+- Hauptnavigation auf vier Arbeitsbereiche reduziert; Hilfe in den Header
+  verschoben
+- technische Normalzustände und technische Fehlerdetails aus der sichtbaren
+  Oberfläche reduziert
 - Codex-Ordner bereinigt und alte Langdokumente archiviert
 - API-Pushdown-TODOs auf offene Prüfungen reduziert
 - Event-Lizenz als Pushdown aktiviert

@@ -12,6 +12,7 @@ import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { getTaskFamilyId, getTaskFamilyMeta } from '../../shared/tasks/task-families';
 import { InlineLoading, MetricLoading } from '../../shared/ui/LoadingIndicators';
+import { PageGuidance } from '../../shared/ui/PageGuidance';
 import { loadOverviewData, type OverviewData, type OverviewIssue } from './overview-api';
 
 type OverviewTaskIssue = {
@@ -128,8 +129,9 @@ export function OverviewPage() {
         setData(result);
       } catch (caughtError) {
         if (!active) return;
+        console.error('Übersicht konnte nicht geladen werden.', caughtError);
         setData(null);
-        setError(caughtError instanceof Error ? caughtError.message : 'Übersicht konnte nicht geladen werden.');
+        setError('Übersicht konnte nicht geladen werden. Bitte aktualisiere die Seite.');
       } finally {
         if (active) setLoading(false);
       }
@@ -165,54 +167,64 @@ export function OverviewPage() {
     qualitySummary?.meta?.failedTypes?.length ||
     qualitySummary?.meta?.incompleteTypes?.length
   );
+  const contextLabel = [context.area, context.city].filter(Boolean).join(' · ') || 'Sachsen';
 
   return (
     <>
       <section className="overview-hero">
         <h1>Datenqualitäts-Monitor</h1>
-        <p>Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für {context.area || context.city || 'Sachsen'}.</p>
+        <p>Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für {contextLabel}.</p>
       </section>
+
+      <PageGuidance
+        title={canCalculateScore ? 'Von der Lage zur nächsten Pflegehandlung' : 'Für Sachsen zuerst Bestand und Pflegebedarf einordnen'}
+        action={<Link className="page-guidance-link" to="/tasks">Pflegeaufgaben öffnen</Link>}
+      >
+        {canCalculateScore
+          ? 'Der Qualitäts-Score ordnet die aktuelle Auswahl ein. Beginne anschließend mit der wichtigsten Aufgabe und öffne die betroffenen Datensätze.'
+          : 'Bestand, veröffentlichte offene Daten und Pflegeaufgaben sind landesweit sichtbar. Für einen belastbaren Qualitäts-Score wähle im Arbeitskontext ein Gebiet oder einen Ort.'}
+      </PageGuidance>
 
       <section className="kpi-grid" aria-label="Kennzahlen">
         <article className="kpi-card">
-          <div className="card-label">Qualitäts-Score <span className="material-icons info-icon" aria-hidden="true">info</span></div>
-          <div className="kpi-value"><span>{loading ? <MetricLoading /> : (qualityScore ?? '-')}</span> <small>/ 100</small></div>
+          <div className="card-label">Qualitäts-Score</div>
+          <div className="kpi-value"><span>{loading ? <MetricLoading /> : (qualityScore ?? '-')}</span>{qualityScore != null ? <small> / 100</small> : null}</div>
           <div className="score-track"><span style={{ width: `${scoreWidth}%` }} /></div>
           <p>Gesamtbewertung der Datenqualität</p>
         </article>
 
         <article className="kpi-card">
-          <div className="card-label">Gesamt-Datensätze <span className="material-icons info-icon" aria-hidden="true">info</span></div>
+          <div className="card-label">Gesamt-Datensätze</div>
           <div className="kpi-value">{loading ? <MetricLoading /> : formatNumber(summary.total)}</div>
           <p>Aktueller Datenbestand</p>
         </article>
 
         <article className="kpi-card">
-          <div className="card-label">Gute Datensätze <span className="material-icons info-icon" aria-hidden="true">info</span></div>
+          <div className="card-label">Gute Datensätze</div>
           <div className="kpi-value">{loading ? <MetricLoading /> : (hasQualitySummary ? formatNumber(qualitySummary?.good || 0) : '-')}</div>
           <strong>{hasQualitySummary ? `${formatPercent(calculatePercent(qualitySummary?.good || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
-          <p>Vollständig und aktuell</p>
+          <p>Guter Qualitätsstatus</p>
         </article>
 
         <article className="kpi-card">
-          <div className="card-label">Mit Pflegebedarf <span className="material-icons info-icon" aria-hidden="true">info</span></div>
+          <div className="card-label">Mit Pflegebedarf</div>
           <div className="kpi-value">{loading ? <MetricLoading /> : (hasQualitySummary ? formatNumber(qualitySummary?.withIssues || 0) : '-')}</div>
           <strong>{hasQualitySummary ? `${formatPercent(calculatePercent(qualitySummary?.withIssues || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
           <p>Ergänzungen empfohlen</p>
         </article>
 
         <article className="kpi-card">
-          <div className="card-label">Kritische Datensätze <span className="material-icons info-icon" aria-hidden="true">info</span></div>
+          <div className="card-label">Kritische Datensätze</div>
           <div className="kpi-value">{loading ? <MetricLoading /> : (hasQualitySummary ? formatNumber(qualitySummary?.critical || 0) : '-')}</div>
           <strong>{hasQualitySummary ? `${formatPercent(calculatePercent(qualitySummary?.critical || 0, qualityTotal))}` : 'Nicht berechnet'}</strong>
           <p>Dringender Handlungsbedarf</p>
         </article>
 
         <article className="kpi-card">
-          <div className="card-label">Open-Data-Quote <span className="material-icons info-icon" aria-hidden="true">info</span></div>
+          <div className="card-label">Open-Data-Quote</div>
           <div className="kpi-value">{loading ? <MetricLoading /> : formatPercent(summary.openDataQuote)}</div>
           <strong>{loading ? '-' : `${formatNumber(summary.openData)} von ${formatNumber(summary.total)}`}</strong>
-          <p>Open-Data-fähige Datensätze</p>
+          <p>Als Open Data veröffentlichte Datensätze</p>
         </article>
       </section>
 
@@ -286,12 +298,12 @@ export function OverviewPage() {
             </div>
             <div className="open-data-stats">
               <div>
-                <span>Open-Data-fähig</span>
+                <span>Als Open Data veröffentlicht</span>
                 <strong>{loading ? '-' : formatNumber(summary.openData)}</strong>
                 <small>{loading ? '-' : formatPercent(openDataWidth)}</small>
               </div>
               <div>
-                <span>Nicht Open-Data-fähig</span>
+                <span>Nicht als Open Data veröffentlicht</span>
                 <strong>{loading ? '-' : formatNumber(summary.notOpenData)}</strong>
                 <small>{loading ? '-' : formatPercent(notOpenDataWidth)}</small>
               </div>

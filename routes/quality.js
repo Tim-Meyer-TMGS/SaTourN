@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import {
   API_KEY,
   BASE_URL,
+  COUNT_TEMPLATE,
   EXPERIENCE,
   REQUEST_TIMEOUT_MS,
   TEMPLATE
@@ -10,10 +11,14 @@ import {
 import { extractId, extractItems, extractTotal } from '../lib/browser/et4.js';
 import {
   buildSearchUrl,
+  buildStructuredFilterQuery,
+  combineSearchQueries,
   computeFinalLimit,
   isCitiesRequest,
+  MetaResponseError,
   normalizeOffsetParam,
-  normalizeQueryParam
+  normalizeQueryParam,
+  parseMetaResponseText
 } from '../lib/search-utils.js';
 import {
   normalizeQualityContext,
@@ -334,12 +339,14 @@ async function scanQualitySummaryType({
 }
 
 function combineQueries(baseQuery, criterionQuery) {
-  const base = normalizeQueryParam(baseQuery);
-  const criterion = normalizeQueryParam(criterionQuery);
+  return combineSearchQueries(baseQuery, criterionQuery);
+}
 
-  if (!base) return criterion;
-  if (!criterion) return base;
-  return `(${base}) AND (${criterion})`;
+function getRequestQuery(req) {
+  return combineSearchQueries(
+    normalizeQueryParam(req.query.query || ''),
+    buildStructuredFilterQuery(req.query)
+  );
 }
 
 async function fetchJsonPage(url, signal) {
@@ -353,11 +360,7 @@ async function fetchJsonPage(url, signal) {
     throw new Error(`Destination.One HTTP ${response.status}: ${text.slice(0, 300)}`);
   }
 
-  try {
-    return JSON.parse(text.trim());
-  } catch {
-    throw new Error(`Destination.One returned non-JSON: ${text.slice(0, 300)}`);
-  }
+  return parseMetaResponseText(text);
 }
 
 function isCriterionRelevantForType(criterion, type) {
@@ -424,7 +427,7 @@ async function writeJsonCache(store, key, value, options = {}) {
 export function registerQualityRoute(app, { keyValueStore = null } = {}) {
   app.get('/api/quality/snapshot', async (req, res) => {
     const context = normalizeQualityContext({
-      query: req.query.query || '',
+      query: getRequestQuery(req),
       type: req.query.type || ''
     });
     const exactKey = qualitySnapshotKey(context);
@@ -470,7 +473,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
     const key = qualityListKey({
       criterionId: criterion.id,
       type,
-      query: req.query.query || ''
+      query: getRequestQuery(req)
     });
     const payload = await readJsonCache(keyValueStore, key);
     if (!payload) {
@@ -521,7 +524,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
         criterion: reduceCriterionForResponse(criterion, normalizedType),
         diagnostic: {
           method: 'unsupported',
-          sourceQuery: normalizeQueryParam(query),
+          sourceQuery: getRequestQuery(req),
           criterionQuery: null,
           verified: false,
           reason: 'criterion_not_relevant_for_type'
@@ -533,7 +536,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
       return res.status(400).json({ error: 'Criterion is not automatically checkable' });
     }
 
-    const qParam = normalizeQueryParam(query);
+    const qParam = getRequestQuery(req);
     const scanConfig = getQualityScanConfig(criterion, normalizedType);
     if (scanConfig.method !== 'api_pushdown' || !scanConfig.verified || !scanConfig.missingQuery) {
       return res.status(400).json({
@@ -580,7 +583,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
       const targetUrl = buildSearchUrl({
         baseUrl: BASE_URL,
         experience: EXPERIENCE,
-        template: TEMPLATE,
+        template: COUNT_TEMPLATE,
         type: normalizedType,
         qParam: effectiveQuery,
         limit: 1,
@@ -611,7 +614,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
       return res.json(responsePayload);
     } catch (error) {
       const isAbort = error && (error.name === 'AbortError' || /aborted|timeout/i.test(String(error)));
-      return res.status(isAbort ? 504 : 500).json({
+      return res.status(isAbort ? 504 : error instanceof MetaResponseError ? 502 : 500).json({
         error: isAbort ? 'Quality count timeout' : 'Quality count failed',
         details: isAbort ? undefined : String(error.message || error).slice(0, 300),
         diagnostic: {
@@ -645,7 +648,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
       return res.status(500).json({ error: 'Server configuration missing: LICENSEKEY' });
     }
 
-    const qParam = normalizeQueryParam(query);
+    const qParam = getRequestQuery(req);
     if (!qParam) {
       return res.status(400).json({
         error: 'Missing query. Quality summaries require a regional or local work context.'
@@ -717,7 +720,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
       return res.status(failedTypes.length === targetTypes.length ? 502 : 200).json(payload);
     } catch (error) {
       const isAbort = error && (error.name === 'AbortError' || /aborted|timeout/i.test(String(error)));
-      return res.status(isAbort ? 504 : 500).json({
+      return res.status(isAbort ? 504 : error instanceof MetaResponseError ? 502 : 500).json({
         error: isAbort ? 'Quality summary timeout' : 'Quality summary failed',
         details: isAbort ? undefined : String(error.message || error).slice(0, 300),
         meta: {
@@ -785,7 +788,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
       return res.status(400).json({ error: 'Criterion is not automatically checkable' });
     }
 
-    const qParam = normalizeQueryParam(query);
+    const qParam = getRequestQuery(req);
     const scanConfig = getQualityScanConfig(criterion, normalizedType);
     const criterionQuery = scanConfig.method === 'api_pushdown'
       ? scanConfig.missingQuery
@@ -918,7 +921,7 @@ export function registerQualityRoute(app, { keyValueStore = null } = {}) {
       });
     } catch (error) {
       const isAbort = error && (error.name === 'AbortError' || /aborted|timeout/i.test(String(error)));
-      res.status(isAbort ? 504 : 500).json({
+      res.status(isAbort ? 504 : error instanceof MetaResponseError ? 502 : 500).json({
         error: isAbort ? 'Quality scan timeout' : 'Quality scan failed',
         details: isAbort ? undefined : String(error.message || error).slice(0, 300),
         diagnostic: {

@@ -9,6 +9,8 @@ export type OverviewStatisticRow = {
   type: string;
   total: number;
   openData: number;
+  licensed: number;
+  isOther?: boolean;
 };
 
 export type OverviewIssue = {
@@ -91,22 +93,43 @@ function canLoadPushdownCount(criterion: QualityCriterion, type: string) {
 
 async function loadStatisticRow(type: string, context: WorkContext): Promise<OverviewStatisticRow> {
   const runtime = getRuntimeConfig();
-  const query = buildContextQuery(context);
-  const [totalPayload, openDataPayload] = await Promise.all([
-    fetchJson<CountPayload>(buildSearchApiUrl(runtime.searchApiBase, type, query, { limit: 1 })),
-    fetchJson<CountPayload>(buildSearchApiUrl(runtime.searchApiBase, type, query, { limit: 1, isOpenData: true }))
+  const filters = {
+    area: context.area || undefined,
+    city: context.city || undefined
+  };
+  const [totalPayload, openDataPayload, licensedPayload] = await Promise.all([
+    fetchJson<CountPayload>(buildSearchApiUrl(runtime.searchApiBase, type, '', { countOnly: true, filters })),
+    fetchJson<CountPayload>(buildSearchApiUrl(runtime.searchApiBase, type, '', { countOnly: true, openDataPublished: true, filters })),
+    fetchJson<CountPayload>(buildSearchApiUrl(runtime.searchApiBase, type, '', { countOnly: true, isOpenData: true, filters }))
   ]);
 
   return {
     type,
     total: extractTotal(totalPayload),
-    openData: extractTotal(openDataPayload)
+    openData: extractTotal(openDataPayload),
+    licensed: extractTotal(licensedPayload)
   };
 }
 
 export async function loadStatisticRows(context: WorkContext): Promise<OverviewStatisticRow[]> {
-  const targetTypes = context.type ? [context.type] : [...DATA_TYPES];
-  return Promise.all(targetTypes.map((type) => loadStatisticRow(type, context)));
+  if (context.type) return [await loadStatisticRow(context.type, context)];
+
+  const [typedRows, aggregate] = await Promise.all([
+    Promise.all(DATA_TYPES.map((type) => loadStatisticRow(type, context))),
+    loadStatisticRow('', context)
+  ]);
+  const typedTotal = typedRows.reduce((sum, row) => sum + row.total, 0);
+  const typedOpenData = typedRows.reduce((sum, row) => sum + row.openData, 0);
+  const typedLicensed = typedRows.reduce((sum, row) => sum + row.licensed, 0);
+  const otherRow: OverviewStatisticRow = {
+    type: 'Weitere (City, Area, Article, Web)',
+    total: Math.max(0, aggregate.total - typedTotal),
+    openData: Math.max(0, aggregate.openData - typedOpenData),
+    licensed: Math.max(0, aggregate.licensed - typedLicensed),
+    isOther: true
+  };
+
+  return otherRow.total || otherRow.openData ? [...typedRows, otherRow] : typedRows;
 }
 
 async function loadQualitySummary(context: WorkContext): Promise<OverviewQualitySummary | null> {

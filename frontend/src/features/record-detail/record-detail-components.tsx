@@ -152,7 +152,7 @@ export function DetailActionBar({
   );
 }
 
-export function DetailHeadCard({ item }: { item: DetailItem }) {
+export function DetailHeadCard({ item, primaryIssue }: { item: DetailItem; primaryIssue?: MissingIssue }) {
   return (
     <section className="panel-card detail-head-card">
       <div className="detail-head-left">
@@ -161,6 +161,16 @@ export function DetailHeadCard({ item }: { item: DetailItem }) {
           <span className={`type-chip ${item.type.toLowerCase()}`}>{item.type || '-'}</span>
         </h1>
         <p>{[item.city, item.region, item.category].filter(Boolean).join(' - ') || 'Ort und Kategorie nicht angegeben'}</p>
+      </div>
+      <div className="detail-head-summary">
+        <span>Jetzt wichtig</span>
+        <div>
+          <span className={`status-badge ${item.qualityStatus === 'gut' ? 'good' : item.qualityStatus === 'kritisch' ? 'critical' : /pr(?:ue|ü)fen/.test(item.qualityStatus) ? 'review' : 'muted'}`}>
+            {item.qualityStatus || 'nicht berechenbar'}{item.qualityScore != null ? ` · ${item.qualityScore} / 100` : ''}
+          </span>
+        </div>
+        <strong>{primaryIssue?.label || 'Keine priorisierte Baustelle'}</strong>
+        <small>{primaryIssue?.recommendation || 'Prüfe die Detailangaben und kehre anschließend zur Arbeitsliste zurück.'}</small>
       </div>
     </section>
   );

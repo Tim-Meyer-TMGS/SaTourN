@@ -111,22 +111,24 @@ Umgesetzt im React-Preview:
 
 Prüfen:
 
-- Gesamtbestand, Open-Data-fähig und nicht Open-Data-fähig stimmen mit Live-Seite überein
+- Gesamtbestand, veröffentlichte offene Daten und nicht veröffentlichte Daten stimmen mit den jeweiligen Experience-Counts überein
 - Datentypverteilung nutzt dieselben Counts wie die Übersicht
 - Quote nach Datentyp ist korrekt
-- Lizenz-Pflegehinweis führt in die Datensatzliste aller nicht Open-Data-fähigen Datensätze
+- Lizenz-Pflegehinweis führt in die Datensatzliste ohne gültige Open-Data-Lizenz
 - kein doppelter Arbeitskontext auf der Seite
 
 Kritische Abweichungen:
 
-- Open-Data-Status kennt nur Open-Data-fähig oder nicht Open-Data-fähig
+- Open-Data-Status kennt nur veröffentlicht oder nicht veröffentlicht
 - kein zusätzlicher Status `Nicht bewertbar`
 
 Umgesetzt im React-Preview:
 
-- Die Aufgabenkarte in der Open-Data-Statistik nutzt die fachliche Differenz `Gesamt - Open-Data-fähig` statt des engeren `license_missing`-Issue-Counts.
+- Die Aufgabenkarte in der Open-Data-Statistik nutzt getrennte Lizenz-Counts aus `statistik_sachsen` und nicht die Differenz `Gesamt - veröffentlicht`.
 - Der Button öffnet die Datensatzliste mit `list=non_open_data`; dieser Modus nutzt den Search-Proxy mit `isOpenData=false`.
-- Die Open-Data-Lizenzdefinition liegt zentral in `lib/open-data-rules.js` und wird von Search-Proxy, Snapshot-Job und Qualitätsmodell gemeinsam genutzt.
+- Die veröffentlichte Open-Data-Zahl kommt aus der Experience `open-data-sachsen-tourismus`; die Open-Data-Lizenzdefinition in `lib/open-data-rules.js` bleibt die getrennte Grundlage für die Lizenz-Pflegeaufgabe.
+- Gesamt-KPIs werden mit `type=All` abgefragt. Die Differenz zu den sechs Qualitäts-Datentypen wird als `Weitere (City, Area, Article, Web)` ausgewiesen, damit alle Summen konsistent sind.
+- Statistik-Counts verwenden strukturierte Gebiets- und Ortsfilter. Mehrere Werte desselben Feldes werden verodert, unterschiedliche Felder verundet.
 
 ### 6. Hilfe
 
@@ -223,6 +225,29 @@ App-Fehler und API-Fehler in der Console sichtbar bleiben.
 2. React-Preview im GitHub-Pages-Build auf Desktop und Mobile visuell prüfen
 3. Detailseite und Fehlerlistenansicht gegen mehrere echte Datensätze testen
 4. Übergabedokumentation für Entwickler ergänzen
+
+## Umgesetzt am 2026-09-01: nutzerzentrierte Informationshierarchie
+
+- Übersicht, Pflegeaufgaben, Datensätze und Statistik zeigen direkt unter dem
+  Seitenkopf eine knappe Einordnung zur aktuellen Entscheidung und nächsten
+  Handlung.
+- Die Datensatzliste zeigt nur noch Titel, Typ, Ort/Gebiet,
+  Qualitätsstatus, nächsten Schritt und die Öffnen-Aktion. ID, global_id,
+  Kategorie, Aktualisierung und die vollständige Bewertung bleiben im Detail
+  beziehungsweise im CSV-Export erhalten.
+- Der Datensatzkopf nennt Qualitätsstatus und wichtigste Baustelle, bevor die
+  tieferen Detailblöcke folgen.
+- Summierte Aufgabentreffer werden nicht mehr als eindeutige betroffene
+  Datensätze bezeichnet; Mehrfachtreffer sind im UI erklärt.
+- Die Open-Data-Statistik erklärt vor den Kennzahlen, dass Veröffentlichung
+  und Lizenz-Pflegebedarf getrennte Aussagen sind. Der Vollständigkeitsstatus
+  der Datenbasis reagiert auf Laden und Fehler.
+- Die Hauptnavigation ist auf vier Arbeitsbereiche reduziert. Hilfe bleibt
+  kontextuell im Header und auf der Übersicht erreichbar.
+- Der bisher wirkungslose Aktualisieren-Button lädt die aktuelle Ansicht neu.
+- Technische Normalzustände wie „Server bereit“ werden nicht dauerhaft
+  angezeigt. Nutzertexte bleiben kurz; technische Fehlerdetails werden in der
+  Console protokolliert.
 
 ## Umgesetzt am 2026-07-07: Count- und Listenabrufe getrennt
 

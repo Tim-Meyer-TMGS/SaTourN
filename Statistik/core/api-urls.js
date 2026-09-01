@@ -4,6 +4,12 @@ export function buildSearchApiUrl(apiBase, type, query, options = {}) {
   params.set('limit', String(options.limit ?? 1));
   if (query) params.set('query', query);
   if (options.isOpenData) params.set('isOpenData', 'true');
+  if (options.openDataPublished) params.set('openDataPublished', 'true');
+  if (options.countOnly) params.set('countOnly', 'true');
+  Object.entries(options.filters || {}).forEach(([name, rawValue]) => {
+    const values = Array.isArray(rawValue) ? rawValue : [rawValue];
+    values.filter(Boolean).forEach((value) => params.append(name, String(value)));
+  });
   if (Number.isFinite(options.offset) && options.offset > 0) params.set('offset', String(options.offset));
   return `${apiBase}?${params.toString()}`;
 }

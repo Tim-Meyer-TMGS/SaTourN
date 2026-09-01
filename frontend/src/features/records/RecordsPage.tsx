@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 
 import { DATA_TYPES } from '../../shared/config/constants';
-import { formatRecordDate } from '../../shared/format/formatters';
 import { getQualityCriterionLabel } from '../../shared/quality/quality-criteria';
 import { buildTaskAwareRecordDetailUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { InlineLoading, LoadingLine } from '../../shared/ui/LoadingIndicators';
+import { PageGuidance } from '../../shared/ui/PageGuidance';
 import {
   loadCriterionRecordsForFrontend,
   loadNonOpenDataRecordsForFrontend,
@@ -177,7 +177,7 @@ export function RecordsPage() {
     if (loading) return '';
     if (error) return error;
     if (meta.mode === 'ai_search' && meta.prompt) return `KI-Suche: ${rows.length} Datensätze geladen`;
-    if (meta.mode === 'non_open_data') return `Nicht Open-Data-fähig: Seite ${page} mit ${rows.length} von ${meta.estimatedTotalItems} Datensätzen`;
+    if (meta.mode === 'non_open_data') return `Ohne gültige Open-Data-Lizenz: Seite ${page} mit ${rows.length} von ${meta.estimatedTotalItems} Datensätzen`;
     if (meta.mode === 'criterion' && meta.supportsPagination === false) {
       const extra = meta.truncated ? ' - weitere Treffer benötigen einen Server-Scan' : '';
       return `Gefiltert nach Pflegeaufgabe: ${meta.criterionLabel || meta.criterionId || 'Auswahl'} - ${rows.length} erste Treffer geladen${extra}`;
@@ -349,6 +349,7 @@ export function RecordsPage() {
         });
       } catch (caughtError) {
         if (!active) return;
+        console.error('Gefilterte Datensatzliste konnte nicht geladen werden.', caughtError);
         setRows([]);
         setMeta({
           mode: urlListMode === 'non_open_data' ? 'non_open_data' : 'criterion',
@@ -356,7 +357,7 @@ export function RecordsPage() {
           estimatedTotalItems: 0,
           truncated: false
         });
-        setError(caughtError instanceof Error ? caughtError.message : 'Fehlerliste konnte nicht geladen werden.');
+        setError('Die Datensatzliste konnte nicht geladen werden. Bitte versuche es erneut.');
       } finally {
         if (active) setLoading(false);
       }
@@ -412,7 +413,8 @@ export function RecordsPage() {
       });
       saveRecordListState(mergedRows, currentListUrl, buildDetailUrl);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Weitere Treffer konnten nicht geladen werden.');
+      console.error('Weitere Treffer konnten nicht geladen werden.', caughtError);
+      setError('Weitere Treffer konnten nicht geladen werden. Bitte versuche es erneut.');
     } finally {
       setLoadingMore(false);
     }
@@ -446,7 +448,7 @@ export function RecordsPage() {
       setAuthorshipFilter('');
       setIssueFilter('');
     } catch (caughtError) {
-      const message = caughtError instanceof Error ? caughtError.message : 'Datensätze konnten nicht geladen werden.';
+      console.error('Datensatzsuche konnte nicht geladen werden.', caughtError);
       setRows([]);
       setMeta({
         mode: nextMode,
@@ -454,7 +456,7 @@ export function RecordsPage() {
         estimatedTotalItems: 0,
         truncated: false
       });
-      setError(message);
+      setError('Die Suche konnte nicht abgeschlossen werden. Bitte versuche es erneut.');
     } finally {
       setLoading(false);
     }
@@ -499,6 +501,10 @@ export function RecordsPage() {
         <h1>Datensätze</h1>
         <p>Suche und prüfe einzelne Datensätze oder arbeite gefilterte Listen ab.</p>
       </section>
+
+      <PageGuidance title="Die Liste zeigt nur, was du für die nächste Entscheidung brauchst">
+        Suche einen Datensatz oder öffne eine Pflegeaufgabe. Technische Angaben, IDs, Aktualisierung und die vollständige Kriterienbewertung findest du im Detail; Listenfilter wirken auf die aktuell geladenen Treffer.
+      </PageGuidance>
 
       <section className="record-filter-card" aria-label="Datensätze suchen und filtern">
         <div className="record-search-block">
@@ -621,19 +627,20 @@ export function RecordsPage() {
                 <th>Titel</th>
                 <th>Typ</th>
                 <th>Ort / Gebiet</th>
-                <th>Kategorie</th>
-                <th>Status</th>
-                <th>Score</th>
-                <th>Hauptproblem</th>
-                <th>Aktualisiert</th>
-                <th>Aktionen</th>
+                <th>Qualitätsstatus</th>
+                <th>Nächster Schritt</th>
+                <th><span className="sr-only">Aktion</span></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody aria-live="polite">
               {!pagedRows.length ? (
                 <tr>
-                  <td colSpan={9} className="table-empty">
-                    {loading ? <LoadingLine>Datensätze werden geladen</LoadingLine> : 'Keine Datensätze geladen.'}
+                  <td colSpan={6} className="table-empty">
+                    {loading
+                      ? <LoadingLine>Datensätze werden geladen</LoadingLine>
+                      : (meta.mode === 'idle'
+                        ? 'Starte eine Suche oder öffne eine Pflegeaufgabe, um Datensätze zu laden.'
+                        : 'Keine Datensätze entsprechen der aktuellen Auswahl. Prüfe oder setze die Filter zurück.')}
                   </td>
                 </tr>
               ) : pagedRows.map((row) => (
@@ -642,23 +649,20 @@ export function RecordsPage() {
                     <Link className="table-title-link" to={buildDetailUrl(row)}>
                       {row.title}
                     </Link>
-                    <small>{row.globalId || row.id}</small>
                   </td>
                   <td>{row.type || '-'}</td>
                   <td>{[row.city, row.region].filter(Boolean).join(' / ') || '-'}</td>
-                  <td>{row.category || '-'}</td>
                   <td>
                     <span className={`status-badge ${getStatusClass(row.qualityStatus)}`}>
                       {row.qualityStatus || 'nicht berechenbar'}
                     </span>
+                    {row.qualityScore != null ? <small>{row.qualityScore} / 100 Punkte</small> : null}
                   </td>
-                  <td>{row.qualityScore ?? '-'}</td>
-                  <td>{row.primaryIssue || '-'}</td>
-                  <td>{formatRecordDate(row.updatedAt)}</td>
+                  <td>{row.primaryIssue && row.primaryIssue !== '-' ? row.primaryIssue : 'Details prüfen'}</td>
                   <td>
                     <div className="table-actions">
                       <Link className="table-link-button" to={buildDetailUrl(row)}>
-                        Detail
+                        Öffnen
                       </Link>
                     </div>
                   </td>

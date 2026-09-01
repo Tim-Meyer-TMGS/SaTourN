@@ -3,17 +3,23 @@ import fetch from 'node-fetch';
 import {
   API_KEY,
   BASE_URL,
+  COUNT_TEMPLATE,
   EXPERIENCE,
+  OPEN_DATA_EXPERIENCE,
   REQUEST_TIMEOUT_MS,
   TEMPLATE
 } from '../lib/config.js';
 import {
   applyOpenDataFilter,
+  buildStructuredFilterQuery,
   buildAutocompleteUrl,
   buildSearchUrl,
+  combineSearchQueries,
   computeFinalLimit,
   isCitiesRequest,
-  normalizeOffsetParam
+  normalizeMetaSearchType,
+  normalizeOffsetParam,
+  parseMetaResponseText
 } from '../lib/search-utils.js';
 
 export function registerSearchRoute(app, cache) {
@@ -96,34 +102,55 @@ export function registerSearchRoute(app, cache) {
   });
 
   app.get('/api/search', async (req, res) => {
-    const { type, query = '', isOpenData = '', limit, offset, scope, forceCities } = req.query;
+    const {
+      type,
+      query = '',
+      isOpenData = '',
+      openDataPublished = '',
+      countOnly = '',
+      limit,
+      offset,
+      scope,
+      forceCities
+    } = req.query;
 
-    if (!API_KEY) {
+    const usePublishedOpenData = String(openDataPublished || '').toLowerCase() === 'true';
+    if (!usePublishedOpenData && !API_KEY) {
       console.error('DESTINATION_ONE_API_KEY, LICENSEKEY or LICENSE_KEY is missing');
       return res.status(500).json({ error: 'Server configuration missing: LICENSEKEY' });
     }
 
-    const qParam = applyOpenDataFilter(query, isOpenData);
+    const structuredQuery = buildStructuredFilterQuery(req.query);
+    const userQuery = combineSearchQueries(query, structuredQuery);
+    if (userQuery.length > 4000) {
+      return res.status(400).json({ error: 'Search query is too long' });
+    }
+    const qParam = applyOpenDataFilter(userQuery, usePublishedOpenData ? '' : isOpenData);
+    const isCountOnly = String(countOnly || '').toLowerCase() === 'true';
+    const normalizedType = normalizeMetaSearchType(type);
+    if (!normalizedType) {
+      return res.status(400).json({ error: 'Unsupported Destination.One type' });
+    }
 
     const cities = isCitiesRequest({
       scope,
-      type,
+      type: normalizedType,
       qParam,
       forceCities: String(forceCities || '') === '1'
     });
 
-    const finalLimit = computeFinalLimit({ requestedLimit: limit, isCities: cities });
+    const finalLimit = isCountOnly ? 1 : computeFinalLimit({ requestedLimit: limit, isCities: cities });
     const finalOffset = normalizeOffsetParam(offset);
 
     const targetUrl = buildSearchUrl({
       baseUrl: BASE_URL,
-      experience: EXPERIENCE,
-      template: TEMPLATE,
-      type,
+      experience: usePublishedOpenData ? OPEN_DATA_EXPERIENCE : EXPERIENCE,
+      template: isCountOnly ? COUNT_TEMPLATE : TEMPLATE,
+      type: normalizedType,
       qParam,
       limit: finalLimit,
       offset: finalOffset,
-      apiKey: API_KEY
+      apiKey: usePublishedOpenData ? '' : API_KEY
     });
 
     res.setHeader('X-Final-Limit', String(finalLimit));
@@ -155,12 +182,12 @@ export function registerSearchRoute(app, cache) {
       }
 
       try {
-        JSON.parse(text.trim());
-      } catch {
-        console.error('Destination.One returned non-JSON:', text.slice(0, 500));
+        parseMetaResponseText(text);
+      } catch (parseError) {
+        console.error('Destination.One returned an invalid META response:', parseError.metaStatus || parseError.message);
         return res.status(502).json({
-          error: 'Upstream did not return JSON',
-          details: text.slice(0, 500)
+          error: 'Invalid upstream response',
+          upstreamStatus: parseError.metaStatus || 'INVALID_JSON'
         });
       }
 

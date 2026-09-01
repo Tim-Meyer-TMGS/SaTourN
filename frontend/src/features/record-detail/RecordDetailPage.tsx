@@ -150,8 +150,9 @@ export function RecordDetailPage() {
         setItem(nextItem);
       } catch (caughtError) {
         if (!active) return;
+        console.error('Datensatz-Detail konnte nicht geladen werden.', caughtError);
         setItem(null);
-        setError(caughtError instanceof Error ? caughtError.message : 'Datensatz-Detail konnte nicht geladen werden.');
+        setError('Der Datensatz konnte nicht geladen werden. Bitte kehre zur Liste zurück und versuche es erneut.');
       } finally {
         if (active) setLoading(false);
       }
@@ -202,7 +203,8 @@ export function RecordDetailPage() {
       setCopyMessage('Mailentwurf wurde im Mailprogramm geöffnet.');
       window.setTimeout(() => setCopyMessage(''), 2200);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Mailentwurf konnte nicht erzeugt werden.');
+      console.error('Mailentwurf konnte nicht erzeugt werden.', caughtError);
+      setError('Der Mailentwurf konnte nicht erstellt werden. Bitte versuche es erneut.');
     } finally {
       setMailDraftLoading(false);
     }
@@ -239,7 +241,7 @@ export function RecordDetailPage() {
 
           {copyMessage ? <div className="overview-message">{copyMessage}</div> : null}
 
-          <DetailHeadCard item={item} />
+          <DetailHeadCard item={item} primaryIssue={missingIssues[0]} />
 
           <section className="detail-grid">
             <DetailLeftColumn item={item} missingIssues={missingIssues} />

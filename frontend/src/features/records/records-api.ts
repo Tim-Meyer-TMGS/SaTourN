@@ -393,7 +393,7 @@ async function fetchNonOpenDataRecords(context: WorkContext, selectedTypes: stri
     meta: {
       mode: 'non_open_data',
       criterionId: 'license_missing',
-      criterionLabel: 'Nicht Open-Data-fähig',
+      criterionLabel: 'Ohne gültige Open-Data-Lizenz',
       estimatedTotalItems,
       supportsPagination: true,
       truncated: payloads.some((entry) => entry.truncated)
