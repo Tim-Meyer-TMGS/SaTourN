@@ -8,6 +8,7 @@ import { RecordDetailPage } from '../../features/record-detail/RecordDetailPage'
 import { RecordsPage } from '../../features/records/RecordsPage';
 import { StatsPage } from '../../features/stats/StatsPage';
 import { TasksPage } from '../../features/tasks/TasksPage';
+import { useAuth } from '../../shared/auth/auth-context';
 
 function NotFoundPage() {
   return (
@@ -20,6 +21,7 @@ function NotFoundPage() {
 }
 
 export function AppRouter() {
+  const { user } = useAuth();
   return (
     <HashRouter>
       <Routes>
@@ -30,7 +32,7 @@ export function AppRouter() {
           <Route path="/record-detail" element={<RecordDetailPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/help" element={<HelpPage />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin" element={user?.role === 'SUPER_ADMIN' ? <AdminPage /> : <NotFoundPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

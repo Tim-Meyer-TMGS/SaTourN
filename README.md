@@ -1,153 +1,58 @@
-# SaTourN Tools
+# SaTourN
 
-SaTourN Tools bündelt interne Web-Werkzeuge für Statistik,
-Destination.One-Links, Datenprüfung und Kategorien-Bearbeitung.
+SaTourN ist ein React-basierter Datenqualitätsmonitor. Vercel liefert das
+Frontend und die Serverless API aus; Neon ist die operative Datenquelle.
 
-## Struktur
+## API
 
-- `index.html`, `_layouts/`, `_includes/`, `base.css`
-  Jekyll-/GitHub-Pages-Oberfläche
-- `Statistik/`
-  produktives Datenqualitätsmonitor-Frontend auf Basis von HTML, CSS und
-  Vanilla JavaScript
-- `frontend/`
-  neues paralleles Frontend-Grundgerüst für die Migration auf
-  `React + Vite + TypeScript`
-- `Pages-Builder/`, `KG-Finder/`, `Copyright-Checker/`, `Category-Editor/`,
-  `Fieldname-Finder/`, `Chatbot-Test/`
-  weitere einzelne Tools
-- `index.js`, `routes/`, `lib/`
-  Express-Proxy für serverseitige API-Keys und Integrationen
-- `deepl-checker/`
-  separates Testprojekt für DeepL-Glossare
+Die fachliche API besteht aus drei Entry-Points:
 
-## GitHub Pages
+- `GET|POST /api/data?action=...` für Datensuche, Detailauflösung und Qualitätsauswertungen
+- `GET|POST /api/system?action=...` für Health, Admin-Metriken und KI-Funktionen
+- `GET /api/cron/sync` für den geplanten destination.one-Import
 
-Produktive Statistik:
+Die fünf bestehenden Auth-Endpunkte unter `/api/auth/` bleiben bis zur
+separaten Auth-Migration bestehen. Damit erzeugt das Repository insgesamt acht
+Vercel Serverless Functions und bleibt unter dem Hobby-Limit.
 
-```text
-https://tim-meyer-tmgs.github.io/SaTourN/Statistik/index.html
-```
+Alte API-URLs werden in `vercel.json` auf die konsolidierten Entry-Points
+umgeschrieben und erzeugen keine zusätzlichen Functions.
 
-Framework-Preview:
+## Datenfluss
+
+Das React-Frontend liest operative Daten ausschließlich aus Neon. Der
+destination.one-Zugang wird nur vom nächtlichen Import verwendet. Der Import
+speichert den konkreten Lizenztyp; `has_license` markiert ausschließlich die
+offenen Lizenztypen `CC0`, `CC-BY`, `CC-BY-SA` und `PD`. Andere Werte wie
+`CC-BY-NC` bleiben als Lizenztyp erhalten, gelten aber nicht als Open Data.
+
+## Wichtige Umgebungsvariablen
 
 ```text
-https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/
+DATABASE_URL
+CRON_SECRET
+DESTINATION_ONE_API_KEY
+DESTINATION_ONE_BASE_URL       optional
+DESTINATION_ONE_EXPERIENCE     optional, Standard: statistik_sachsen
+DESTINATION_ONE_DATABASE_TEMPLATE optional, Standard: ET2022A.json
+DESTINATION_ONE_FULL_SYNC      optional, true aktiviert Abgleich und Löschung fehlender IDs
+BETTER_AUTH_SECRET
+BETTER_AUTH_URL
+TENANT_EMAIL_DOMAINS_JSON
+OI_API_KEY
+OI_MODEL_MAIL
+OI_MODEL_SEARCH
 ```
 
-Die Framework-Preview wird im GitHub-Pages-Workflow zusätzlich gebaut und ersetzt
-die produktive Statistik nicht.
-
-## Secrets und Umgebungsvariablen
-
-Der Proxy akzeptiert die Secret-Namen aus dem GitHub-/Render-Setup:
-
-```text
-LICENSEKEY      Destination.One / ET4 License Key für den OnRender-Proxy
-DZT_LICENSEKEY  DZT Knowledge Graph API Key für den KG-Finder
-OI_API_KEY      one.intelligence API Key
-OI_MODEL_MAIL   Modellname für Mailentwürfe
-OI_MODEL_SEARCH Modellname für KI-Suche
-```
-
-Der Destination.One-Key wird serverseitig im OnRender-Proxy genutzt. Der
-KG-Finder greift direkt auf die DZT-/OpenDataGermany-Endpunkte zu; dafür muss
-der DZT-Key im Browser verfügbar sein, zum Beispiel über eine nicht versionierte
-`KG-Finder/config.js`:
-
-```js
-window.SATOURN_DZT_LICENSEKEY = '...';
-```
-
-Wichtig: Ein direkter Browser-Zugriff bedeutet, dass der KG-Key für Nutzer der
-Seite technisch sichtbar ist. Wenn der Key geheim bleiben muss, braucht der
-KG-Finder ebenfalls einen Server-Proxy.
-
-Optionale Overrides:
-
-```text
-PORT
-CACHE_TTL_MS
-REQUEST_TIMEOUT_MS
-DESTINATION_ONE_BASE_URL
-DESTINATION_ONE_EXPERIENCE
-DESTINATION_ONE_OPEN_DATA_EXPERIENCE
-DESTINATION_ONE_TEMPLATE
-DESTINATION_ONE_COUNT_TEMPLATE
-OI_API_BASE
-OI_MAIL_CC
-OI_MAIL_BCC
-```
-
-Die Statistik-Oberfläche kann bei Bedarf vor dem Laden von `Statistik/scripts.js`
-über Browser-Globals angepasst werden:
-
-```js
-window.SATOURN_SEARCH_API_BASE = 'https://satourn.onrender.com/api/search';
-window.SATOURN_STATISTIK_CONCURRENCY = 6;
-window.SATOURN_STATISTIK_WARN_REQUESTS = 120;
-```
-
-### Strukturierte META-Filter
-
-Der Search-Proxy akzeptiert neben `query` auch wiederholbare strukturierte
-Filterparameter:
-
-```text
-area, city, category, feature, keyword, zip, globalId, id
-```
-
-Mehrere Werte desselben Feldes werden standardmäßig mit `OR` verbunden,
-verschiedene Felder mit `AND`. Für Kategorien und Merkmale kann über
-`categoryOperator=AND` beziehungsweise `featureOperator=AND` umgestellt
-werden. Ausschlüsse verwenden beispielsweise `excludeCategory` oder
-`excludeFeature`.
-
-```text
-/api/search?type=POI&countOnly=true&city=Leipzig&city=Dresden&category=Museum
-```
-
-Leere Filter senden kein `q`. Gesamtabfragen werden gegen `type=All`
-ausgeführt. `countOnly=true` erzwingt `limit=1` und verwendet das schlanke
-Count-Template.
-
-## Statistik und Python
-
-Die produktive Statistik-Oberfläche läuft auf GitHub Pages als statisches
-HTML/CSS/JavaScript. Python kann dort nicht als serverseitige Laufzeit für
-Nutzeranfragen ausgeführt werden. Deshalb bleibt die Live-Statistik im Browser
-bei JavaScript und der API-Zugriff beim bestehenden Node-/Express-Proxy.
-
-Python ist nur für Build- oder Job-Pfade sinnvoll, zum Beispiel GitHub Actions
-zur Erzeugung statischer Snapshot-JSONs oder ein separater Backend-Dienst für
-Vollscans und große CSV-Exporte.
-
-## Lokal starten
-
-### Proxy
+## Entwicklung und Prüfung
 
 ```bash
 npm install
-npm start
+npm run db:migrate
+npm run check
+npm run --prefix frontend build
 ```
 
-Der Proxy läuft danach standardmäßig auf `http://localhost:3000`.
-
-### Neues React-Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Das neue Frontend läuft danach standardmäßig auf `http://localhost:4173`.
-
-## Pages-Builder Daten aktualisieren
-
-```bash
-npm run update:pagesbuilder-json
-```
-
-Das Skript lädt Areas und Cities über den Proxy und schreibt die statischen
-JSON-Dateien nach `Pages-Builder/data/`.
+Der manuelle Import läuft mit `npm run db:sync`; ein vollständiger Abgleich
+kann mit `--full` am Skript ausgeführt werden. Der Vercel-Cron wird über
+`DESTINATION_ONE_FULL_SYNC=true` auf einen vollständigen Abgleich gestellt.

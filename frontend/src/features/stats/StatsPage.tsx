@@ -155,13 +155,13 @@ export function StatsPage() {
           <div>
             <span>Open-Data-Quote</span>
             <strong>{loading ? <MetricLoading /> : formatPercent(summary.openDataQuote)}</strong>
-            <small>Anteil der veröffentlichten offenen Daten</small>
+            <small>Anteil der Open-Data-fähigen Datensätze</small>
           </div>
         </article>
         <article className="stats-kpi-card">
           <span className="stats-kpi-icon amber material-icons" aria-hidden="true">pie_chart</span>
           <div>
-            <span>Nicht als Open Data veröffentlicht</span>
+            <span>Nicht Open-Data-fähig</span>
             <strong>{loading ? <MetricLoading /> : formatNumber(summary.nonOpenDataRecords)}</strong>
             <small>{loading ? <MetricLoading /> : `${formatPercent(summary.nonOpenDataQuote)} aller Datensätze`}</small>
           </div>
@@ -183,7 +183,7 @@ export function StatsPage() {
                     <th>Datentyp</th>
                     <th>Anzahl</th>
                     <th>Offene Daten</th>
-                    <th>Nicht veröffentlicht</th>
+                    <th>Nicht Open-Data-fähig</th>
                     <th>Anteil</th>
                   </tr>
                 </thead>

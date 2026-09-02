@@ -1,7 +1,7 @@
 import { fetchJson } from '../../shared/api/http-client';
-import { getRuntimeConfig } from '../../shared/api/runtime-config';
+import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
-import { evaluateAllItems, getQualityScanConfig, type QualityCriterion } from '../../shared/legacy/quality';
+import { evaluateAllItems, type QualityCriterion } from '../../shared/legacy/quality';
 import { findQualityCriterion } from '../../shared/quality/quality-criteria';
 import {
   buildQualityEvaluationInput,
@@ -82,10 +82,7 @@ function getPerRequestOffset(requestCount: number, pagination: PaginationOptions
 }
 
 function canPageQualityScanResults(requests: Array<{ criterion: QualityCriterion; type: string }>) {
-  return requests.every(({ criterion, type }) => {
-    const scanConfig = getQualityScanConfig(criterion, type);
-    return scanConfig.method === 'api_pushdown' && scanConfig.verified && Boolean(scanConfig.missingQuery);
-  });
+  return requests.length > 0;
 }
 
 function cleanQueryValue(value: string) {
@@ -234,7 +231,7 @@ async function fetchRecordsById(query: string, context: WorkContext, selectedTyp
   for (const type of targetTypes) {
     for (const variant of variants) {
       const combinedQuery = [contextQuery, variant].filter(Boolean).join(' AND ');
-      const payload = await fetchJson<SearchPayload>(buildSearchApiUrl(runtime.searchApiBase, type, combinedQuery, { limit: 10 }));
+      const payload = await fetchJson<SearchPayload>(buildSearchApiUrl(runtime.dataApiBase, type, combinedQuery, { limit: 10 }));
       const items = extractItems(payload).map((raw) => normalizeSearchItem(raw, type, context));
       results.push(...items);
       if (results.length) break;
@@ -279,7 +276,7 @@ async function fetchRecordsByTextQuery(query: string, context: WorkContext, sele
   const payloads = await Promise.all(targetTypes.map(async (type): Promise<{ items: Record<string, unknown>[]; total: number }> => {
     try {
       const payload = await fetchJson<SearchPayload>(
-        buildSearchApiUrl(runtime.searchApiBase, type, combinedQuery, { limit: perTypeLimit, offset })
+        buildSearchApiUrl(runtime.dataApiBase, type, combinedQuery, { limit: perTypeLimit, offset })
       );
       return {
         items: extractItems(payload).map((raw) => normalizeSearchItem(raw, type, context)),
@@ -306,7 +303,7 @@ async function fetchRecordsByTextQuery(query: string, context: WorkContext, sele
 
 async function fetchRecordsByAiPrompt(prompt: string, context: WorkContext, selectedType: string): Promise<SearchResult> {
   const runtime = getRuntimeConfig();
-  const aiPayload = await fetchJson<AiSearchPayload>(runtime.oiSearchApiBase, {
+  const aiPayload = await fetchJson<AiSearchPayload>(buildApiActionUrl(runtime.systemApiBase, 'ai-search'), {
     method: 'POST',
     timeoutMs: 60_000,
     headers: { 'Content-Type': 'application/json' },
@@ -334,7 +331,7 @@ async function fetchRecordsByAiPrompt(prompt: string, context: WorkContext, sele
     };
   }
 
-  const resolvedPayload = await fetchJson<ResolvedPayload>(runtime.recordsByIdsApiBase, {
+  const resolvedPayload = await fetchJson<ResolvedPayload>(buildApiActionUrl(runtime.dataApiBase, 'records-by-ids'), {
     method: 'POST',
     timeoutMs: 45_000,
     headers: { 'Content-Type': 'application/json' },
@@ -368,7 +365,7 @@ async function fetchNonOpenDataRecords(context: WorkContext, selectedTypes: stri
 
   const payloads = await Promise.all(targetTypes.map(async (type) => {
     const payload = await fetchJson<SearchPayload>(
-      buildSearchApiUrl(runtime.searchApiBase, type, contextQuery, {
+      buildSearchApiUrl(runtime.dataApiBase, type, contextQuery, {
         limit: perTypeLimit,
         offset: perTypeOffset,
         isOpenData: false
@@ -490,7 +487,7 @@ export async function loadCriterionRecordsForFrontend(options: {
     if (query) params.set('query', query);
 
     try {
-      const payload = await fetchJson<QualityScanPayload>(`${runtime.qualityScanApiBase}?${params.toString()}`, {
+      const payload = await fetchJson<QualityScanPayload>(`${buildApiActionUrl(runtime.dataApiBase, 'quality-scan')}&${params.toString()}`, {
         timeoutMs: 45_000
       });
 

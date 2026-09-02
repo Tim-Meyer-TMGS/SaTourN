@@ -1,6 +1,5 @@
 import 'dotenv/config';
 
-import { API_KEY, BASE_URL, EXPERIENCE, REQUEST_TIMEOUT_MS } from '../lib/config.js';
 import { DEFAULT_ET4_SYNC_TYPES, syncEt4ToNeon } from '../lib/database/sync-et4.js';
 
 function readOption(name, fallback = '') {
@@ -20,9 +19,9 @@ function parseTypes(value) {
 
 const result = await syncEt4ToNeon({
   databaseUrl: process.env.DATABASE_URL,
-  apiKey: API_KEY,
-  baseUrl: BASE_URL,
-  experience: readOption('--experience', EXPERIENCE),
+  apiKey: process.env.DESTINATION_ONE_API_KEY || process.env.LICENSEKEY || process.env.LICENSE_KEY,
+  baseUrl: process.env.DESTINATION_ONE_BASE_URL || 'https://meta.et4.de/rest.ashx/search/',
+  experience: process.env.DESTINATION_ONE_EXPERIENCE || 'statistik_sachsen',
   types: parseTypes(readOption('--types')),
   explicitSince: readOption('--since') || null,
   fullSync: process.argv.includes('--full'),
@@ -31,9 +30,8 @@ const result = await syncEt4ToNeon({
   maxPages: numberOption('--max-pages', 500, 5000),
   overlapMinutes: numberOption('--overlap-minutes', 10, 1440),
   template: readOption('--template', process.env.DESTINATION_ONE_DATABASE_TEMPLATE || 'ET2022A.json'),
-  requestTimeoutMs: REQUEST_TIMEOUT_MS,
+  requestTimeoutMs: Number(process.env.REQUEST_TIMEOUT_MS) || 15_000,
   log: console.log
 });
 
 console.log(JSON.stringify(result, null, 2));
-

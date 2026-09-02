@@ -70,11 +70,11 @@ export function RandomSamplePanel() {
     try {
       const runtime = getRuntimeConfig();
       const sample = await loadRandomSample({
-        apiBase: runtime.searchApiBase,
+        apiBase: runtime.dataApiBase,
         types: selectedTypes,
         targetCount,
         query: buildSampleQuery(context.area, context.city, additionalQuery),
-        openDataPublished: source === 'open-data',
+        openDataOnly: source === 'open-data',
         signal: controller.signal
       });
       setResult(sample);
@@ -125,12 +125,12 @@ export function RandomSamplePanel() {
             <label>
               Datenquelle
               <select value={source} onChange={(event) => setSource(event.target.value as 'inventory' | 'open-data')}>
-                <option value="open-data">Open Data veröffentlicht</option>
+                <option value="open-data">Open-Data-fähige Datensätze</option>
                 <option value="inventory">SaTourN-Bestand</option>
               </select>
             </label>
             <label>
-              Zusätzlicher META-Filter (optional)
+              Zusätzlicher Filter (optional)
               <input
                 type="text"
                 value={additionalQuery}

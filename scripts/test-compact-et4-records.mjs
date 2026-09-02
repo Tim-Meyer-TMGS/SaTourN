@@ -45,9 +45,18 @@ assert.equal(row.globalId, 'p_42');
 assert.equal(row.recordType, 'POI');
 assert.deepEqual(row.areas, ['Leipzig', 'Sachsen']);
 assert.equal(row.hasLicense, true);
+assert.equal(row.licenseType, 'CC-BY');
 assert.equal(row.hasDescription, true);
 assert.equal(row.hasImages, true);
 assert.match(row.contentHash, /^[a-f0-9]{64}$/);
 assert.equal(extractEt4Items({ items: [source] }).length, 1);
+
+const restrictedLicenseRow = createEt4RecordRow({
+  ...source,
+  global_id: 'p_43',
+  attributes: [{ key: 'license', value: 'cc-by-nc' }]
+}, { experience: 'statistik_sachsen' });
+assert.equal(restrictedLicenseRow.licenseType, 'CC-BY-NC');
+assert.equal(restrictedLicenseRow.hasLicense, false);
 
 console.log('Compact ET4 record contract passed.');

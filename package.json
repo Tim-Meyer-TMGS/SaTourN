@@ -1,35 +1,28 @@
 {
-  "name": "satourn-proxy",
+  "name": "satourn",
   "version": "1.0.0",
-  "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "check:database": "node --check lib/database/compact-et4-record.js && node --check lib/database/neon-et4-store.js && node --check lib/database/sync-et4.js && node --check api/_database.js && node --check api/_record-query.js && node --check api/_quality.js && node --check api/health.js && node --check api/search.js && node --check api/records/by-global-ids.js && node --check api/quality/count.js && node --check api/quality/scan.js && node --check api/quality/list.js && node --check api/quality/summary.js && node --check api/cron/sync-et4.js && node --check scripts/analyze-et4-projection.mjs && node --check scripts/delete-et4-experience.mjs && node --check scripts/delete-inactive-et4-records.mjs && node --check scripts/import-et4-json.mjs && node --check scripts/run-db-migrations.mjs && node --check scripts/sync-et4-to-neon.mjs && node --check scripts/sync-open-data-membership.mjs && node --check scripts/test-database-api.mjs && node --check scripts/verify-db-import.mjs && node scripts/test-compact-et4-records.mjs",
-    "check": "node --check index.js && node --check lib/config.js && node --check lib/oi-config.js && node --check lib/cache.js && node --check lib/kv-store.js && node --check lib/file-key-value-store.js && node --check lib/quality-cache.js && node --check lib/quality-snapshot-contract.js && node --check lib/quality-snapshot-store.js && node --check lib/open-data-rules.js && node --check lib/search-utils.js && node --check lib/database/compact-et4-record.js && node --check lib/database/neon-et4-store.js && node --check routes/search.js && node --check routes/records.js && node --check routes/oi.js && node --check routes/quality.js && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs && node --check scripts/run-quality-snapshot.mjs && node --check scripts/run-quality-snapshot-cli.mjs && node --check scripts/test-quality-snapshot-storage.mjs && node --check scripts/analyze-et4-projection.mjs && node --check scripts/import-et4-json.mjs && node --check scripts/run-db-migrations.mjs && node --check scripts/sync-et4-to-neon.mjs && node --check scripts/verify-db-import.mjs && node scripts/test-search-utils.mjs && node scripts/test-compact-et4-records.mjs",
+    "check:database": "node --check lib/api/auth.js && node --check lib/api/data-service.js && node --check lib/api/http.js && node --check lib/api/quality.js && node --check lib/api/record-query.js && node --check lib/api/system-service.js && node --check lib/auth/bridge.js && node --check lib/auth/server.js && node --check lib/auth/tenant-domains.js && node --check lib/database/compact-et4-record.js && node --check lib/database/destination-one.js && node --check lib/database/neon-et4-store.js && node --check lib/database/sync-et4.js && node --check lib/integrations/one-intelligence.js && node --check api/data.js && node --check api/system.js && node --check api/cron/sync.js && node --check api/auth/login.js && node --check api/auth/session.js && node --check api/auth/logout.js && node --check api/auth/change-password.js && node --check api/auth/forgot-password.js && node --check scripts/analyze-et4-projection.mjs && node --check scripts/create-initial-super-admin.mjs && node --check scripts/import-et4-json.mjs && node --check scripts/run-db-migrations.mjs && node --check scripts/sync-et4-to-neon.mjs && node --check scripts/test-api-entrypoints.mjs && node --check scripts/test-database-api.mjs && node --check scripts/verify-auth.mjs && node --check scripts/verify-db-import.mjs && node scripts/test-compact-et4-records.mjs",
+    "check": "npm run check:database && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs",
     "diagnose:quality-examples": "node scripts/diagnose-quality-examples.mjs",
     "diagnose:quality-examples:json": "node scripts/diagnose-quality-examples.mjs --json",
-    "quality:snapshot": "node scripts/run-quality-snapshot-cli.mjs",
-    "quality:snapshot:files": "node scripts/run-quality-snapshot-cli.mjs --output-dir frontend/public/quality-snapshots --contexts-file config/quality-snapshot-contexts.json",
-    "test:snapshot-storage": "node scripts/test-quality-snapshot-storage.mjs",
     "test:db-projection": "node scripts/test-compact-et4-records.mjs",
+    "test:api-entrypoints": "node scripts/test-api-entrypoints.mjs",
     "test:db-api-live": "node scripts/test-database-api.mjs",
     "db:analyze": "node scripts/analyze-et4-projection.mjs",
-    "db:delete-inactive": "node scripts/delete-inactive-et4-records.mjs",
-    "db:delete-experience": "node scripts/delete-et4-experience.mjs",
     "db:migrate": "node scripts/run-db-migrations.mjs",
     "db:import": "node scripts/import-et4-json.mjs",
     "db:sync": "node scripts/sync-et4-to-neon.mjs",
-    "db:sync-open-data": "node scripts/sync-open-data-membership.mjs",
-    "db:verify": "node scripts/verify-db-import.mjs",
-    "update:pagesbuilder-json": "node Pages-Builder/scripts/update-pagesbuilder-json.mjs"
+    "auth:create-super-admin": "node scripts/create-initial-super-admin.mjs",
+    "auth:revoke-sessions": "node scripts/revoke-user-sessions.mjs",
+    "auth:verify": "node scripts/verify-auth.mjs",
+    "db:verify": "node scripts/verify-db-import.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
-    "cors": "^2.8.5",
+    "better-auth": "^1.7.2",
     "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "node-fetch": "^3.3.2"
+    "pg": "^8.23.0"
   }
 }
-

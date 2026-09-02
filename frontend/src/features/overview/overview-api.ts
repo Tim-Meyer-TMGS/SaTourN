@@ -1,5 +1,5 @@
 import { fetchJson } from '../../shared/api/http-client';
-import { getRuntimeConfig } from '../../shared/api/runtime-config';
+import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
 import { DATA_TYPES } from '../../shared/config/constants';
 import { getQualityScanConfig, qualityCriteria, type QualityCriterion } from '../../shared/legacy/quality';
@@ -82,10 +82,6 @@ function priorityRank(priority: string) {
   return 1;
 }
 
-function hasConcreteQualityContext(context: WorkContext) {
-  return Boolean(context.city || (context.area && context.area !== 'Sachsen'));
-}
-
 function canLoadPushdownCount(criterion: QualityCriterion, type: string) {
   const config = getQualityScanConfig(criterion, type);
   return config.method === 'api_pushdown' && config.verified && Boolean(config.missingQuery);
@@ -97,17 +93,17 @@ async function loadStatisticRow(type: string, context: WorkContext): Promise<Ove
     area: context.area || undefined,
     city: context.city || undefined
   };
-  const [totalPayload, openDataPayload, licensedPayload] = await Promise.all([
-    fetchJson<CountPayload>(buildSearchApiUrl(runtime.searchApiBase, type, '', { countOnly: true, filters })),
-    fetchJson<CountPayload>(buildSearchApiUrl(runtime.searchApiBase, type, '', { countOnly: true, openDataPublished: true, filters })),
-    fetchJson<CountPayload>(buildSearchApiUrl(runtime.searchApiBase, type, '', { countOnly: true, isOpenData: true, filters }))
+  const [totalPayload, openDataPayload] = await Promise.all([
+    fetchJson<CountPayload>(buildSearchApiUrl(runtime.dataApiBase, type, '', { countOnly: true, filters })),
+    fetchJson<CountPayload>(buildSearchApiUrl(runtime.dataApiBase, type, '', { countOnly: true, isOpenData: true, filters }))
   ]);
+  const openDataCount = extractTotal(openDataPayload);
 
   return {
     type,
     total: extractTotal(totalPayload),
-    openData: extractTotal(openDataPayload),
-    licensed: extractTotal(licensedPayload)
+    openData: openDataCount,
+    licensed: openDataCount
   };
 }
 
@@ -133,20 +129,17 @@ export async function loadStatisticRows(context: WorkContext): Promise<OverviewS
 }
 
 async function loadQualitySummary(context: WorkContext): Promise<OverviewQualitySummary | null> {
-  if (!hasConcreteQualityContext(context)) return null;
-
   const runtime = getRuntimeConfig();
   const query = buildContextQuery(context);
-  if (!query) return null;
 
   const params = new URLSearchParams();
-  params.set('query', query);
+  if (query) params.set('query', query);
   params.set('scanPageSize', '200');
   params.set('maxPages', '50');
   params.set('timeoutMs', '20000');
   if (context.type) params.set('type', context.type);
 
-  return fetchJson<OverviewQualitySummary>(`${runtime.qualitySummaryApiBase}?${params.toString()}`);
+  return fetchJson<OverviewQualitySummary>(`${buildApiActionUrl(runtime.dataApiBase, 'quality-summary')}&${params.toString()}`);
 }
 
 async function loadIssueCount(criterionId: string, type: string, context: WorkContext) {
@@ -157,7 +150,7 @@ async function loadIssueCount(criterionId: string, type: string, context: WorkCo
   const query = buildContextQuery(context);
   if (query) params.set('query', query);
 
-  const payload = await fetchJson<CountPayload>(`${runtime.qualityCountApiBase}?${params.toString()}`);
+  const payload = await fetchJson<CountPayload>(`${buildApiActionUrl(runtime.dataApiBase, 'quality-count')}&${params.toString()}`);
   return extractTotal(payload);
 }
 
