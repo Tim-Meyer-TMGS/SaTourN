@@ -1,5 +1,17 @@
 {
-  "installCommand": "npm install --prefix frontend",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install --ignore-scripts && npm install --prefix frontend",
   "buildCommand": "VITE_BASE_PATH=/ npm run --prefix frontend build",
-  "outputDirectory": "frontend/dist"
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/cron/*.js": {
+      "maxDuration": 300
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/sync-et4",
+      "schedule": "15 2 * * *"
+    }
+  ]
 }
