@@ -5,15 +5,21 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "check": "node --check index.js && node --check lib/config.js && node --check lib/oi-config.js && node --check lib/cache.js && node --check lib/kv-store.js && node --check lib/file-key-value-store.js && node --check lib/quality-cache.js && node --check lib/quality-snapshot-contract.js && node --check lib/quality-snapshot-store.js && node --check lib/open-data-rules.js && node --check lib/search-utils.js && node --check routes/search.js && node --check routes/records.js && node --check routes/oi.js && node --check routes/quality.js && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs && node --check scripts/run-quality-snapshot.mjs && node --check scripts/run-quality-snapshot-cli.mjs && node --check scripts/test-quality-snapshot-storage.mjs && node scripts/test-search-utils.mjs",
+    "check": "node --check index.js && node --check lib/config.js && node --check lib/oi-config.js && node --check lib/cache.js && node --check lib/kv-store.js && node --check lib/file-key-value-store.js && node --check lib/quality-cache.js && node --check lib/quality-snapshot-contract.js && node --check lib/quality-snapshot-store.js && node --check lib/open-data-rules.js && node --check lib/search-utils.js && node --check lib/database/compact-et4-record.js && node --check routes/search.js && node --check routes/records.js && node --check routes/oi.js && node --check routes/quality.js && node --check Statistik/quality.js && node --check scripts/diagnose-quality-examples.mjs && node --check scripts/run-quality-snapshot.mjs && node --check scripts/run-quality-snapshot-cli.mjs && node --check scripts/test-quality-snapshot-storage.mjs && node --check scripts/analyze-et4-projection.mjs && node --check scripts/import-et4-json.mjs && node --check scripts/run-db-migrations.mjs && node --check scripts/verify-db-import.mjs && node scripts/test-search-utils.mjs && node scripts/test-compact-et4-records.mjs",
     "diagnose:quality-examples": "node scripts/diagnose-quality-examples.mjs",
     "diagnose:quality-examples:json": "node scripts/diagnose-quality-examples.mjs --json",
     "quality:snapshot": "node scripts/run-quality-snapshot-cli.mjs",
     "quality:snapshot:files": "node scripts/run-quality-snapshot-cli.mjs --output-dir frontend/public/quality-snapshots --contexts-file config/quality-snapshot-contexts.json",
     "test:snapshot-storage": "node scripts/test-quality-snapshot-storage.mjs",
+    "test:db-projection": "node scripts/test-compact-et4-records.mjs",
+    "db:analyze": "node scripts/analyze-et4-projection.mjs",
+    "db:migrate": "node scripts/run-db-migrations.mjs",
+    "db:import": "node scripts/import-et4-json.mjs",
+    "db:verify": "node scripts/verify-db-import.mjs",
     "update:pagesbuilder-json": "node Pages-Builder/scripts/update-pagesbuilder-json.mjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",

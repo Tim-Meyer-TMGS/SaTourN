@@ -483,49 +483,6 @@ textarea {
   line-height: 1.45;
 }
 
-.page-guidance {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
-  margin: 0 0 16px;
-  padding: 13px 16px;
-  border: 1px solid #cfe0fb;
-  border-radius: 8px;
-  background: var(--blue-soft);
-}
-
-.page-guidance-icon {
-  width: 36px;
-  height: 36px;
-  display: grid !important;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--surface);
-  color: var(--blue);
-}
-
-.page-guidance-copy strong {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--text);
-}
-
-.page-guidance-copy p {
-  margin: 0;
-  color: #475467;
-  line-height: 1.45;
-}
-
-.page-guidance-action {
-  justify-self: end;
-}
-
-.page-guidance-link {
-  min-height: 36px;
-  white-space: nowrap;
-}
-
 .panel-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -2710,7 +2667,6 @@ button.table-link-button:disabled,
 }
 
 .dark-shell .data-note,
-.dark-shell .page-guidance-copy p,
 .dark-shell .subtle-note,
 .dark-shell .table-empty,
 .dark-shell .empty-note,
@@ -2724,11 +2680,6 @@ button.table-link-button:disabled,
 .dark-shell .usability-grid span,
 .dark-shell .detail-kv-list dt {
   color: var(--muted);
-}
-
-.dark-shell .page-guidance {
-  border-color: #24496e;
-  background: var(--blue-soft);
 }
 
 .dark-shell .record-table td,
@@ -3316,16 +3267,6 @@ button.table-link-button:disabled,
     flex-direction: column;
   }
 
-  .page-guidance {
-    grid-template-columns: 36px minmax(0, 1fr);
-    align-items: start;
-  }
-
-  .page-guidance-action {
-    grid-column: 2;
-    justify-self: start;
-  }
-
   .kpi-grid,
   .task-kpi-grid,
   .stats-kpi-grid,
@@ -3474,18 +3415,6 @@ button.table-link-button:disabled,
 
   .overview-hero h1 {
     font-size: 23px;
-  }
-
-  .page-guidance {
-    grid-template-columns: 1fr;
-  }
-
-  .page-guidance-icon {
-    display: none !important;
-  }
-
-  .page-guidance-action {
-    grid-column: 1;
   }
 
   .panel-card,

@@ -170,7 +170,7 @@ export function DetailHeadCard({ item, primaryIssue }: { item: DetailItem; prima
           </span>
         </div>
         <strong>{primaryIssue?.label || 'Keine priorisierte Baustelle'}</strong>
-        <small>{primaryIssue?.recommendation || 'Prüfe die Detailangaben und kehre anschließend zur Arbeitsliste zurück.'}</small>
+        {primaryIssue?.recommendation ? <small>{primaryIssue.recommendation}</small> : null}
       </div>
     </section>
   );
