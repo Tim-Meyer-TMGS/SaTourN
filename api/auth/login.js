@@ -1,6 +1,7 @@
-import { genericLoginMessage } from '../../lib/auth/server.js';
+import { genericLoginMessage } from '../../lib/auth/config.js';
 import { normalizeEmail } from '../../lib/auth/tenant-domains.js';
-import { forwardBetterAuthResponse, runBetterAuthRequest } from '../../lib/auth/bridge.js';
+import { forwardNeonAuthResponse, runNeonAuthRequest } from '../../lib/auth/neon-bridge.js';
+import { approvedLoginEmail, recordSuccessfulLogin } from '../../lib/api/auth.js';
 import { methodNotAllowed, sendJson } from '../../lib/api/http.js';
 
 function parseBody(body) {
@@ -12,8 +13,12 @@ export default async function handler(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, ['POST']);
   try {
     const body = parseBody(request.body);
-    const authResponse = await runBetterAuthRequest(request, 'sign-in/email', {
-      email: normalizeEmail(body.email),
+    const email = normalizeEmail(body.email);
+    if (!await approvedLoginEmail(email)) {
+      return sendJson(response, 401, { error: 'LOGIN_FAILED', message: genericLoginMessage });
+    }
+    const authResponse = await runNeonAuthRequest(request, 'sign-in/email', {
+      email,
       password: String(body.password || ''),
       rememberMe: body.rememberMe !== false
     });
@@ -23,7 +28,8 @@ export default async function handler(request, response) {
         message: genericLoginMessage
       });
     }
-    return forwardBetterAuthResponse(response, authResponse);
+    await recordSuccessfulLogin(email);
+    return forwardNeonAuthResponse(response, authResponse);
   } catch (error) {
     console.error('Login request failed.', error instanceof Error ? error.message : error);
     return sendJson(response, 401, { error: 'LOGIN_FAILED', message: genericLoginMessage });

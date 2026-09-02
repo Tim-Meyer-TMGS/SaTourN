@@ -11,9 +11,10 @@ Die fachliche API besteht aus drei Entry-Points:
 - `GET|POST /api/system?action=...` für Health, Admin-Metriken und KI-Funktionen
 - `GET /api/cron/sync` für den geplanten destination.one-Import
 
-Die fünf bestehenden Auth-Endpunkte unter `/api/auth/` bleiben bis zur
-separaten Auth-Migration bestehen. Damit erzeugt das Repository insgesamt acht
-Vercel Serverless Functions und bleibt unter dem Hobby-Limit.
+Die fünf Auth-Endpunkte unter `/api/auth/` bilden eine Same-Origin-Brücke zu
+Neon Auth. Rollen, Mandanten und die Freigabe einzelner Konten bleiben in den
+SaTourN-Anwendungstabellen. Damit erzeugt das Repository insgesamt acht Vercel
+Serverless Functions und bleibt unter dem Hobby-Limit.
 
 Alte API-URLs werden in `vercel.json` auf die konsolidierten Entry-Points
 umgeschrieben und erzeugen keine zusätzlichen Functions.
@@ -36,9 +37,8 @@ DESTINATION_ONE_BASE_URL       optional
 DESTINATION_ONE_EXPERIENCE     optional, Standard: statistik_sachsen
 DESTINATION_ONE_DATABASE_TEMPLATE optional, Standard: ET2022A.json
 DESTINATION_ONE_FULL_SYNC      optional, true aktiviert Abgleich und Löschung fehlender IDs
-BETTER_AUTH_SECRET
-BETTER_AUTH_URL
-TENANT_EMAIL_DOMAINS_JSON
+NEON_AUTH_BASE_URL
+VITE_NEON_AUTH_URL
 OI_API_KEY
 OI_MODEL_MAIL
 OI_MODEL_SEARCH
