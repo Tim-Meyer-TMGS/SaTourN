@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { fetchJson } from '../../shared/api/http-client';
-import { getRuntimeConfig } from '../../shared/api/runtime-config';
+import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
 import { findQualityCriterion } from '../../shared/quality/quality-criteria';
 import {
   buildMailDraftUrl,
@@ -64,7 +64,7 @@ function buildMailDraftRecord(item: DetailItem, primaryIssue: string): MailDraft
 
 async function fetchRecordDetailItem(identifier: string, type: string) {
   const runtime = getRuntimeConfig();
-  const payload = await fetchJson<ResolvedPayload>(runtime.recordsByIdsApiBase, {
+  const payload = await fetchJson<ResolvedPayload>(buildApiActionUrl(runtime.dataApiBase, 'records-by-ids'), {
     method: 'POST',
     timeoutMs: 45_000,
     headers: { 'Content-Type': 'application/json' },

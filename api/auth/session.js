@@ -1,5 +1,5 @@
-import { authenticatedIdentity, publicIdentity, sendAuthAccessError } from '../_auth.js';
-import { methodNotAllowed, sendJson } from '../_database.js';
+import { authenticatedIdentity, publicIdentity, sendAuthAccessError } from '../../lib/api/auth.js';
+import { methodNotAllowed, sendJson } from '../../lib/api/http.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') return methodNotAllowed(response, ['GET']);

@@ -12,12 +12,12 @@ function readOption(name, fallback = '') {
 }
 
 const filePath = readOption('--file');
-const experience = readOption('--experience');
+const experience = process.env.DESTINATION_ONE_EXPERIENCE || 'statistik_sachsen';
 const batchSize = Math.max(1, Math.min(100, Number.parseInt(readOption('--batch-size', '50'), 10) || 50));
 const dryRun = process.argv.includes('--dry-run');
 
-if (!filePath || !experience) {
-  throw new Error('Usage: node scripts/import-et4-json.mjs --file <json> --experience <name> [--batch-size 50] [--dry-run]');
+if (!filePath) {
+  throw new Error('Usage: node scripts/import-et4-json.mjs --file <json> [--batch-size 50] [--dry-run]');
 }
 
 const document = JSON.parse(await readFile(filePath, 'utf8'));

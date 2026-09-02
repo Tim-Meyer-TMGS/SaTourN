@@ -2,16 +2,12 @@ import assert from 'node:assert/strict';
 
 import 'dotenv/config';
 
-import cronSyncHandler from '../api/cron/sync-et4.js';
+import cronSyncHandler from '../api/cron/sync.js';
+import dataHandler from '../api/data.js';
+import systemHandler from '../api/system.js';
 import loginHandler from '../api/auth/login.js';
 import logoutHandler from '../api/auth/logout.js';
 import sessionHandler from '../api/auth/session.js';
-import healthHandler from '../api/health.js';
-import recordLookupHandler from '../api/records/by-global-ids.js';
-import qualityCountHandler from '../api/quality/count.js';
-import qualityScanHandler from '../api/quality/scan.js';
-import qualitySummaryHandler from '../api/quality/summary.js';
-import searchHandler from '../api/search.js';
 
 function responseMock() {
   return {
@@ -60,10 +56,10 @@ if (!testPassword) throw new Error('TEST_ADMIN_PASSWORD is required for the auth
 if (!testEmail) throw new Error('TEST_ADMIN_EMAIL is required for the authenticated live API test.');
 
 const unauthorizedResponse = responseMock();
-await searchHandler({
+await dataHandler({
   method: 'GET',
   headers: { 'x-real-ip': '127.0.0.1' },
-  query: { countOnly: 'true' }
+  query: { action: 'search', countOnly: 'true' }
 }, unauthorizedResponse);
 assert.equal(unauthorizedResponse.statusCode, 401);
 
@@ -93,10 +89,10 @@ assert.equal(sessionPayload.user.tenant.slug, 'tmgs');
 
 if (sessionPayload.user.mustChangePassword) {
   const protectedResponse = responseMock();
-  await searchHandler({
+  await dataHandler({
     method: 'GET',
     headers: { cookie: authCookie },
-    query: { countOnly: 'true' }
+    query: { action: 'search', countOnly: 'true' }
   }, protectedResponse);
   assert.equal(protectedResponse.statusCode, 403);
   assert.equal(protectedResponse.body?.error, 'PASSWORD_CHANGE_REQUIRED');
@@ -113,70 +109,71 @@ if (sessionPayload.user.mustChangePassword) {
   process.exit(0);
 }
 
-const countPayload = await invoke(searchHandler, {
+const countPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: 'POI', countOnly: 'true' }
+  query: { action: 'search', type: 'POI', countOnly: 'true' }
 });
 assert.ok(countPayload.overallcount > 0);
 
-const healthPayload = await invoke(healthHandler, { method: 'GET' });
+const healthPayload = await invoke(systemHandler, { method: 'GET', query: { action: 'health' } });
 assert.equal(healthPayload.ok, true);
 
-const allInventoryPayload = await invoke(searchHandler, {
+const allInventoryPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: '', countOnly: 'true' }
+  query: { action: 'search', type: '', countOnly: 'true' }
 });
 assert.ok(allInventoryPayload.overallcount >= countPayload.overallcount);
 
-const publishedPayload = await invoke(searchHandler, {
+const publishedPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: 'POI', countOnly: 'true', openDataPublished: 'true' }
+  query: { action: 'search', type: 'POI', countOnly: 'true', isOpenData: 'true' }
 });
 assert.ok(publishedPayload.overallcount > 0);
 assert.ok(publishedPayload.overallcount < countPayload.overallcount);
 
-const allPublishedPayload = await invoke(searchHandler, {
+const allPublishedPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: '', countOnly: 'true', openDataPublished: 'true' }
+  query: { action: 'search', type: '', countOnly: 'true', isOpenData: 'true' }
 });
 assert.ok(allPublishedPayload.overallcount >= publishedPayload.overallcount);
 assert.ok(allPublishedPayload.overallcount < allInventoryPayload.overallcount);
 
-const nonOpenDataPayload = await invoke(searchHandler, {
+const nonOpenDataPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: 'POI', countOnly: 'true', isOpenData: 'false' }
+  query: { action: 'search', type: 'POI', countOnly: 'true', isOpenData: 'false' }
 });
 
-const licenseCountPayload = await invoke(qualityCountHandler, {
+const licenseCountPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: 'POI', criterionId: 'license_missing' }
+  query: { action: 'quality-count', type: 'POI', criterionId: 'license_missing' }
 });
 assert.equal(licenseCountPayload.overallcount, nonOpenDataPayload.overallcount);
 
-const qualityScanPayload = await invoke(qualityScanHandler, {
+const qualityScanPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: 'POI', criterionId: 'license_missing', limit: '2' }
+  query: { action: 'quality-scan', type: 'POI', criterionId: 'license_missing', limit: '2' }
 });
 assert.equal(qualityScanPayload.items.length, 2);
 assert.ok(qualityScanPayload.stats.overallcount > 0);
 
-const qualitySummaryPayload = await invoke(qualitySummaryHandler, {
+const qualitySummaryPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: 'POI' }
+  query: { action: 'quality-summary', type: 'POI' }
 });
 assert.equal(qualitySummaryPayload.totalAssessed, countPayload.overallcount);
 assert.ok(Array.isArray(qualitySummaryPayload.issueSummary));
 
-const listPayload = await invoke(searchHandler, {
+const listPayload = await invoke(dataHandler, {
   method: 'GET',
-  query: { type: 'POI', limit: '2' }
+  query: { action: 'search', type: 'POI', limit: '2' }
 });
 assert.equal(listPayload.items.length, 2);
 assert.ok(listPayload.items[0].global_id);
 
 const globalId = listPayload.items[0].global_id;
-const detailPayload = await invoke(recordLookupHandler, {
+const detailPayload = await invoke(dataHandler, {
   method: 'POST',
+  query: { action: 'records-by-ids' },
   body: { ids: [globalId], type: 'POI' }
 });
 assert.equal(detailPayload.items.length, 1);
@@ -190,9 +187,7 @@ const cronPayload = await invoke(cronSyncHandler, {
 });
 delete process.env.CRON_SECRET;
 assert.equal(cronPayload.ok, true);
-assert.equal(cronPayload.inventory.results.length, 9);
-assert.ok(cronPayload.openDataMembership.importedCount >= cronPayload.openDataMembership.publishedCount);
-assert.ok(cronPayload.openDataMembership.publishedCount > 0);
+assert.equal(cronPayload.sync.results.length, 9);
 
 await invoke(logoutHandler, { method: 'POST', body: {} });
 
@@ -200,10 +195,9 @@ console.log(JSON.stringify({
   databaseApiContract: 'passed',
   poiCount: countPayload.overallcount,
   inventoryCount: allInventoryPayload.overallcount,
-  publishedPoiCount: publishedPayload.overallcount,
-  publishedCount: allPublishedPayload.overallcount,
+  openDataPoiCount: publishedPayload.overallcount,
+  openDataCount: allPublishedPayload.overallcount,
   poiWithoutLicense: licenseCountPayload.overallcount,
   detailGlobalId: globalId,
-  scheduledInventorySync: 'passed',
-  scheduledOpenDataMembershipSync: 'passed'
+  scheduledInventorySync: 'passed'
 }, null, 2));

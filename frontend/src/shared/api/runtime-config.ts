@@ -1,61 +1,23 @@
 export type FrontendRuntimeConfig = {
-  warmupApiBase: string;
-  searchApiBase: string;
-  qualityCountApiBase: string;
-  qualityScanApiBase: string;
-  qualitySummaryApiBase: string;
-  qualityListApiBase: string;
-  oiSearchApiBase: string;
-  oiMailDraftApiBase: string;
-  recordsByIdsApiBase: string;
+  dataApiBase: string;
+  systemApiBase: string;
 };
 
 declare global {
   interface Window {
-    SATOURN_SEARCH_API_BASE?: string;
-    SATOURN_WARMUP_API_BASE?: string;
-    SATOURN_QUALITY_COUNT_API_BASE?: string;
-    SATOURN_QUALITY_SCAN_API_BASE?: string;
-    SATOURN_QUALITY_SUMMARY_API_BASE?: string;
-    SATOURN_QUALITY_LIST_API_BASE?: string;
-    SATOURN_OI_SEARCH_API_BASE?: string;
-    SATOURN_OI_MAIL_DRAFT_API_BASE?: string;
-    SATOURN_RECORDS_BY_GLOBAL_IDS_API_BASE?: string;
+    SATOURN_DATA_API_BASE?: string;
+    SATOURN_SYSTEM_API_BASE?: string;
   }
-}
-
-function deriveApiBase() {
-  if (typeof window !== 'undefined' && window.SATOURN_SEARCH_API_BASE) {
-    return window.SATOURN_SEARCH_API_BASE;
-  }
-
-  if (typeof window !== 'undefined') {
-    const { hostname } = window.location;
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3000/api/search';
-    }
-  }
-
-  return '/api/search';
-}
-
-function deriveEndpointFromSearchBase(baseUrl: string, replacement: string) {
-  return baseUrl.replace(/\/api\/search(?:\?.*)?$/, replacement);
 }
 
 export function getRuntimeConfig(): FrontendRuntimeConfig {
-  const searchApiBase = deriveApiBase();
-  const legacySearchApiBase = 'https://satourn.onrender.com/api/search';
-
   return {
-    warmupApiBase: window.SATOURN_WARMUP_API_BASE || deriveEndpointFromSearchBase(searchApiBase, '/api/health'),
-    searchApiBase,
-    qualityCountApiBase: window.SATOURN_QUALITY_COUNT_API_BASE || deriveEndpointFromSearchBase(searchApiBase, '/api/quality/count'),
-    qualityScanApiBase: window.SATOURN_QUALITY_SCAN_API_BASE || deriveEndpointFromSearchBase(searchApiBase, '/api/quality/scan'),
-    qualitySummaryApiBase: window.SATOURN_QUALITY_SUMMARY_API_BASE || deriveEndpointFromSearchBase(searchApiBase, '/api/quality/summary'),
-    qualityListApiBase: window.SATOURN_QUALITY_LIST_API_BASE || deriveEndpointFromSearchBase(searchApiBase, '/api/quality/list'),
-    oiSearchApiBase: window.SATOURN_OI_SEARCH_API_BASE || deriveEndpointFromSearchBase(legacySearchApiBase, '/api/oi/search-records'),
-    oiMailDraftApiBase: window.SATOURN_OI_MAIL_DRAFT_API_BASE || deriveEndpointFromSearchBase(legacySearchApiBase, '/api/oi/mail-draft'),
-    recordsByIdsApiBase: window.SATOURN_RECORDS_BY_GLOBAL_IDS_API_BASE || deriveEndpointFromSearchBase(searchApiBase, '/api/records/by-global-ids')
+    dataApiBase: window.SATOURN_DATA_API_BASE || '/api/data',
+    systemApiBase: window.SATOURN_SYSTEM_API_BASE || '/api/system'
   };
+}
+
+export function buildApiActionUrl(apiBase: string, action: string) {
+  const separator = apiBase.includes('?') ? '&' : '?';
+  return `${apiBase}${separator}action=${encodeURIComponent(action)}`;
 }

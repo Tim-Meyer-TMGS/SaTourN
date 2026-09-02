@@ -17,7 +17,7 @@ const [summary] = await sql`
     COUNT(DISTINCT global_id) FILTER (WHERE is_active)::integer AS distinct_global_ids,
     COUNT(*) FILTER (WHERE NOT is_active)::integer AS inactive_records,
     COUNT(*) FILTER (WHERE is_active AND has_license)::integer AS records_with_license,
-    COUNT(*) FILTER (WHERE is_active AND is_open_data_published)::integer AS records_published_open_data,
+    COUNT(*) FILTER (WHERE is_active AND license_type IS NOT NULL)::integer AS records_with_license_type,
     COUNT(*) FILTER (WHERE is_active AND has_description)::integer AS records_with_description,
     COUNT(*) FILTER (WHERE is_active AND has_images)::integer AS records_with_images,
     MIN(changed_at) FILTER (WHERE is_active) AS oldest_change,
@@ -31,7 +31,7 @@ const typeCounts = await sql`
     record_type,
     COUNT(*) FILTER (WHERE is_active)::integer AS records,
     COUNT(*) FILTER (WHERE is_active AND has_license)::integer AS records_with_license,
-    COUNT(*) FILTER (WHERE is_active AND is_open_data_published)::integer AS records_published_open_data
+    COUNT(*) FILTER (WHERE is_active AND license_type IS NOT NULL)::integer AS records_with_license_type
   FROM et4_records
   WHERE experience = ${experience}
   GROUP BY record_type
@@ -59,12 +59,11 @@ const [staging] = await sql`
 `;
 
 const licenseValues = await sql`
-  SELECT LOWER(attribute->>'value') AS license, COUNT(*)::integer AS records
+  SELECT license_type AS license, COUNT(*)::integer AS records
   FROM et4_records AS record
-  CROSS JOIN LATERAL jsonb_array_elements(record.payload->'attributes') AS attribute
   WHERE record.experience = ${experience}
-    AND LOWER(attribute->>'key') = 'license'
-  GROUP BY LOWER(attribute->>'value')
+    AND license_type IS NOT NULL
+  GROUP BY license_type
   ORDER BY records DESC, license
 `;
 

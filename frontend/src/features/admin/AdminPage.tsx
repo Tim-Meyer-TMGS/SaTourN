@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { useUserSettingsStore } from '../../shared/state/user-settings-store';
 import { useAuth } from '../../shared/auth/auth-context';
+import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
 
 type AdminOverview = {
   metrics: {
@@ -27,7 +28,7 @@ export function AdminPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/admin/overview', { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
+    fetch(buildApiActionUrl(getRuntimeConfig().systemApiBase, 'admin-overview'), { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
       .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Admin-Übersicht nicht verfügbar.'))))
       .then((payload: AdminOverview) => setOverview(payload))
       .catch((error) => {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
-import { getRuntimeConfig } from '../../shared/api/runtime-config';
-import { wakeRenderServer } from '../../shared/api/server-warmup';
+import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
+import { checkSystemHealth } from '../../shared/api/system-health';
 import { AREAS, DATA_TYPES } from '../../shared/config/constants';
 import { useContextStore } from '../../shared/state/context-store';
 import type { DataType, WorkContext } from '../../shared/types/context';
@@ -80,7 +80,10 @@ export function AppShell() {
 
       try {
         const runtime = getRuntimeConfig();
-        const result = await wakeRenderServer(runtime.warmupApiBase, controller.signal);
+        const result = await checkSystemHealth(
+          buildApiActionUrl(runtime.systemApiBase, 'health'),
+          controller.signal
+        );
 
         if (!active) return;
         setServerWarmupState(result.ok ? 'ready' : 'failed');

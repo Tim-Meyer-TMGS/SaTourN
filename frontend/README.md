@@ -1,84 +1,28 @@
 # SaTourN Frontend
 
-Dieses Verzeichnis enthält das neue Frontend-Grundgerüst für die geplante
-Migration auf `React + Vite + TypeScript`.
-
-## Ziel
-
-Das bestehende Frontend unter `Statistik/` bleibt vorerst produktiv. Dieses
-Verzeichnis dient als paralleler Migrationspfad.
+Das produktive Frontend liegt in diesem Verzeichnis und verwendet React, Vite
+und TypeScript.
 
 ## Lokal starten
 
 ```bash
-cd frontend
 npm install
 npm run dev
 ```
 
-## GitHub-Pages-Preview
+## API-Anbindung
 
-Der Pages-Workflow baut das Frontend zusätzlich zur bestehenden Jekyll-Seite und
-veröffentlicht es unter:
-
-```text
-https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/
-```
-
-Unterseiten werden auf GitHub Pages per Hash-Routing geöffnet, zum Beispiel:
+Das Frontend verwendet standardmäßig dieselbe Origin:
 
 ```text
-https://tim-meyer-tmgs.github.io/SaTourN/frontend-preview/#/tasks
+/api/data
+/api/system
+/api/auth/*
 ```
 
-Die bestehende Live-Seite unter `/SaTourN/Statistik/index.html` bleibt davon
-unberührt.
+Für lokale Sonderfälle können vor dem App-Start ausschließlich die beiden
+Globals `SATOURN_DATA_API_BASE` und `SATOURN_SYSTEM_API_BASE` gesetzt werden.
+Es gibt keinen Render-Warmup und keinen Browserzugriff auf destination.one.
 
-## Vercel-Deployment
-
-Vercel baut das React-Frontend direkt aus `frontend/` und liefert `frontend/dist`
-aus. Der Base-Pfad muss dort `/` sein, sonst werden CSS- und JavaScript-Dateien
-unter dem GitHub-Pages-Pfad gesucht.
-
-Die Root-Konfiguration liegt in `../vercel.json`:
-
-```json
-{
-  "installCommand": "npm install --prefix frontend",
-  "buildCommand": "VITE_BASE_PATH=/ npm run --prefix frontend build",
-  "outputDirectory": "frontend/dist"
-}
-```
-
-GitHub Pages bleibt davon getrennt. Ohne `VITE_BASE_PATH` nutzt der normale
-Build weiterhin `/SaTourN/frontend-preview/`.
-
-## Aktueller Stand
-
-- React-/Vite-/TypeScript-Grundgerüst angelegt
-- Router, Shell, Arbeitskontext-Store und API-Basis angelegt
-- persistenter Light-/Dark-Mode in der React-Shell
-- nicht-blockierender Warmup-Call auf den Render-Proxy (`/health`) beim Start
-- Overview-Pilotseite mit KPI-Karten, Open-Data-Status, wichtigsten Pflegeaufgaben, Schnellzugriffen und deduplizierter Qualitätszusammenfassung für konkrete Arbeitskontexte
-- Pflegeaufgaben-Pilotseite mit KPI-Zeile, Filtern, gruppierten Aufgaben, Detailspalte und Übergabe in die Datensatzliste
-- erste Records-Pilotseite mit Suche, KI-Suche, Qualitätsbewertung, Mailentwurf und gefiltertem Detailkontext
-- React-Detailseite mit Datensatzauflösung, 3-Spalten-Layout, Qualitätsbewertung, Medien, Nutzbarkeit, Pflegesystem-Logo, erweiterten Detailfeldern und kontextbezogener Listen-Navigation
-- Open-Data-Statistik-Pilotseite mit Bestandskennzahlen, Datentypverteilung, Open-Data-Quote nach Typ und Lizenz-Pflegehinweis
-- Hilfe-Pilotseite mit Score-Erklärung, drei Fehler-Ebenen und Mindestanforderungen je Datentyp aus dem bestehenden Qualitätsmodell
-- Beispieldaten-Abruf auf der Übersicht mit kontextbezogener Zufallsstichprobe und JSON-/ID-Export
-- direkter Outdooractive-Abruf in Details von Outdooractive-Datensätzen
-- vorbereitetes Adminpanel für nutzerbezogene Outdooractive-Zugänge; bis Login und Neon folgen bleibt der API-Key flüchtig
-- gemeinsame Feldnormalisierung unter `src/shared/records/record-fields.ts`
-- gemeinsame Bewertungsbasis für Records- und Detailseite über `buildQualityEvaluationInput`
-- Detailseiten-Mapping und Detail-UI in `src/features/record-detail/record-detail-mapper.ts` und `record-detail-components.tsx` getrennt
-- weitere Bereiche nur noch dort als Teilmigration, wo Detailverhalten gegen echte Daten abgeglichen werden muss
-
-## Nächster Umsetzungsschritt
-
-Overview-, Pflegeaufgaben-, Records-, Detail-, Statistik- und Hilfeseite werden weiter gegen echte Daten und die Live-Seiten abgeglichen.
-Neue Feldzugriffe sollen über `src/shared/records/record-fields.ts` laufen,
-damit Listen- und Detailansicht dieselbe Normalisierung nutzen.
-Bewertungsrelevante Datensatzobjekte sollen über `buildQualityEvaluationInput`
-gebaut werden, damit Liste und Detail denselben Score berechnen.
-Die Overview-Seite darf Pflegebedarf nicht aus einzelnen Fehlercounts summieren;
-für berechnete Qualitätskennzahlen ist `/api/quality/summary` maßgeblich.
+Vercel baut das Frontend über die Root-Konfiguration `../vercel.json` und
+liefert `frontend/dist` aus.

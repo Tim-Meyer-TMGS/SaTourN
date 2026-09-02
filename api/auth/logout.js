@@ -1,5 +1,5 @@
-import { methodNotAllowed } from '../_database.js';
-import { forwardBetterAuthResponse, runBetterAuthRequest } from './_bridge.js';
+import { forwardBetterAuthResponse, runBetterAuthRequest } from '../../lib/auth/bridge.js';
+import { methodNotAllowed } from '../../lib/api/http.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, ['POST']);

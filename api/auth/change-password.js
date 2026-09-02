@@ -1,6 +1,6 @@
-import { authenticatedIdentity, sendAuthAccessError } from '../_auth.js';
-import { getDatabaseClient, methodNotAllowed, sendJson } from '../_database.js';
-import { copyBetterAuthHeaders, runBetterAuthRequest } from './_bridge.js';
+import { authenticatedIdentity, sendAuthAccessError } from '../../lib/api/auth.js';
+import { getDatabaseClient, methodNotAllowed, sendJson } from '../../lib/api/http.js';
+import { copyBetterAuthHeaders, runBetterAuthRequest } from '../../lib/auth/bridge.js';
 
 function parseBody(body) {
   if (!body) return {};

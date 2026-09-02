@@ -1,5 +1,5 @@
 import { fetchJson } from '../api/http-client';
-import { getRuntimeConfig } from '../api/runtime-config';
+import { buildApiActionUrl, getRuntimeConfig } from '../api/runtime-config';
 import { findQualityCriterion } from '../quality/quality-criteria';
 
 export type MailDraftRecord = {
@@ -123,7 +123,7 @@ export async function requestRecordMailDraft(options: {
   const runtime = getRuntimeConfig();
   const { record, selectedCriterionId = '', source = 'records' } = options;
 
-  return fetchJson<MailDraftPayload>(runtime.oiMailDraftApiBase, {
+  return fetchJson<MailDraftPayload>(buildApiActionUrl(runtime.systemApiBase, 'mail-draft'), {
     method: 'POST',
     timeoutMs: 45_000,
     headers: { 'Content-Type': 'application/json' },

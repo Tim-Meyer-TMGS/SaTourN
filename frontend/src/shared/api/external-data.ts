@@ -59,14 +59,14 @@ async function loadTypeSample(options: {
   type: string;
   count: number;
   query: string;
-  openDataPublished: boolean;
+  openDataOnly: boolean;
   signal?: AbortSignal;
 }) {
-  const { apiBase, type, count, query, openDataPublished, signal } = options;
+  const { apiBase, type, count, query, openDataOnly, signal } = options;
   if (count <= 0) return { items: [] as RandomSampleItem[], total: 0 };
 
   const countPayload = await fetchJson<SearchPayload>(
-    buildSearchApiUrl(apiBase, type, query, { countOnly: true, openDataPublished }),
+    buildSearchApiUrl(apiBase, type, query, { countOnly: true, openDataOnly }),
     { signal }
   );
   const total = extractTotal(countPayload);
@@ -80,7 +80,7 @@ async function loadTypeSample(options: {
   while (remaining > 0) {
     const limit = Math.min(200, remaining, total - offset);
     requests.push(fetchJson<SearchPayload>(
-      buildSearchApiUrl(apiBase, type, query, { limit, offset, openDataPublished }),
+      buildSearchApiUrl(apiBase, type, query, { limit, offset, openDataOnly }),
       { signal }
     ));
     remaining -= limit;
@@ -106,17 +106,17 @@ export async function loadRandomSample(options: {
   types: string[];
   targetCount: number;
   query: string;
-  openDataPublished: boolean;
+  openDataOnly: boolean;
   signal?: AbortSignal;
 }): Promise<RandomSampleResult> {
-  const { apiBase, types, targetCount, query, openDataPublished, signal } = options;
+  const { apiBase, types, targetCount, query, openDataOnly, signal } = options;
   const plan = distributeTarget(targetCount, types);
   const results = await Promise.all(plan.map(({ type, count }) => loadTypeSample({
     apiBase,
     type,
     count,
     query,
-    openDataPublished,
+    openDataOnly,
     signal
   })));
 

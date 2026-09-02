@@ -1,7 +1,7 @@
 import { genericLoginMessage } from '../../lib/auth/server.js';
 import { normalizeEmail } from '../../lib/auth/tenant-domains.js';
-import { methodNotAllowed, sendJson } from '../_database.js';
-import { forwardBetterAuthResponse, runBetterAuthRequest } from './_bridge.js';
+import { forwardBetterAuthResponse, runBetterAuthRequest } from '../../lib/auth/bridge.js';
+import { methodNotAllowed, sendJson } from '../../lib/api/http.js';
 
 function parseBody(body) {
   if (!body) return {};

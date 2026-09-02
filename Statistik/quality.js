@@ -1,7 +1,5 @@
-import {
-  NON_OPEN_DATA_LICENSE_QUERY,
-  OPEN_DATA_LICENSE_QUERY
-} from '../lib/open-data-rules.js';
+const OPEN_DATA_LICENSE_QUERY = 'attribute_license:(CC0 OR CC-BY OR CC-BY-SA OR PD)';
+const NON_OPEN_DATA_LICENSE_QUERY = `all:all -${OPEN_DATA_LICENSE_QUERY}`;
 
 const TYPE_ALIASES = new Map([
   ['poi', 'POI'],

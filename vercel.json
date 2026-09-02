@@ -3,6 +3,18 @@
   "installCommand": "npm install --ignore-scripts && npm install --prefix frontend",
   "buildCommand": "VITE_BASE_PATH=/ npm run --prefix frontend build",
   "outputDirectory": "frontend/dist",
+  "rewrites": [
+    { "source": "/api/search", "destination": "/api/data?action=search" },
+    { "source": "/api/records/by-global-ids", "destination": "/api/data?action=records-by-ids" },
+    { "source": "/api/quality/count", "destination": "/api/data?action=quality-count" },
+    { "source": "/api/quality/scan", "destination": "/api/data?action=quality-scan" },
+    { "source": "/api/quality/list", "destination": "/api/data?action=quality-list" },
+    { "source": "/api/quality/summary", "destination": "/api/data?action=quality-summary" },
+    { "source": "/api/health", "destination": "/api/system?action=health" },
+    { "source": "/api/admin/overview", "destination": "/api/system?action=admin-overview" },
+    { "source": "/api/oi/search-records", "destination": "/api/system?action=ai-search" },
+    { "source": "/api/oi/mail-draft", "destination": "/api/system?action=mail-draft" }
+  ],
   "functions": {
     "api/cron/*.js": {
       "maxDuration": 300
@@ -10,7 +22,7 @@
   },
   "crons": [
     {
-      "path": "/api/cron/sync-et4",
+      "path": "/api/cron/sync",
       "schedule": "15 2 * * *"
     }
   ]

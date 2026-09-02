@@ -213,7 +213,7 @@ export function OverviewPage() {
           <div className="card-label">Open-Data-Quote</div>
           <div className="kpi-value">{loading ? <MetricLoading /> : formatPercent(summary.openDataQuote)}</div>
           <strong>{loading ? '-' : `${formatNumber(summary.openData)} von ${formatNumber(summary.total)}`}</strong>
-          <p>Als Open Data veröffentlichte Datensätze</p>
+          <p>Open-Data-fähige Datensätze</p>
         </article>
       </section>
 
@@ -282,12 +282,12 @@ export function OverviewPage() {
             </div>
             <div className="open-data-stats">
               <div>
-                <span>Als Open Data veröffentlicht</span>
+                <span>Open-Data-fähig</span>
                 <strong>{loading ? '-' : formatNumber(summary.openData)}</strong>
                 <small>{loading ? '-' : formatPercent(openDataWidth)}</small>
               </div>
               <div>
-                <span>Nicht als Open Data veröffentlicht</span>
+                <span>Nicht Open-Data-fähig</span>
                 <strong>{loading ? '-' : formatNumber(summary.notOpenData)}</strong>
                 <small>{loading ? '-' : formatPercent(notOpenDataWidth)}</small>
               </div>
