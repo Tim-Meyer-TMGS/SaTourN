@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 
 import 'dotenv/config';
 
-process.env.BETTER_AUTH_URL ||= 'http://localhost:3000';
-process.env.BETTER_AUTH_SECRET ||= 'local-entrypoint-contract-secret-at-least-32-characters';
+process.env.NEON_AUTH_BASE_URL ||= 'https://example.neonauth.example/neondb/auth';
 
 const { default: cronHandler } = await import('../api/cron/sync.js');
 const { default: dataHandler } = await import('../api/data.js');

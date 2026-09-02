@@ -1,6 +1,6 @@
 import { authenticatedIdentity, sendAuthAccessError } from '../../lib/api/auth.js';
 import { getDatabaseClient, methodNotAllowed, sendJson } from '../../lib/api/http.js';
-import { copyBetterAuthHeaders, runBetterAuthRequest } from '../../lib/auth/bridge.js';
+import { copyNeonAuthHeaders, runNeonAuthRequest } from '../../lib/auth/neon-bridge.js';
 
 function parseBody(body) {
   if (!body) return {};
@@ -16,7 +16,7 @@ export default async function handler(request, response) {
     if (newPassword.length < 12 || newPassword.length > 128) {
       return sendJson(response, 400, { error: 'INVALID_PASSWORD', message: 'Das neue Passwort muss 12 bis 128 Zeichen lang sein.' });
     }
-    const authResponse = await runBetterAuthRequest(request, 'change-password', {
+    const authResponse = await runNeonAuthRequest(request, 'change-password', {
       currentPassword: String(body.currentPassword || ''),
       newPassword,
       revokeOtherSessions: true
@@ -29,11 +29,11 @@ export default async function handler(request, response) {
     await sql.transaction([
       sql`UPDATE app_user_profile
           SET must_change_password = FALSE, password_changed_at = NOW(), updated_at = NOW()
-          WHERE user_id = ${identity.id}`,
+          WHERE user_id = ${identity.profile_id}`,
       sql`INSERT INTO app_audit_log (actor_user_id, action, target_type, target_id, metadata)
-          VALUES (${identity.id}, 'PASSWORD_CHANGED', 'user', ${identity.id}, '{}'::jsonb)`
+          VALUES (${identity.profile_id}, 'PASSWORD_CHANGED', 'user', ${identity.id}, '{}'::jsonb)`
     ]);
-    copyBetterAuthHeaders(response, authResponse);
+    copyNeonAuthHeaders(response, authResponse);
     return sendJson(response, 200, { ok: true });
   } catch (error) {
     if (sendAuthAccessError(response, error)) return;

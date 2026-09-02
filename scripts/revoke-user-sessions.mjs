@@ -16,8 +16,8 @@ if (!databaseUrl) throw new Error('DATABASE_URL is required.');
 const sql = neon(databaseUrl);
 
 const revoked = await sql.query(`
-  DELETE FROM "session"
-  WHERE "userId" IN (SELECT id FROM "user" WHERE LOWER(email) = $1)
+  DELETE FROM neon_auth.session
+  WHERE "userId" IN (SELECT id FROM neon_auth."user" WHERE LOWER(email) = $1)
   RETURNING id
 `, [email]);
 
