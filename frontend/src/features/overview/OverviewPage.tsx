@@ -14,6 +14,7 @@ import { getTaskFamilyId, getTaskFamilyMeta } from '../../shared/tasks/task-fami
 import { InlineLoading, MetricLoading } from '../../shared/ui/LoadingIndicators';
 import { PageGuidance } from '../../shared/ui/PageGuidance';
 import { loadOverviewData, type OverviewData, type OverviewIssue } from './overview-api';
+import { RandomSamplePanel } from './RandomSamplePanel';
 
 type OverviewTaskIssue = {
   taskId: string;
@@ -312,6 +313,8 @@ export function OverviewPage() {
           </article>
         </div>
       </section>
+
+      <RandomSamplePanel />
 
       <section className="quick-actions panel-card" aria-labelledby="quick-actions-title">
         <h2 id="quick-actions-title">Schnellzugriff</h2>

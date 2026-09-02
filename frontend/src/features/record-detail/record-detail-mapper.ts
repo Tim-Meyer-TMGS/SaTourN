@@ -112,9 +112,25 @@ function buildInfoEntries(rows: Array<[string, unknown]>): DetailInfoEntry[] {
     .filter((entry) => entry.value);
 }
 
+function getOutdooractiveId(raw: unknown) {
+  const attributeId = getAttributeValue(raw, 'SYSTEMID_outdooractive');
+  if (attributeId) return attributeId;
+
+  const keywords = [
+    ...getArrayFromPaths(raw, ['keywords_old']),
+    ...getArrayFromPaths(raw, ['keywords'])
+  ].map((entry) => textValue(entry));
+
+  for (const keyword of keywords) {
+    const match = keyword.match(/^import_sourceid_(\d+)$/i);
+    if (match) return match[1];
+  }
+  return '';
+}
+
 function getExternalSystemIds(raw: unknown): DetailInfoEntry[] {
   return buildInfoEntries([
-    ['Outdooractive-ID', getAttributeValue(raw, 'SYSTEMID_outdooractive')],
+    ['Outdooractive-ID', getOutdooractiveId(raw)],
     ['Google-Places-ID', getAttributeValue(raw, 'SYSTEMID_GOOGLEPLACES')],
     ['source_id', getFirst(raw, ['source_id', 'sourceId'])]
   ]);
@@ -396,6 +412,7 @@ export function normalizeDetailItem(rawInput: unknown, fallbackType: string): De
     sourceUrl: getFirst(raw, ['source.url', 'raw.source.url']),
     coordinates: getCoordinates(raw),
     primarySystem,
+    outdooractiveId: getOutdooractiveId(raw),
     externalIds: getExternalSystemIds(raw),
     addressEntries: getAddressSummary(raw),
     rawExcerpt: getRawExcerpt(raw),

@@ -65,6 +65,9 @@ Build weiterhin `/SaTourN/frontend-preview/`.
 - React-Detailseite mit Datensatzauflösung, 3-Spalten-Layout, Qualitätsbewertung, Medien, Nutzbarkeit, Pflegesystem-Logo, erweiterten Detailfeldern und kontextbezogener Listen-Navigation
 - Open-Data-Statistik-Pilotseite mit Bestandskennzahlen, Datentypverteilung, Open-Data-Quote nach Typ und Lizenz-Pflegehinweis
 - Hilfe-Pilotseite mit Score-Erklärung, drei Fehler-Ebenen und Mindestanforderungen je Datentyp aus dem bestehenden Qualitätsmodell
+- Beispieldaten-Abruf auf der Übersicht mit kontextbezogener Zufallsstichprobe und JSON-/ID-Export
+- direkter Outdooractive-Abruf in Details von Outdooractive-Datensätzen
+- vorbereitetes Adminpanel für nutzerbezogene Outdooractive-Zugänge; bis Login und Neon folgen bleibt der API-Key flüchtig
 - gemeinsame Feldnormalisierung unter `src/shared/records/record-fields.ts`
 - gemeinsame Bewertungsbasis für Records- und Detailseite über `buildQualityEvaluationInput`
 - Detailseiten-Mapping und Detail-UI in `src/features/record-detail/record-detail-mapper.ts` und `record-detail-components.tsx` getrennt

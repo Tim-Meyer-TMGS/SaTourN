@@ -1,6 +1,7 @@
 import { HashRouter, NavLink, Route, Routes } from 'react-router-dom';
 
 import { AppShell } from '../layout/AppShell';
+import { AdminPage } from '../../features/admin/AdminPage';
 import { HelpPage } from '../../features/help/HelpPage';
 import { OverviewPage } from '../../features/overview/OverviewPage';
 import { RecordDetailPage } from '../../features/record-detail/RecordDetailPage';
@@ -29,6 +30,7 @@ export function AppRouter() {
           <Route path="/record-detail" element={<RecordDetailPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

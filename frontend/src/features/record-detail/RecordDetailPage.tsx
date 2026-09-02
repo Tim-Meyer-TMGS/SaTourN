@@ -20,6 +20,7 @@ import {
   DetailRightColumn
 } from './record-detail-components';
 import { normalizeDetailItem, priorityRank } from './record-detail-mapper';
+import { OutdooractiveDetailPanel } from './OutdooractiveDetailPanel';
 import type { DetailItem, MissingIssue, RecordListEntry, RecordListState, ResolvedPayload } from './record-detail-types';
 
 const RECORD_LIST_STATE_KEY = 'satourn.frontend.recordListState';
@@ -242,6 +243,8 @@ export function RecordDetailPage() {
           {copyMessage ? <div className="overview-message">{copyMessage}</div> : null}
 
           <DetailHeadCard item={item} primaryIssue={missingIssues[0]} />
+
+          <OutdooractiveDetailPanel item={item} />
 
           <section className="detail-grid">
             <DetailLeftColumn item={item} missingIssues={missingIssues} />
