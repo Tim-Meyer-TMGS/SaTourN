@@ -41,6 +41,23 @@ export function getRecordPhone(raw, helpers) {
   ], helpers) || '';
 }
 
+export function getRecordAuthorships(raw) {
+  const precomputed = Array.isArray(raw?.authorships)
+    ? raw.authorships.map((value) => String(value || '').trim()).filter(Boolean)
+    : [];
+  const addresses = Array.isArray(raw?.addresses) ? raw.addresses : [];
+  const addressNames = addresses.flatMap((entry) => {
+    const relation = String(entry?.rel || '').trim().toLowerCase();
+    if (!['author', 'organisation', 'organization'].includes(relation)) return [];
+    const name = String(entry?.name || entry?.company || entry?.title || entry?.value || '').trim();
+    return name ? [name] : [];
+  });
+  const directNames = [raw?.author, raw?.organisation, raw?.organization]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean);
+  return Array.from(new Set([...precomputed, ...addressNames, ...directNames]));
+}
+
 export function buildVerifiedEt4Url(item) {
   if (item.type !== 'POI' || !item.globalId) return '';
   return `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/${encodeURIComponent(item.globalId)}/x`;
@@ -64,6 +81,7 @@ export function normalizeItem(raw, fallbackType, {
     region: qualityHelpers.getAreaValues(raw)?.[0] || context.area || '',
     city: getFirst(raw, ['city', 'location.city', 'address.city'], helpers) || context.city || '',
     category: qualityHelpers.getCategoryValues(raw)?.[0] || '',
+    authorships: getRecordAuthorships(raw),
     license: qualityHelpers.getAttributeValue(raw, 'license') || '',
     isOpenData: qualityHelpers.hasValidDatasetLicense(raw),
     updatedAt: getFirst(raw, ['updatedAt', 'lastModified', 'modified', 'changeDate'], helpers) || '',
@@ -120,6 +138,7 @@ export function buildRecordViewModel(item, {
     city: item.city || '',
     region: item.region || '',
     category: item.category || '',
+    authorships: Array.isArray(item.authorships) ? item.authorships : getRecordAuthorships(raw),
     qualityStatus: item.qualityStatus || 'nicht berechenbar',
     qualityScore: Number.isFinite(item.qualityScore) ? item.qualityScore : null,
     primaryIssueId,

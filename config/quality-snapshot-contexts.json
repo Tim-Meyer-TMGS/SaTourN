@@ -1,0 +1,12 @@
+[
+  { "label": "Sachsen", "area": "" },
+  { "label": "Chemnitz", "area": "Chemnitz" },
+  { "label": "Dresden", "area": "Dresden" },
+  { "label": "Dresden Elbland", "area": "Dresden Elbland" },
+  { "label": "Erzgebirge", "area": "Erzgebirge" },
+  { "label": "Leipzig", "area": "Leipzig" },
+  { "label": "Leipzig Region", "area": "Leipzig Region" },
+  { "label": "Oberlausitz", "area": "Oberlausitz" },
+  { "label": "Sächsische Schweiz", "area": "Sächsische Schweiz" },
+  { "label": "Vogtland", "area": "Vogtland" }
+]

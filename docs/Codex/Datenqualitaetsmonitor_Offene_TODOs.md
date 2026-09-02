@@ -93,8 +93,22 @@ Offen:
 - Render bleibt vorerst Backend-/Proxy-Betrieb
 - Vercel kann das React-Frontend hosten, ersetzt aber nicht automatisch Render
 - späteren eigenen Server als Zielarchitektur konkretisieren
-- Cache-/Snapshot-Strategie erst wieder anfassen, wenn Bewertungslogik stabil
-  ist
+- manuellen Snapshot-Probelauf in GitHub Actions ausführen und Zahlen gegen
+  die Live-Seite prüfen
+- nach erfolgreicher Abnahme nächtliche Veröffentlichung und React-
+  Snapshot-Fallback aktivieren
+
+Umgesetzt:
+
+- versionierter Snapshot-Datenvertrag
+- atomare statische Dateiausgabe zusätzlich zum optionalen Redis-Speicher
+- Gebietskonfiguration für Sachsen und alle auswählbaren Regionen
+- manueller GitHub-Actions-Probelauf ohne Eingriff in das produktive Pages-
+  Deployment
+
+Nachweis:
+
+- `Datenqualitaetsmonitor_Snapshot_Architektur.md`
 
 ## Nicht aktiv bearbeiten
 
@@ -105,6 +119,15 @@ Offen:
 
 ## Zuletzt erledigt
 
+- Nutzerzentrierte Orientierung auf Übersicht, Pflegeaufgaben, Datensätzen und
+  Statistik ergänzt
+- Datensatz-Arbeitsliste auf sechs entscheidungsrelevante Spalten reduziert
+- Aufgabentreffer, Open-Data-Veröffentlichung und Lizenz-Pflegebedarf im UI
+  fachlich eindeutig benannt
+- Hauptnavigation auf vier Arbeitsbereiche reduziert; Hilfe in den Header
+  verschoben
+- technische Normalzustände und technische Fehlerdetails aus der sichtbaren
+  Oberfläche reduziert
 - Codex-Ordner bereinigt und alte Langdokumente archiviert
 - API-Pushdown-TODOs auf offene Prüfungen reduziert
 - Event-Lizenz als Pushdown aktiviert

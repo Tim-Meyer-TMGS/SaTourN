@@ -20,11 +20,15 @@ export function computeStatsSummary(rows, percent) {
   const totalRecords = rows.reduce((sum, row) => sum + row.statistikCount, 0);
   const openDataRecords = rows.reduce((sum, row) => sum + row.openDataCount, 0);
   const nonOpenDataRecords = Math.max(0, totalRecords - openDataRecords);
+  const licenseMissingRecords = rows
+    .filter((row) => !row.isOther)
+    .reduce((sum, row) => sum + Math.max(0, row.statistikCount - Number(row.licensedCount || 0)), 0);
 
   return {
     totalRecords,
     openDataRecords,
     nonOpenDataRecords,
+    licenseMissingRecords,
     openDataQuote: percent(openDataRecords, totalRecords)
   };
 }
@@ -37,7 +41,7 @@ function renderStatsTypeDistribution({
   formatNumber,
   formatPercent
 }) {
-  const palette = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9'];
+  const palette = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9', '#64748b'];
   let cursor = 0;
   const segments = statsRows.map((row, index) => {
     const start = cursor;
@@ -88,14 +92,14 @@ function renderStatsLicenseTask({
   formatPercent,
   percent
 }) {
-  const hasLicenseTask = summary.nonOpenDataRecords > 0;
+  const hasLicenseTask = summary.licenseMissingRecords > 0;
   if (els.statsLicenseTaskCard) els.statsLicenseTaskCard.hidden = !hasLicenseTask;
   if (!hasLicenseTask) return;
   if (els.statsLicenseTaskCount) {
-    els.statsLicenseTaskCount.textContent = formatNumber(summary.nonOpenDataRecords);
+    els.statsLicenseTaskCount.textContent = formatNumber(summary.licenseMissingRecords);
   }
   if (els.statsLicenseTaskShare) {
-    els.statsLicenseTaskShare.textContent = `${formatPercent(percent(summary.nonOpenDataRecords, summary.totalRecords))} nicht Open-Data-fähig`;
+    els.statsLicenseTaskShare.textContent = 'ohne gültige Open-Data-Lizenz';
   }
 }
 
@@ -164,6 +168,11 @@ export function renderStatsEmpty({ els, message, showStatsMessage }) {
 
 export function renderStatsError({ els, showStatsMessage }) {
   showStatsMessage('Die Statistik konnte nicht vollständig geladen werden. Bitte erneut aktualisieren.');
+  [els.statsTotalRecords, els.statsOpenDataRecords, els.statsOpenDataQuote, els.statsNonOpenDataRecords]
+    .forEach((node) => { if (node) node.textContent = '-'; });
+  if (els.statsOpenDataShare) els.statsOpenDataShare.textContent = '-';
+  if (els.statsNonOpenDataShare) els.statsNonOpenDataShare.textContent = '-';
+  if (els.statsTypeDonutTotal) els.statsTypeDonutTotal.textContent = '-';
   if (els.statsTypeDistributionBody) els.statsTypeDistributionBody.innerHTML = '<tr><td colspan="3" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
   if (els.statsQuoteBars) els.statsQuoteBars.innerHTML = '<div class="empty-note">Die Statistik konnte nicht vollständig geladen werden.</div>';
   if (els.statsTypeTableBody) els.statsTypeTableBody.innerHTML = '<tr><td colspan="5" class="table-empty">Die Statistik konnte nicht vollständig geladen werden.</td></tr>';
@@ -287,6 +296,8 @@ export async function loadStatsData({
     }
   } catch (error) {
     console.error('Open-Data-Statistik konnte nicht vollständig geladen werden.', error);
+    state.statsRows = [];
+    state.statsSummary = null;
     renderStatsError();
   } finally {
     setStatsLoadingState(false);
@@ -334,6 +345,8 @@ export async function loadStatsDataAsync({
     }
   } catch (error) {
     console.error('Open-Data-Statistik konnte nicht geladen werden.', error);
+    state.statsRows = [];
+    state.statsSummary = null;
     renderStatsError();
   } finally {
     setStatsLoadingState(false);
@@ -374,7 +387,7 @@ export function exportStatsCsv({
   if (!state.statsRows.length || !state.statsSummary) return;
   const summary = state.statsSummary;
   const rows = [
-    ['Datentyp', 'Gesamtzahl', 'Open-Data-fähig', 'Open-Data-Quote', 'Nicht Open-Data-fähig'],
+    ['Datentyp', 'Gesamtzahl', 'Als Open Data veröffentlicht', 'Open-Data-Quote', 'Nicht als Open Data veröffentlicht'],
     ...state.statsRows.map((row) => [
       row.type,
       row.statistikCount,

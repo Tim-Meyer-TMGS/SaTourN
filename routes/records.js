@@ -7,7 +7,7 @@ import {
   REQUEST_TIMEOUT_MS,
   TEMPLATE
 } from '../lib/config.js';
-import { buildSearchUrl } from '../lib/search-utils.js';
+import { buildSearchUrl, MetaResponseError, parseMetaResponseText } from '../lib/search-utils.js';
 
 const TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'];
 const MAX_IDS = 50;
@@ -43,7 +43,7 @@ async function fetchSearchPayload({ type, query, limit = 5 }) {
     });
     const text = await response.text();
     if (!response.ok) throw new Error(`Search upstream error ${response.status}: ${text.slice(0, 500)}`);
-    return JSON.parse(text.trim());
+    return parseMetaResponseText(text);
   } finally {
     clearTimeout(timeout);
   }
@@ -121,6 +121,7 @@ async function resolveRecordByIdentifier(identifier, preferredType = '') {
         const item = findMatchingItem(extractItems(payload), globalId, numericId || normalized);
         if (item) return { ...item, _resolvedType: type };
       } catch (error) {
+        if (error instanceof MetaResponseError) throw error;
         console.warn('Record lookup by identifier failed.', normalized, type, error.message || error);
       }
     }
@@ -159,14 +160,25 @@ export function registerRecordRoutes(app) {
       return res.json({ items: [], missingIds: [] });
     }
 
-    const resolutionResults = await mapWithConcurrency(
-      identifiers,
-      RESOLVE_CONCURRENCY,
-      async (identifier) => ({
-        identifier,
-        item: await resolveRecordByIdentifier(identifier, preferredType)
-      })
-    );
+    let resolutionResults;
+    try {
+      resolutionResults = await mapWithConcurrency(
+        identifiers,
+        RESOLVE_CONCURRENCY,
+        async (identifier) => ({
+          identifier,
+          item: await resolveRecordByIdentifier(identifier, preferredType)
+        })
+      );
+    } catch (error) {
+      if (error instanceof MetaResponseError) {
+        return res.status(502).json({
+          error: 'Invalid upstream response',
+          upstreamStatus: error.metaStatus
+        });
+      }
+      throw error;
+    }
 
     const resolved = resolutionResults.filter((entry) => entry.item).map((entry) => entry.item);
     const missingIds = resolutionResults.filter((entry) => !entry.item).map((entry) => entry.identifier);

@@ -7,7 +7,8 @@ import { findQualityCriterion, isOpenDataRelevantCriterion } from '../../shared/
 import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { InlineLoading, LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
-import { loadOverviewData, type OverviewData, type OverviewIssue } from '../overview/overview-api';
+import { PageGuidance } from '../../shared/ui/PageGuidance';
+import { loadOverviewIssues, type OverviewIssue } from '../overview/overview-api';
 
 const ROWS_PER_PAGE = 10;
 
@@ -371,7 +372,7 @@ function computePotential(tasks: TaskRow[]) {
 
 export function TasksPage() {
   const { context } = useContextStore();
-  const [data, setData] = useState<OverviewData | null>(null);
+  const [issues, setIssues] = useState<OverviewIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState<TaskFilters>({ query: '', priority: '', type: '', impact: '' });
@@ -386,13 +387,14 @@ export function TasksPage() {
       setError('');
 
       try {
-        const result = await loadOverviewData(context);
+        const result = await loadOverviewIssues(context);
         if (!active) return;
-        setData(result);
+        setIssues(result.issues);
       } catch (caughtError) {
         if (!active) return;
-        setData(null);
-        setError(caughtError instanceof Error ? caughtError.message : 'Pflegeaufgaben konnten nicht geladen werden.');
+        console.error('Pflegeaufgaben konnten nicht geladen werden.', caughtError);
+        setIssues([]);
+        setError('Pflegeaufgaben konnten nicht geladen werden. Bitte versuche es erneut.');
       } finally {
         if (active) setLoading(false);
       }
@@ -405,7 +407,7 @@ export function TasksPage() {
     };
   }, [context]);
 
-  const tasks = useMemo(() => buildTaskRows(data?.issues || []), [data]);
+  const tasks = useMemo(() => buildTaskRows(issues), [issues]);
   const filteredTasks = useMemo(() => filterTasks(tasks, filters), [tasks, filters]);
   const totalPages = Math.max(1, Math.ceil(filteredTasks.length / ROWS_PER_PAGE));
   const visibleTasks = filteredTasks.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);
@@ -455,6 +457,10 @@ export function TasksPage() {
         <p>Übersicht der offenen Pflegeaufgaben nach Priorität und Auswirkung.</p>
       </section>
 
+      <PageGuidance title="Eine Aufgabe auswählen, dann konkrete Datensätze bearbeiten">
+        Die Zahlen sind Treffer je Pflegeaufgabe. Ein Datensatz mit mehreren Lücken kann mehrfach vorkommen; die konkrete Arbeitsliste öffnet sich über den Pfeil oder „Datensätze anzeigen“.
+      </PageGuidance>
+
       <section className="task-kpi-grid" aria-label="Pflegeaufgaben Kennzahlen">
         <article className="task-kpi-card">
           <span className="task-kpi-icon critical material-icons" aria-hidden="true">flag</span>
@@ -475,9 +481,9 @@ export function TasksPage() {
         <article className="task-kpi-card">
           <span className="task-kpi-icon review material-icons" aria-hidden="true">groups</span>
           <div>
-            <span>Betroffene Datensätze</span>
+            <span>Betroffene Treffer</span>
             <strong>{loading ? <MetricLoading /> : formatNumber(summary.affectedHits)}</strong>
-            <small>Treffer in Pflegeaufgaben</small>
+            <small>Mehrfachtreffer sind möglich</small>
           </div>
         </article>
         <article className="task-kpi-card">
@@ -485,7 +491,7 @@ export function TasksPage() {
           <div>
             <span>Open-Data-Relevanz</span>
             <strong>{loading ? <MetricLoading /> : formatPercent(calculatePercent(summary.openDataHits, summary.affectedHits))}</strong>
-            <small>Der betroffenen Treffer</small>
+            <small>Anteil der Aufgabentreffer</small>
           </div>
         </article>
         <article className="task-kpi-card">
@@ -549,7 +555,7 @@ export function TasksPage() {
               <thead>
                 <tr>
                   <th>Pflegeaufgabe</th>
-                  <th>Betroffene Datensätze</th>
+                  <th>Treffer</th>
                   <th>Priorität</th>
                   <th>Betroffene Typen</th>
                   <th>Auswirkung</th>

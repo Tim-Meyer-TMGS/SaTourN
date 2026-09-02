@@ -1,14 +1,18 @@
 import fetch from 'node-fetch';
+import { readFileSync } from 'fs';
+import path from 'path';
+import { pathToFileURL } from 'url';
 
 import {
   API_KEY,
   BASE_URL,
+  COUNT_TEMPLATE,
   EXPERIENCE,
+  OPEN_DATA_EXPERIENCE,
   REQUEST_TIMEOUT_MS,
   TEMPLATE
 } from '../lib/config.js';
 import { extractId, extractItems, extractTotal } from '../lib/browser/et4.js';
-import { createKeyValueStore } from '../lib/kv-store.js';
 import {
   latestSnapshotIndexKey,
   normalizeQualityContext,
@@ -16,11 +20,21 @@ import {
   qualitySnapshotKey
 } from '../lib/quality-cache.js';
 import {
+  createQualitySnapshotManifest,
+  QUALITY_SNAPSHOT_SCHEMA_VERSION
+} from '../lib/quality-snapshot-contract.js';
+import {
+  createQualitySnapshotStore,
+  getSnapshotPath,
+  prepareQualitySnapshotStore
+} from '../lib/quality-snapshot-store.js';
+import {
   buildSearchUrl,
   combineSearchQueries,
   normalizeOffsetParam,
   normalizeQueryParam,
-  OPEN_DATA_LICENSE_QUERY
+  OPEN_DATA_LICENSE_QUERY,
+  parseMetaResponseText
 } from '../lib/search-utils.js';
 import {
   evaluateQualityForItem,
@@ -41,7 +55,10 @@ const MAX_PAGES_PER_TYPE = numberFromEnv('QUALITY_SNAPSHOT_MAX_PAGES_PER_TYPE', 
 const LIST_LIMIT_PER_BUCKET = numberFromEnv('QUALITY_SNAPSHOT_LIST_LIMIT', 2000);
 const SNAPSHOT_TTL_MS = numberFromEnv('QUALITY_SNAPSHOT_TTL_HOURS', 48) * 60 * 60 * 1000;
 const REQUEST_DELAY_MS = numberFromEnv('QUALITY_SNAPSHOT_REQUEST_DELAY_MS', 0);
-const SNAPSHOT_VERSION = 1;
+const SNAPSHOT_SOURCE_MODE = String(process.env.QUALITY_SNAPSHOT_SOURCE || 'proxy').trim().toLowerCase();
+const SNAPSHOT_SEARCH_PROXY_URL = String(
+  process.env.QUALITY_SNAPSHOT_SEARCH_PROXY_URL || 'https://satourn.onrender.com/api/search'
+).trim();
 
 function numberFromEnv(name, fallback) {
   const value = Number(process.env[name]);
@@ -54,8 +71,17 @@ function sleep(ms) {
 
 function parseContexts() {
   const raw = process.env.QUALITY_SNAPSHOT_CONTEXTS;
+  const contextsFile = String(process.env.QUALITY_SNAPSHOT_CONTEXTS_FILE || '').trim();
+  if (!raw?.trim() && contextsFile) {
+    const fileContent = readFileSync(path.resolve(contextsFile), 'utf8');
+    return parseContextValue(fileContent);
+  }
   if (!raw || !raw.trim()) return DEFAULT_CONTEXTS;
 
+  return parseContextValue(raw);
+}
+
+function parseContextValue(raw) {
   try {
     const parsed = JSON.parse(raw);
     const values = Array.isArray(parsed) ? parsed : [parsed];
@@ -91,20 +117,9 @@ function buildContextQuery({ area = '', city = '' } = {}) {
   return parts.join(' AND ');
 }
 
-async function fetchJsonPage({ type, query, limit, offset }) {
-  if (!API_KEY) throw new Error('Server configuration missing: LICENSEKEY');
-
+async function fetchJsonPage({ type, query, limit, offset, openDataPublished = false, countOnly = false }) {
   await sleep(REQUEST_DELAY_MS);
-  const targetUrl = buildSearchUrl({
-    baseUrl: BASE_URL,
-    experience: EXPERIENCE,
-    template: TEMPLATE,
-    type,
-    qParam: query,
-    limit,
-    offset,
-    apiKey: API_KEY
-  });
+  const targetUrl = buildSnapshotSearchUrl({ type, query, limit, offset, openDataPublished, countOnly });
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -115,16 +130,44 @@ async function fetchJsonPage({ type, query, limit, offset }) {
     });
     const text = await response.text();
     if (!response.ok) {
-      throw new Error(`Destination.One HTTP ${response.status}: ${text.slice(0, 300)}`);
+      throw new Error(`Snapshot source HTTP ${response.status}: ${text.slice(0, 300)}`);
     }
-    return JSON.parse(text.trim());
+    return parseMetaResponseText(text);
   } finally {
     clearTimeout(timeout);
   }
 }
 
-async function fetchCount(type, query) {
-  const payload = await fetchJsonPage({ type, query, limit: 1, offset: 0 });
+function buildSnapshotSearchUrl({ type, query, limit, offset, openDataPublished = false, countOnly = false }) {
+  if (SNAPSHOT_SOURCE_MODE === 'direct') {
+    if (!openDataPublished && !API_KEY) throw new Error('LICENSEKEY is required for protected direct snapshot requests.');
+    return buildSearchUrl({
+      baseUrl: BASE_URL,
+      experience: openDataPublished ? OPEN_DATA_EXPERIENCE : EXPERIENCE,
+      template: countOnly ? COUNT_TEMPLATE : TEMPLATE,
+      type,
+      qParam: query,
+      limit,
+      offset,
+      apiKey: openDataPublished ? '' : API_KEY
+    });
+  }
+
+  if (!SNAPSHOT_SEARCH_PROXY_URL) {
+    throw new Error('QUALITY_SNAPSHOT_SEARCH_PROXY_URL is required in proxy mode.');
+  }
+  const url = new URL(SNAPSHOT_SEARCH_PROXY_URL);
+  url.searchParams.set('type', type || '');
+  url.searchParams.set('query', query || '');
+  url.searchParams.set('limit', String(limit));
+  url.searchParams.set('offset', String(offset || 0));
+  if (openDataPublished) url.searchParams.set('openDataPublished', 'true');
+  if (countOnly) url.searchParams.set('countOnly', 'true');
+  return url.toString();
+}
+
+async function fetchCount(type, query, { openDataPublished = false } = {}) {
+  const payload = await fetchJsonPage({ type, query, limit: 1, offset: 0, openDataPublished, countOnly: true });
   return Number(extractTotal(payload) || 0);
 }
 
@@ -182,6 +225,21 @@ function getKeywords(rawItem) {
   ].map(textValue).filter(Boolean);
 }
 
+function getRecordAuthorships(rawItem) {
+  const addresses = safeArray(rawItem?.addresses);
+  const addressNames = addresses.flatMap((entry) => {
+    const relation = firstText(entry, ['rel']).toLowerCase();
+    if (!['author', 'organisation', 'organization'].includes(relation)) return [];
+    const name = firstText(entry, ['name', 'company', 'title', 'value']);
+    return name ? [name] : [];
+  });
+  const directNames = [
+    firstText(rawItem, ['author']),
+    firstText(rawItem, ['organisation', 'organization'])
+  ];
+  return Array.from(new Set([...addressNames, ...directNames].filter(Boolean)));
+}
+
 function reduceItemForCache(item, criterion) {
   const raw = item.raw || item;
   const type = item.type || '';
@@ -192,6 +250,7 @@ function reduceItemForCache(item, criterion) {
     title: firstText(item, ['title', 'Title', 'name', 'Name', 'headline', 'presentation.title', 'raw.title', 'raw.name', 'raw.presentation.title']) || 'Ohne Titel',
     type,
     category: firstListText(getCategoryValues(raw)),
+    authorships: getRecordAuthorships(raw),
     region: firstListText(getAreaValues(raw)),
     city: firstText(item, ['city', 'place', 'town', 'municipality', 'address.city', 'raw.city', 'raw.place']),
     license: getAttributeValue(raw, 'license') || '',
@@ -294,12 +353,13 @@ function addListItem(listBuckets, criterion, type, query, item) {
 
 async function scanType({ type, query, rows, issueMap, listBuckets, overallStatusCounts }) {
   const openDataQuery = combineSearchQueries(query, OPEN_DATA_LICENSE_QUERY);
-  const [statistikCount, openDataCount] = await Promise.all([
+  const [statistikCount, openDataCount, licensedCount] = await Promise.all([
     fetchCount(type, query),
+    fetchCount(type, query, { openDataPublished: true }),
     fetchCount(type, openDataQuery)
   ]);
 
-  rows.push({ type, statistikCount, openDataCount });
+  rows.push({ type, statistikCount, openDataCount, licensedCount });
 
   const typeStats = {
     type,
@@ -422,6 +482,7 @@ async function storeLists(store, context, listBuckets, typeStatsByType) {
     await store.setJson(key, payload, { ttlMs: SNAPSHOT_TTL_MS });
     written.push({
       key,
+      path: getSnapshotPath(store, key),
       criterionId: bucket.criterion.id,
       type: bucket.type,
       count: bucket.totalCount,
@@ -462,6 +523,23 @@ async function buildSnapshotForContext(store, context) {
     }
   }
 
+  if (!context.type) {
+    const openDataQuery = combineSearchQueries(context.query, OPEN_DATA_LICENSE_QUERY);
+    const [aggregateTotal, aggregateOpenData, aggregateLicensed] = await Promise.all([
+      fetchCount('', context.query),
+      fetchCount('', context.query, { openDataPublished: true }),
+      fetchCount('', openDataQuery)
+    ]);
+    const otherRow = {
+      type: 'Weitere (City, Area, Article, Web)',
+      statistikCount: Math.max(0, aggregateTotal - rows.reduce((sum, row) => sum + row.statistikCount, 0)),
+      openDataCount: Math.max(0, aggregateOpenData - rows.reduce((sum, row) => sum + row.openDataCount, 0)),
+      licensedCount: Math.max(0, aggregateLicensed - rows.reduce((sum, row) => sum + row.licensedCount, 0)),
+      isOther: true
+    };
+    if (otherRow.statistikCount || otherRow.openDataCount) rows.push(otherRow);
+  }
+
   const listCache = await storeLists(store, context, listBuckets, typeStatsByType);
   const finishedAt = new Date();
   const complete = typeStats.every((entry) => entry.complete);
@@ -470,7 +548,8 @@ async function buildSnapshotForContext(store, context) {
   const openDataRecords = rows.reduce((sum, row) => sum + row.openDataCount, 0);
 
   const snapshot = {
-    version: SNAPSHOT_VERSION,
+    version: QUALITY_SNAPSHOT_SCHEMA_VERSION,
+    schemaVersion: QUALITY_SNAPSHOT_SCHEMA_VERSION,
     context: normalizeQualityContext(context),
     label: context.label,
     generatedAt: finishedAt.toISOString(),
@@ -482,6 +561,7 @@ async function buildSnapshotForContext(store, context) {
       averageQualityScore: scoreCount ? Math.round(scoreSum / scoreCount) : null,
       qualityStatusCounts: overallStatusCounts,
       openDataCapableCount: openDataRecords,
+      openDataPublishedCount: openDataRecords,
       issueSummary,
       typeSummary: typeStats.map((entry) => ({
         type: entry.type,
@@ -501,7 +581,7 @@ async function buildSnapshotForContext(store, context) {
     },
     qualityDataMeta: {
       mode: 'snapshot',
-      source: 'render_key_value',
+      source: store.mode === 'file' ? 'static_snapshot' : 'render_key_value',
       collectedItems: typeStats.reduce((sum, entry) => sum + entry.scannedItems, 0),
       estimatedTotalItems: totalRecords,
       truncated: !complete,
@@ -516,6 +596,7 @@ async function buildSnapshotForContext(store, context) {
   await store.setJson(snapshotKey, snapshot, { ttlMs: SNAPSHOT_TTL_MS });
   return {
     key: snapshotKey,
+    path: getSnapshotPath(store, snapshotKey),
     context: snapshot.context,
     label: context.label,
     generatedAt: snapshot.generatedAt,
@@ -527,14 +608,13 @@ async function buildSnapshotForContext(store, context) {
   };
 }
 
-async function main() {
-  if (!API_KEY) throw new Error('LICENSEKEY is missing.');
-
-  const store = createKeyValueStore();
-  if (store.mode === 'memory' && process.env.QUALITY_SNAPSHOT_ALLOW_MEMORY !== '1') {
-    throw new Error('REDIS_URL is required for the snapshot job. Set QUALITY_SNAPSHOT_ALLOW_MEMORY=1 only for local dry runs.');
+export async function runQualitySnapshot() {
+  if (SNAPSHOT_SOURCE_MODE === 'direct' && !API_KEY) {
+    throw new Error('LICENSEKEY is required when QUALITY_SNAPSHOT_SOURCE=direct.');
   }
-  await store.ping();
+
+  const store = createQualitySnapshotStore();
+  await prepareQualitySnapshotStore(store);
   const contexts = parseContexts();
   const results = [];
 
@@ -542,19 +622,27 @@ async function main() {
     results.push(await buildSnapshotForContext(store, context));
   }
 
-  await store.setJson(latestSnapshotIndexKey(), {
-    generatedAt: new Date().toISOString(),
-    contexts: results
-  }, { ttlMs: SNAPSHOT_TTL_MS });
+  const manifest = createQualitySnapshotManifest({
+    contexts: results,
+    storageMode: store.mode
+  });
+  await store.setJson(latestSnapshotIndexKey(), manifest, { ttlMs: SNAPSHOT_TTL_MS });
 
-  console.log(JSON.stringify({
+  const result = {
     ok: true,
+    sourceMode: SNAPSHOT_SOURCE_MODE,
     cacheMode: store.mode,
+    manifestPath: getSnapshotPath(store, latestSnapshotIndexKey()),
     contexts: results
-  }, null, 2));
+  };
+  console.log(JSON.stringify(result, null, 2));
+  return result;
 }
 
-main().catch((error) => {
-  console.error('Quality snapshot job failed.', error);
-  process.exitCode = 1;
-});
+const invokedScript = process.argv[1] ? pathToFileURL(path.resolve(process.argv[1])).href : '';
+if (import.meta.url === invokedScript) {
+  runQualitySnapshot().catch((error) => {
+    console.error('Quality snapshot job failed.', error);
+    process.exitCode = 1;
+  });
+}

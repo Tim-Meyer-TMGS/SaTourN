@@ -95,6 +95,24 @@ export function getRecordPhone(raw: unknown) {
   return getFirst(raw, ['phone', 'phone2', 'telephone', 'address.phone', 'addresses.phone']);
 }
 
+export function getRecordAuthorships(raw: unknown) {
+  if (!raw || typeof raw !== 'object') return [];
+
+  const source = raw as Record<string, unknown>;
+  const addresses = Array.isArray(source.addresses) ? source.addresses : [];
+  const addressNames = addresses.flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const address = entry as Record<string, unknown>;
+    const relation = textValue(address.rel).toLowerCase();
+    if (relation !== 'author' && relation !== 'organisation' && relation !== 'organization') return [];
+    const name = getFirst(address, ['name', 'company', 'title', 'value']);
+    return name ? [name] : [];
+  });
+  const directNames = [getFirst(source, ['author']), getFirst(source, ['organisation', 'organization'])];
+
+  return Array.from(new Set([...addressNames, ...directNames].map((name) => name.trim()).filter(Boolean)));
+}
+
 export function buildVerifiedEt4Url(item: { type?: unknown; globalId?: unknown }) {
   if (String(item.type || '') !== 'POI' || !item.globalId) return '';
   return `https://pages.et4.de/de/statistik_sachsen/wlan/detail/POI/${encodeURIComponent(String(item.globalId))}/x`;

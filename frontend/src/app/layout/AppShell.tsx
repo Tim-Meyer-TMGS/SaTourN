@@ -12,8 +12,7 @@ const navigationItems = [
   { to: '/', label: 'Übersicht', icon: 'home', end: true },
   { to: '/tasks', label: 'Pflegeaufgaben', icon: 'assignment' },
   { to: '/records', label: 'Datensätze', icon: 'storage' },
-  { to: '/stats', label: 'Open-Data-Statistik', icon: 'bar_chart' },
-  { to: '/help', label: 'Hilfe', icon: 'help_outline' }
+  { to: '/stats', label: 'Open-Data-Statistik', icon: 'bar_chart' }
 ];
 
 type ThemeMode = 'light' | 'dark';
@@ -41,13 +40,6 @@ function getMainClassName(pathname: string) {
   if (pathname.startsWith('/stats')) return 'stats-main';
   if (pathname.startsWith('/help')) return 'help-main';
   return 'records-main';
-}
-
-function getServerWarmupLabel(state: ServerWarmupState) {
-  if (state === 'warming') return 'Server wird geweckt';
-  if (state === 'ready') return 'Server bereit';
-  if (state === 'failed') return 'Server braucht länger';
-  return 'Server';
 }
 
 function persistTheme(theme: ThemeMode) {
@@ -137,12 +129,21 @@ export function AppShell() {
           >
             <span className="material-icons" aria-hidden="true">{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>
           </button>
-          <button className="icon-button" type="button" aria-label="Daten aktualisieren">
+          <NavLink className="icon-button header-help-link" to="/help" aria-label="Hilfe und Prüfkriterien" title="Hilfe und Prüfkriterien">
+            <span className="material-icons" aria-hidden="true">help_outline</span>
+          </NavLink>
+          <button
+            className="icon-button"
+            type="button"
+            aria-label="Daten aktualisieren"
+            title="Daten aktualisieren"
+            onClick={() => window.location.reload()}
+          >
             <span className="material-icons" aria-hidden="true">refresh</span>
           </button>
-          <span className={`server-status server-status-${serverWarmupState}`}>
-            {getServerWarmupLabel(serverWarmupState)}
-          </span>
+          {serverWarmupState === 'failed' ? (
+            <span className="server-status server-status-failed">Daten brauchen länger</span>
+          ) : null}
           <span className="preview-chip">Preview</span>
         </div>
       </header>

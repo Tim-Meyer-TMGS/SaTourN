@@ -44,6 +44,30 @@ function emitRegionalQualityUpdate(shared, onUpdate, dependencies) {
   });
 }
 
+async function loadStatisticRow({ type, query, filters = {}, buildUrl, fetchJsonCached, extractTotal }) {
+  const [totalPayload, openDataPayload, licensedPayload] = await Promise.all([
+    fetchJsonCached(buildUrl(type, query, { countOnly: true, filters })),
+    fetchJsonCached(buildUrl(type, query, { countOnly: true, openDataPublished: true, filters })),
+    fetchJsonCached(buildUrl(type, query, { countOnly: true, isOpenData: true, filters }))
+  ]);
+  return {
+    type,
+    statistikCount: Number(extractTotal(totalPayload) || 0),
+    openDataCount: Number(extractTotal(openDataPayload) || 0),
+    licensedCount: Number(extractTotal(licensedPayload) || 0)
+  };
+}
+
+function buildOtherStatisticRow(rows, aggregate) {
+  return {
+    type: 'Weitere (City, Area, Article, Web)',
+    statistikCount: Math.max(0, aggregate.statistikCount - rows.reduce((sum, row) => sum + row.statistikCount, 0)),
+    openDataCount: Math.max(0, aggregate.openDataCount - rows.reduce((sum, row) => sum + row.openDataCount, 0)),
+    licensedCount: Math.max(0, aggregate.licensedCount - rows.reduce((sum, row) => sum + row.licensedCount, 0)),
+    isOther: true
+  };
+}
+
 export async function loadStatisticRowsIncremental({
   context,
   types,
@@ -54,21 +78,17 @@ export async function loadStatisticRowsIncremental({
   onRow = null,
   isAbortLikeError = () => false
 }) {
-  const query = buildQuery(context);
+  const query = '';
+  const filters = { area: context.area || '', city: context.city || '' };
   const targetTypes = context.type ? [context.type] : types;
   const rows = [];
+  const aggregatePromise = context.type ? null : loadStatisticRow({
+    type: '', query, filters, buildUrl, fetchJsonCached, extractTotal
+  });
 
   const results = await Promise.all(targetTypes.map(async (type) => {
     try {
-      const [totalPayload, openDataPayload] = await Promise.all([
-        fetchJsonCached(buildUrl(type, query, { limit: 1 })),
-        fetchJsonCached(buildUrl(type, query, { limit: 1, isOpenData: true }))
-      ]);
-      const row = {
-        type,
-        statistikCount: Number(extractTotal(totalPayload) || 0),
-        openDataCount: Number(extractTotal(openDataPayload) || 0)
-      };
+      const row = await loadStatisticRow({ type, query, filters, buildUrl, fetchJsonCached, extractTotal });
       rows.push(row);
       onRow?.(row, sortStatisticRows(rows, types));
       return row;
@@ -80,7 +100,17 @@ export async function loadStatisticRowsIncremental({
     }
   }));
 
+  if (results.some((row) => row == null)) {
+    throw new Error('At least one statistic type count failed');
+  }
   const finalRows = sortStatisticRows(results.filter(Boolean), types);
+  if (aggregatePromise) {
+    const otherRow = buildOtherStatisticRow(finalRows, await aggregatePromise);
+    if (otherRow.statistikCount || otherRow.openDataCount) {
+      finalRows.push(otherRow);
+      onRow?.(otherRow, finalRows);
+    }
+  }
   if (!finalRows.length && targetTypes.length) {
     throw new Error('No statistic rows loaded');
   }
@@ -95,19 +125,16 @@ export async function loadStatisticRows({
   fetchJsonCached,
   extractTotal
 }) {
-  const query = buildQuery(context);
+  const query = '';
+  const filters = { area: context.area || '', city: context.city || '' };
   const targetTypes = context.type ? [context.type] : types;
-  return Promise.all(targetTypes.map(async (type) => {
-    const [totalPayload, openDataPayload] = await Promise.all([
-      fetchJsonCached(buildUrl(type, query, { limit: 1 })),
-      fetchJsonCached(buildUrl(type, query, { limit: 1, isOpenData: true }))
-    ]);
-    return {
-      type,
-      statistikCount: Number(extractTotal(totalPayload) || 0),
-      openDataCount: Number(extractTotal(openDataPayload) || 0)
-    };
-  }));
+  const rows = await Promise.all(targetTypes.map((type) => loadStatisticRow({
+    type, query, filters, buildUrl, fetchJsonCached, extractTotal
+  })));
+  if (context.type) return rows;
+  const aggregate = await loadStatisticRow({ type: '', query, filters, buildUrl, fetchJsonCached, extractTotal });
+  const otherRow = buildOtherStatisticRow(rows, aggregate);
+  return otherRow.statistikCount || otherRow.openDataCount ? [...rows, otherRow] : rows;
 }
 
 export async function loadRegionalQualityEvaluation({

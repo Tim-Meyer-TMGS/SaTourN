@@ -21,6 +21,9 @@ ist ein kleiner Kontext für neue Arbeitssitzungen.
 - `Datenqualitaetsmonitor_Architektur_und_Zielbild.md`
   Architektur, Zielbild für Übergabe und späteres Eigenhosting
 
+- `Datenqualitaetsmonitor_Snapshot_Architektur.md`
+  Datenvertrag und Rollout für schnelle statische Qualitäts-Snapshots
+
 - `Datenqualitaetsmonitor_Pflegeaufgaben_je_Datentyp.md`
   Pflegeaufgaben nach Datentyp als Grundlage für Gewichtung und Hilfetexte
 

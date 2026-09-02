@@ -42,6 +42,7 @@ export function filterRecordRows(rows, {
   query = '',
   type = '',
   category = '',
+  authorship = '',
   status = '',
   issue = '',
   qualityCriteria = [],
@@ -52,6 +53,7 @@ export function filterRecordRows(rows, {
     if (query && !itemMatchesRecordSearch(row, query, qualityCriteria) && !serverSearchKeys.has(getIdentityKey(row))) return false;
     if (type && row.type !== type) return false;
     if (category && row.category !== category) return false;
+    if (authorship && !row.authorships?.includes(authorship)) return false;
     if (status && row.qualityStatus !== status) return false;
     if (issue && !row.missingCriteria.includes(issue)) return false;
     return true;

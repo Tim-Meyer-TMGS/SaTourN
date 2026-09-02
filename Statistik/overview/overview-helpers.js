@@ -2,12 +2,18 @@ export function normalizeStatisticRow(row) {
   return {
     type: row.type,
     statistikCount: Number(row.statistikCount || 0),
-    openDataCount: Number(row.openDataCount || 0)
+    openDataCount: Number(row.openDataCount || 0),
+    licensedCount: Number(row.licensedCount || 0),
+    isOther: row.isOther === true
   };
 }
 
 export function sortStatisticRows(rows, types) {
-  return [...rows].sort((a, b) => types.indexOf(a.type) - types.indexOf(b.type));
+  const rank = (type) => {
+    const index = types.indexOf(type);
+    return index >= 0 ? index : types.length;
+  };
+  return [...rows].sort((a, b) => rank(a.type) - rank(b.type));
 }
 
 export function upsertStatisticRow(rows, row, types) {

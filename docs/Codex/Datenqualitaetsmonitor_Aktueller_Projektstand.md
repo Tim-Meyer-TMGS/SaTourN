@@ -1,6 +1,6 @@
 # Datenqualitätsmonitor - Aktueller Projektstand
 
-Stand: 2026-07-06
+Stand: 2026-09-01
 
 ## Kurzfassung
 
@@ -36,6 +36,24 @@ Frontend ausgeliefert.
 - Open-Data-Lizenz inklusive `Event`
 - Gastro-Küchenarten über eine bestätigte `cuisine`-OR-Liste
 
+## Open-Data-Statistik
+
+- Veröffentlichte offene Daten werden gegen die Experience
+  `open-data-sachsen-tourismus` gezählt.
+- Eine gültige Open-Data-Lizenz im Bestand `statistik_sachsen` ist davon
+  getrennt und wird nur für die Lizenz-Pflegeaufgabe verwendet.
+- Die Sachsen-Gesamtsummen werden mit `type=All` geladen. Bestände außerhalb
+  der sechs Qualitäts-Datentypen erscheinen als
+  `Weitere (City, Area, Article, Web)`, damit Tabellen- und KPI-Summen
+  übereinstimmen.
+- Count-Abfragen lassen ein leeres `q` weg und nutzen
+  `ET2014A_LIGHT.json`.
+- Strukturierte Filter werden innerhalb eines Feldes mit `OR` und zwischen
+  unterschiedlichen Feldern mit `AND` kombiniert. Reine Ausschlüsse werden
+  mit `all:all` verankert.
+- META-Statuswerte wie `INVALID_LICENSE` werden auch bei HTTP 200 als
+  Upstream-Fehler behandelt und nicht als Nullbestand ausgegeben.
+
 Offene Pushdown-Prüfungen stehen in:
 
 - `Datenqualitaetsmonitor_API_Pushdown_TODOs.md`
@@ -50,6 +68,17 @@ Bereits migrierte beziehungsweise pilotierte Hauptbereiche:
 - Datensatz-Detail
 - Open-Data-Statistik
 - Hilfe
+
+Die React-Darstellung führt Nutzer inzwischen auf jeder Arbeitsseite mit einer
+kompakten Entscheidungshilfe. Die Datensatzliste ist auf Titel, Typ,
+Ort/Gebiet, Qualitätsstatus, nächsten Schritt und Aktion reduziert; technische
+Angaben bleiben in Detailseite und CSV. Die Hauptnavigation enthält nur die
+vier operativen Bereiche. Hilfe und Prüfkriterien sind weiterhin über den
+Header und den Schnellzugriff erreichbar.
+
+Normale technische Zustände werden nicht dauerhaft angezeigt. Der Header
+meldet nur einen verzögerten Datenzugriff; technische Fehlerdetails gehen in
+die Browser-Konsole, während die Oberfläche kurze Handlungshinweise zeigt.
 
 Der laufende Abgleich gegen das Bestandsfrontend steht in:
 

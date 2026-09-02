@@ -60,7 +60,7 @@ module: true
         <article class="stats-kpi-card">
           <span class="stats-kpi-icon green material-icons" aria-hidden="true">lock_open</span>
           <div>
-            <span>Open-Data-fähig</span>
+            <span>Offene Daten</span>
             <strong id="stats-open-data-records">-</strong>
             <small id="stats-open-data-share">-</small>
           </div>
@@ -70,13 +70,13 @@ module: true
           <div>
             <span>Open-Data-Quote</span>
             <strong id="stats-open-data-quote">-</strong>
-            <small>Verhältnis Open-Data-fähig</small>
+            <small>Anteil der veröffentlichten offenen Daten</small>
           </div>
         </article>
         <article class="stats-kpi-card">
           <span class="stats-kpi-icon amber material-icons" aria-hidden="true">pie_chart</span>
           <div>
-            <span>Nicht Open-Data-fähig</span>
+            <span>Nicht als Open Data veröffentlicht</span>
             <strong id="stats-non-open-data-records">-</strong>
             <small id="stats-non-open-data-share">-</small>
           </div>
@@ -91,7 +91,7 @@ module: true
             <div class="stats-chart-table-wrap">
               <table class="stats-mini-table">
                 <thead>
-                  <tr><th>Datentyp</th><th>Anzahl</th><th>Open-Data-Lizenz</th><th>Keine Open-Data-Lizenz</th><th>Anteil</th></tr>
+                  <tr><th>Datentyp</th><th>Anzahl</th><th>Offene Daten</th><th>Nicht veröffentlicht</th><th>Anteil</th></tr>
                 </thead>
                 <tbody id="stats-type-distribution-body">
                   <tr><td colspan="5" class="table-empty"><span class="loading-line">Statistik wird geladen ...</span></td></tr>
@@ -121,6 +121,11 @@ module: true
           <small id="stats-license-task-share">-</small>
         </div>
         <a class="primary-action stats-task-link" href="tasks.html?task=license_missing">Pflegeaufgabe &ouml;ffnen<span class="material-icons" aria-hidden="true">arrow_forward</span></a>
+      </section>
+
+      <section class="stats-data-note" aria-label="Datenbasis">
+        <span><span class="material-icons" aria-hidden="true">info</span>Die Zahl der offenen Daten stammt aus der Experience <code>open-data-sachsen-tourismus</code>. Die Lizenz-Pflegeaufgabe wird separat im Statistikbestand ermittelt.</span>
+        <strong><span class="material-icons" aria-hidden="true">check_circle</span>Datenbasis: vollständig</strong>
       </section>
 
     </main>

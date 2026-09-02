@@ -1,11 +1,12 @@
 import { fetchJson } from '../../shared/api/http-client';
 import { getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
-import { evaluateAllItems, type QualityCriterion } from '../../shared/legacy/quality';
+import { evaluateAllItems, getQualityScanConfig, type QualityCriterion } from '../../shared/legacy/quality';
 import { findQualityCriterion } from '../../shared/quality/quality-criteria';
 import {
   buildQualityEvaluationInput,
   buildRecordDetailUrl,
+  getRecordAuthorships,
   getRecordEmail,
   getRecordWeb
 } from '../../shared/records/record-fields';
@@ -43,6 +44,7 @@ type QualityScanPayload = {
   };
   page?: {
     complete?: boolean;
+    nextCursor?: string | number | null;
   };
 };
 
@@ -51,10 +53,40 @@ type SearchResult = {
   meta: RecordSearchMeta;
 };
 
+type PaginationOptions = {
+  page?: number;
+  pageSize?: number;
+};
+
 const RECORD_TYPES = ['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package'] as const;
 const RECORD_TYPE_SET = new Set<string>(RECORD_TYPES);
-const NON_OPEN_DATA_PAGE_SIZE = 200;
-const NON_OPEN_DATA_MAX_PAGES = 20;
+
+function getPageSize({ pageSize }: PaginationOptions = {}) {
+  const value = Number(pageSize || 25);
+  return Number.isFinite(value) ? Math.max(1, Math.min(200, value)) : 25;
+}
+
+function getOffset({ page, pageSize }: PaginationOptions = {}) {
+  const normalizedPage = Math.max(1, Number(page || 1));
+  return (normalizedPage - 1) * getPageSize({ pageSize });
+}
+
+function getPerRequestPageSize(requestCount: number, pagination: PaginationOptions = {}) {
+  const pageSize = getPageSize(pagination);
+  return requestCount > 1 ? Math.max(1, Math.floor(pageSize / requestCount)) : pageSize;
+}
+
+function getPerRequestOffset(requestCount: number, pagination: PaginationOptions = {}) {
+  const normalizedPage = Math.max(1, Number(pagination.page || 1));
+  return (normalizedPage - 1) * getPerRequestPageSize(requestCount, pagination);
+}
+
+function canPageQualityScanResults(requests: Array<{ criterion: QualityCriterion; type: string }>) {
+  return requests.every(({ criterion, type }) => {
+    const scanConfig = getQualityScanConfig(criterion, type);
+    return scanConfig.method === 'api_pushdown' && scanConfig.verified && Boolean(scanConfig.missingQuery);
+  });
+}
 
 function cleanQueryValue(value: string) {
   return String(value || '').replace(/"/g, '').trim();
@@ -134,6 +166,9 @@ function toRecordRow(item: Record<string, unknown>): RecordRow {
     const rightCriterion = findQualityCriterion(right);
     return priorityRank(String(rightCriterion?.priority || '')) - priorityRank(String(leftCriterion?.priority || ''));
   })[0] || '';
+  const authorships = Array.isArray(item.authorships)
+    ? Array.from(new Set(item.authorships.map((entry) => String(entry).trim()).filter(Boolean)))
+    : getRecordAuthorships(item.raw);
 
   return {
     id: String(item.id || ''),
@@ -143,6 +178,7 @@ function toRecordRow(item: Record<string, unknown>): RecordRow {
     city: String(item.city || ''),
     region: String(item.region || ''),
     category: String(item.category || ''),
+    authorships,
     updatedAt: String(item.updatedAt || ''),
     qualityStatus: String(item.qualityStatus || 'nicht berechenbar'),
     qualityScore: Number.isFinite(Number(item.qualityScore)) ? Number(item.qualityScore) : null,
@@ -216,7 +252,7 @@ async function fetchRecordsById(query: string, context: WorkContext, selectedTyp
   };
 }
 
-async function fetchRecordsByTextQuery(query: string, context: WorkContext, selectedType: string) {
+async function fetchRecordsByTextQuery(query: string, context: WorkContext, selectedType: string, pagination: PaginationOptions = {}) {
   const runtime = getRuntimeConfig();
   const targetTypes = selectedType ? [selectedType] : [...RECORD_TYPES];
   const contextQuery = buildContextQuery(context);
@@ -237,12 +273,13 @@ async function fetchRecordsByTextQuery(query: string, context: WorkContext, sele
   }
 
   const combinedQuery = [contextQuery, termQuery].filter(Boolean).join(' AND ');
-  const perTypeLimit = selectedType ? 40 : 15;
+  const perTypeLimit = selectedType ? getPageSize(pagination) : getPerRequestPageSize(targetTypes.length, pagination);
+  const offset = selectedType ? getOffset(pagination) : 0;
 
   const payloads = await Promise.all(targetTypes.map(async (type): Promise<{ items: Record<string, unknown>[]; total: number }> => {
     try {
       const payload = await fetchJson<SearchPayload>(
-        buildSearchApiUrl(runtime.searchApiBase, type, combinedQuery, { limit: perTypeLimit })
+        buildSearchApiUrl(runtime.searchApiBase, type, combinedQuery, { limit: perTypeLimit, offset })
       );
       return {
         items: extractItems(payload).map((raw) => normalizeSearchItem(raw, type, context)),
@@ -321,41 +358,34 @@ async function fetchRecordsByAiPrompt(prompt: string, context: WorkContext, sele
   };
 }
 
-async function fetchNonOpenDataRecords(context: WorkContext, selectedTypes: string[]): Promise<SearchResult> {
+async function fetchNonOpenDataRecords(context: WorkContext, selectedTypes: string[], pagination: PaginationOptions = {}): Promise<SearchResult> {
   const runtime = getRuntimeConfig();
   const targetTypes = (selectedTypes.length ? selectedTypes : [...RECORD_TYPES])
     .filter((type) => RECORD_TYPE_SET.has(type as (typeof RECORD_TYPES)[number]));
   const contextQuery = buildContextQuery(context);
+  const perTypeLimit = getPerRequestPageSize(targetTypes.length, pagination);
+  const perTypeOffset = getPerRequestOffset(targetTypes.length, pagination);
 
   const payloads = await Promise.all(targetTypes.map(async (type) => {
-    const items: Record<string, unknown>[] = [];
-    let total = 0;
-    let offset = 0;
-
-    for (let page = 0; page < NON_OPEN_DATA_MAX_PAGES; page += 1) {
-      const payload = await fetchJson<SearchPayload>(
-        buildSearchApiUrl(runtime.searchApiBase, type, contextQuery, {
-          limit: NON_OPEN_DATA_PAGE_SIZE,
-          offset,
-          isOpenData: false
-        }),
-        { timeoutMs: 45_000 }
-      );
-      const pageItems = extractItems(payload);
-      total = extractTotal(payload, total || pageItems.length);
-      items.push(...pageItems.map((raw) => normalizeSearchItem(raw, type, context)));
-      if (!pageItems.length || items.length >= total) break;
-      offset += pageItems.length;
-    }
+    const payload = await fetchJson<SearchPayload>(
+      buildSearchApiUrl(runtime.searchApiBase, type, contextQuery, {
+        limit: perTypeLimit,
+        offset: perTypeOffset,
+        isOpenData: false
+      }),
+      { timeoutMs: 45_000 }
+    );
+    const pageItems = extractItems(payload);
+    const total = extractTotal(payload, pageItems.length);
 
     return {
-      items,
+      items: pageItems.map((raw) => normalizeSearchItem(raw, type, context)),
       total,
-      truncated: total > items.length
+      truncated: total > perTypeOffset + pageItems.length
     };
   }));
 
-  const items = uniqueRecordItems(payloads.flatMap((entry) => entry.items));
+  const items = uniqueRecordItems(payloads.flatMap((entry) => entry.items)).slice(0, getPageSize(pagination));
   const estimatedTotalItems = payloads.reduce((sum, entry) => sum + entry.total, 0);
 
   return {
@@ -363,8 +393,9 @@ async function fetchNonOpenDataRecords(context: WorkContext, selectedTypes: stri
     meta: {
       mode: 'non_open_data',
       criterionId: 'license_missing',
-      criterionLabel: 'Nicht Open-Data-fähig',
+      criterionLabel: 'Ohne gültige Open-Data-Lizenz',
       estimatedTotalItems,
+      supportsPagination: true,
       truncated: payloads.some((entry) => entry.truncated)
     } satisfies RecordSearchMeta
   };
@@ -375,13 +406,15 @@ export async function loadRecordsForFrontend(options: {
   query: string;
   context: WorkContext;
   selectedType: string;
+  page?: number;
+  pageSize?: number;
 }) {
-  const { mode, query, context, selectedType } = options;
+  const { mode, query, context, selectedType, page, pageSize } = options;
   const baseResult = mode === 'ai_search'
     ? await fetchRecordsByAiPrompt(query, context, selectedType)
     : looksLikeRecordId(query)
       ? await fetchRecordsById(query, context, selectedType)
-      : await fetchRecordsByTextQuery(query, context, selectedType);
+      : await fetchRecordsByTextQuery(query, context, selectedType, { page, pageSize });
 
   return {
     rows: buildEvaluatedRecordRows(baseResult.items),
@@ -392,8 +425,13 @@ export async function loadRecordsForFrontend(options: {
 export async function loadNonOpenDataRecordsForFrontend(options: {
   context: WorkContext;
   selectedTypes?: string[];
+  page?: number;
+  pageSize?: number;
 }) {
-  const baseResult = await fetchNonOpenDataRecords(options.context, options.selectedTypes || []);
+  const baseResult = await fetchNonOpenDataRecords(options.context, options.selectedTypes || [], {
+    page: options.page,
+    pageSize: options.pageSize
+  });
   return {
     rows: buildEvaluatedRecordRows(baseResult.items),
     meta: baseResult.meta
@@ -406,8 +444,11 @@ export async function loadCriterionRecordsForFrontend(options: {
   context: WorkContext;
   selectedType: string;
   selectedTypes?: string[];
+  page?: number;
+  pageSize?: number;
+  cursor?: string | number | null;
 }) {
-  const { criterionId, criterionIds = [], context, selectedType, selectedTypes = [] } = options;
+  const { criterionId, criterionIds = [], context, selectedType, selectedTypes = [], page, pageSize, cursor } = options;
   const criterion = findQualityCriterion(criterionId);
   const criteria = Array.from(new Set((criterionIds.length ? criterionIds : [criterionId]).filter(Boolean)))
     .map((id) => findQualityCriterion(id))
@@ -428,12 +469,22 @@ export async function loadCriterionRecordsForFrontend(options: {
   const requests = criteria.flatMap((activeCriterion) => targetTypes
     .filter((type) => !activeCriterion.types?.length || activeCriterion.types.includes(type))
     .map((type) => ({ criterion: activeCriterion, type })));
+  const supportsPagination = canPageQualityScanResults(requests);
+  const supportsCursorLoading = !supportsPagination && requests.length === 1;
+  const resultLimit = getPerRequestPageSize(requests.length, { page, pageSize });
+  const offset = supportsPagination ? getPerRequestOffset(requests.length, { page, pageSize }) : 0;
+  const scanCursor = supportsCursorLoading ? cursor : null;
 
   const scanResults = await Promise.all(requests.map(async ({ criterion: activeCriterion, type }) => {
     const params = new URLSearchParams();
     params.set('criterionId', activeCriterion.id);
     params.set('type', type);
-    params.set('limit', '200');
+    params.set('limit', String(resultLimit));
+    if (scanCursor !== null && scanCursor !== undefined && scanCursor !== '') {
+      params.set('cursor', String(scanCursor));
+    } else {
+      params.set('offset', String(offset));
+    }
     params.set('scanPageSize', '200');
     params.set('maxPages', '20');
     if (query) params.set('query', query);
@@ -463,10 +514,15 @@ export async function loadCriterionRecordsForFrontend(options: {
         type: item.type || type,
         raw: item.raw || item
       }));
-  }));
+  })).slice(0, getPageSize({ page, pageSize }));
   const estimatedTotalItems = payloads.reduce((sum, { payload }) => (
     sum + Number(payload.stats?.overallcount ?? payload.stats?.matchedItems ?? 0)
   ), 0);
+  const nextCursor = supportsPagination
+    ? null
+    : supportsCursorLoading
+      ? payloads.map(({ payload }) => payload.page?.nextCursor).find((value) => value !== null && value !== undefined) ?? null
+      : null;
 
   return {
     rows,
@@ -475,6 +531,8 @@ export async function loadCriterionRecordsForFrontend(options: {
       criterionId,
       criterionLabel: criteria.length > 1 ? 'Gruppierte Pflegeaufgabe' : criterion?.label || criterionId,
       estimatedTotalItems: estimatedTotalItems || rows.length,
+      nextCursor,
+      supportsPagination,
       truncated: payloads.some(({ payload }) => payload.page?.complete === false)
     } satisfies RecordSearchMeta
   };
