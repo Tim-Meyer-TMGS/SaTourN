@@ -37,8 +37,8 @@ DESTINATION_ONE_BASE_URL       optional
 DESTINATION_ONE_EXPERIENCE     optional, Standard: statistik_sachsen
 DESTINATION_ONE_DATABASE_TEMPLATE optional, Standard: ET2022A.json
 DESTINATION_ONE_FULL_SYNC      optional, true aktiviert Abgleich und Löschung fehlender IDs
-NEON_AUTH_BASE_URL
-VITE_NEON_AUTH_URL
+NEON_AUTH_BASE_URL             oder DATABASE_NEON_AUTH_BASE_URL bei Custom Prefix DATABASE
+VITE_NEON_AUTH_URL             oder DATABASE_VITE_NEON_AUTH_URL bei Custom Prefix DATABASE
 OI_API_KEY
 OI_MODEL_MAIL
 OI_MODEL_SEARCH

@@ -19,11 +19,15 @@ const email = normalizeEmail(readOption('--email') || positional[0]);
 const name = readOption('--name') || positional[1] || 'Administrator';
 const password = readOption('--password') || positional[2] || temporaryPassword();
 const databaseUrl = String(process.env.DATABASE_URL || '').trim();
-const authUrl = String(process.env.NEON_AUTH_BASE_URL || '').trim().replace(/\/$/, '');
+const authUrl = String(
+  process.env.NEON_AUTH_BASE_URL
+  || process.env.DATABASE_NEON_AUTH_BASE_URL
+  || ''
+).trim().replace(/\/$/, '');
 const authOrigin = String(process.env.NEON_AUTH_TRUSTED_ORIGIN || '').trim();
 
 if (!databaseUrl) throw new Error('DATABASE_URL is required.');
-if (!authUrl) throw new Error('NEON_AUTH_BASE_URL is required.');
+if (!authUrl) throw new Error('NEON_AUTH_BASE_URL or DATABASE_NEON_AUTH_BASE_URL is required.');
 if (!authOrigin) throw new Error('NEON_AUTH_TRUSTED_ORIGIN is required.');
 if (!email) throw new Error('An email address is required.');
 if (password.length < 12 || password.length > 128) {
