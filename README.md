@@ -13,8 +13,7 @@ Destination.One-Links, Datenprüfung und Kategorien-Bearbeitung.
 - `frontend/`
   neues paralleles Frontend-Grundgerüst für die Migration auf
   `React + Vite + TypeScript`
-- `Pages-Builder/`, `KG-Finder/`, `Item_Randomizer/`,
-  `Copyright-Checker/`, `OA-Datenabruf/`, `Category-Editor/`,
+- `Pages-Builder/`, `KG-Finder/`, `Copyright-Checker/`, `Category-Editor/`,
   `Fieldname-Finder/`, `Chatbot-Test/`
   weitere einzelne Tools
 - `index.js`, `routes/`, `lib/`

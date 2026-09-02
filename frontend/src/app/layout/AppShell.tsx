@@ -39,6 +39,7 @@ function getMainClassName(pathname: string) {
   if (pathname.startsWith('/tasks')) return 'tasks-main';
   if (pathname.startsWith('/stats')) return 'stats-main';
   if (pathname.startsWith('/help')) return 'help-main';
+  if (pathname.startsWith('/admin')) return 'admin-main';
   return 'records-main';
 }
 
@@ -131,6 +132,9 @@ export function AppShell() {
           </button>
           <NavLink className="icon-button header-help-link" to="/help" aria-label="Hilfe und Prüfkriterien" title="Hilfe und Prüfkriterien">
             <span className="material-icons" aria-hidden="true">help_outline</span>
+          </NavLink>
+          <NavLink className="icon-button header-admin-link" to="/admin" aria-label="Administration" title="Administration">
+            <span className="material-icons" aria-hidden="true">settings</span>
           </NavLink>
           <button
             className="icon-button"

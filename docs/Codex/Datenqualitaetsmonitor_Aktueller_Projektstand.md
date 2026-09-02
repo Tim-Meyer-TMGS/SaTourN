@@ -1,6 +1,6 @@
 # Datenqualitätsmonitor - Aktueller Projektstand
 
-Stand: 2026-09-01
+Stand: 2026-09-02
 
 ## Kurzfassung
 
@@ -79,6 +79,14 @@ Header und den Schnellzugriff erreichbar.
 Normale technische Zustände werden nicht dauerhaft angezeigt. Der Header
 meldet nur einen verzögerten Datenzugriff; technische Fehlerdetails gehen in
 die Browser-Konsole, während die Oberfläche kurze Handlungshinweise zeigt.
+
+Zusatzfunktionen sind fachlich in den Monitor eingeordnet:
+
+- Zufallsstichproben und Beispieldaten werden direkt auf der Übersicht erzeugt.
+- Outdooractive-Quelldaten können bei Outdooractive-Datensätzen direkt in der
+  Detailansicht abgerufen werden.
+- Das vorbereitete Adminpanel hält den persönlichen Outdooractive-Zugang bis
+  zur Login-/Neon-Anbindung nur flüchtig im Arbeitsspeicher.
 
 Der laufende Abgleich gegen das Bestandsfrontend steht in:
 

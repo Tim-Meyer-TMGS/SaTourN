@@ -251,7 +251,8 @@ textarea {
   cursor: pointer;
 }
 
-.header-help-link {
+.header-help-link,
+.header-admin-link {
   padding: 0 !important;
   border-radius: 8px !important;
   background: var(--surface) !important;
@@ -395,6 +396,12 @@ textarea {
 .tasks-main,
 .stats-main,
 .help-main {
+  width: 100%;
+  max-width: none;
+  padding: 24px 28px;
+}
+
+.admin-main {
   width: 100%;
   max-width: none;
   padding: 24px 28px;
@@ -2846,6 +2853,306 @@ button.table-link-button:disabled,
   }
 }
 
+.header-admin-link.active {
+  border-color: var(--blue) !important;
+  color: var(--blue) !important;
+}
+
+.admin-page {
+  max-width: 1180px;
+}
+
+.tool-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tool-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.tool-card-header h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.tool-card-header p,
+.tool-message {
+  margin: 0;
+  color: var(--muted);
+}
+
+.tool-card-icon {
+  display: grid !important;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.tool-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.tool-form-grid label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tool-form-grid input,
+.tool-form-grid textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.tool-form-grid textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.tool-form-wide {
+  grid-column: span 2;
+}
+
+.tool-form-full {
+  grid-column: 1 / -1;
+}
+
+.tool-type-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.tool-type-picker legend {
+  width: 100%;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tool-type-picker label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  cursor: pointer;
+}
+
+.tool-context-note {
+  margin: 16px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.tool-actions .tool-primary-button {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.tool-actions button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.tool-message {
+  margin-top: 16px;
+}
+
+.tool-message-error {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--red-soft);
+  color: var(--red);
+  font-weight: 700;
+}
+
+.tool-results {
+  margin-top: 18px;
+}
+
+.tool-table-wrap {
+  margin-top: 10px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.tool-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.tool-table th,
+.tool-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tool-table th {
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.tool-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.tool-json-output {
+  max-height: 560px;
+  margin: 18px 0 0;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0b1220;
+  color: #e7eefc;
+  font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.overview-sample-panel {
+  margin: 0 0 18px;
+}
+
+.admin-settings-card {
+  margin-bottom: 16px;
+}
+
+.admin-storage-note,
+.outdooractive-config-note {
+  margin: 16px 0 0;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+
+.admin-placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.admin-placeholder-grid article > .material-icons {
+  color: var(--blue);
+  font-size: 28px;
+}
+
+.admin-placeholder-grid h2 {
+  margin: 12px 0 6px;
+  font-size: 18px;
+}
+
+.admin-placeholder-grid p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.outdooractive-detail-panel {
+  margin-bottom: 16px;
+}
+
+.outdooractive-detail-head,
+.outdooractive-detail-head > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.outdooractive-detail-head h2 {
+  margin: 0 0 3px;
+  font-size: 18px;
+}
+
+.outdooractive-detail-head p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.outdooractive-detail-head .tool-primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.outdooractive-detail-head .tool-primary-button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.outdooractive-result details {
+  margin-top: 12px;
+}
+
+.outdooractive-result summary {
+  color: var(--blue);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 @media (max-width: 1180px) {
   .app-header {
     grid-template-columns: minmax(0, 1fr);
@@ -2931,7 +3238,7 @@ button.table-link-button:disabled,
 
   .header-status {
     display: grid;
-    grid-template-columns: repeat(3, 38px) minmax(0, 1fr);
+    grid-template-columns: repeat(4, 38px) minmax(0, 1fr);
     gap: 8px;
   }
 
@@ -2978,8 +3285,27 @@ button.table-link-button:disabled,
   .tasks-main,
   .stats-main,
   .record-detail-main,
-  .help-main {
+  .help-main,
+  .admin-main {
     padding: 18px;
+  }
+
+  .tool-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-form-wide,
+  .tool-form-full {
+    grid-column: 1;
+  }
+
+  .admin-placeholder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .outdooractive-detail-head {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .record-search-block,
@@ -3136,8 +3462,14 @@ button.table-link-button:disabled,
   .tasks-main,
   .stats-main,
   .record-detail-main,
-  .help-main {
+  .help-main,
+  .admin-main {
     padding: 14px;
+  }
+
+  .tool-actions,
+  .tool-actions button {
+    width: 100%;
   }
 
   .overview-hero h1 {

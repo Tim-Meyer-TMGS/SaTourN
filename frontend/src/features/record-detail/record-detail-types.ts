@@ -87,6 +87,7 @@ export type DetailItem = {
   sourceUrl: string;
   coordinates: string;
   primarySystem: DetailPrimarySystem;
+  outdooractiveId: string;
   externalIds: DetailInfoEntry[];
   addressEntries: DetailInfoEntry[];
   rawExcerpt: DetailInfoEntry[];
