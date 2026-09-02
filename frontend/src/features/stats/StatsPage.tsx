@@ -6,7 +6,6 @@ import { buildOpenDataSummary } from '../../shared/quality/quality-metrics';
 import { buildNonOpenDataRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
-import { PageGuidance } from '../../shared/ui/PageGuidance';
 import { loadStatisticRows, type OverviewStatisticRow } from '../overview/overview-api';
 
 const TYPE_COLORS = ['#0b74f2', '#2eb85c', '#f5aa1c', '#8b3ff2', '#ef3f42', '#16b8d9', '#64748b'];
@@ -132,10 +131,6 @@ export function StatsPage() {
         <p>Aggregierte Kennzahlen für deinen Arbeitskontext.</p>
       </section>
 
-      <PageGuidance title="Hier zählt die tatsächliche Open-Data-Veröffentlichung" icon="published_with_changes">
-        Die Open-Data-Zahl kommt aus der öffentlichen Sachsen-Experience. Datensätze ohne gültige offene Lizenz sind eine separate Pflegegruppe und deshalb nicht mit der Differenz zum Gesamtbestand gleichzusetzen.
-      </PageGuidance>
-
       {error ? <div className="overview-message">{error}</div> : null}
 
       <section className="stats-kpi-grid" aria-label="Open-Data-Kennzahlen">
@@ -249,13 +244,6 @@ export function StatsPage() {
         </section>
       ) : null}
 
-      <section className="stats-data-note" aria-label="Datenbasis">
-        <span><span className="material-icons" aria-hidden="true">info</span>Die Zahl der offenen Daten stammt aus der Experience open-data-sachsen-tourismus. Die Lizenz-Pflegeaufgabe wird separat im Statistikbestand ermittelt.</span>
-        <strong>
-          <span className="material-icons" aria-hidden="true">{error ? 'error_outline' : loading ? 'hourglass_top' : 'check_circle'}</span>
-          {error ? 'Datenbasis: nicht vollständig' : loading ? 'Datenbasis wird geladen' : 'Datenbasis: vollständig'}
-        </strong>
-      </section>
     </>
   );
 }

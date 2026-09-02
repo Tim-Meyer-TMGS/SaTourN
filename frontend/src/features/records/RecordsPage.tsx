@@ -6,7 +6,6 @@ import { getQualityCriterionLabel } from '../../shared/quality/quality-criteria'
 import { buildTaskAwareRecordDetailUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { InlineLoading, LoadingLine } from '../../shared/ui/LoadingIndicators';
-import { PageGuidance } from '../../shared/ui/PageGuidance';
 import {
   loadCriterionRecordsForFrontend,
   loadNonOpenDataRecordsForFrontend,
@@ -206,9 +205,8 @@ export function RecordsPage() {
       .sort((left, right) => formatAuthorshipLabel(left).localeCompare(formatAuthorshipLabel(right), 'de'));
   }, [authorshipFilter, rows]);
 
-  const activeTypeFilter = urlCriterionId
-    ? urlType
-    : context.type;
+  const hasUrlFilteredList = Boolean(urlCriterionId || urlListMode);
+  const activeTypeFilter = hasUrlFilteredList ? urlType : context.type;
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -305,9 +303,9 @@ export function RecordsPage() {
     async function loadRequestedRecordList() {
       if (!urlCriterionId && urlListMode !== 'non_open_data') return;
 
-      const selectedTypes = urlTypes.length
-        ? urlTypes
-        : [urlType].filter((entry) => DATA_TYPE_SET.has(entry));
+      const selectedTypes = DATA_TYPE_SET.has(urlType)
+        ? [urlType]
+        : urlTypes;
       if (urlType && !DATA_TYPE_SET.has(urlType)) {
         setError('Für diese Pflegeaufgabe fehlt ein konkreter Datentyp.');
         return;
@@ -386,9 +384,9 @@ export function RecordsPage() {
   async function loadMoreServerScanRows() {
     if (!canLoadMoreServerScanRows || !urlCriterionId) return;
 
-    const selectedTypes = urlTypes.length
-      ? urlTypes
-      : [urlType].filter((entry) => DATA_TYPE_SET.has(entry));
+    const selectedTypes = DATA_TYPE_SET.has(urlType)
+      ? [urlType]
+      : urlTypes;
 
     setLoadingMore(true);
     setError('');
@@ -489,6 +487,19 @@ export function RecordsPage() {
     }
   }
 
+  function updateRecordTypeFilter(nextType: typeof context.type) {
+    setContext({ type: nextType });
+    setPage(1);
+
+    if (!hasUrlFilteredList) return;
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('types');
+    if (nextType) nextParams.set('type', nextType);
+    else nextParams.delete('type');
+    setSearchParams(nextParams);
+  }
+
   function exportFilteredRowsAsCsv() {
     if (!filteredRows.length) return;
     const csv = `\uFEFF${buildRecordsCsv(filteredRows)}`;
@@ -499,12 +510,8 @@ export function RecordsPage() {
     <>
       <section className="overview-hero">
         <h1>Datensätze</h1>
-        <p>Suche und prüfe einzelne Datensätze oder arbeite gefilterte Listen ab.</p>
+        <p>Datensatzsuche und gefilterte Listen.</p>
       </section>
-
-      <PageGuidance title="Die Liste zeigt nur, was du für die nächste Entscheidung brauchst">
-        Suche einen Datensatz oder öffne eine Pflegeaufgabe. Technische Angaben, IDs, Aktualisierung und die vollständige Kriterienbewertung findest du im Detail; Listenfilter wirken auf die aktuell geladenen Treffer.
-      </PageGuidance>
 
       <section className="record-filter-card" aria-label="Datensätze suchen und filtern">
         <div className="record-search-block">
@@ -529,12 +536,11 @@ export function RecordsPage() {
               {loading && mode === 'ai_search' ? <InlineLoading className="button-loading">KI sucht</InlineLoading> : 'AI-Search'}
             </button>
           </div>
-          <small>Du kannst auch direkt eine ID oder global_id eingeben.</small>
         </div>
 
         <label>
           <span>Typ</span>
-          <select value={context.type} onChange={(event) => setContext({ type: event.target.value as typeof context.type })}>
+          <select value={activeTypeFilter} onChange={(event) => updateRecordTypeFilter(event.target.value as typeof context.type)}>
             <option value="">Typ: Alle</option>
             {DATA_TYPES.map((type) => (
               <option key={type} value={type}>{type}</option>
@@ -639,8 +645,8 @@ export function RecordsPage() {
                     {loading
                       ? <LoadingLine>Datensätze werden geladen</LoadingLine>
                       : (meta.mode === 'idle'
-                        ? 'Starte eine Suche oder öffne eine Pflegeaufgabe, um Datensätze zu laden.'
-                        : 'Keine Datensätze entsprechen der aktuellen Auswahl. Prüfe oder setze die Filter zurück.')}
+                        ? 'Keine Daten geladen.'
+                        : 'Keine Datensätze gefunden.')}
                   </td>
                 </tr>
               ) : pagedRows.map((row) => (

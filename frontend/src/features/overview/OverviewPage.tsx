@@ -5,14 +5,12 @@ import { calculatePercent, formatNumber, formatPercent } from '../../shared/form
 import {
   buildOpenDataSummary,
   buildQualityDistribution,
-  buildQualityStatusGradient,
-  canShowQualityScore
+  buildQualityStatusGradient
 } from '../../shared/quality/quality-metrics';
 import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { getTaskFamilyId, getTaskFamilyMeta } from '../../shared/tasks/task-families';
 import { InlineLoading, MetricLoading } from '../../shared/ui/LoadingIndicators';
-import { PageGuidance } from '../../shared/ui/PageGuidance';
 import { loadOverviewData, type OverviewData, type OverviewIssue } from './overview-api';
 import { RandomSamplePanel } from './RandomSamplePanel';
 
@@ -152,7 +150,6 @@ export function OverviewPage() {
 
   const topIssues = useMemo(() => buildOverviewTaskIssues(data?.issues || []).slice(0, 5), [data]);
   const qualitySummary = data?.qualitySummary || null;
-  const canCalculateScore = canShowQualityScore(context.area, context.city);
   const hasQualitySummary = Boolean(qualitySummary);
   const qualityTotal = qualitySummary?.totalAssessed || 0;
   const qualityScore = qualitySummary?.averageQualityScore ?? null;
@@ -176,15 +173,6 @@ export function OverviewPage() {
         <h1>Datenqualitäts-Monitor</h1>
         <p>Pflegeaufgaben, Qualitätsstatus und Open-Data-Quote für {contextLabel}.</p>
       </section>
-
-      <PageGuidance
-        title={canCalculateScore ? 'Von der Lage zur nächsten Pflegehandlung' : 'Für Sachsen zuerst Bestand und Pflegebedarf einordnen'}
-        action={<Link className="page-guidance-link" to="/tasks">Pflegeaufgaben öffnen</Link>}
-      >
-        {canCalculateScore
-          ? 'Der Qualitäts-Score ordnet die aktuelle Auswahl ein. Beginne anschließend mit der wichtigsten Aufgabe und öffne die betroffenen Datensätze.'
-          : 'Bestand, veröffentlichte offene Daten und Pflegeaufgaben sind landesweit sichtbar. Für einen belastbaren Qualitäts-Score wähle im Arbeitskontext ein Gebiet oder einen Ort.'}
-      </PageGuidance>
 
       <section className="kpi-grid" aria-label="Kennzahlen">
         <article className="kpi-card">
@@ -279,13 +267,8 @@ export function OverviewPage() {
                 )}
               </div>
             </div>
-            <p className="data-note">
-              {hasQualitySummary
-                ? `Qualitätsstatus basiert auf ${formatNumber(qualityTotal)} bewerteten Datensätzen im aktuellen Arbeitskontext.`
-                : (canCalculateScore ? 'Qualitätsstatus konnte für diesen Kontext noch nicht geladen werden.' : 'Für ganz Sachsen wird kein Qualitäts-Score angezeigt. Pflegeaufgaben laden im Hintergrund.')}
-            </p>
             {summaryPartial ? (
-              <p className="data-note subtle-note">Einige Datentypen wurden nur teilweise bewertet. Die Zahlen werden angezeigt, sobald verfügbare Ergebnisse vorliegen.</p>
+              <p className="data-note subtle-note">Daten teilweise geladen.</p>
             ) : null}
           </article>
 

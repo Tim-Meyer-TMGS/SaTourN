@@ -7,7 +7,6 @@ import { findQualityCriterion, isOpenDataRelevantCriterion } from '../../shared/
 import { buildTaskRecordsUrl } from '../../shared/records/record-list-links';
 import { useContextStore } from '../../shared/state/context-store';
 import { InlineLoading, LoadingLine, MetricLoading } from '../../shared/ui/LoadingIndicators';
-import { PageGuidance } from '../../shared/ui/PageGuidance';
 import { loadOverviewIssues, type OverviewIssue } from '../overview/overview-api';
 
 const ROWS_PER_PAGE = 10;
@@ -457,10 +456,6 @@ export function TasksPage() {
         <p>Übersicht der offenen Pflegeaufgaben nach Priorität und Auswirkung.</p>
       </section>
 
-      <PageGuidance title="Eine Aufgabe auswählen, dann konkrete Datensätze bearbeiten">
-        Die Zahlen sind Treffer je Pflegeaufgabe. Ein Datensatz mit mehreren Lücken kann mehrfach vorkommen; die konkrete Arbeitsliste öffnet sich über den Pfeil oder „Datensätze anzeigen“.
-      </PageGuidance>
-
       <section className="task-kpi-grid" aria-label="Pflegeaufgaben Kennzahlen">
         <article className="task-kpi-card">
           <span className="task-kpi-icon critical material-icons" aria-hidden="true">flag</span>
@@ -623,7 +618,7 @@ export function TasksPage() {
             </header>
             <div className="task-detail-content">
               {!selectedTask ? (
-                <p className="empty-note">Wähle eine Pflegeaufgabe aus der Liste.</p>
+                <p className="empty-note">Keine Aufgabe ausgewählt.</p>
               ) : (
                 <>
                   <h3>{selectedTask.label}</h3>

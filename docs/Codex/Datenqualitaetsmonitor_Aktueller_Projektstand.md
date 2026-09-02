@@ -69,12 +69,15 @@ Bereits migrierte beziehungsweise pilotierte Hauptbereiche:
 - Open-Data-Statistik
 - Hilfe
 
-Die React-Darstellung führt Nutzer inzwischen auf jeder Arbeitsseite mit einer
-kompakten Entscheidungshilfe. Die Datensatzliste ist auf Titel, Typ,
+Die React-Darstellung verzichtet auf allgemeine Hinweisbanner. Die
+Datensatzliste ist auf Titel, Typ,
 Ort/Gebiet, Qualitätsstatus, nächsten Schritt und Aktion reduziert; technische
 Angaben bleiben in Detailseite und CSV. Die Hauptnavigation enthält nur die
 vier operativen Bereiche. Hilfe und Prüfkriterien sind weiterhin über den
 Header und den Schnellzugriff erreichbar.
+
+Typfilter in aus Übersicht oder Pflegeaufgaben geöffneten Datensatzlisten
+werden in der URL geführt und lösen eine neue typbezogene Serverabfrage aus.
 
 Normale technische Zustände werden nicht dauerhaft angezeigt. Der Header
 meldet nur einen verzögerten Datenzugriff; technische Fehlerdetails gehen in
