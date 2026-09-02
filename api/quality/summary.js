@@ -1,6 +1,7 @@
 import { getDatabaseClient, methodNotAllowed, sendJson } from '../_database.js';
 import { buildRecordSearchQuery } from '../_record-query.js';
 import { criterionInfo } from '../_quality.js';
+import { authenticatedIdentity, sendAuthAccessError } from '../_auth.js';
 
 function priorityRank(priority) {
   if (priority === 'hoch') return 3;
@@ -12,11 +13,12 @@ export default async function handler(request, response) {
   if (request.method !== 'GET') return methodNotAllowed(response, ['GET']);
 
   try {
+    const identity = await authenticatedIdentity(request);
     const filter = buildRecordSearchQuery({
       ...(request.query || {}),
       experience: 'statistik_sachsen',
       countOnly: 'false'
-    });
+    }, identity);
     const sql = getDatabaseClient();
     const [summary] = await sql.query(
       `SELECT
@@ -80,8 +82,8 @@ export default async function handler(request, response) {
       meta: { partial: false, source: 'database' }
     });
   } catch (error) {
+    if (sendAuthAccessError(response, error)) return;
     console.error('Database quality summary failed.', error);
     return sendJson(response, 500, { error: 'Database query failed' });
   }
 }
-

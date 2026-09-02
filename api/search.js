@@ -1,12 +1,14 @@
 import { getDatabaseClient, methodNotAllowed, sendJson } from './_database.js';
 import { buildRecordSearchQuery } from './_record-query.js';
+import { authenticatedIdentity, sendAuthAccessError } from './_auth.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') return methodNotAllowed(response, ['GET']);
 
   try {
+    const identity = await authenticatedIdentity(request);
     const sql = getDatabaseClient();
-    const search = buildRecordSearchQuery(request.query || {});
+    const search = buildRecordSearchQuery(request.query || {}, identity);
     const [{ count }] = await sql.query(
       `SELECT COUNT(*)::integer AS count FROM et4_records WHERE ${search.whereSql}`,
       search.parameters
@@ -39,9 +41,9 @@ export default async function handler(request, response) {
       items: items.map((entry) => entry.payload)
     });
   } catch (error) {
+    if (sendAuthAccessError(response, error)) return;
     console.error('Database search failed.', error);
     const status = /Unsupported record type/.test(String(error?.message)) ? 400 : 500;
     return sendJson(response, status, { error: status === 400 ? error.message : 'Database query failed' });
   }
 }
-

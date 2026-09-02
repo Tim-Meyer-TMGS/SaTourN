@@ -7,13 +7,13 @@ export function qualityCriterion(criterionId) {
   return criteriaById.get(String(criterionId || '').trim()) || null;
 }
 
-export function buildQualityFilter(query = {}) {
+export function buildQualityFilter(query = {}, identity = null) {
   const search = buildRecordSearchQuery({
     ...query,
     experience: 'statistik_sachsen',
     countOnly: 'false',
     limit: '200'
-  });
+  }, identity);
   const criterionId = String(Array.isArray(query.criterionId) ? query.criterionId[0] : query.criterionId || '').trim();
   const criterion = qualityCriterion(criterionId);
   if (!criterion) throw new Error('Unsupported quality criterion.');
@@ -87,4 +87,3 @@ export function criterionInfo(criterionId) {
     recommendation: ''
   };
 }
-

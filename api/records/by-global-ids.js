@@ -1,4 +1,5 @@
 import { getDatabaseClient, methodNotAllowed, queryValues, sendJson } from '../_database.js';
+import { authenticatedIdentity, sendAuthAccessError } from '../_auth.js';
 
 function parseBody(body) {
   if (!body) return {};
@@ -10,6 +11,7 @@ export default async function handler(request, response) {
   if (request.method !== 'POST') return methodNotAllowed(response, ['POST']);
 
   try {
+    const identity = await authenticatedIdentity(request);
     const body = parseBody(request.body);
     const identifiers = Array.from(new Set([
       ...queryValues(body.ids),
@@ -27,6 +29,14 @@ export default async function handler(request, response) {
     if (type) {
       parameters.push(type);
       conditions.push(`record_type = $${parameters.length}`);
+    }
+    if (!identity.access_all_areas) {
+      if (!identity.allowed_area_ids.length) {
+        conditions.push('FALSE');
+      } else {
+        parameters.push(identity.allowed_area_ids);
+        conditions.push(`areas ?| $${parameters.length}::text[]`);
+      }
     }
 
     const sql = getDatabaseClient();
@@ -49,8 +59,8 @@ export default async function handler(request, response) {
 
     return sendJson(response, 200, { items, missingIds });
   } catch (error) {
+    if (sendAuthAccessError(response, error)) return;
     console.error('Database record lookup failed.', error);
     return sendJson(response, 500, { error: 'Database query failed' });
   }
 }
-

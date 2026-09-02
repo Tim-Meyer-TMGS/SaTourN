@@ -1,17 +1,41 @@
 import { useEffect, useState } from 'react';
 
 import { useUserSettingsStore } from '../../shared/state/user-settings-store';
+import { useAuth } from '../../shared/auth/auth-context';
+
+type AdminOverview = {
+  metrics: {
+    active_users: number;
+    inactive_users: number;
+    active_tenants: number;
+    active_sessions: number;
+  };
+};
 
 export function AdminPage() {
+  const { user } = useAuth();
   const { outdooractive, setOutdooractive, clearOutdooractive } = useUserSettingsStore();
   const [projectKey, setProjectKey] = useState(outdooractive.projectKey);
   const [apiKey, setApiKey] = useState(outdooractive.apiKey);
   const [message, setMessage] = useState('');
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
 
   useEffect(() => {
     setProjectKey(outdooractive.projectKey);
     setApiKey(outdooractive.apiKey);
   }, [outdooractive]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/admin/overview', { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Admin-Übersicht nicht verfügbar.'))))
+      .then((payload: AdminOverview) => setOverview(payload))
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setOverview(null);
+      });
+    return () => controller.abort();
+  }, []);
 
   function saveForSession() {
     if (!projectKey.trim() || !apiKey.trim()) {
@@ -36,10 +60,19 @@ export function AdminPage() {
       <header className="panel-header">
         <div>
           <h1>Administration</h1>
-          <p>Nutzerbezogene Zugänge und Einstellungen für Zusatzfunktionen.</p>
+          <p>{user?.name} · {user?.tenant.name} · Super-Admin</p>
         </div>
-        <span className="status-chip">Vorbereitung</span>
+        <span className="status-chip">Aktiv</span>
       </header>
+
+      {overview ? (
+        <section className="admin-metrics" aria-label="Systemübersicht">
+          <article className="panel-card"><strong>{overview.metrics.active_users}</strong><span>Aktive Nutzer</span></article>
+          <article className="panel-card"><strong>{overview.metrics.active_tenants}</strong><span>Nutzergruppen</span></article>
+          <article className="panel-card"><strong>{overview.metrics.active_sessions}</strong><span>Aktive Sitzungen</span></article>
+          <article className="panel-card"><strong>{overview.metrics.inactive_users}</strong><span>Deaktivierte Nutzer</span></article>
+        </section>
+      ) : null}
 
       <section className="panel-card admin-settings-card" aria-labelledby="admin-outdooractive-title">
         <header className="tool-card-header">
@@ -77,7 +110,7 @@ export function AdminPage() {
 
         {message ? <p className="tool-message" role="status">{message}</p> : null}
         <p className="admin-storage-note">
-          Aktuell bleibt der Key ausschließlich im Arbeitsspeicher und ist nach einem Neuladen entfernt. Mit Login und Neon wird dieselbe Einstellung nutzerbezogen und serverseitig gespeichert.
+          Der Key bleibt aktuell ausschließlich im Arbeitsspeicher und ist nach einem Neuladen entfernt. Die nutzerbezogene Speicherung folgt separat.
         </p>
       </section>
 
@@ -85,7 +118,7 @@ export function AdminPage() {
         <article className="panel-card">
           <span className="material-icons" aria-hidden="true">group</span>
           <h2>Nutzer und Gruppen</h2>
-          <p>Rollen, Gruppenzugehörigkeit und eigene Experience werden mit dem Login ergänzt.</p>
+          <p>Die vollständige Nutzer- und Gruppenverwaltung wird hier als nächster Schritt ergänzt.</p>
         </article>
         <article className="panel-card">
           <span className="material-icons" aria-hidden="true">filter_alt</span>

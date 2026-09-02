@@ -7,6 +7,7 @@ import { AREAS, DATA_TYPES } from '../../shared/config/constants';
 import { useContextStore } from '../../shared/state/context-store';
 import type { DataType, WorkContext } from '../../shared/types/context';
 import { ContextSummary } from '../../shared/ui/ContextSummary';
+import { useAuth } from '../../shared/auth/auth-context';
 
 const navigationItems = [
   { to: '/', label: 'Übersicht', icon: 'home', end: true },
@@ -54,6 +55,7 @@ function persistTheme(theme: ThemeMode) {
 }
 
 export function AppShell() {
+  const { logout, user } = useAuth();
   const location = useLocation();
   const { context, setContext } = useContextStore();
   const [isContextOpen, setIsContextOpen] = useState(false);
@@ -133,9 +135,11 @@ export function AppShell() {
           <NavLink className="icon-button header-help-link" to="/help" aria-label="Hilfe und Prüfkriterien" title="Hilfe und Prüfkriterien">
             <span className="material-icons" aria-hidden="true">help_outline</span>
           </NavLink>
-          <NavLink className="icon-button header-admin-link" to="/admin" aria-label="Administration" title="Administration">
-            <span className="material-icons" aria-hidden="true">settings</span>
-          </NavLink>
+          {user?.role === 'SUPER_ADMIN' ? (
+            <NavLink className="icon-button header-admin-link" to="/admin" aria-label="Administration" title="Administration">
+              <span className="material-icons" aria-hidden="true">settings</span>
+            </NavLink>
+          ) : null}
           <button
             className="icon-button"
             type="button"
@@ -148,7 +152,10 @@ export function AppShell() {
           {serverWarmupState === 'failed' ? (
             <span className="server-status server-status-failed">Daten brauchen länger</span>
           ) : null}
-          <span className="preview-chip">Preview</span>
+          <span className="user-chip" title={user?.email}>{user?.name} · {user?.tenant.name}</span>
+          <button className="icon-button" type="button" aria-label="Abmelden" title="Abmelden" onClick={() => void logout()}>
+            <span className="material-icons" aria-hidden="true">logout</span>
+          </button>
         </div>
       </header>
 
@@ -170,7 +177,7 @@ export function AppShell() {
         <main className={mainClassName}>
           {serverWarmupState === 'warming' ? (
             <div className="warmup-banner" role="status">
-              <span className="loading-line">Render-Server wird vorbereitet. Die ersten Daten können einen Moment dauern.</span>
+              <span className="loading-line">Datenbankverbindung wird geprüft.</span>
             </div>
           ) : null}
           <Outlet />

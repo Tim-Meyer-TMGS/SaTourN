@@ -1,4 +1,5 @@
 import { positiveInteger, queryValues } from './_database.js';
+import { AuthAccessError } from './_auth.js';
 
 const RECORD_TYPES = new Set(['POI', 'Tour', 'Hotel', 'Event', 'Gastro', 'Package']);
 
@@ -43,7 +44,7 @@ function remainingSearchTerm(query) {
     .trim();
 }
 
-export function buildRecordSearchQuery(query = {}) {
+export function buildRecordSearchQuery(query = {}, identity = null) {
   const state = {
     conditions: ['experience = $1', 'is_active = TRUE'],
     parameters: [scalar(query.experience) || 'statistik_sachsen']
@@ -62,7 +63,19 @@ export function buildRecordSearchQuery(query = {}) {
     ...extractQuotedFilter(queryText, 'globalid')
   ]);
   addEqualityFilter(state, 'source_id', [...queryValues(query.id), ...extractQuotedFilter(queryText, 'id')]);
-  addJsonArrayFilter(state, 'areas', [...queryValues(query.area), ...extractQuotedFilter(queryText, 'area')]);
+  const requestedAreas = [...queryValues(query.area), ...extractQuotedFilter(queryText, 'area')];
+  if (identity && !identity.access_all_areas) {
+    const allowedAreas = new Set(identity.allowed_area_ids || []);
+    if (requestedAreas.some((area) => !allowedAreas.has(area))) {
+      throw new AuthAccessError(403, 'AREA_FORBIDDEN', 'Forbidden');
+    }
+    if (!allowedAreas.size) {
+      state.conditions.push('FALSE');
+    } else {
+      state.conditions.push(`areas ?| ${addParameter(state, [...allowedAreas])}::text[]`);
+    }
+  }
+  addJsonArrayFilter(state, 'areas', requestedAreas);
   addJsonArrayFilter(state, 'categories', query.category, scalar(query.categoryOperator).toUpperCase());
   addJsonArrayFilter(state, "payload->'features'", query.feature, scalar(query.featureOperator).toUpperCase());
   addJsonArrayFilter(state, "payload->'keywords'", query.keyword);

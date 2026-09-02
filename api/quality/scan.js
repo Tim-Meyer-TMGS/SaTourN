@@ -1,4 +1,5 @@
 import { getDatabaseClient, methodNotAllowed, positiveInteger, sendJson } from '../_database.js';
+import { authenticatedIdentity, sendAuthAccessError } from '../_auth.js';
 import {
   buildQualityFilter,
   criterionPresentation,
@@ -9,7 +10,8 @@ export default async function handler(request, response) {
   if (request.method !== 'GET') return methodNotAllowed(response, ['GET']);
 
   try {
-    const filter = buildQualityFilter(request.query || {});
+    const identity = await authenticatedIdentity(request);
+    const filter = buildQualityFilter(request.query || {}, identity);
     const limit = positiveInteger(request.query?.limit, 25, 200) || 1;
     const rawOffset = request.query?.cursor ?? request.query?.offset;
     const offset = positiveInteger(rawOffset, 0, 1_000_000);
@@ -53,9 +55,9 @@ export default async function handler(request, response) {
       }
     });
   } catch (error) {
+    if (sendAuthAccessError(response, error)) return;
     console.error('Database quality scan failed.', error);
     const status = /Unsupported/.test(String(error?.message)) ? 400 : 500;
     return sendJson(response, status, { error: status === 400 ? error.message : 'Database query failed' });
   }
 }
-
