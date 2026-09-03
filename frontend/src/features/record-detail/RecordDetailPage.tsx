@@ -258,6 +258,7 @@ export function RecordDetailPage() {
       {!loading && item ? (
         <>
           <DetailActionBar
+            key={item.id}
             item={item}
             backUrl={listState.backUrl}
             previous={listNavigation.previous}
