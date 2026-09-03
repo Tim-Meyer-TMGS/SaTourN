@@ -11,6 +11,8 @@ Scriptreferenzen projektweit geprüft.
 
 Entfernt wurden:
 
+- die alte separate Serverlaufzeit mit Root-Server und eigenem Routenbaum
+- konfigurierbare Frontend-Backend-Basen zugunsten fester Same-Origin-Pfade
 - alte Einzeloberflächen: Category Editor, Chatbot Test, Copyright Checker,
   Fieldname Finder, KG Finder, Pages Builder und deepl-checker
 - die durch React ersetzte Oberfläche `Statistik/`

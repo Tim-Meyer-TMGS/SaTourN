@@ -1,5 +1,5 @@
 import { fetchJson } from '../../shared/api/http-client';
-import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
+import { buildApiActionUrl, DATA_API_PATH, SYSTEM_API_PATH } from '../../shared/api/api-paths';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
 import { evaluateAllItems, type QualityCriterion } from '../../shared/quality/quality';
 import { findQualityCriterion } from '../../shared/quality/quality-criteria';
@@ -220,7 +220,6 @@ function uniqueRecordRows(rows: RecordRow[]) {
 }
 
 async function fetchRecordsById(query: string, context: WorkContext, selectedType: string) {
-  const runtime = getRuntimeConfig();
   const targetTypes = selectedType ? [selectedType] : [...RECORD_TYPES];
   const contextQuery = buildContextQuery(context);
   const idQuery = cleanQueryValue(query);
@@ -231,7 +230,7 @@ async function fetchRecordsById(query: string, context: WorkContext, selectedTyp
   for (const type of targetTypes) {
     for (const variant of variants) {
       const combinedQuery = [contextQuery, variant].filter(Boolean).join(' AND ');
-      const payload = await fetchJson<SearchPayload>(buildSearchApiUrl(runtime.dataApiBase, type, combinedQuery, { limit: 10 }));
+      const payload = await fetchJson<SearchPayload>(buildSearchApiUrl(DATA_API_PATH, type, combinedQuery, { limit: 10 }));
       const items = extractItems(payload).map((raw) => normalizeSearchItem(raw, type, context));
       results.push(...items);
       if (results.length) break;
@@ -250,7 +249,6 @@ async function fetchRecordsById(query: string, context: WorkContext, selectedTyp
 }
 
 async function fetchRecordsByTextQuery(query: string, context: WorkContext, selectedType: string, pagination: PaginationOptions = {}) {
-  const runtime = getRuntimeConfig();
   const targetTypes = selectedType ? [selectedType] : [...RECORD_TYPES];
   const contextQuery = buildContextQuery(context);
   const termQuery = cleanQueryValue(query)
@@ -276,7 +274,7 @@ async function fetchRecordsByTextQuery(query: string, context: WorkContext, sele
   const payloads = await Promise.all(targetTypes.map(async (type): Promise<{ items: Record<string, unknown>[]; total: number }> => {
     try {
       const payload = await fetchJson<SearchPayload>(
-        buildSearchApiUrl(runtime.dataApiBase, type, combinedQuery, { limit: perTypeLimit, offset })
+        buildSearchApiUrl(DATA_API_PATH, type, combinedQuery, { limit: perTypeLimit, offset })
       );
       return {
         items: extractItems(payload).map((raw) => normalizeSearchItem(raw, type, context)),
@@ -302,8 +300,7 @@ async function fetchRecordsByTextQuery(query: string, context: WorkContext, sele
 }
 
 async function fetchRecordsByAiPrompt(prompt: string, context: WorkContext, selectedType: string): Promise<SearchResult> {
-  const runtime = getRuntimeConfig();
-  const aiPayload = await fetchJson<AiSearchPayload>(buildApiActionUrl(runtime.systemApiBase, 'ai-search'), {
+  const aiPayload = await fetchJson<AiSearchPayload>(buildApiActionUrl(SYSTEM_API_PATH, 'ai-search'), {
     method: 'POST',
     timeoutMs: 60_000,
     headers: { 'Content-Type': 'application/json' },
@@ -331,7 +328,7 @@ async function fetchRecordsByAiPrompt(prompt: string, context: WorkContext, sele
     };
   }
 
-  const resolvedPayload = await fetchJson<ResolvedPayload>(buildApiActionUrl(runtime.dataApiBase, 'records-by-ids'), {
+  const resolvedPayload = await fetchJson<ResolvedPayload>(buildApiActionUrl(DATA_API_PATH, 'records-by-ids'), {
     method: 'POST',
     timeoutMs: 45_000,
     headers: { 'Content-Type': 'application/json' },
@@ -356,7 +353,6 @@ async function fetchRecordsByAiPrompt(prompt: string, context: WorkContext, sele
 }
 
 async function fetchNonOpenDataRecords(context: WorkContext, selectedTypes: string[], pagination: PaginationOptions = {}): Promise<SearchResult> {
-  const runtime = getRuntimeConfig();
   const targetTypes = (selectedTypes.length ? selectedTypes : [...RECORD_TYPES])
     .filter((type) => RECORD_TYPE_SET.has(type as (typeof RECORD_TYPES)[number]));
   const contextQuery = buildContextQuery(context);
@@ -365,7 +361,7 @@ async function fetchNonOpenDataRecords(context: WorkContext, selectedTypes: stri
 
   const payloads = await Promise.all(targetTypes.map(async (type) => {
     const payload = await fetchJson<SearchPayload>(
-      buildSearchApiUrl(runtime.dataApiBase, type, contextQuery, {
+      buildSearchApiUrl(DATA_API_PATH, type, contextQuery, {
         limit: perTypeLimit,
         offset: perTypeOffset,
         isOpenData: false
@@ -461,7 +457,6 @@ export async function loadCriterionRecordsForFrontend(options: {
     throw new Error('Für diese Pflegeaufgabe fehlt ein konkreter Datentyp.');
   }
 
-  const runtime = getRuntimeConfig();
   const query = buildContextQuery(context);
   const requests = criteria.flatMap((activeCriterion) => targetTypes
     .filter((type) => !activeCriterion.types?.length || activeCriterion.types.includes(type))
@@ -487,7 +482,7 @@ export async function loadCriterionRecordsForFrontend(options: {
     if (query) params.set('query', query);
 
     try {
-      const payload = await fetchJson<QualityScanPayload>(`${buildApiActionUrl(runtime.dataApiBase, 'quality-scan')}&${params.toString()}`, {
+      const payload = await fetchJson<QualityScanPayload>(`${buildApiActionUrl(DATA_API_PATH, 'quality-scan')}&${params.toString()}`, {
         timeoutMs: 45_000
       });
 

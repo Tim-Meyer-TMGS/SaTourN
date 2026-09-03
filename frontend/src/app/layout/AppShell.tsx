@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
-import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
+import { buildApiActionUrl, SYSTEM_API_PATH } from '../../shared/api/api-paths';
 import { checkSystemHealth } from '../../shared/api/system-health';
 import { AREAS, DATA_TYPES } from '../../shared/config/constants';
 import { useContextStore } from '../../shared/state/context-store';
@@ -91,9 +91,8 @@ export function AppShell() {
       setServerWarmupState('warming');
 
       try {
-        const runtime = getRuntimeConfig();
         const result = await checkSystemHealth(
-          buildApiActionUrl(runtime.systemApiBase, 'health'),
+          buildApiActionUrl(SYSTEM_API_PATH, 'health'),
           controller.signal
         );
 

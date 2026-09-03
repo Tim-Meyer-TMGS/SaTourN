@@ -20,9 +20,8 @@ Das Frontend verwendet standardmäßig dieselbe Origin:
 /api/auth/*
 ```
 
-Für lokale Sonderfälle können vor dem App-Start ausschließlich die beiden
-Globals `SATOURN_DATA_API_BASE` und `SATOURN_SYSTEM_API_BASE` gesetzt werden.
-Es gibt keinen Render-Warmup und keinen Browserzugriff auf destination.one.
+Die Endpunkte sind als feste Same-Origin-Pfade im Frontend hinterlegt.
+destination.one wird nicht aus dem Browser aufgerufen.
 
 Der Outdooractive-Detailabruf ist eine bewusste Ausnahme vom zentralen
 Datenfluss. Den Schlüssel gibt der Nutzer ein; die Anwendung hält ihn nur im

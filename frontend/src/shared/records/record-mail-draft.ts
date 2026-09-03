@@ -1,5 +1,5 @@
 import { fetchJson } from '../api/http-client';
-import { buildApiActionUrl, getRuntimeConfig } from '../api/runtime-config';
+import { buildApiActionUrl, SYSTEM_API_PATH } from '../api/api-paths';
 import { findQualityCriterion } from '../quality/quality-criteria';
 
 export type MailDraftRecord = {
@@ -120,10 +120,9 @@ export async function requestRecordMailDraft(options: {
   selectedCriterionId?: string;
   source?: string;
 }) {
-  const runtime = getRuntimeConfig();
   const { record, selectedCriterionId = '', source = 'records' } = options;
 
-  return fetchJson<MailDraftPayload>(buildApiActionUrl(runtime.systemApiBase, 'mail-draft'), {
+  return fetchJson<MailDraftPayload>(buildApiActionUrl(SYSTEM_API_PATH, 'mail-draft'), {
     method: 'POST',
     timeoutMs: 45_000,
     headers: { 'Content-Type': 'application/json' },

@@ -1,4 +1,4 @@
-import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
+import { buildApiActionUrl, SYSTEM_API_PATH } from '../../shared/api/api-paths';
 
 export type AdminRole = 'USER' | 'GROUP_ADMIN' | 'SUPER_ADMIN';
 
@@ -105,7 +105,7 @@ type RequestOptions = {
 
 async function request<T>(action: string, options: RequestOptions = {}): Promise<T> {
   const url = new URL(
-    buildApiActionUrl(getRuntimeConfig().systemApiBase, action),
+    buildApiActionUrl(SYSTEM_API_PATH, action),
     window.location.origin
   );
   Object.entries(options.query || {}).forEach(([key, value]) => url.searchParams.set(key, String(value)));

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getRuntimeConfig } from '../../shared/api/runtime-config';
+import { DATA_API_PATH } from '../../shared/api/api-paths';
 import { useContextStore } from '../../shared/state/context-store';
 import { loadRandomSample, type RandomSampleResult } from '../../shared/api/external-data';
 
@@ -68,9 +68,8 @@ export function RandomSamplePanel() {
     setResult(null);
 
     try {
-      const runtime = getRuntimeConfig();
       const sample = await loadRandomSample({
-        apiBase: runtime.dataApiBase,
+        apiBase: DATA_API_PATH,
         types: selectedTypes,
         targetCount,
         query: buildSampleQuery(context.area, context.city, additionalQuery),

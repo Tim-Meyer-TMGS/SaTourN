@@ -1,5 +1,5 @@
 import { fetchJson } from '../../shared/api/http-client';
-import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
+import { buildApiActionUrl, DATA_API_PATH } from '../../shared/api/api-paths';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
 import { DATA_TYPES } from '../../shared/config/constants';
 import { getQualityScanConfig, qualityCriteria, type QualityCriterion } from '../../shared/quality/quality';
@@ -88,14 +88,13 @@ function canLoadPushdownCount(criterion: QualityCriterion, type: string) {
 }
 
 async function loadStatisticRow(type: string, context: WorkContext): Promise<OverviewStatisticRow> {
-  const runtime = getRuntimeConfig();
   const filters = {
     area: context.area || undefined,
     city: context.city || undefined
   };
   const [totalPayload, openDataPayload] = await Promise.all([
-    fetchJson<CountPayload>(buildSearchApiUrl(runtime.dataApiBase, type, '', { countOnly: true, filters })),
-    fetchJson<CountPayload>(buildSearchApiUrl(runtime.dataApiBase, type, '', { countOnly: true, isOpenData: true, filters }))
+    fetchJson<CountPayload>(buildSearchApiUrl(DATA_API_PATH, type, '', { countOnly: true, filters })),
+    fetchJson<CountPayload>(buildSearchApiUrl(DATA_API_PATH, type, '', { countOnly: true, isOpenData: true, filters }))
   ]);
   const openDataCount = extractTotal(openDataPayload);
 
@@ -129,7 +128,6 @@ export async function loadStatisticRows(context: WorkContext): Promise<OverviewS
 }
 
 async function loadQualitySummary(context: WorkContext): Promise<OverviewQualitySummary | null> {
-  const runtime = getRuntimeConfig();
   const query = buildContextQuery(context);
 
   const params = new URLSearchParams();
@@ -139,18 +137,17 @@ async function loadQualitySummary(context: WorkContext): Promise<OverviewQuality
   params.set('timeoutMs', '20000');
   if (context.type) params.set('type', context.type);
 
-  return fetchJson<OverviewQualitySummary>(`${buildApiActionUrl(runtime.dataApiBase, 'quality-summary')}&${params.toString()}`);
+  return fetchJson<OverviewQualitySummary>(`${buildApiActionUrl(DATA_API_PATH, 'quality-summary')}&${params.toString()}`);
 }
 
 async function loadIssueCount(criterionId: string, type: string, context: WorkContext) {
-  const runtime = getRuntimeConfig();
   const params = new URLSearchParams();
   params.set('criterionId', criterionId);
   params.set('type', type);
   const query = buildContextQuery(context);
   if (query) params.set('query', query);
 
-  const payload = await fetchJson<CountPayload>(`${buildApiActionUrl(runtime.dataApiBase, 'quality-count')}&${params.toString()}`);
+  const payload = await fetchJson<CountPayload>(`${buildApiActionUrl(DATA_API_PATH, 'quality-count')}&${params.toString()}`);
   return extractTotal(payload);
 }
 

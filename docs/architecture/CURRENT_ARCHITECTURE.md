@@ -5,9 +5,8 @@ Stand: 3. September 2026
 ## Betrieb
 
 SaTourN wird als ein Vercel-Projekt betrieben. Vercel baut `frontend/` und
-liefert `frontend/dist` aus. Neon stellt PostgreSQL und Neon Auth bereit.
-Jekyll, GitHub Pages, Render und ein allgemeiner Proxy gehören nicht mehr zur
-Laufzeitarchitektur.
+liefert `frontend/dist` aus. Neon stellt PostgreSQL und Neon Auth bereit. Das
+Frontend spricht die Serverless API ausschließlich über Same-Origin-Pfade an.
 
 ## Serverless Functions
 
