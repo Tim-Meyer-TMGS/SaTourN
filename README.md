@@ -49,7 +49,7 @@ OI_MODEL_MAIL
 OI_MODEL_SEARCH
 OI_MAIL_CC                                optional
 OI_MAIL_BCC                               optional
-TENANT_INTEGRATION_SECRET                mindestens 32 Zeichen, für Integration-Keys
+TENANT_INTEGRATION_SECRET                empfohlen, mindestens 32 Zeichen; sonst wird DATABASE_URL als serverseitiges Schlüsselmaterial verwendet
 ```
 
 ## Entwicklung und Prüfung

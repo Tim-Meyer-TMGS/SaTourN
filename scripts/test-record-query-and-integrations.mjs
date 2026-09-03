@@ -34,4 +34,10 @@ assert.equal(decryptIntegrationSecret(encrypted), 'oa-secret-abcd');
 assert.equal(maskSecret('oa-secret-abcd'), '••••••••abcd');
 delete process.env.TENANT_INTEGRATION_SECRET;
 
+process.env.DATABASE_URL = 'postgresql://integration-fallback-secret-that-is-long-enough@example.invalid/database';
+const fallbackEncrypted = encryptIntegrationSecret('oa-fallback-secret');
+process.env.TENANT_INTEGRATION_SECRET = 'new-dedicated-secret-that-is-at-least-32-characters';
+assert.equal(decryptIntegrationSecret(fallbackEncrypted), 'oa-fallback-secret');
+delete process.env.TENANT_INTEGRATION_SECRET;
+
 console.log('Record query, category and tenant integration contracts passed.');
