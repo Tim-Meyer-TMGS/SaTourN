@@ -1,132 +1,108 @@
 import { useEffect, useState } from 'react';
 
-import { useUserSettingsStore } from '../../shared/state/user-settings-store';
 import { useAuth } from '../../shared/auth/auth-context';
-import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
+import {
+  adminApi,
+  type AdminArea,
+  type AdminAuditEntry,
+  type AdminOverview,
+  type AdminQualityCriterion,
+  type AdminStatus,
+  type AdminTenant,
+  type AdminUser
+} from './admin-api';
+import { AuditPanel, QualityPanel, StatusPanel } from './AdminInfoPanels';
+import { AdminSettingsPanel } from './AdminSettingsPanel';
+import { adminErrorText, formatAdminDate } from './admin-ui';
+import { TenantsPanel } from './TenantsPanel';
+import { UsersPanel } from './UsersPanel';
 
-type AdminOverview = {
-  metrics: {
-    active_users: number;
-    inactive_users: number;
-    active_tenants: number;
-    active_sessions: number;
-  };
-};
+type AdminTab = 'overview' | 'users' | 'tenants' | 'quality' | 'status' | 'audit' | 'settings';
+
+const TABS: Array<{ id: AdminTab; label: string; icon: string }> = [
+  { id: 'overview', label: 'Übersicht', icon: 'dashboard' },
+  { id: 'users', label: 'Nutzer', icon: 'group' },
+  { id: 'tenants', label: 'Nutzergruppen', icon: 'account_tree' },
+  { id: 'quality', label: 'Prüfkriterien', icon: 'fact_check' },
+  { id: 'status', label: 'Systemstatus', icon: 'monitor_heart' },
+  { id: 'audit', label: 'Protokoll', icon: 'history' },
+  { id: 'settings', label: 'Eigene Einstellungen', icon: 'tune' }
+];
 
 export function AdminPage() {
   const { user } = useAuth();
-  const { outdooractive, setOutdooractive, clearOutdooractive } = useUserSettingsStore();
-  const [projectKey, setProjectKey] = useState(outdooractive.projectKey);
-  const [apiKey, setApiKey] = useState(outdooractive.apiKey);
-  const [message, setMessage] = useState('');
+  const [tab, setTab] = useState<AdminTab>('overview');
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [tenants, setTenants] = useState<AdminTenant[]>([]);
+  const [areas, setAreas] = useState<AdminArea[]>([]);
+  const [criteria, setCriteria] = useState<AdminQualityCriterion[]>([]);
+  const [status, setStatus] = useState<AdminStatus | null>(null);
+  const [audit, setAudit] = useState<AdminAuditEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    setProjectKey(outdooractive.projectKey);
-    setApiKey(outdooractive.apiKey);
-  }, [outdooractive]);
+  async function loadUsersAndTenants() {
+    const [userResult, tenantResult] = await Promise.all([adminApi.users(), adminApi.tenants()]);
+    setUsers(userResult.users);
+    setTenants(tenantResult.tenants);
+    setAreas(tenantResult.areas);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(buildApiActionUrl(getRuntimeConfig().systemApiBase, 'admin-overview'), { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error('Admin-Übersicht nicht verfügbar.'))))
-      .then((payload: AdminOverview) => setOverview(payload))
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === 'AbortError') return;
-        setOverview(null);
-      });
-    return () => controller.abort();
-  }, []);
+    setLoading(true);
+    setError('');
+    const load = tab === 'overview'
+      ? adminApi.overview(controller.signal).then(setOverview)
+      : tab === 'users' || tab === 'tenants'
+        ? Promise.all([adminApi.users(controller.signal), adminApi.tenants(controller.signal)]).then(([userResult, tenantResult]) => {
+          setUsers(userResult.users);
+          setTenants(tenantResult.tenants);
+          setAreas(tenantResult.areas);
+        })
+        : tab === 'quality'
+          ? adminApi.quality(controller.signal).then((result) => setCriteria(result.criteria))
+          : tab === 'status'
+            ? adminApi.status(controller.signal).then(setStatus)
+            : tab === 'audit'
+              ? adminApi.audit(controller.signal).then((result) => setAudit(result.entries))
+              : Promise.resolve();
 
-  function saveForSession() {
-    if (!projectKey.trim() || !apiKey.trim()) {
-      setMessage('Bitte Project Key und API Key eingeben.');
-      return;
-    }
-
-    setOutdooractive({
-      projectKey: projectKey.trim(),
-      apiKey: apiKey.trim()
+    load.catch((requestError) => {
+      if (requestError instanceof DOMException && requestError.name === 'AbortError') return;
+      setError(adminErrorText(requestError));
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
     });
-    setMessage('Outdooractive-Zugang ist für diese Sitzung hinterlegt.');
-  }
-
-  function clearSettings() {
-    clearOutdooractive();
-    setMessage('Outdooractive-Zugang wurde aus der Sitzung entfernt.');
-  }
+    return () => controller.abort();
+  }, [tab]);
 
   return (
     <section className="content-panel admin-page">
-      <header className="panel-header">
-        <div>
-          <h1>Administration</h1>
-          <p>{user?.name} · {user?.tenant.name} · Super-Admin</p>
-        </div>
-        <span className="status-chip">Aktiv</span>
-      </header>
+      <header className="panel-header"><div><h1>Administration</h1><p>{user?.name} · {user?.tenant.name} · Super-Admin</p></div><span className="status-chip">Aktiv</span></header>
+      <nav className="admin-tabs" aria-label="Administration">
+        {TABS.map((entry) => <button key={entry.id} type="button" className={tab === entry.id ? 'active' : ''} onClick={() => setTab(entry.id)}><span className="material-icons" aria-hidden="true">{entry.icon}</span>{entry.label}</button>)}
+      </nav>
+      {loading ? <div className="panel-card admin-loading" role="status">Daten werden geladen.</div> : null}
+      {error ? <p className="tool-message tool-message-error" role="alert">{error}</p> : null}
 
-      {overview ? (
+      {!loading && tab === 'overview' && overview ? <>
         <section className="admin-metrics" aria-label="Systemübersicht">
           <article className="panel-card"><strong>{overview.metrics.active_users}</strong><span>Aktive Nutzer</span></article>
           <article className="panel-card"><strong>{overview.metrics.active_tenants}</strong><span>Nutzergruppen</span></article>
           <article className="panel-card"><strong>{overview.metrics.active_sessions}</strong><span>Aktive Sitzungen</span></article>
-          <article className="panel-card"><strong>{overview.metrics.inactive_users}</strong><span>Deaktivierte Nutzer</span></article>
+          <article className="panel-card"><strong>{overview.metrics.inactive_users}</strong><span>Gesperrte Nutzer</span></article>
         </section>
-      ) : null}
-
-      <section className="panel-card admin-settings-card" aria-labelledby="admin-outdooractive-title">
-        <header className="tool-card-header">
-          <div>
-            <h2 id="admin-outdooractive-title">Outdooractive-Zugang</h2>
-            <p>Dieser Zugang wird für den direkten Abruf in Outdooractive-Datensatzdetails verwendet.</p>
-          </div>
-          <span className="material-icons tool-card-icon" aria-hidden="true">key</span>
-        </header>
-
-        <div className="tool-form-grid admin-settings-form">
-          <label>
-            Project Key
-            <input value={projectKey} onChange={(event) => setProjectKey(event.target.value)} />
-          </label>
-          <label className="tool-form-wide">
-            API Key
-            <input
-              type="password"
-              value={apiKey}
-              autoComplete="off"
-              placeholder="Outdooractive API Key"
-              onChange={(event) => setApiKey(event.target.value)}
-            />
-          </label>
-        </div>
-
-        <div className="tool-actions">
-          <button className="tool-primary-button" type="button" onClick={saveForSession}>
-            <span className="material-icons" aria-hidden="true">save</span>
-            Für diese Sitzung übernehmen
-          </button>
-          {outdooractive.apiKey ? <button type="button" onClick={clearSettings}>Zugang entfernen</button> : null}
-        </div>
-
-        {message ? <p className="tool-message" role="status">{message}</p> : null}
-        <p className="admin-storage-note">
-          Der Key bleibt aktuell ausschließlich im Arbeitsspeicher und ist nach einem Neuladen entfernt. Die nutzerbezogene Speicherung folgt separat.
-        </p>
-      </section>
-
-      <section className="admin-placeholder-grid" aria-label="Geplante Administration">
-        <article className="panel-card">
-          <span className="material-icons" aria-hidden="true">group</span>
-          <h2>Nutzer und Gruppen</h2>
-          <p>Die vollständige Nutzer- und Gruppenverwaltung wird hier als nächster Schritt ergänzt.</p>
-        </article>
-        <article className="panel-card">
-          <span className="material-icons" aria-hidden="true">filter_alt</span>
-          <h2>Eigene Filter</h2>
-          <p>Persönliche Prüfbereiche und zusätzliche Filter werden später pro Nutzer gespeichert.</p>
-        </article>
-      </section>
+        <section className="panel-card admin-section-card"><header className="admin-section-header"><div><h2>Letzter Datenimport</h2><p>{formatAdminDate(overview.sync.last_import_at)}</p></div><span className={`status-badge ${overview.sync.failed_imports ? 'critical' : 'good'}`}>{overview.sync.failed_imports ? `${overview.sync.failed_imports} Fehler` : 'Ohne Fehler'}</span></header></section>
+        <AuditPanel entries={overview.recentAudit} compact />
+      </> : null}
+      {!loading && tab === 'users' ? <UsersPanel users={users} tenants={tenants} reload={loadUsersAndTenants} /> : null}
+      {!loading && tab === 'tenants' ? <TenantsPanel tenants={tenants} areas={areas} reload={loadUsersAndTenants} /> : null}
+      {!loading && tab === 'quality' ? <QualityPanel criteria={criteria} /> : null}
+      {!loading && tab === 'status' && status ? <StatusPanel status={status} /> : null}
+      {!loading && tab === 'audit' ? <AuditPanel entries={audit} /> : null}
+      {!loading && tab === 'settings' ? <AdminSettingsPanel /> : null}
     </section>
   );
 }

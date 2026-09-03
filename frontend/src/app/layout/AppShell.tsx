@@ -40,6 +40,7 @@ function getMainClassName(pathname: string) {
   if (pathname.startsWith('/tasks')) return 'tasks-main';
   if (pathname.startsWith('/stats')) return 'stats-main';
   if (pathname.startsWith('/help')) return 'help-main';
+  if (pathname.startsWith('/account')) return 'account-main';
   if (pathname.startsWith('/admin')) return 'admin-main';
   return 'records-main';
 }
@@ -62,6 +63,12 @@ export function AppShell() {
   const [draftContext, setDraftContext] = useState<WorkContext>(context);
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
   const [serverWarmupState, setServerWarmupState] = useState<ServerWarmupState>('idle');
+  const availableAreas = user?.tenant.accessAllAreas
+    ? AREAS
+    : [
+      ['Alle freigegebenen Gebiete', ''] as const,
+      ...AREAS.slice(1).filter(([, value]) => user?.allowedAreaIds.includes(value))
+    ];
 
   useEffect(() => {
     if (isContextOpen) setDraftContext(context);
@@ -70,6 +77,11 @@ export function AppShell() {
   useEffect(() => {
     persistTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (!user || user.tenant.accessAllAreas || !context.area) return;
+    if (!user.allowedAreaIds.includes(context.area)) setContext({ area: '', city: '' });
+  }, [context.area, setContext, user]);
 
   useEffect(() => {
     let active = true;
@@ -155,7 +167,7 @@ export function AppShell() {
           {serverWarmupState === 'failed' ? (
             <span className="server-status server-status-failed">Daten brauchen länger</span>
           ) : null}
-          <span className="user-chip" title={user?.email}>{user?.name} · {user?.tenant.name}</span>
+          <NavLink className="user-chip" to="/account" title={user?.email}>{user?.name} · {user?.tenant.name}</NavLink>
           <button className="icon-button" type="button" aria-label="Abmelden" title="Abmelden" onClick={() => void logout()}>
             <span className="material-icons" aria-hidden="true">logout</span>
           </button>
@@ -203,7 +215,7 @@ export function AppShell() {
                 value={draftContext.area}
                 onChange={(event) => setDraftContext((current) => ({ ...current, area: event.target.value }))}
               >
-                {AREAS.map(([label, value]) => (
+                {availableAreas.map(([label, value]) => (
                   <option key={value || 'all'} value={value}>{label}</option>
                 ))}
               </select>

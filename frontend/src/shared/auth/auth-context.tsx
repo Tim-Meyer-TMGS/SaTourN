@@ -14,6 +14,7 @@ export type AuthUser = {
     accessAllAreas: boolean;
     theme: string;
   };
+  allowedAreaIds: string[];
   mustChangePassword: boolean;
   lastLoginAt: string | null;
   passwordChangedAt: string | null;

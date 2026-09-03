@@ -1,33 +1,49 @@
-# Admin- und Mandanten-Backlog
+# Admin- und Mandantenbereich
 
 Stand: 3. September 2026
 
-Die Authentifizierung selbst ist produktiv: Neon Auth verwaltet Konten und
-Sitzungen; SaTourN ergänzt Rolle, Aktivierung, Mandant und Gebietsrechte. Der
-aktuelle Root-Mandant ist TMGS, ein aktiver Super-Admin ist verknüpft und die
-öffentliche Registrierung ist abgeschaltet.
+## Umgesetzt
 
-Der nächste eigenständige Arbeitsschritt ist die vollständige
-Super-Admin-Oberfläche. Dazu gehören:
+Neon Auth verwaltet Konten und Sitzungen; SaTourN ergänzt Rolle, Aktivierung,
+Mandant und Gebietsrechte. Der Admin-Bereich verwendet keine eigene
+Authentifizierung und erzeugt keine zusätzliche Vercel Function. Sämtliche
+Operationen laufen als Actions über `api/system.js`.
 
-- Nutzer auflisten, anlegen beziehungsweise einladen und deaktivieren
-- Rollen `USER`, `GROUP_ADMIN` und `SUPER_ADMIN` verwalten
-- Mandanten anlegen und bearbeiten
-- Gebiete einem Mandanten zuordnen
-- Passwort-Reset auslösen und bestehende Sitzungen widerrufen
-- relevante Änderungen im Audit-Log nachvollziehbar machen
-- Zugriffsgrenzen für Nicht-Root-Mandanten automatisiert testen
+Der Super-Admin kann:
 
-Die Outdooractive-Eingabe ist bereits im Admin-Bereich vorbereitet. Der Key
-bleibt bis zu einem eigenen Sicherheits- und Persistenzkonzept ausschließlich
-im Arbeitsspeicher der laufenden Browsersitzung und darf nicht gecacht werden.
+- Nutzer auflisten, suchen, anlegen, bearbeiten und deaktivieren
+- Rollen `USER`, `GROUP_ADMIN` und `SUPER_ADMIN` zuweisen
+- temporäre Passwörter erzeugen und einen Pflicht-Passwortwechsel setzen
+- Sitzungen eines Nutzers widerrufen
+- Nutzergruppen anlegen, bearbeiten und deaktivieren
+- Gebiete einer Nutzergruppe zuweisen
+- den Import- und Auth-Status prüfen
+- die aktiven Qualitätskriterien einsehen
+- administrative Änderungen im Audit-Log nachvollziehen
 
-Änderungen in diesem Bereich müssen die bestehende Neon-Auth-Brücke und die
-serverseitige Mandanten-/Gebietsprüfung weiterverwenden. Eine parallele zweite
-Authentifizierung soll nicht eingeführt werden.
+Jeder angemeldete Nutzer erreicht über seinen Namen im Kopfbereich das eigene
+Profil. Dort sind Rolle, Nutzergruppe und der Zeitpunkt der letzten
+Passwortänderung sichtbar; das eigene Passwort kann mit Beendigung der anderen
+Sitzungen geändert werden.
 
-Bis die Oberfläche fertig ist, können berechtigte Betreiber Konten mit
-`npm run auth:manage-user -- --operation create ... --confirm` anlegen und mit
-`--operation reset-password` ein temporäres Passwort setzen. Das Skript setzt
-den Pflicht-Passwortwechsel, widerruft Sitzungen und protokolliert die Aktion,
-aber niemals das Klartextpasswort.
+E-Mail-Domains werden zentral in `lib/auth/tenant-domains.js` gepflegt. Die
+Regeln werden beim Anlegen, bei Änderungen, beim Login und bei jeder
+sicherheitsrelevanten Sessionprüfung angewendet. Leere Domainlisten sperren die
+Nutzeranlage für den betreffenden Mandanten, bis eine echte Domain im Code
+freigegeben wurde.
+
+Gebietsrechte werden nicht nur in der Oberfläche gefiltert. Die Daten-API
+prüft sie weiterhin serverseitig. Der Root-Mandant TMGS besitzt Zugriff auf
+alle Gebiete.
+
+Die Outdooractive-Eingabe bleibt unter „Eigene Einstellungen“. Der Key wird
+ausschließlich im Arbeitsspeicher der laufenden Browsersitzung gehalten und
+weder an Neon gesendet noch im Browser-Cache gespeichert.
+
+## Spätere Erweiterungen
+
+- eingeschränkte Verwaltungsansicht für `GROUP_ADMIN`
+- nutzerbezogene Auswahl eigener Prüfbereiche und Zusatzfilter
+- Gestaltungseinstellungen über die derzeitige Theme-Kennung hinaus
+- sicher verschlüsselte, nutzerbezogene Speicherung externer Zugänge, falls
+  die reine Sitzungsspeicherung später ersetzt werden soll

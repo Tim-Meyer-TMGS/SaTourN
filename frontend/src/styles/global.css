@@ -543,7 +543,8 @@ textarea {
 .record-detail-main,
 .tasks-main,
 .stats-main,
-.help-main {
+.help-main,
+.account-main {
   width: 100%;
   max-width: none;
   padding: 24px 28px;
@@ -2961,6 +2962,293 @@ button.table-link-button:disabled,
   max-width: 1180px;
 }
 
+.admin-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  padding-bottom: 2px;
+  overflow-x: auto;
+}
+
+.admin-tabs button,
+.admin-section-header > button,
+.admin-tenant-card > button,
+.admin-row-actions button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.admin-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 8px 12px;
+  font-weight: 700;
+}
+
+.admin-tabs button .material-icons {
+  font-size: 19px;
+}
+
+.admin-tabs button.active {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.admin-loading {
+  padding: 28px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.admin-section-card {
+  margin-bottom: 16px;
+}
+
+.admin-section-header,
+.admin-tenant-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.admin-section-header h2,
+.admin-tenant-card h3 {
+  margin: 0 0 4px;
+}
+
+.admin-section-header p,
+.admin-tenant-card small {
+  margin: 0;
+  color: var(--muted);
+}
+
+.admin-section-header > button,
+.admin-tenant-card > button {
+  min-height: 40px;
+  padding: 8px 13px;
+  font-weight: 700;
+}
+
+.admin-section-header > .tool-primary-button {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.admin-toolbar input,
+.admin-toolbar select,
+.admin-form-grid input,
+.admin-form-grid select {
+  min-height: 40px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.admin-toolbar input {
+  flex: 1 1 280px;
+}
+
+.admin-table td > strong,
+.admin-table td > small {
+  display: block;
+}
+
+.admin-table td > small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.admin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-row-actions button {
+  padding: 6px 8px;
+}
+
+.admin-row-actions button:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.admin-tenant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.admin-tenant-card {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+}
+
+.admin-tenant-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.admin-tenant-card dl div {
+  min-width: 0;
+}
+
+.admin-tenant-card dt {
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.user-chip:hover {
+  color: var(--blue);
+}
+
+.admin-tenant-card dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.admin-dialog {
+  width: min(680px, calc(100vw - 32px));
+}
+
+.admin-dialog-body {
+  padding: 18px 20px;
+}
+
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-form-grid > label:not(.admin-check) {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.admin-check input,
+.admin-area-picker input {
+  width: 17px;
+  height: 17px;
+}
+
+.admin-form-full {
+  grid-column: 1 / -1;
+}
+
+.admin-area-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.admin-area-picker legend {
+  padding: 0 5px;
+  font-weight: 700;
+}
+
+.admin-area-picker label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.admin-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.admin-password-value {
+  display: block;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 16px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.admin-audit-metadata {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.admin-status-layout > .admin-metrics {
+  margin-bottom: 16px;
+}
+
+.account-page {
+  max-width: 1080px;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, .8fr) minmax(420px, 1.4fr);
+  gap: 16px;
+}
+
+.account-grid h2 {
+  margin: 0 0 18px;
+}
+
+.account-profile-card dl {
+  display: grid;
+  gap: 13px;
+  margin: 0 0 20px;
+}
+
+.account-profile-card dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.account-profile-card dd {
+  margin: 3px 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
 .tool-actions button {
   display: inline-flex;
   align-items: center;
@@ -3309,6 +3597,19 @@ button.table-link-button:disabled,
 }
 
 @media (max-width: 780px) {
+  .account-grid,
+  .admin-tenant-grid,
+  .admin-form-grid,
+  .admin-area-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-toolbar,
+  .admin-section-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .app-header {
     gap: 12px;
     padding: 12px 16px;
@@ -3385,6 +3686,7 @@ button.table-link-button:disabled,
   .stats-main,
   .record-detail-main,
   .help-main,
+  .account-main,
   .admin-main {
     padding: 18px;
   }
@@ -3552,6 +3854,7 @@ button.table-link-button:disabled,
   .stats-main,
   .record-detail-main,
   .help-main,
+  .account-main,
   .admin-main {
     padding: 14px;
   }

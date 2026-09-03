@@ -58,6 +58,7 @@ Neon Auth und sorgen insbesondere für die korrekte Session-Cookie-Behandlung.
 
 Fachliche Datenendpunkte benötigen eine gültige Neon-Auth-Sitzung und ein
 aktives SaTourN-Profil. Rolle, Mandant und erlaubte Gebiete werden aus den
-Anwendungstabellen geladen. Der Admin-Bereich ist vorhanden, wird aber in einem
-eigenen Arbeitsschritt weiterentwickelt. Der dafür erhaltene Arbeitsstand steht
-in `ADMIN_BACKLOG.md`.
+Anwendungstabellen geladen. Die Super-Admin-Oberfläche verwaltet Nutzer,
+Mandanten, Gebietsrechte, Passwörter und Sitzungen über Actions von
+`api/system.js`. Änderungen werden im Audit-Log protokolliert. Details und
+offene Erweiterungen stehen in `ADMIN_BACKLOG.md`.
