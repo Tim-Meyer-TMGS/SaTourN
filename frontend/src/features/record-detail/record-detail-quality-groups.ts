@@ -63,8 +63,7 @@ export function buildDetailQualityGroups(item: DetailItem): DetailQualityGroup[]
       status: score == null ? 'not_applicable' : score < 50 ? 'critical' : score < 100 || reviewCount ? 'review' : 'good',
       missingCount,
       reviewCount,
-      items: [...criteria, ...(fields[definition.id] || [])],
-      initiallyOpen: missingCount > 0 && definition.id !== 'technical'
+      items: [...criteria, ...(fields[definition.id] || [])]
     } satisfies DetailQualityGroup;
   }).filter((group) => group.items.length && (group.id !== 'opening' || item.openings || group.score != null) && (group.id !== 'prices' || item.price || item.priceReduced || group.score != null));
 }

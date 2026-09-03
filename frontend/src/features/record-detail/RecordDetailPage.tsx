@@ -120,6 +120,7 @@ export function RecordDetailPage() {
   const [error, setError] = useState('');
   const [copyMessage, setCopyMessage] = useState('');
   const [mailDraftLoading, setMailDraftLoading] = useState(false);
+  const [outdooractiveLoading, setOutdooractiveLoading] = useState(false);
 
   const type = searchParams.get('type') || '';
   const globalId = searchParams.get('global_id') || searchParams.get('globalId') || '';
@@ -212,6 +213,31 @@ export function RecordDetailPage() {
     }
   }
 
+  async function downloadOutdooractiveSource() {
+    if (!item?.outdooractiveId) return;
+    setOutdooractiveLoading(true);
+    setError('');
+    try {
+      const result = await fetchJson<{ item: unknown }>(`${buildApiActionUrl(DATA_API_PATH, 'outdooractive-detail')}&id=${encodeURIComponent(item.outdooractiveId)}`);
+      const blob = new Blob([JSON.stringify(result.item, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `outdooractive-${item.outdooractiveId}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      setCopyMessage('Outdooractive-Quelldaten wurden heruntergeladen.');
+      window.setTimeout(() => setCopyMessage(''), 2200);
+    } catch (caughtError) {
+      console.error('Outdooractive-Quelldaten konnten nicht geladen werden.', caughtError);
+      setError(caughtError instanceof Error ? caughtError.message : 'Outdooractive-Quelldaten konnten nicht geladen werden.');
+    } finally {
+      setOutdooractiveLoading(false);
+    }
+  }
+
   return (
     <>
       <DetailBreadcrumb contextSource={contextSource} contextLabel={contextLabel} />
@@ -237,14 +263,16 @@ export function RecordDetailPage() {
             previous={listNavigation.previous}
             next={listNavigation.next}
             mailDraftLoading={mailDraftLoading}
+            outdooractiveLoading={outdooractiveLoading}
             onCopy={(value, label) => void copyTextToClipboard(value, label)}
             onCreateMailDraft={() => void createMailDraftForCurrentRecord()}
+            onDownloadOutdooractive={() => void downloadOutdooractiveSource()}
           />
 
           {copyMessage ? <div className="overview-message">{copyMessage}</div> : null}
 
-          <RecordOverview item={item} issue={missingIssues[0]} />
-          <RecordQualityGroups groups={qualityGroups} item={item} />
+          <RecordOverview key={item.id} item={item} issue={missingIssues[0]} />
+          <RecordQualityGroups key={item.id} groups={qualityGroups} />
         </>
       ) : null}
     </>

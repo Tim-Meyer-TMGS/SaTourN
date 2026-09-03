@@ -113,7 +113,6 @@ export type DetailQualityGroup = {
   missingCount: number;
   reviewCount: number;
   items: DetailQualityField[];
-  initiallyOpen?: boolean;
 };
 
 export type MissingIssue = {
