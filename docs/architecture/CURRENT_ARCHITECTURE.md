@@ -48,10 +48,9 @@ Neon Auth und sorgen insbesondere für die korrekte Session-Cookie-Behandlung.
   manuellen Imports; kein Browserzugriff.
 - **One Intelligence:** serverseitige Integration für Datensatzsuche und
   Mailentwürfe über `api/system.js`.
-- **Outdooractive:** direkter Detailabruf im Browser. Projektkennung und Key
-  werden vom Nutzer eingegeben, nur im Arbeitsspeicher gehalten und nicht
-  gecacht. Diese Ausnahme bleibt bestehen, bis ein eigener Sicherheitsumbau
-  beauftragt wird.
+- **Outdooractive:** serverseitiger Detailabruf mit verschlüsselt gespeicherter
+  Konfiguration je Nutzergruppe. Gruppen-Admins verwalten den eigenen Zugang,
+  Super-Admins alle Zugänge.
 
 ## Zugriff
 

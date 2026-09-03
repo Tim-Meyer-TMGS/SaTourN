@@ -393,7 +393,7 @@ export function TasksPage() {
         if (!active) return;
         console.error('Pflegeaufgaben konnten nicht geladen werden.', caughtError);
         setIssues([]);
-        setError('Pflegeaufgaben konnten nicht geladen werden. Bitte versuche es erneut.');
+        setError('Die Pflegeaufgaben konnten nicht geladen werden.');
       } finally {
         if (active) setLoading(false);
       }

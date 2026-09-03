@@ -22,8 +22,8 @@ Aufgabe benötigt werden.
 - Neon ist die operative Datenquelle des Frontends.
 - destination.one darf nur serverseitig für den Datenimport genutzt werden.
 - Auth-Code, Mandanten- und Rollenprüfung nicht ohne eigenen Auftrag umbauen.
-- Outdooractive-Zugangsdaten bleiben nutzerseitig eingegeben, flüchtig und
-  ungecacht.
+- Outdooractive-Zugangsdaten werden je Mandant serverseitig verschlüsselt
+  gespeichert und niemals unmaskiert an den Browser gegeben.
 - Zufalls-/Beispieldatenabruf, Outdooractive-Details und One Intelligence sind
   aktive Produktfunktionen und keine Altlasten.
 - Keine Secrets in Quellcode, Browser-Storage, Logs, Snapshots oder Cache legen.

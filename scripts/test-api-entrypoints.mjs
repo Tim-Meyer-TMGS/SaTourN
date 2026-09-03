@@ -39,6 +39,10 @@ assert.equal(invalidDataAction.statusCode, 400);
 
 const protectedData = await invoke(dataHandler, { method: 'GET', query: { action: 'search' } });
 assert.equal(protectedData.statusCode, 401);
+const protectedOutdooractive = await invoke(dataHandler, { method: 'GET', query: { action: 'outdooractive-detail', id: '123' } });
+assert.equal(protectedOutdooractive.statusCode, 401);
+const protectedFilterOptions = await invoke(dataHandler, { method: 'GET', query: { action: 'record-filter-options' } });
+assert.equal(protectedFilterOptions.statusCode, 401);
 
 const health = await invoke(systemHandler, { method: 'GET', query: { action: 'health' } });
 assert.equal(health.statusCode, 200);
@@ -59,6 +63,7 @@ for (const action of [
   'admin-quality',
   'admin-audit',
   'admin-status'
+  ,'admin-tenant-integration'
 ]) {
   const protectedAdminAction = await invoke(systemHandler, { method: 'GET', query: { action } });
   assert.equal(protectedAdminAction.statusCode, 401, `${action} must require authentication`);

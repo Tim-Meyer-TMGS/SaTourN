@@ -22,6 +22,13 @@ Andere Lizenztypen werden nicht verworfen. So bleibt beispielsweise
 Vollabgleich werden IDs, die in der aktuellen Quelle nicht mehr vorkommen, aus
 der operativen Tabelle entfernt.
 
+`categories` speichert den Kategoriebaum je Experience und Datentyp.
+`record_categories` bildet die normalisierte, indizierte Zuordnung zu
+`et4_records` ab. Da der destination.one-Categories-Endpunkt keine stabilen IDs
+liefert, erzeugt der Import deterministische interne IDs aus Experience,
+Datentyp und Kategoriename. Der bisherige JSONB-Wert bleibt für die kompakte
+Projektion und Abwärtskompatibilität erhalten.
+
 ## Auth und Mandanten
 
 Neon Auth verwaltet Identitäten und Sitzungen im Schema `neon_auth`. SaTourN
@@ -33,6 +40,7 @@ ergänzt diese Identitäten durch eigene Anwendungstabellen:
 - `app_user_profile`: Rolle, Aktivierung, Mandant und Neon-Auth-Verknüpfung
 - `app_audit_log`: administrative Ereignisse
 - `app_system_metrics`: anwendungsbezogene Systemmetriken
+- `tenant_integrations`: verschlüsselte Zugangsdaten externer Anbieter je Nutzergruppe
 
 Eine gültige Auth-Sitzung allein reicht nicht aus. API-Zugriff setzt zusätzlich
 ein aktives Profil, einen aktiven Mandanten und eine gültige Rolle voraus.

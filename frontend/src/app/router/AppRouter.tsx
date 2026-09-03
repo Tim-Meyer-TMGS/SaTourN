@@ -34,7 +34,7 @@ export function AppRouter() {
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/account" element={<AccountPage />} />
-          <Route path="/admin" element={user?.role === 'SUPER_ADMIN' ? <AdminPage /> : <NotFoundPage />} />
+          <Route path="/admin" element={user?.role === 'SUPER_ADMIN' || user?.role === 'GROUP_ADMIN' ? <AdminPage /> : <NotFoundPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

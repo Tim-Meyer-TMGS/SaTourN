@@ -26,12 +26,13 @@ const TABS: Array<{ id: AdminTab; label: string; icon: string }> = [
   { id: 'quality', label: 'Prüfkriterien', icon: 'fact_check' },
   { id: 'status', label: 'Systemstatus', icon: 'monitor_heart' },
   { id: 'audit', label: 'Protokoll', icon: 'history' },
-  { id: 'settings', label: 'Eigene Einstellungen', icon: 'tune' }
+  { id: 'settings', label: 'Integrationen', icon: 'tune' }
 ];
 
 export function AdminPage() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<AdminTab>('overview');
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const [tab, setTab] = useState<AdminTab>(isSuperAdmin ? 'overview' : 'settings');
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [tenants, setTenants] = useState<AdminTenant[]>([]);
@@ -53,7 +54,7 @@ export function AdminPage() {
     const controller = new AbortController();
     setLoading(true);
     setError('');
-    const load = tab === 'overview'
+    const load = !isSuperAdmin && tab !== 'settings' ? Promise.resolve() : tab === 'overview'
       ? adminApi.overview(controller.signal).then(setOverview)
       : tab === 'users' || tab === 'tenants'
         ? Promise.all([adminApi.users(controller.signal), adminApi.tenants(controller.signal)]).then(([userResult, tenantResult]) => {
@@ -76,13 +77,13 @@ export function AdminPage() {
       if (!controller.signal.aborted) setLoading(false);
     });
     return () => controller.abort();
-  }, [tab]);
+  }, [isSuperAdmin, tab]);
 
   return (
     <section className="content-panel admin-page">
-      <header className="panel-header"><div><h1>Administration</h1><p>{user?.name} · {user?.tenant.name} · Super-Admin</p></div><span className="status-chip">Aktiv</span></header>
+      <header className="panel-header"><div><h1>Administration</h1><p>{user?.name} · {user?.tenant.name}</p></div><span className="status-chip">{isSuperAdmin ? 'Super-Admin' : 'Gruppen-Admin'}</span></header>
       <nav className="admin-tabs" aria-label="Administration">
-        {TABS.map((entry) => <button key={entry.id} type="button" className={tab === entry.id ? 'active' : ''} onClick={() => setTab(entry.id)}><span className="material-icons" aria-hidden="true">{entry.icon}</span>{entry.label}</button>)}
+        {TABS.filter((entry) => isSuperAdmin || entry.id === 'settings').map((entry) => <button key={entry.id} type="button" className={tab === entry.id ? 'active' : ''} onClick={() => setTab(entry.id)}><span className="material-icons" aria-hidden="true">{entry.icon}</span>{entry.label}</button>)}
       </nav>
       {loading ? <div className="panel-card admin-loading" role="status">Daten werden geladen.</div> : null}
       {error ? <p className="tool-message tool-message-error" role="alert">{error}</p> : null}

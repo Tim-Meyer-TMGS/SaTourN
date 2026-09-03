@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { fetchJson } from '../../shared/api/http-client';
 import { buildApiActionUrl, DATA_API_PATH } from '../../shared/api/api-paths';
 import { findQualityCriterion } from '../../shared/quality/quality-criteria';
+import { useAuth } from '../../shared/auth/auth-context';
 import {
   buildMailDraftUrl,
   openMailDraftInMailClient,
@@ -12,15 +13,12 @@ import {
 } from '../../shared/records/record-mail-draft';
 import {
   DetailActionBar,
-  DetailBreadcrumb,
-  DetailCenterColumn,
-  DetailCriteriaCard,
-  DetailHeadCard,
-  DetailLeftColumn,
-  DetailRightColumn
+  DetailBreadcrumb
 } from './record-detail-components';
 import { normalizeDetailItem, priorityRank } from './record-detail-mapper';
-import { OutdooractiveDetailPanel } from './OutdooractiveDetailPanel';
+import { buildDetailQualityGroups } from './record-detail-quality-groups';
+import { RecordOverview } from './RecordOverview';
+import { RecordQualityGroups } from './RecordQualityGroups';
 import type { DetailItem, MissingIssue, RecordListEntry, RecordListState, ResolvedPayload } from './record-detail-types';
 
 const RECORD_LIST_STATE_KEY = 'satourn.frontend.recordListState';
@@ -115,6 +113,7 @@ function buildListNavigation(item: DetailItem | null, listState: RecordListState
 }
 
 export function RecordDetailPage() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [item, setItem] = useState<DetailItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,7 +151,7 @@ export function RecordDetailPage() {
         if (!active) return;
         console.error('Datensatz-Detail konnte nicht geladen werden.', caughtError);
         setItem(null);
-        setError('Der Datensatz konnte nicht geladen werden. Bitte kehre zur Liste zurück und versuche es erneut.');
+        setError('Der Datensatz konnte nicht geladen werden.');
       } finally {
         if (active) setLoading(false);
       }
@@ -166,6 +165,9 @@ export function RecordDetailPage() {
   }, [identifier, type]);
 
   const missingIssues = useMemo(() => buildMissingIssues(item), [item]);
+  const qualityGroups = useMemo(() => item
+    ? buildDetailQualityGroups(item).filter((group) => group.id !== 'technical' || user?.role !== 'USER')
+    : [], [item, user?.role]);
 
   const listState = useMemo(() => loadRecordListState(), [identifier]);
   const listNavigation = useMemo(() => buildListNavigation(item, listState), [item, listState]);
@@ -204,7 +206,7 @@ export function RecordDetailPage() {
       window.setTimeout(() => setCopyMessage(''), 2200);
     } catch (caughtError) {
       console.error('Mailentwurf konnte nicht erzeugt werden.', caughtError);
-      setError('Der Mailentwurf konnte nicht erstellt werden. Bitte versuche es erneut.');
+      setError('Der Mailentwurf konnte nicht erstellt werden.');
     } finally {
       setMailDraftLoading(false);
     }
@@ -241,17 +243,8 @@ export function RecordDetailPage() {
 
           {copyMessage ? <div className="overview-message">{copyMessage}</div> : null}
 
-          <DetailHeadCard item={item} primaryIssue={missingIssues[0]} />
-
-          <OutdooractiveDetailPanel item={item} />
-
-          <section className="detail-grid">
-            <DetailLeftColumn item={item} missingIssues={missingIssues} />
-            <DetailCenterColumn item={item} />
-            <DetailRightColumn item={item} />
-          </section>
-
-          <DetailCriteriaCard item={item} />
+          <RecordOverview item={item} issue={missingIssues[0]} />
+          <RecordQualityGroups groups={qualityGroups} item={item} />
         </>
       ) : null}
     </>

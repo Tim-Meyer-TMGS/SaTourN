@@ -24,8 +24,6 @@ export type RandomSampleResult = {
   available: number;
 };
 
-export type OutdooractiveResult = Record<string, unknown>;
-
 function extractItems(payload: SearchPayload | null | undefined) {
   return payload?.items || payload?.Items || payload?.results || payload?.Results || [];
 }
@@ -135,58 +133,3 @@ export async function loadRandomSample(options: {
   };
 }
 
-function parseOutdooractiveResponse(text: string) {
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return text;
-  }
-}
-
-export async function loadOutdooractiveData(options: {
-  projectKey: string;
-  apiKey: string;
-  display: 'verbose' | 'snippet';
-  ids: string[];
-  signal?: AbortSignal;
-}): Promise<OutdooractiveResult> {
-  const { projectKey, apiKey, display, ids, signal } = options;
-  const results: OutdooractiveResult = {};
-  let nextIndex = 0;
-
-  async function worker() {
-    while (nextIndex < ids.length) {
-      const id = ids[nextIndex];
-      nextIndex += 1;
-      const url = new URL(
-        `https://api-oa.com/api/v2/project/${encodeURIComponent(projectKey)}/contents/${encodeURIComponent(id)}`
-      );
-      url.searchParams.set('display', display);
-      url.searchParams.set('format', 'json');
-      url.searchParams.set('key', apiKey);
-
-      try {
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: { Accept: 'application/json' },
-          cache: 'no-store',
-          signal
-        });
-        const text = await response.text();
-        results[id] = response.ok
-          ? parseOutdooractiveResponse(text)
-          : { _error: true, status: response.status, body: text };
-      } catch (error) {
-        if (signal?.aborted) throw error;
-        results[id] = {
-          _error: true,
-          status: 0,
-          body: error instanceof Error ? error.message : String(error)
-        };
-      }
-    }
-  }
-
-  await Promise.all(Array.from({ length: Math.min(4, ids.length) }, () => worker()));
-  return results;
-}

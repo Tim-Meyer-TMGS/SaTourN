@@ -97,6 +97,25 @@ export type DetailItem = {
   mediaNote: string;
 };
 
+export type DetailQualityField = {
+  id: string;
+  label: string;
+  value: string;
+  status: 'fulfilled' | 'missing' | 'review' | 'not_applicable';
+  recommendation?: string;
+};
+
+export type DetailQualityGroup = {
+  id: string;
+  label: string;
+  score: number | null;
+  status: 'good' | 'review' | 'critical' | 'not_applicable';
+  missingCount: number;
+  reviewCount: number;
+  items: DetailQualityField[];
+  initiallyOpen?: boolean;
+};
+
 export type MissingIssue = {
   id: string;
   label: string;

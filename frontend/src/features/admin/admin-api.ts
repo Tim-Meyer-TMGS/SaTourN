@@ -33,6 +33,17 @@ export type AdminTenant = {
   area_ids: string[];
 };
 
+export type TenantIntegration = {
+  tenantId: string;
+  provider: 'outdooractive';
+  projectKey: string;
+  apiKeyMasked: string;
+  active: boolean;
+  lastTestedAt?: string | null;
+  lastTestSucceeded?: boolean | null;
+  updatedAt?: string;
+};
+
 export type AdminArea = {
   id: string;
   external_id: string;
@@ -149,6 +160,8 @@ export const adminApi = {
     request<{ ok: boolean; sessionsRevoked: boolean }>('admin-tenant-update', { method: 'POST', body }),
   updateTenantAreas: (tenantId: string, areaIds: string[]) =>
     request<{ ok: boolean; areaIds: string[] }>('admin-tenant-areas', { method: 'POST', body: { tenantId, areaIds } }),
+  tenantIntegration: (tenantId?: string, signal?: AbortSignal) => request<{ integration: TenantIntegration | null }>('admin-tenant-integration', { query: tenantId ? { tenantId } : undefined, signal }),
+  saveTenantIntegration: (body: { tenantId?: string; projectKey: string; apiKey?: string; active: boolean }) => request<{ ok: boolean; integration: TenantIntegration }>('admin-tenant-integration', { method: 'POST', body }),
   quality: (signal?: AbortSignal) =>
     request<{ criteria: AdminQualityCriterion[] }>('admin-quality', { signal }),
   audit: (signal?: AbortSignal) =>

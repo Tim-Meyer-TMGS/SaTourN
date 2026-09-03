@@ -51,13 +51,14 @@ Ein Super-Admin kann diese Zuordnungen in der Nutzergruppenverwaltung ändern.
 Die initiale Migration wird durch eine Seed-Markierung nur einmal angewendet
 und stellt später entfernte Zuordnungen nicht wieder her.
 
-Die Outdooractive-Eingabe bleibt unter „Eigene Einstellungen“. Der Key wird
-ausschließlich im Arbeitsspeicher der laufenden Browsersitzung gehalten und
-weder an Neon gesendet noch im Browser-Cache gespeichert.
+Outdooractive wird als Nutzergruppen-Integration verwaltet. Gruppen-Admins
+können den Zugang der eigenen Nutzergruppe ändern, Super-Admins alle Zugänge.
+Der API Key wird verschlüsselt gespeichert, nur maskiert angezeigt und für
+Outdooractive-Aufrufe ausschließlich serverseitig entschlüsselt.
 
 ## Spätere Erweiterungen
 
-- eingeschränkte Verwaltungsansicht für `GROUP_ADMIN`
+- weitere Verwaltungsfunktionen für `GROUP_ADMIN` neben Integrationen
 - nutzerbezogene Auswahl eigener Prüfbereiche und Zusatzfilter
 - Gestaltungseinstellungen über die derzeitige Theme-Kennung hinaus
 - sicher verschlüsselte, nutzerbezogene Speicherung externer Zugänge, falls

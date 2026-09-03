@@ -23,9 +23,9 @@ Das Frontend verwendet standardmäßig dieselbe Origin:
 Die Endpunkte sind als feste Same-Origin-Pfade im Frontend hinterlegt.
 destination.one wird nicht aus dem Browser aufgerufen.
 
-Der Outdooractive-Detailabruf ist eine bewusste Ausnahme vom zentralen
-Datenfluss. Den Schlüssel gibt der Nutzer ein; die Anwendung hält ihn nur im
-Arbeitsspeicher und überträgt ihn direkt an Outdooractive.
+Outdooractive-Aufrufe laufen über die Same-Origin-API. Zugangsdaten werden je
+Nutzergruppe serverseitig verwaltet und niemals unmaskiert an das Frontend
+gegeben.
 
 Vercel baut das Frontend über die Root-Konfiguration `../vercel.json` und
 liefert `frontend/dist` aus.

@@ -26,9 +26,9 @@ konkreten Lizenztyp. `has_license` ist nur für `CC0`, `CC-BY`, `CC-BY-SA`
 und `PD` wahr; beispielsweise bleibt `CC-BY-NC` gespeichert, zählt aber
 nicht als Open Data.
 
-Outdooractive ist eine bewusste Ausnahme: Zugangsdaten werden vom Nutzer in der
-Anwendung eingegeben, nur im Arbeitsspeicher gehalten und für den direkten
-Detailabruf verwendet. Sie dürfen weder persistiert noch gecacht werden.
+Outdooractive-Zugänge werden je Nutzergruppe verschlüsselt gespeichert. Der
+Browser erhält nur einen maskierten Status; Outdooractive-Aufrufe laufen über
+die Serverless API.
 
 ## Konfiguration
 
@@ -49,6 +49,7 @@ OI_MODEL_MAIL
 OI_MODEL_SEARCH
 OI_MAIL_CC                                optional
 OI_MAIL_BCC                               optional
+TENANT_INTEGRATION_SECRET                mindestens 32 Zeichen, für Integration-Keys
 ```
 
 ## Entwicklung und Prüfung

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 
 import { buildApiActionUrl, SYSTEM_API_PATH } from '../../shared/api/api-paths';
@@ -63,6 +63,8 @@ export function AppShell() {
   const [draftContext, setDraftContext] = useState<WorkContext>(context);
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
   const [serverWarmupState, setServerWarmupState] = useState<ServerWarmupState>('idle');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const availableAreas = user?.tenant.accessAllAreas
     ? AREAS
     : [
@@ -112,6 +114,15 @@ export function AppShell() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { setIsMenuOpen(false); menuButtonRef.current?.focus(); }
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isMenuOpen]);
+
   function closeContextDialog() {
     setIsContextOpen(false);
   }
@@ -133,6 +144,7 @@ export function AppShell() {
             <small>Datenqualitäts-Monitor</small>
           </span>
         </NavLink>
+        <button ref={menuButtonRef} className="mobile-menu-button icon-button" type="button" aria-label="Navigation öffnen" aria-expanded={isMenuOpen} aria-controls="app-navigation" onClick={() => setIsMenuOpen((value) => !value)}><span className="material-icons" aria-hidden="true">menu</span></button>
 
         <ContextSummary onEdit={() => setIsContextOpen(true)} />
 
@@ -149,7 +161,7 @@ export function AppShell() {
           <NavLink className="icon-button header-help-link" to="/help" aria-label="Hilfe und Prüfkriterien" title="Hilfe und Prüfkriterien">
             <span className="material-icons" aria-hidden="true">help_outline</span>
           </NavLink>
-          {user?.role === 'SUPER_ADMIN' ? (
+          {user?.role === 'SUPER_ADMIN' || user?.role === 'GROUP_ADMIN' ? (
             <NavLink className="icon-button header-admin-link" to="/admin" aria-label="Administration" title="Administration">
               <span className="material-icons" aria-hidden="true">settings</span>
             </NavLink>
@@ -174,13 +186,15 @@ export function AppShell() {
       </header>
 
       <div className="app-layout">
-        <nav className="app-sidebar" aria-label="Datenqualitätsmonitor Navigation">
+        {isMenuOpen ? <button className="sidebar-backdrop" type="button" aria-label="Navigation schließen" onClick={() => setIsMenuOpen(false)} /> : null}
+        <nav id="app-navigation" className={`app-sidebar${isMenuOpen ? ' open' : ''}`} aria-label="Datenqualitätsmonitor Navigation">
           {navigationItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
               className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+              onClick={() => setIsMenuOpen(false)}
             >
               <span className="material-icons" aria-hidden="true">{item.icon}</span>
               {item.label}

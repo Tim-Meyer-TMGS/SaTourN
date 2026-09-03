@@ -11,7 +11,7 @@ import {
   getRecordWeb
 } from '../../shared/records/record-fields';
 import type { WorkContext } from '../../shared/types/context';
-import type { RecordRow, RecordSearchMeta } from './records-types';
+import type { RecordRow, RecordSearchMeta, RecordsQuery } from './records-types';
 
 type SearchPayload = {
   items?: unknown[];
@@ -20,6 +20,7 @@ type SearchPayload = {
   Results?: unknown[];
   overallcount?: number;
   OverallCount?: number;
+  pagination?: { page: number; pageSize: number; totalItems: number; totalPages: number };
 };
 
 type AiSearchPayload = {
@@ -195,6 +196,49 @@ function toRecordRow(item: Record<string, unknown>): RecordRow {
 function buildEvaluatedRecordRows(items: Record<string, unknown>[]) {
   const evaluated = evaluateAllItems(items) as Array<Record<string, unknown>>;
   return evaluated.map(toRecordRow);
+}
+
+export async function loadRecordsPageForFrontend(query: RecordsQuery, context: WorkContext) {
+  const params = new URLSearchParams();
+  params.set('limit', String(query.pageSize));
+  params.set('offset', String((query.page - 1) * query.pageSize));
+  if (query.q) params.set('query', query.q);
+  if (query.types.length) params.set('types', query.types.join(','));
+  if (query.categories.length) params.set('category', query.categories.join(','));
+  if (query.categoryIds.length) params.set('categoryIds', query.categoryIds.join(','));
+  if (query.authorships.length) params.set('authorships', query.authorships.join(','));
+  if (query.criterionIds.length) params.set('criterionIds', query.criterionIds.join(','));
+  const requestedAreas = query.areaIds.length ? query.areaIds : (context.area ? [context.area] : []);
+  if (requestedAreas.length) params.set('area', requestedAreas.join(','));
+  if (query.city || context.city) params.set('city', query.city || context.city);
+  if (query.nonOpenData) params.set('isOpenData', 'false');
+
+  const payload = await fetchJson<SearchPayload>(`${buildApiActionUrl(DATA_API_PATH, 'search')}&${params.toString()}`);
+  const items = extractItems(payload).map((raw) => normalizeSearchItem(raw, query.types[0] || '', context));
+  const totalItems = payload.pagination?.totalItems ?? extractTotal(payload, items.length);
+  const totalPages = payload.pagination?.totalPages ?? Math.ceil(totalItems / query.pageSize);
+  return {
+    rows: buildEvaluatedRecordRows(items),
+    meta: {
+      mode: query.nonOpenData ? 'non_open_data' : query.criterionIds.length ? 'criterion' : 'search',
+      criterionId: query.criterionIds[0],
+      estimatedTotalItems: totalItems,
+      totalItems,
+      page: query.page,
+      pageSize: query.pageSize,
+      totalPages,
+      supportsPagination: true,
+      truncated: query.page < totalPages
+    } satisfies RecordSearchMeta
+  };
+}
+
+export async function loadRecordFilterOptions(query: RecordsQuery, context: WorkContext) {
+  const params = new URLSearchParams();
+  if (query.types.length) params.set('types', query.types.join(','));
+  if (context.area) params.set('area', context.area);
+  if (context.city) params.set('city', context.city);
+  return fetchJson<{ categories: string[]; authorships: string[]; criterionIds: string[] }>(`${buildApiActionUrl(DATA_API_PATH, 'record-filter-options')}&${params.toString()}`);
 }
 
 function uniqueRecordItems(items: Record<string, unknown>[]) {
