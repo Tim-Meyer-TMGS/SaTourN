@@ -43,7 +43,7 @@ CREATE INDEX IF NOT EXISTS record_categories_record_idx ON record_categories (ex
 CREATE INDEX IF NOT EXISTS record_categories_category_idx ON record_categories (category_id);
 
 INSERT INTO categories (id, experience, name, taxonomy)
-SELECT
+SELECT DISTINCT
   'cat_' || md5(record.experience || ':' || record.record_type || ':' || category.value),
   record.experience,
   category.value,
@@ -54,7 +54,7 @@ WHERE NULLIF(TRIM(category.value), '') IS NOT NULL
 ON CONFLICT (experience, taxonomy, name) DO UPDATE SET updated_at = NOW();
 
 INSERT INTO record_categories (experience, record_global_id, category_id, relation_type)
-SELECT record.experience, record.global_id, category.id, 'category'
+SELECT DISTINCT record.experience, record.global_id, category.id, 'category'
 FROM et4_records AS record
 CROSS JOIN LATERAL jsonb_array_elements_text(record.categories) AS value(name)
 JOIN categories AS category

@@ -70,7 +70,9 @@ Stand: 3. September 2026
 
 - Neue Migration: `db/migrations/011_create_integrations_and_categories.sql`
 - Neue Tabellen: `tenant_integrations`, `categories`, `record_categories`
-- Die Migration wurde nicht gegen eine Live-Datenbank ausgeführt.
+- Die Migration wurde am 3. September 2026 erfolgreich gegen die konfigurierte
+  Neon-Datenbank ausgeführt. Ergebnis: 454 Kategorien, 48.476 Zuordnungen und
+  keine verwaisten Foreign Keys.
 
 ## Neue und geänderte API-Verträge
 
@@ -93,6 +95,8 @@ Erfolgreich ausgeführt:
 - `scripts/test-api-entrypoints.mjs`
 - TypeScript-Projektbuild (`tsc -b frontend`)
 - Vite-Produktionsbuild
+- `scripts/verify-implemented-functionality.mjs` gegen Neon: Gebiets-Scope,
+  Pagination, Kategorie- und Qualitätsfilter erfolgreich
 
 `npm` ist in der aktuellen Shell nicht im `PATH`. Die in `npm run check`
 enthaltenen Prüfungen wurden deshalb direkt mit der vorhandenen Node-Laufzeit
@@ -100,10 +104,13 @@ ausgeführt.
 
 ## Noch offen
 
-- Migration bewusst in einer Zielumgebung ausführen und Backfill kontrollieren.
 - Live-Integrationstest mit echten Rollen, Tenant-Daten und Outdooractive-Key.
 - Eigener Button „Verbindung testen“ mit persistiertem Teststatus.
 - Automatisierte React-Tests für Accordion, URL-State und Rücknavigation.
 - Manuelle visuelle QA bei 1440, 1280, 1024, 768 und 390 Pixeln.
 - Redaktionelle Vollprüfung der nicht in diesem Arbeitsblock geänderten Seiten.
 - Filterkomponenten bei Bedarf weiter aus `RecordsPage.tsx` auslagern.
+
+Für einen produktiven Outdooractive-Test fehlen in der lokalen Umgebung derzeit
+`TENANT_INTEGRATION_SECRET` und Zugangsdaten für ein Testkonto. Die reine
+Verschlüsselungs- und Rollenlogik ist durch Vertragstests abgedeckt.
