@@ -3116,6 +3116,10 @@ button.table-link-button:disabled,
   min-width: 0;
 }
 
+.admin-tenant-card .admin-tenant-areas {
+  grid-column: 1 / -1;
+}
+
 .admin-tenant-card dt {
   color: var(--muted);
   font-size: 12px;

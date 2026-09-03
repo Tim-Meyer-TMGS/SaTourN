@@ -55,6 +55,14 @@ export function TenantsPanel({ tenants, areas, reload }: {
     }));
   }
 
+  function areaNames(tenant: AdminTenant) {
+    if (tenant.access_all_areas) return 'Alle Gebiete';
+    const names = tenant.area_ids
+      .map((areaId) => areas.find((area) => area.id === areaId)?.name)
+      .filter((name): name is string => Boolean(name));
+    return names.length ? names.join(', ') : 'Keine Gebiete';
+  }
+
   return (
     <section className="panel-card admin-section-card">
       <header className="admin-section-header">
@@ -68,7 +76,7 @@ export function TenantsPanel({ tenants, areas, reload }: {
           <dl>
             <div><dt>Parent</dt><dd>{tenant.parent_name || '–'}</dd></div>
             <div><dt>Nutzer</dt><dd>{tenant.user_count}</dd></div>
-            <div><dt>Gebiete</dt><dd>{tenant.access_all_areas ? 'Alle' : tenant.area_ids.length}</dd></div>
+            <div className="admin-tenant-areas"><dt>Gebiete ({tenant.access_all_areas ? 'alle' : tenant.area_ids.length})</dt><dd>{areaNames(tenant)}</dd></div>
             <div><dt>Theme</dt><dd>{tenant.theme}</dd></div>
           </dl>
           <button type="button" onClick={() => openEditor(tenant)}>Bearbeiten</button>

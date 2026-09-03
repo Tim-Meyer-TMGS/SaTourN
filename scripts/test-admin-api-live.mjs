@@ -48,8 +48,22 @@ for (const action of ['admin-overview', 'admin-users', 'admin-tenants', 'admin-q
 assert.ok(results['admin-overview'].metrics.active_users >= 1);
 assert.ok(results['admin-users'].users.length >= 1);
 assert.ok(results['admin-users'].users.every((user) => isEmailAllowedForTenant(user.email, user.tenant_slug)));
-assert.ok(results['admin-tenants'].tenants.length >= 1);
-assert.equal(results['admin-tenants'].areas.length, 9);
+assert.ok(results['admin-tenants'].tenants.length >= 9);
+assert.ok(results['admin-tenants'].areas.length >= 13);
+const tenantMappings = new Map(results['admin-tenants'].tenants.map((tenant) => [tenant.id, tenant.area_ids]));
+assert.deepEqual(tenantMappings.get('tenant_chemnitz'), ['area_chemnitz']);
+assert.deepEqual(tenantMappings.get('tenant_chemnitz_zwickau'), [
+  'area_chemnitz',
+  'area_chemnitz_zwickau_region',
+  'area_rochlitzer_muldental',
+  'area_zwickau'
+]);
+assert.deepEqual(tenantMappings.get('tenant_dresden'), ['area_dresden', 'area_dresden_elbland']);
+assert.deepEqual(tenantMappings.get('tenant_leipzig'), ['area_leipzig', 'area_leipzig_region']);
+assert.deepEqual(tenantMappings.get('tenant_oberlausitz'), ['area_lausitzer_seenland', 'area_oberlausitz']);
+assert.deepEqual(tenantMappings.get('tenant_erzgebirge'), ['area_erzgebirge']);
+assert.deepEqual(tenantMappings.get('tenant_saechsische_schweiz'), ['area_saechsische_schweiz']);
+assert.deepEqual(tenantMappings.get('tenant_vogtland'), ['area_vogtland']);
 assert.ok(results['admin-quality'].criteria.length >= 1);
 assert.equal(results['admin-status'].database.ok, true);
 
