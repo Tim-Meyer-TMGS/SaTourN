@@ -25,3 +25,9 @@ im Arbeitsspeicher der laufenden Browsersitzung und darf nicht gecacht werden.
 Änderungen in diesem Bereich müssen die bestehende Neon-Auth-Brücke und die
 serverseitige Mandanten-/Gebietsprüfung weiterverwenden. Eine parallele zweite
 Authentifizierung soll nicht eingeführt werden.
+
+Bis die Oberfläche fertig ist, können berechtigte Betreiber Konten mit
+`npm run auth:manage-user -- --operation create ... --confirm` anlegen und mit
+`--operation reset-password` ein temporäres Passwort setzen. Das Skript setzt
+den Pflicht-Passwortwechsel, widerruft Sitzungen und protokolliert die Aktion,
+aber niemals das Klartextpasswort.
