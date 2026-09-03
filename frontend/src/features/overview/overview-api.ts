@@ -2,7 +2,7 @@ import { fetchJson } from '../../shared/api/http-client';
 import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
 import { DATA_TYPES } from '../../shared/config/constants';
-import { getQualityScanConfig, qualityCriteria, type QualityCriterion } from '../../shared/legacy/quality';
+import { getQualityScanConfig, qualityCriteria, type QualityCriterion } from '../../shared/quality/quality';
 import type { WorkContext } from '../../shared/types/context';
 
 export type OverviewStatisticRow = {

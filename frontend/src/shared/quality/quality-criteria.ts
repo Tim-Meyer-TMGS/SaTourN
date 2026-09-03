@@ -1,4 +1,4 @@
-import { qualityCriteria } from '../legacy/quality';
+import { qualityCriteria } from './quality';
 
 const OPEN_DATA_CRITERION_FALLBACKS = new Set(['license_missing', 'image_author_missing']);
 

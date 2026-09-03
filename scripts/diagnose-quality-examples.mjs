@@ -8,7 +8,7 @@ import {
   getDomainQualityModelSummary,
   getQualityScanConfig,
   qualityHelpers
-} from '../Statistik/quality.js';
+} from '../lib/quality/criteria.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');

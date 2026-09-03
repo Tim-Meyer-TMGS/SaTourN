@@ -3,56 +3,63 @@
 SaTourN ist ein React-basierter Datenqualitätsmonitor. Vercel liefert das
 Frontend und die Serverless API aus; Neon ist die operative Datenquelle.
 
-## API
+## Laufzeitarchitektur
 
-Die fachliche API besteht aus drei Entry-Points:
+- `frontend/`: produktive React-/Vite-Anwendung
+- `api/data.js`: Datensuche, Details und Qualitätsauswertungen
+- `api/system.js`: Health, Admin-Metriken und KI-Funktionen
+- `api/cron/sync.js`: geplanter Import aus destination.one
+- `api/auth/*.js`: fünf Same-Origin-Endpunkte für Neon Auth
+- `lib/`: Fachlogik, Datenbankzugriff, Auth und Integrationen
+- `db/migrations/`: idempotente Neon-Migrationen
+- `scripts/`: Migration, Import, Diagnose und Verifikation
 
-- `GET|POST /api/data?action=...` für Datensuche, Detailauflösung und Qualitätsauswertungen
-- `GET|POST /api/system?action=...` für Health, Admin-Metriken und KI-Funktionen
-- `GET /api/cron/sync` für den geplanten destination.one-Import
-
-Die fünf Auth-Endpunkte unter `/api/auth/` bilden eine Same-Origin-Brücke zu
-Neon Auth. Rollen, Mandanten und die Freigabe einzelner Konten bleiben in den
-SaTourN-Anwendungstabellen. Damit erzeugt das Repository insgesamt acht Vercel
-Serverless Functions und bleibt unter dem Hobby-Limit.
-
-Alte API-URLs werden in `vercel.json` auf die konsolidierten Entry-Points
-umgeschrieben und erzeugen keine zusätzlichen Functions.
+Damit entstehen acht Vercel Serverless Functions. Kompatibilitäts-URLs in
+`vercel.json` sind Rewrites auf die konsolidierten Entry-Points und erzeugen
+keine weiteren Functions.
 
 ## Datenfluss
 
-Das React-Frontend liest operative Daten ausschließlich aus Neon. Der
-destination.one-Zugang wird nur vom nächtlichen Import verwendet. Der Import
-speichert den konkreten Lizenztyp; `has_license` markiert ausschließlich die
-offenen Lizenztypen `CC0`, `CC-BY`, `CC-BY-SA` und `PD`. Andere Werte wie
-`CC-BY-NC` bleiben als Lizenztyp erhalten, gelten aber nicht als Open Data.
+Das Frontend liest operative ET4-Daten ausschließlich aus Neon. destination.one
+wird nur serverseitig durch den Import angesprochen. Der Import speichert den
+konkreten Lizenztyp. `has_license` ist nur für `CC0`, `CC-BY`, `CC-BY-SA`
+und `PD` wahr; beispielsweise bleibt `CC-BY-NC` gespeichert, zählt aber
+nicht als Open Data.
 
-## Wichtige Umgebungsvariablen
+Outdooractive ist eine bewusste Ausnahme: Zugangsdaten werden vom Nutzer in der
+Anwendung eingegeben, nur im Arbeitsspeicher gehalten und für den direkten
+Detailabruf verwendet. Sie dürfen weder persistiert noch gecacht werden.
+
+## Konfiguration
+
+Erforderlich beziehungsweise funktionsabhängig:
 
 ```text
 DATABASE_URL
 CRON_SECRET
 DESTINATION_ONE_API_KEY
-DESTINATION_ONE_BASE_URL       optional
-DESTINATION_ONE_EXPERIENCE     optional, Standard: statistik_sachsen
-DESTINATION_ONE_DATABASE_TEMPLATE optional, Standard: ET2022A.json
-DESTINATION_ONE_FULL_SYNC      optional, true aktiviert Abgleich und Löschung fehlender IDs
-NEON_AUTH_BASE_URL             oder DATABASE_NEON_AUTH_BASE_URL bei Custom Prefix DATABASE
-VITE_NEON_AUTH_URL             oder DATABASE_VITE_NEON_AUTH_URL bei Custom Prefix DATABASE
-OI_API_KEY
+DESTINATION_ONE_BASE_URL                 optional
+DESTINATION_ONE_EXPERIENCE               optional, Standard: statistik_sachsen
+DESTINATION_ONE_DATABASE_TEMPLATE        optional, Standard: ET2022A.json
+DESTINATION_ONE_FULL_SYNC                 optional, true aktiviert Vollabgleich
+NEON_AUTH_BASE_URL                        alternativ DATABASE_NEON_AUTH_BASE_URL
+OI_API_KEY                                für KI-Funktionen
+OI_API_BASE                               optional
 OI_MODEL_MAIL
 OI_MODEL_SEARCH
+OI_MAIL_CC                                optional
+OI_MAIL_BCC                               optional
 ```
 
 ## Entwicklung und Prüfung
 
 ```bash
 npm install
+npm install --prefix frontend
 npm run db:migrate
 npm run check
 npm run --prefix frontend build
 ```
 
-Der manuelle Import läuft mit `npm run db:sync`; ein vollständiger Abgleich
-kann mit `--full` am Skript ausgeführt werden. Der Vercel-Cron wird über
-`DESTINATION_ONE_FULL_SYNC=true` auf einen vollständigen Abgleich gestellt.
+Ein manueller Import läuft mit `npm run db:sync`. Details zu Architektur,
+Daten- und Qualitätsmodell stehen unter [`docs/architecture`](docs/architecture).

@@ -2,7 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 import { compactEt4Record, extractEt4Items } from '../lib/database/compact-et4-record.js';
-import { evaluateQualityForItem } from '../Statistik/quality.js';
+import { evaluateQualityForItem } from '../lib/quality/criteria.js';
 
 function byteSize(value) {
   return Buffer.byteLength(JSON.stringify(value), 'utf8');

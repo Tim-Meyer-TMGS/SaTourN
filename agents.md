@@ -1,47 +1,43 @@
-# Codex-Projektanweisung
+# Arbeitsanweisung für SaTourN
 
-Dieses Repository enthaelt das SaTourN-Statistik-Dashboard.
+SaTourN ist ein React-/Vite-Datenqualitätsmonitor auf Vercel mit Neon als
+operativer Datenbank und Neon Auth als Authentifizierungsdienst.
 
-Ziel:
-Das bestehende Dashboard soll schrittweise zu einem Datenqualitaets-Monitor
-erweitert werden.
+## Vor Änderungen lesen
 
-## Wichtige Referenzen
+- immer: `docs/architecture/CURRENT_ARCHITECTURE.md`
+- für Repository- oder API-Arbeit: `docs/architecture/REPO_AUDIT.md`
+- für Datenbank/Import: `docs/architecture/DATA_MODEL.md`
+- für Kriterien/Qualität: `docs/architecture/QUALITY_MODEL.md`
+- für Admin-Funktionen: `docs/architecture/ADMIN_BACKLOG.md`
 
-Vor groesseren Aenderungen zuerst `docs/Codex/README.md` lesen und nur die dort
-genannten Standard-Kontextdateien laden:
+Große Fixtures unter `testdata/quality-examples/` nur laden, wenn sie für die
+Aufgabe benötigt werden.
 
-- `docs/Codex/Datenqualitaetsmonitor_Aktueller_Projektstand.md`
-- `docs/Codex/Datenqualitaetsmonitor_Offene_TODOs.md`
+## Verbindliche Grenzen
 
-Wenn der Nutzer auf den neuen Arbeitsauftrag oder einzelne Punkte daraus Bezug
-nimmt, zusaetzlich lesen:
+- `frontend/` ist die einzige produktive Benutzeroberfläche.
+- Nur Dateien unter `api/` werden zu Vercel Serverless Functions.
+- API-Entry-Points bleiben dünn; Fachlogik gehört nach `lib/`.
+- Neon ist die operative Datenquelle des Frontends.
+- destination.one darf nur serverseitig für den Datenimport genutzt werden.
+- Auth-Code, Mandanten- und Rollenprüfung nicht ohne eigenen Auftrag umbauen.
+- Outdooractive-Zugangsdaten bleiben nutzerseitig eingegeben, flüchtig und
+  ungecacht.
+- Zufalls-/Beispieldatenabruf, Outdooractive-Details und One Intelligence sind
+  aktive Produktfunktionen und keine Altlasten.
+- Keine Secrets in Quellcode, Browser-Storage, Logs, Snapshots oder Cache legen.
+- Keine neue Hosting-, Proxy- oder Build-Infrastruktur neben Vercel einführen.
 
-- `docs/Datenqualitaetsmonitor_Codex_Arbeitsauftrag.md`
+## Prüfung
 
-Bei Architektur-, API-, Kriterien- oder KI-Fragen zusaetzlich:
+Nach Änderungen mindestens die betroffenen Verträge prüfen. Für einen
+vollständigen lokalen Durchlauf:
 
-- `docs/Codex/Datenqualitaetsmonitor_Entscheidungen.md`
+```bash
+npm run check
+npm run --prefix frontend build
+```
 
-Grosse Fixtures unter `testdata/quality-examples/` und alte Arbeitsstaende unter
-`_archive/codex-docs/` nicht automatisch in den Kontext laden.
-
-## Arbeitsweise
-
-- Bestehendes Dashboard nicht komplett neu bauen.
-- Bestehendes Branding, Titel, Farbwelt und Grundlayout erhalten.
-- Aenderungen schrittweise und nachvollziehbar umsetzen.
-- Keine neue Build-Kette einfuehren, falls das Projekt statisch ist.
-- Keine Secrets oder API-Keys im Frontend speichern.
-- GitHub Pages bleibt statisches Hosting.
-- KI-Anbindung nur ueber n8n-Webhook als Middleware vorbereiten.
-- Fuer grosse Aufgaben immer nur den jeweils angeforderten Abschnitt umsetzen.
-- Vorgaben ab Punkt 25 des Arbeitsauftrags gelten als operative
-  Aufgabenbeschreibung: UI auditieren, Tabellen verschlanken,
-  Statusmeldungen umbauen, Loader lokal integrieren, Arbeitskontext vorbereiten
-  und Navigation beruhigen.
-- Nach jeder Aenderung kurz zusammenfassen:
-  - geaenderte Dateien
-  - was umgesetzt wurde
-  - was getestet wurde
-  - offene TODOs
+Live- oder schreibende Datenbankskripte nur ausführen, wenn die Aufgabe dies
+erfordert und die passende Umgebung bewusst ausgewählt wurde.

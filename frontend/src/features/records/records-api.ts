@@ -1,7 +1,7 @@
 import { fetchJson } from '../../shared/api/http-client';
 import { buildApiActionUrl, getRuntimeConfig } from '../../shared/api/runtime-config';
 import { buildSearchApiUrl } from '../../shared/api/url-builders';
-import { evaluateAllItems, type QualityCriterion } from '../../shared/legacy/quality';
+import { evaluateAllItems, type QualityCriterion } from '../../shared/quality/quality';
 import { findQualityCriterion } from '../../shared/quality/quality-criteria';
 import {
   buildQualityEvaluationInput,

@@ -12,7 +12,7 @@ import {
   hasValidDatasetLicense,
   isCheckableMediaObject,
   qualityCriteria
-} from '../../shared/legacy/quality';
+} from '../../shared/quality/quality';
 import {
   arrayOfStrings,
   buildQualityEvaluationInput,

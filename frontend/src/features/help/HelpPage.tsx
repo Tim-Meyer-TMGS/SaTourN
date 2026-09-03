@@ -1,6 +1,6 @@
 import { DATA_TYPES } from '../../shared/config/constants';
 import { formatNumber } from '../../shared/format/formatters';
-import { getDomainCriteriaForType, qualityCriteria, type QualityCriterion } from '../../shared/legacy/quality';
+import { getDomainCriteriaForType, qualityCriteria, type QualityCriterion } from '../../shared/quality/quality';
 
 type HelpSeverity = 'critical' | 'error' | 'optimization';
 

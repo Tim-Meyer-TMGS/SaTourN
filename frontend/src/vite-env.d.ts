@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-declare module '../../../../Statistik/quality.js' {
+declare module '../../../../lib/quality/criteria.js' {
   export const qualityCriteria: Array<{
     id: string;
     label: string;
